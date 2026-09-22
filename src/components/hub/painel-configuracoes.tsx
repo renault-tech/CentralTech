@@ -171,7 +171,7 @@ function FormularioAcesso({
         </label>
       </div>
 
-      {acao.erro && <p className="mt-2 text-xs text-semaforo-vermelho">{acao.erro}</p>}
+      {acao.erro && <p className="mt-2 text-xs text-red-700">{acao.erro}</p>}
       <div className="mt-3 flex gap-2">
         <Button
           size="sm"
