@@ -73,8 +73,6 @@ export default async function PaginaInicial() {
               <a
                 key={m.chave}
                 href={m.url}
-                target="_blank"
-                rel="noreferrer"
                 className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                 style={{ borderTopColor: m.cor, borderTopWidth: 4 }}
               >
