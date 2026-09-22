@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Identidade visual, Prefeitura de Cataguases
+   Azul institucional #0C1D33 e variações; vermelho #C63B22 e dourado #E9A63B como apoio.
+   Semáforo: azul #378ADD, verde #639922, amarelo #EF9F27, vermelho #E24B4A. */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 214 62% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 214 62% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 62% 12%;
+
+    /* Azul marinho institucional #0C1D33 */
+    --primary: 214 62% 12%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 212 32% 94%;
+    --secondary-foreground: 214 62% 12%;
+
+    --muted: 212 30% 95%;
+    --muted-foreground: 212 18% 40%;
+
+    --accent: 212 32% 94%;
+    --accent-foreground: 214 62% 12%;
+
+    /* Vermelho do brasão #C63B22 */
+    --destructive: 9 71% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 212 25% 88%;
+    --input: 212 25% 88%;
+    /* Azul claro institucional #2563A8 */
+    --ring: 212 64% 40%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 214 62% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 213 55% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 213 55% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 212 64% 55%;
+    --primary-foreground: 214 62% 10%;
+
+    --secondary: 212 45% 18%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 212 45% 16%;
+    --muted-foreground: 212 20% 65%;
+
+    --accent: 212 45% 18%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 9 71% 52%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 212 40% 20%;
+    --input: 212 40% 20%;
+    --ring: 212 64% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Entrada suave e escalonada da página institucional */
+@layer utilities {
+  .animar-entrada {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: entrada 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes entrada {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /* Entrada mais curta usada em conteúdo/painéis do redesign (fadeUp) */
+  .animar-subir {
+    animation: subir 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes subir {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /*
+   * Fundo institucional do app (estética "Apple", handoff /processos):
+   * um brilho radial no canto superior direito sobre um degradê vertical
+   * frio. `fixed` para não rolar com o conteúdo.
+   */
+  .fundo-institucional {
+    background:
+      radial-gradient(1200px 600px at 78% -8%, #e8eef6, transparent 60%),
+      radial-gradient(900px 500px at -6% 106%, rgba(233, 166, 59, 0.05), transparent 55%),
+      linear-gradient(180deg, #f4f6fa, #eef1f6);
+    background-attachment: fixed;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animar-entrada,
+    .animar-subir {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
