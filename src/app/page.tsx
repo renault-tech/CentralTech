@@ -1,14 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarMeusModulos } from "@/lib/dados/modulos";
-import { Brasao } from "@/components/brasao";
-import { sair } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/button";
+import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { GerenciadorTours } from "@/components/ajuda/gerenciador-tours";
-import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 
 export const dynamic = "force-dynamic";
 
@@ -26,44 +22,7 @@ export default async function PaginaInicial() {
   return (
     <div className="min-h-dvh bg-slate-50">
       <GerenciadorTours />
-      <header className="flex items-center justify-between border-b border-slate-200 bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
-        <div className="flex items-center gap-3" data-tour="marca-hub">
-          <Brasao tamanho={32} />
-          <div>
-            <p className="text-sm font-semibold leading-tight">Central Cataguases</p>
-            <p className="text-[11px] leading-tight text-slate-300">Prefeitura de Cataguases</p>
-          </div>
-        </div>
-        <nav className="flex items-center gap-2 text-sm">
-          <Link
-            href="/novidades"
-            data-tour="link-novidades"
-            className="hidden rounded-md px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white sm:inline-block"
-          >
-            Novidades
-          </Link>
-          {usuario.admin_hub && (
-            <Link
-              href="/configuracoes"
-              className="rounded-md px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              Configurações
-            </Link>
-          )}
-          <BotaoAjuda />
-          <span className="hidden text-xs text-slate-400 sm:inline">{usuario.nome}</span>
-          <form action={sair}>
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              className="text-slate-200 hover:bg-white/10 hover:text-white"
-            >
-              Sair
-            </Button>
-          </form>
-        </nav>
-      </header>
+      <CabecalhoHub usuario={usuario} />
 
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <CabecalhoPagina
@@ -92,7 +51,7 @@ export default async function PaginaInicial() {
                 <p className="mt-1.5 text-sm text-slate-500">{m.descricao}</p>
                 <span
                   className="mt-3 inline-block text-xs font-medium"
-                  style={{ color: m.cor }}
+                  style={{ color: m.corTexto }}
                 >
                   Abrir →
                 </span>

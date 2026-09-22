@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
+import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { NOVIDADES } from "@/lib/novidades";
 
@@ -22,21 +21,13 @@ export default async function PaginaNovidades() {
 
   return (
     <div className="min-h-dvh bg-slate-50">
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-cataguases-azul"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-          Voltar
-        </Link>
+      <CabecalhoHub usuario={usuario} />
 
-        <div className="mt-3">
-          <CabecalhoPagina
-            titulo="Novidades"
-            subtitulo="O que mudou na Central Cataguases, mais recente primeiro."
-          />
-        </div>
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <CabecalhoPagina
+          titulo="Novidades"
+          subtitulo="O que mudou na Central Cataguases, mais recente primeiro."
+        />
 
         <div className="mt-6 space-y-4">
           {NOVIDADES.map((n) => (

@@ -5,6 +5,7 @@ import { listarUsuariosComAcessos } from "@/lib/dados/usuarios";
 import { listarUsuariosNumera } from "@/lib/dados/numera";
 import { PainelConfiguracoes } from "@/components/hub/painel-configuracoes";
 import { ImportadorNumera } from "@/components/hub/importador-numera";
+import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 
 export const dynamic = "force-dynamic";
@@ -26,15 +27,19 @@ export default async function PaginaConfiguracoes() {
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <CabecalhoPagina
-        titulo="Configurações"
-        subtitulo="Quem tem acesso ao hub e quais cards de módulo cada pessoa vê."
-      />
+    <div className="min-h-dvh bg-slate-50">
+      <CabecalhoHub usuario={usuario} />
 
-      <PainelConfiguracoes usuarios={usuarios} />
+      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+        <CabecalhoPagina
+          titulo="Configurações"
+          subtitulo="Quem tem acesso ao hub e quais cards de módulo cada pessoa vê."
+        />
 
-      <ImportadorNumera usuarios={usuariosNumera} />
+        <PainelConfiguracoes usuarios={usuarios} />
+
+        <ImportadorNumera usuarios={usuariosNumera} />
+      </main>
     </div>
   );
 }

@@ -3,9 +3,18 @@ import type { Modulo } from "@/types/database";
 export type InfoModulo = {
   chave: Modulo;
   nome: string;
+  /** Rótulo curto (1 palavra) — cabeçalho de coluna/badge, onde o nome
+   * completo não cabe. */
+  nomeCurto: string;
   descricao: string;
   url: string;
+  /** Cor de identidade do módulo — fundo/borda/preenchimento, nunca texto
+   * direto (ver `corTexto`). */
   cor: string;
+  /** Versão de `cor` segura para texto/ícone sobre fundo branco (≥4,5:1,
+   * WCAG AA) — o azul vivo do Numera (#0071e3) mede ~4,54:1 sozinho,
+   * abaixo da margem de segurança que o resto da plataforma usa. */
+  corTexto: string;
 };
 
 /**
@@ -22,22 +31,28 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
   compras: {
     chave: "compras",
     nome: "Compras, Licitações e Contratos",
+    nomeCurto: "Compras",
     descricao: "Fluxo de trabalho de Compras, Licitações e Contratos da Secretaria de Administração.",
     url: "https://app-compras-brown.vercel.app",
     cor: "#0C1D33",
+    corTexto: "#0C1D33",
   },
   numera: {
     chave: "numera",
     nome: "Numera",
+    nomeCurto: "Numera",
     descricao: "Numeração sequencial de documentos oficiais.",
     url: "https://app-numera-o-de-docs.vercel.app",
     cor: "#0071e3",
+    corTexto: "#0058B0",
   },
   requerimentos: {
     chave: "requerimentos",
     nome: "Requerimentos da Câmara",
+    nomeCurto: "Requerimentos",
     descricao: "Requerimentos da Câmara Municipal, distribuídos às secretarias pelo Gabinete do Prefeito.",
     url: "https://app-requerimentos-camara.vercel.app",
     cor: "#C63B22",
+    corTexto: "#C63B22",
   },
 };
