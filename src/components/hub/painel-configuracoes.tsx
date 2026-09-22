@@ -34,16 +34,14 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="text-left text-[11px] text-slate-400">
-              <th rowSpan={2} className="w-px" />
+              <th />
               <th
                 colSpan={TODOS_MODULOS.length}
                 className="border-b border-slate-100 pb-1 text-center font-medium uppercase tracking-wide"
               >
                 Módulos liberados
               </th>
-              <th rowSpan={2} className="w-px" />
-              <th rowSpan={2} className="w-px" />
-              <th rowSpan={2} className="w-px" />
+              <th colSpan={3} />
             </tr>
             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
               <th className="py-1.5 pr-3 font-medium">Usuário</th>
