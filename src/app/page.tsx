@@ -7,6 +7,8 @@ import { Brasao } from "@/components/brasao";
 import { sair } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { GerenciadorTours } from "@/components/ajuda/gerenciador-tours";
+import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +25,9 @@ export default async function PaginaInicial() {
 
   return (
     <div className="min-h-dvh bg-slate-50">
+      <GerenciadorTours />
       <header className="flex items-center justify-between border-b border-slate-200 bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-tour="marca-hub">
           <Brasao tamanho={32} />
           <div>
             <p className="text-sm font-semibold leading-tight">Central Cataguases</p>
@@ -32,6 +35,13 @@ export default async function PaginaInicial() {
           </div>
         </div>
         <nav className="flex items-center gap-2 text-sm">
+          <Link
+            href="/novidades"
+            data-tour="link-novidades"
+            className="hidden rounded-md px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white sm:inline-block"
+          >
+            Novidades
+          </Link>
           {usuario.admin_hub && (
             <Link
               href="/configuracoes"
@@ -40,6 +50,7 @@ export default async function PaginaInicial() {
               Configurações
             </Link>
           )}
+          <BotaoAjuda />
           <span className="hidden text-xs text-slate-400 sm:inline">{usuario.nome}</span>
           <form action={sair}>
             <Button
@@ -67,7 +78,7 @@ export default async function PaginaInicial() {
             plataforma.
           </p>
         ) : (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2" data-tour="cards-modulos">
             {modulos.map((m) => (
               <a
                 key={m.chave}
