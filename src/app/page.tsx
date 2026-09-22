@@ -41,7 +41,7 @@ export default async function PaginaInicial() {
             {modulos.map((m) => (
               <a
                 key={m.chave}
-                href={m.url}
+                href={`${m.url}?origem=hub`}
                 className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                 style={{ borderTopColor: m.cor, borderTopWidth: 4 }}
               >
