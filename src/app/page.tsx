@@ -6,6 +6,7 @@ import { listarMeusModulos } from "@/lib/dados/modulos";
 import { Brasao } from "@/components/brasao";
 import { sair } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
+import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 
 export const dynamic = "force-dynamic";
 
@@ -54,13 +55,11 @@ export default async function PaginaInicial() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold text-cataguases-marinho">
-          Bem-vindo(a), {usuario.nome.split(" ")[0]}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Escolha o sistema que deseja acessar. O login de cada um continua sendo o mesmo que
-          você já usa.
-        </p>
+        <CabecalhoPagina
+          titulo={`Bem-vindo(a), ${usuario.nome.split(" ")[0]}`}
+          subtitulo="Escolha o sistema que deseja acessar. O login de cada um continua sendo o mesmo que você já usa."
+          tamanho="grande"
+        />
 
         {modulos.length === 0 ? (
           <p className="mt-8 rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500">
