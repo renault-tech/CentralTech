@@ -20,3 +20,21 @@ export function criarClienteAdmin() {
     },
   });
 }
+
+/**
+ * Mesma chave/projeto de `criarClienteAdmin()`, mas SEM schema fixo e sem
+ * generics do `Database` (só `hub`) — para checagens de existência
+ * cross-schema (`public`/`requerimentos`) na orquestração de aprovação de
+ * solicitações de acesso, onde a sessão do admin do Hub não tem
+ * necessariamente visibilidade de RLS sobre as tabelas desses apps.
+ * Sempre usar `.schema("...")` explicitamente antes de `.from(...)`.
+ */
+export function criarClienteAdminBruto() {
+  const env = envServidor();
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}

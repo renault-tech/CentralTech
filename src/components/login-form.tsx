@@ -76,6 +76,13 @@ export function FormularioLogin() {
       >
         {pendente ? "Entrando…" : "Entrar"}
       </Button>
+
+      <p className="text-center text-xs text-slate-400">
+        Ainda não tem acesso?{" "}
+        <Link href="/solicitar-acesso" className="text-cataguases-dourado hover:underline">
+          Solicite aqui
+        </Link>
+      </p>
     </form>
   );
 }

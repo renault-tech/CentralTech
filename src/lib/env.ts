@@ -36,6 +36,28 @@ export function envNumera() {
   });
 }
 
+// Service role do projeto Numera — precisa ser colada manualmente na Vercel
+// (ver "Passo manual" no changelog): é a única forma de criar conta/aprovar
+// diretamente no banco do Numera a partir do Hub (cadastro unificado).
+// Diferente de `SUPABASE_SERVICE_ROLE_KEY` (projeto compartilhado
+// Compras/Requerimentos/Hub) — são dois projetos Supabase diferentes.
+const esquemaNumeraAdmin = z.object({
+  NUMERA_SUPABASE_URL: z.url({ message: "NUMERA_SUPABASE_URL deve ser uma URL válida" }),
+  NUMERA_SUPABASE_SERVICE_ROLE_KEY: z
+    .string()
+    .min(20, "NUMERA_SUPABASE_SERVICE_ROLE_KEY ausente ou inválida"),
+});
+
+export function envNumeraAdmin() {
+  if (typeof window !== "undefined") {
+    throw new Error("envNumeraAdmin() não pode ser chamado no cliente");
+  }
+  return esquemaNumeraAdmin.parse({
+    NUMERA_SUPABASE_URL: process.env.NUMERA_SUPABASE_URL,
+    NUMERA_SUPABASE_SERVICE_ROLE_KEY: process.env.NUMERA_SUPABASE_SERVICE_ROLE_KEY,
+  });
+}
+
 export function envPublico() {
   return esquemaPublico.parse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
