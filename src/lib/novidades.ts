@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-09-24",
+    titulo: "Correção: link de \"esqueci minha senha\" e nova tela \"Minha conta\"",
+    descricao:
+      "O link do e-mail de recuperação de senha levava de volta à tela de login em vez de abrir a redefinição — corrigido. Também chegou uma tela \"Minha conta\" (clique no seu nome, no topo): para quem lembra a senha atual, dá para trocá-la ali mesmo, sem sair do Hub nem depender de e-mail; \"Esqueci minha senha\" continua sendo o caminho para quem não lembra.",
+  },
+  {
+    data: "2026-09-24",
     titulo: "Peça acesso pela Central Cataguases",
     descricao:
       "Nova página \"Solicitar acesso\", com um link direto na tela de login: preencha nome, e-mail e a quais sistemas você precisa (Compras, Numera, Requerimentos), e o administrador aprova cada um com a configuração certa (perfil e setor no Compras, perfil e secretaria no Requerimentos, nível e documentos no Numera). Se você já tem conta em algum sistema, o pedido só adiciona o que falta — nunca cria uma conta duplicada. Quando a conta é nova, você recebe um link de primeiro acesso para definir sua senha, sem depender de e-mail chegar.",

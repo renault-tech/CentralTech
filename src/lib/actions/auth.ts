@@ -100,6 +100,24 @@ export async function sair(): Promise<void> {
 /**
  * Envia o e-mail de recuperação de senha (Supabase Auth). Responde sempre
  * com sucesso genérico, sem revelar se o e-mail existe.
+ *
+ * Achado real (bug reportado pelo usuário): o `redirectTo` apontava para
+ * `/auth/confirm?next=/redefinir-senha`, uma rota de SERVIDOR que só sabe
+ * ler `code`/`token_hash` da query string. Mas o link padrão do e-mail de
+ * recuperação passa primeiro pelo endpoint hospedado do próprio GoTrue
+ * (`.../auth/v1/verify`, confirmado nos logs: `GET /verify` com
+ * `auth_event.action: "login"`, sucesso) — que autentica e só então
+ * redireciona para o `redirectTo`, anexando os tokens como FRAGMENTO da
+ * URL (`#access_token=...&type=recovery`), não como query string. Um
+ * fragmento nunca chega ao servidor (o navegador não o envia na
+ * requisição HTTP) — por isso `/auth/confirm` sempre caía no fallback
+ * `/login?motivo=link_invalido`, exatamente o sintoma relatado ("o link
+ * me leva de volta pro login"). Corrigido apontando direto para
+ * `/redefinir-senha` (uma página de CLIENTE): o cliente Supabase do
+ * navegador (`criarClienteNavegador`, `detectSessionInUrl` ligado por
+ * padrão) lê esse fragmento sozinho ao montar a página e já sincroniza a
+ * sessão nos cookies (é um client `@supabase/ssr`) — dali em diante o
+ * servidor enxerga a sessão normalmente. Ver `GuardaRecuperacao`.
  */
 export async function solicitarRecuperacao(
   _estadoAnterior: EstadoRecuperacao,
@@ -115,7 +133,7 @@ export async function solicitarRecuperacao(
   const origem = await origemDaRequisicao();
 
   const { error } = await supabase.auth.resetPasswordForEmail(analise.data.email, {
-    redirectTo: `${origem}/auth/confirm?next=/redefinir-senha`,
+    redirectTo: `${origem}/redefinir-senha`,
   });
 
   if (error) {
@@ -127,7 +145,8 @@ export async function solicitarRecuperacao(
 
 /**
  * Define a nova senha do usuário. Só funciona com uma sessão de recuperação
- * ativa (criada por /auth/confirm ao abrir o link do e-mail).
+ * ativa — estabelecida no navegador por `GuardaRecuperacao` ao abrir
+ * `/redefinir-senha` a partir do link do e-mail (ver comentário acima).
  */
 export async function redefinirSenha(
   _estadoAnterior: EstadoNovaSenha,

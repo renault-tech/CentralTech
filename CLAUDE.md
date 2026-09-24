@@ -328,6 +328,67 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
     qualquer uso da Admin API; nenhum segredo `service_role` vaza pro
     client-side; gate de `/configuracoes/*` cobre todas as sub-rotas.
 
+- **Bug real: link de "esqueci minha senha" levava de volta ao login, não
+  à redefinição — corrigido.** Diagnosticado direto pelos logs do
+  Supabase (`query_logs`, `source = 'auth_logs'`, projeto
+  `nfijlzndlioefayctbsh`): a sequência real do usuário foi `POST /recover`
+  (200, `user_recovery_requested`) e, ao clicar no link do e-mail,
+  `GET /verify` (303, `auth_event.action: "login"`, **sucesso**) — o token
+  era válido e o GoTrue autenticava normalmente. O problema estava depois:
+  nenhuma chamada a `POST /token` (PKCE) apareceu nos logs em seguida, ou
+  seja, nosso `/auth/confirm` (rota de SERVIDOR, só lê `code`/`token_hash`
+  da query string) nunca recebeu nada útil. **Causa raiz**: o link padrão
+  de recuperação do Supabase passa primeiro pelo endpoint hospedado do
+  próprio GoTrue (`.../auth/v1/verify`, é o que os logs mostraram), que
+  autentica e só então redireciona para o `redirectTo` configurado —
+  anexando os tokens como **fragmento da URL** (`#access_token=...&type=
+  recovery`), não como query string. Um fragmento (`#...`) nunca chega ao
+  servidor (é só o navegador que o lê) — por isso `/auth/confirm` sempre
+  caía direto no fallback `/login?motivo=link_invalido`, batendo
+  exatamente com o sintoma relatado pelo usuário.
+  **Correção** (`src/lib/actions/auth.ts`, `solicitarRecuperacao`):
+  `redirectTo` passou a apontar direto para `/redefinir-senha` (uma
+  página de CLIENTE), pulando `/auth/confirm`. Novo componente
+  `src/components/guarda-recuperacao.tsx` (`GuardaRecuperacao`, envolve
+  `<FormularioRedefinir/>` na página) espera o cliente Supabase do
+  navegador (`criarClienteNavegador`, `detectSessionInUrl` ligado por
+  padrão) processar o fragmento sozinho ao montar a página — como é um
+  client `@supabase/ssr` (não o `@supabase/supabase-js` puro), ele
+  sincroniza a sessão nos cookies também, então a server action
+  `redefinirSenha` (que lê a sessão via `criarClienteServidor()`, baseado
+  em cookie) continua funcionando sem nenhuma mudança. `GuardaRecuperacao`
+  mostra "Validando o link…" enquanto espera (checa `getSession()` no
+  mount + assina `onAuthStateChange` para `PASSWORD_RECOVERY`/
+  `SIGNED_IN`), com um timeout de 6s que mostra "link inválido ou
+  expirado" + atalho para pedir um novo, caso a pessoa chegue na página
+  sem vir de um link válido. `/auth/confirm/route.ts` não foi removida
+  (continua válida para um eventual link `code`/`token_hash` direto no
+  futuro), só deixou de ser o caminho usado pela recuperação de senha.
+  **Não testado ponta a ponta** (mesma limitação de sempre — o sandbox
+  não alcança `*.supabase.co`); verificado por leitura dos logs reais do
+  incidente relatado + `tsc`/`eslint`/`vitest`/`next build` limpos.
+  **Lição**: para um bug de auth "silencioso" (sem exceção visível pro
+  usuário), `query_logs` com `source = 'auth_logs'` no projeto do
+  Supabase mostra a sequência exata de chamadas — inclusive quais NÃO
+  aconteceram, que foi o que revelou a causa real aqui (mesmo padrão já
+  documentado no CLAUDE.md do App-Compras para o SMTP da Brevo, agora
+  também útil para depurar o fluxo de tokens em si, não só entrega de
+  e-mail).
+
+- **Nova tela `/conta` — "Minha conta"** (pedido do usuário, junto do bug
+  acima: uma forma de trocar a senha pela própria tela do Hub para quem
+  lembra a senha atual, sem depender de e-mail). A server action
+  `mudarSenhaLogado` já existia em `src/lib/actions/auth.ts` desde uma
+  sessão anterior mas nunca tinha sido ligada a nenhuma tela — corrigido
+  criando `src/app/conta/page.tsx` +
+  `src/components/conta/formulario-mudar-senha.tsx` (senha atual + nova
+  senha ×2, mesmo padrão de `FormularioMudarSenha` do App-Compras,
+  adaptado ao tema claro do Hub). Link de acesso: o nome do usuário no
+  cabeçalho (`CabecalhoHub`) virou um link para `/conta`. Sem RPC/
+  migration nova — `mudarSenhaLogado` já reautentica com a senha atual
+  antes de trocar (`signInWithPassword` como checagem, não como troca de
+  sessão) e usa `updateUser`, exatamente como o equivalente do Compras.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

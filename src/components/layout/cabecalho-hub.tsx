@@ -45,7 +45,12 @@ export function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
           </Link>
         )}
         <BotaoAjuda />
-        <span className="hidden text-xs text-slate-400 sm:inline">{usuario.nome}</span>
+        <Link
+          href="/conta"
+          className="hidden rounded-md px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-white/10 hover:text-white sm:inline-block"
+        >
+          {usuario.nome}
+        </Link>
         <form action={sair}>
           <Button
             type="submit"
