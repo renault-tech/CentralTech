@@ -56,3 +56,27 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     corTexto: "#C63B22",
   },
 };
+
+/**
+ * `MODULOS[chave]` direto assume que `chave` é sempre um dos 3 valores
+ * válidos — verdade quando o dado vem tipado (`Modulo`), mas não quando
+ * vem de uma tabela que um `anon` pode inserir (`hub.solicitacoes_acesso`,
+ * protegida por CHECK no banco, mas defesa em profundidade: nenhuma tela
+ * deve quebrar por um valor inesperado). Achado real de auditoria: sem
+ * essa guarda, uma chave desconhecida derrubava a tela inteira de
+ * Solicitações (nenhum error boundary no app), travando o único fluxo de
+ * concessão de acesso da plataforma.
+ */
+export function moduloInfo(chave: string): InfoModulo {
+  return (
+    (MODULOS as Record<string, InfoModulo>)[chave] ?? {
+      chave: chave as Modulo,
+      nome: chave,
+      nomeCurto: chave,
+      descricao: "",
+      url: "#",
+      cor: "#94A3B8",
+      corTexto: "#475569",
+    }
+  );
+}

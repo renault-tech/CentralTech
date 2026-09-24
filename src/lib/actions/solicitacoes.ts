@@ -352,6 +352,14 @@ export async function recusarSolicitacao(
   solicitacaoId: string,
   observacao: string
 ): Promise<ResultadoRecusa> {
+  // A RPC já se protege sozinha (`hub.eh_admin_hub()`), mas as demais
+  // actions administrativas deste arquivo checam aqui também — defesa em
+  // profundidade e consistência de padrão (achado de auditoria).
+  const usuario = await obterUsuarioAtual();
+  if (!usuario?.admin_hub) {
+    return { sucesso: false, erro: "Sem permissão para recusar solicitações." };
+  }
+
   const hub = await criarClienteServidor();
   const { error } = await hub.rpc("rejeitar_solicitacao", {
     p_id: solicitacaoId,

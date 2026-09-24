@@ -21,7 +21,7 @@ import {
   type CatalogoItem,
   type DocumentoNumera,
 } from "@/lib/catalogos-solicitacao";
-import { MODULOS } from "@/lib/modulos-info";
+import { moduloInfo } from "@/lib/modulos-info";
 import type { Modulo, SolicitacaoAcesso } from "@/types/database";
 
 type Props = {
@@ -73,15 +73,18 @@ export function PainelSolicitacoes({
                   <p className="text-xs text-slate-500">{s.email}</p>
                 </div>
                 <div className="flex gap-1">
-                  {s.modulos_solicitados.map((m) => (
-                    <span
-                      key={m}
-                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                      style={{ backgroundColor: `${MODULOS[m].cor}1A`, color: MODULOS[m].corTexto }}
-                    >
-                      {MODULOS[m].nomeCurto}
-                    </span>
-                  ))}
+                  {s.modulos_solicitados.map((m) => {
+                    const info = moduloInfo(m);
+                    return (
+                      <span
+                        key={m}
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        style={{ backgroundColor: `${info.cor}1A`, color: info.corTexto }}
+                      >
+                        {info.nomeCurto}
+                      </span>
+                    );
+                  })}
                 </div>
               </button>
 
@@ -237,7 +240,7 @@ function FormularioDecisao({
               }`}
             >
               <p className="font-medium">
-                {MODULOS[m].nome}: {r.sucesso ? "aprovado" : "falhou"}
+                {moduloInfo(m).nome}: {r.sucesso ? "aprovado" : "falhou"}
               </p>
               {r.mensagem && <p className="mt-0.5 text-xs">{r.mensagem}</p>}
               {r.linkPrimeiroAcesso && <LinkCopiavel link={r.linkPrimeiroAcesso} />}

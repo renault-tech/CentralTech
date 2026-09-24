@@ -276,6 +276,58 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   fecha a anterior (exclusividade). `tsc`/`eslint`/`vitest`/`next build`
   verdes.
 
+- **Auditoria de segurança completa da plataforma** (pedido do usuário,
+  "erros como este não podem acontecer" — depois do bug do botão Editar
+  fora da tela). Achados reais e corrigidos neste repo:
+  - **DoS não autenticado contra a única tela de aprovação de acesso.**
+    A policy `qualquer_um_solicita_acesso` (INSERT em
+    `hub.solicitacoes_acesso`) só travava `status = 'pendente'` — a
+    validação de que `modulos_solicitados` só contém
+    `compras`/`numera`/`requerimentos` existia SÓ no Zod da server
+    action, contornável com um INSERT direto via PostgREST (a `anon` key
+    é pública). Um `modulos_solicitados` com chave inválida faz
+    `PainelSolicitacoes` acessar `MODULOS[m].cor` de um `undefined` —
+    `TypeError` em render, sem nenhum `error.tsx` no repo para
+    recuperar. Resultado: um request não autenticado derrubava a tela
+    de Solicitações inteira até alguém apagar a linha direto no banco —
+    negação de serviço real contra o único fluxo de concessão de acesso
+    da plataforma. Corrigido em duas camadas
+    (`20260924040000_solicitacoes_acesso_validacao_servidor.sql`):
+    - CHECK no banco: `modulos_solicitados <@ array[...]` + array não
+      vazio + limite de tamanho em `nome`/`email`/`justificativa`/
+      `secretaria_sugerida` (a validação de verdade tem que estar onde
+      ninguém consegue contornar — mesma regra de sempre deste
+      ecossistema).
+    - `with_check` do INSERT ganhou `decidido_por is null and
+      decidido_em is null and observacao_decisao is null` — antes um
+      `anon` podia forjar esses campos de auditoria numa linha ainda
+      "pendente" (achado de baixa severidade, corrigido junto).
+    - `moduloInfo()` novo em `src/lib/modulos-info.ts` — defesa em
+      profundidade: `MODULOS[chave]` direto nunca mais é usado nos
+      pontos que renderizam dado vindo do banco (`painel-solicitacoes.tsx`);
+      chave desconhecida cai num fallback neutro em vez de quebrar a tela.
+    - Testado transacionalmente (5 cenários: insert válido passa, módulo
+      forjado bloqueado, array vazio bloqueado, `decidido_por` forjado
+      bloqueado, nome gigante bloqueado) antes de aplicar.
+  - **`recusarSolicitacao` não replicava a checagem de `admin_hub`** que
+    `aprovarSolicitacao` e `importarUsuariosNumera` já têm — a RPC
+    `rejeitar_solicitacao` já se protegia sozinha (`hub.eh_admin_hub()`),
+    então não era um bypass real, só inconsistência de padrão. Corrigido
+    por defesa em profundidade.
+  - **Open redirect real (CWE-601)** em `src/app/auth/confirm/route.ts`
+    — mesmo achado e mesma correção aplicados nos 3 repos Next.js, ver
+    detalhe no CLAUDE.md do App-Compras. De carona: o fallback quando
+    `next` está ausente era `/dashboard`, rota que **não existe** neste
+    repo (herdado de copiar o arquivo do App-Compras sem ajustar) —
+    corrigido para `/` (a Início do Hub).
+  - Auditoria também confirmou, sem achado: nenhuma RPC do schema `hub`
+    usa `<>` em vez de `IS DISTINCT FROM` contra coluna nullable; grants
+    a `anon` batem exatamente com o que já era esperado (15
+    anon-executável, só `eh_admin_hub`/`esta_bloqueado_login_direto`
+    no schema `hub`); `aprovarSolicitacao` checa `admin_hub` antes de
+    qualquer uso da Admin API; nenhum segredo `service_role` vaza pro
+    client-side; gate de `/configuracoes/*` cobre todas as sub-rotas.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
