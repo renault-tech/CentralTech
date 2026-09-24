@@ -20,7 +20,7 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
   const colunas = 3 + TODOS_MODULOS.length; // Usuário, Admin, Ativo, Ações + 1 por módulo
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-cataguases-marinho">Usuários e acessos</h2>

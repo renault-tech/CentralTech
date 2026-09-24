@@ -8,7 +8,7 @@ export async function PainelLoginDireto() {
   const adocao = await listarAdocaoHub();
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-center gap-2">
         <ShieldAlert className="h-4 w-4 text-cataguases-marinho" aria-hidden />
         <h2 className="text-sm font-semibold text-cataguases-marinho">Login direto por aplicativo</h2>

@@ -48,7 +48,7 @@ export function ImportadorNumera({ usuarios }: { usuarios: UsuarioNumera[] }) {
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <h2 className="text-sm font-semibold text-cataguases-marinho">Importar do Numera</h2>
       <p className="mt-1 text-xs text-slate-500">
         Cria acesso ao Hub (módulo Numera) para quem já tem conta aprovada no Numera. O primeiro

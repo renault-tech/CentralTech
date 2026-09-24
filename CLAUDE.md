@@ -231,6 +231,29 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   exposição (15 anon-executável — os 2 já esperados desta entrega — e
   83 authenticated-executável, mesma contagem de antes).
 
+- **Configurações virou um hub de cards por área** (pedido do usuário: a
+  tela empilhava as 4 seções — Solicitações, Usuários e acessos, Importar
+  do Numera, Login direto — verticalmente, e era preciso rolar bastante
+  para chegar na última). Reestruturado no mesmo padrão já usado no
+  App-Compras (`configuracoes/layout.tsx` + `AbasNavegacao`, portado para
+  cá — não existia neste repo ainda, só no Compras): um `layout.tsx`
+  compartilhado (gate de `admin_hub`, `CabecalhoPagina` fixo, faixa de
+  abas) e uma sub-rota por área (`/configuracoes/solicitacoes`,
+  `/usuarios`, `/numera`, `/login-direto`), cada uma buscando só os
+  próprios dados. O índice (`/configuracoes`) virou um grid de 4 cards
+  (mesmo visual dos cards de Configurações do Compras), com um selo
+  vermelho no card de Solicitações mostrando a contagem de pendentes —
+  único indicador com um "pendente" natural entre as 4 áreas. Os 4
+  componentes (`PainelSolicitacoes`, `PainelConfiguracoes`,
+  `ImportadorNumera`, `PainelLoginDireto`) perderam o `mt-6` do próprio
+  `<section>` (empilhavam um atrás do outro antes; agora cada um é o
+  único conteúdo da própria página, o espaçamento vem do layout).
+  Verificado com mockup usando o CSS compilado real (`next build`) +
+  `headless_shell` em 390px e 1280px (mesmo processo já documentado no
+  CLAUDE.md do App-Compras) — grid de 2 colunas no desktop, empilhado no
+  mobile, selo de contagem bem posicionado nos dois. `tsc`/`eslint`/
+  `vitest`/`next build` verdes.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

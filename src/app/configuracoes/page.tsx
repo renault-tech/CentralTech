@@ -1,86 +1,85 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import { Inbox, ShieldAlert, UploadCloud, Users } from "lucide-react";
 
-import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { listarUsuariosComAcessos } from "@/lib/dados/usuarios";
-import { listarUsuariosNumera } from "@/lib/dados/numera";
-import {
-  listarSolicitacoesPendentes,
-  listarSolicitacoesDecididas,
-  listarSetoresCompras,
-  listarSecretariasRequerimentos,
-  listarDocumentosNumera,
-} from "@/lib/dados/solicitacoes";
-import { PainelConfiguracoes } from "@/components/hub/painel-configuracoes";
-import { PainelSolicitacoes } from "@/components/hub/painel-solicitacoes";
-import { PainelLoginDireto } from "@/components/hub/painel-login-direto";
-import { ImportadorNumera } from "@/components/hub/importador-numera";
-import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { listarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaConfiguracoes() {
-  const usuario = await obterUsuarioAtual();
-  if (!usuario) redirect("/login");
-  if (!usuario.admin_hub) redirect("/");
+type CardConfig = {
+  href: string;
+  titulo: string;
+  descricao: string;
+  Icone: LucideIcon;
+  cor: string;
+  contagem?: number;
+};
 
-  const [
-    usuarios,
-    usuariosNumera,
-    solicitacoes,
-    decididas,
-    setoresCompras,
-    secretariasRequerimentos,
-    documentosNumera,
-  ] = await Promise.all([
-      listarUsuariosComAcessos(),
-      // Env vars do Numera podem ainda não estar configuradas na Vercel —
-      // nesse caso a seção de importação só fica vazia, não derruba a tela
-      // inteira de Configurações.
-      listarUsuariosNumera().catch((e) => {
-        console.error("[PaginaConfiguracoes] Numera indisponível:", e);
-        return [];
-      }),
-      listarSolicitacoesPendentes(),
-      listarSolicitacoesDecididas(),
-      listarSetoresCompras().catch((e) => {
-        console.error("[PaginaConfiguracoes] setores do Compras indisponíveis:", e);
-        return [];
-      }),
-      listarSecretariasRequerimentos().catch((e) => {
-        console.error("[PaginaConfiguracoes] secretarias do Requerimentos indisponíveis:", e);
-        return [];
-      }),
-      listarDocumentosNumera().catch((e) => {
-        console.error("[PaginaConfiguracoes] documentos do Numera indisponíveis:", e);
-        return [];
-      }),
-    ]);
+/**
+ * Índice de Configurações: um card por área, mesmo padrão já usado no
+ * App-Compras. O gate de admin_hub já é feito no layout (`layout.tsx`),
+ * então esta página só busca a contagem para o selo de "Solicitações"
+ * (o único indicador acionável — usuários/importação/bloqueio não têm
+ * um "pendente" natural para destacar).
+ */
+export default async function PaginaConfiguracoes() {
+  const pendentes = await listarSolicitacoesPendentes();
+
+  const cards: CardConfig[] = [
+    {
+      href: "/configuracoes/solicitacoes",
+      titulo: "Solicitações de acesso",
+      descricao: "Pedidos feitos em /solicitar-acesso — aprovar por app ou recusar.",
+      Icone: Inbox,
+      cor: "#2563A8",
+      contagem: pendentes.length,
+    },
+    {
+      href: "/configuracoes/usuarios",
+      titulo: "Usuários e acessos",
+      descricao: "Quem já tem conta, quais módulos vê, e quem é admin do hub.",
+      Icone: Users,
+      cor: "#639922",
+    },
+    {
+      href: "/configuracoes/numera",
+      titulo: "Importar do Numera",
+      descricao: "Traz para o Hub quem já tem conta aprovada só lá.",
+      Icone: UploadCloud,
+      cor: "#7C3AED",
+    },
+    {
+      href: "/configuracoes/login-direto",
+      titulo: "Login direto por aplicativo",
+      descricao: "Sinal de quanto cada app já migrou, e o interruptor de bloqueio.",
+      Icone: ShieldAlert,
+      cor: "#D98614",
+    },
+  ];
 
   return (
-    <div className="min-h-dvh bg-slate-50">
-      <CabecalhoHub usuario={usuario} />
-
-      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <CabecalhoPagina
-          titulo="Configurações"
-          subtitulo="Quem tem acesso ao hub e quais cards de módulo cada pessoa vê."
-        />
-
-        <PainelSolicitacoes
-          solicitacoes={solicitacoes}
-          decididas={decididas}
-          setoresCompras={setoresCompras}
-          secretariasRequerimentos={secretariasRequerimentos}
-          documentosNumera={documentosNumera}
-        />
-
-        <PainelConfiguracoes usuarios={usuarios} />
-
-        <ImportadorNumera usuarios={usuariosNumera} />
-
-        <PainelLoginDireto />
-      </main>
+    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+      {cards.map((card) => (
+        <Link
+          key={card.href}
+          href={card.href}
+          className="group relative rounded-[20px] border border-[rgba(12,29,51,0.07)] bg-white/75 p-[18px] shadow-[0_2px_10px_rgba(12,29,51,0.04)] backdrop-blur-[10px] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cataguases-azul focus-visible:ring-offset-2"
+        >
+          {!!card.contagem && (
+            <span className="absolute right-4 top-4 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cataguases-vermelho px-1.5 text-[11px] font-semibold text-white">
+              {card.contagem}
+            </span>
+          )}
+          <span
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-[12px]"
+            style={{ backgroundColor: `${card.cor}1F`, color: card.cor }}
+          >
+            <card.Icone className="h-5 w-5" strokeWidth={1.9} aria-hidden />
+          </span>
+          <p className="mt-3 text-[15px] font-semibold text-cataguases-marinho">{card.titulo}</p>
+          <p className="mt-1 text-[13px] leading-[1.4] text-slate-500">{card.descricao}</p>
+        </Link>
+      ))}
     </div>
   );
 }
