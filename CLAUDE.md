@@ -254,6 +254,28 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   mobile, selo de contagem bem posicionado nos dois. `tsc`/`eslint`/
   `vitest`/`next build` verdes.
 
+- **Bug real: "Editar" em Usuários e acessos parecia não fazer nada**
+  (relato do usuário, confirmado por investigação — sem erro de console,
+  botão "Conceder acesso" funcionando normalmente, só "Editar" das linhas
+  "sem reação"). Causa raiz: `editando`/`mostrarForm` era um único par de
+  estado compartilhado por TODA a tabela, e o formulário renderizava numa
+  posição fixa **abaixo da tabela inteira**, não perto da linha clicada —
+  clicar em "Editar" na 1ª linha de uma tabela com várias pessoas de fato
+  atualizava o estado e abria o formulário, só que a ~500px+ abaixo da
+  área visível; sem rolar, parecia que nada tinha acontecido. Confirmado
+  isolando o componente real (sem alterar nada) numa rota de teste
+  temporária, clique de verdade via Playwright: distância entre o botão
+  clicado e o formulário aberto era de centenas de pixels antes da
+  correção. Corrigido trocando o par de estado por `editandoId: string |
+  null` (por linha) + `criandoNovo: boolean` (independente, para
+  "Conceder acesso"), e o formulário passou a abrir **dentro da própria
+  linha** (`<tr>` com `colSpan`, mesmo padrão de linha expansível já usado
+  no App-Compras para Processos/Contratos) — nunca mais precisa rolar até
+  o fim da tabela. Reconfirmado com o mesmo teste (Playwright, clique
+  real): formulário aparece a 68px do botão clicado, e abrir outra linha
+  fecha a anterior (exclusividade). `tsc`/`eslint`/`vitest`/`next build`
+  verdes.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
