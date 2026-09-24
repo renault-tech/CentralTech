@@ -33,6 +33,27 @@ export async function listarSolicitacoesPendentes(): Promise<SolicitacaoAcesso[]
   return data ?? [];
 }
 
+/** Últimas decididas (aprovada/recusada) — sem isto, uma solicitação some
+ * de vista assim que sai de "pendente", inclusive quando algum módulo
+ * falhou na aprovação (o resumo por módulo fica só em `observacao_decisao`,
+ * sem tela nenhuma pra ver). */
+export async function listarSolicitacoesDecididas(): Promise<SolicitacaoAcesso[]> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from("solicitacoes_acesso")
+    .select("*")
+    .neq("status", "pendente")
+    .order("decidido_em", { ascending: false })
+    .limit(15);
+
+  if (error) {
+    console.error("[listarSolicitacoesDecididas] falha:", error);
+    throw new Error("Não foi possível carregar o histórico de solicitações.");
+  }
+
+  return data ?? [];
+}
+
 export async function listarSetoresCompras(): Promise<CatalogoItem[]> {
   const admin = criarClienteAdminBruto();
   const { data, error } = await admin.schema("public").from("setores").select("id,nome").order("ordem");

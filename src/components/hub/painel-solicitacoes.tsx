@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Inbox } from "lucide-react";
+import { Check, ChevronDown, Copy, History, Inbox } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAcao } from "@/lib/hooks/usar-acao";
@@ -26,6 +26,7 @@ import type { Modulo, SolicitacaoAcesso } from "@/types/database";
 
 type Props = {
   solicitacoes: SolicitacaoAcesso[];
+  decididas: SolicitacaoAcesso[];
   setoresCompras: CatalogoItem[];
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
@@ -33,11 +34,15 @@ type Props = {
 
 export function PainelSolicitacoes({
   solicitacoes,
+  decididas,
   setoresCompras,
   secretariasRequerimentos,
   documentosNumera,
 }: Props) {
   const [expandidaId, setExpandidaId] = React.useState<string | null>(null);
+  const [historicoAberto, setHistoricoAberto] = React.useState(false);
+
+  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera };
 
   return (
     <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -84,9 +89,7 @@ export function PainelSolicitacoes({
                 <div className="border-t border-slate-100 p-3">
                   <FormularioDecisao
                     solicitacao={s}
-                    setoresCompras={setoresCompras}
-                    secretariasRequerimentos={secretariasRequerimentos}
-                    documentosNumera={documentosNumera}
+                    {...catalogos}
                     onDecidido={() => setExpandidaId(null)}
                   />
                 </div>
@@ -94,6 +97,78 @@ export function PainelSolicitacoes({
             </li>
           ))}
         </ul>
+      )}
+
+      {decididas.length > 0 && (
+        <div className="mt-5 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+            onClick={() => setHistoricoAberto((v) => !v)}
+          >
+            <History className="h-3.5 w-3.5" aria-hidden />
+            Decididas recentemente ({decididas.length})
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${historicoAberto ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+
+          {historicoAberto && (
+            <ul className="mt-2 space-y-1.5">
+              {decididas.map((s) => {
+                const falhouAlgo = s.observacao_decisao?.includes("falhou");
+                return (
+                  <li key={s.id} className="rounded-md border border-slate-100">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
+                      onClick={() => setExpandidaId((atual) => (atual === s.id ? null : s.id))}
+                    >
+                      <div>
+                        <p className="text-xs font-medium text-slate-700">
+                          {s.nome} <span className="font-normal text-slate-400">— {s.email}</span>
+                        </p>
+                        {s.observacao_decisao && (
+                          <p
+                            className={`mt-0.5 text-[11px] ${falhouAlgo ? "text-amber-700" : "text-slate-400"}`}
+                          >
+                            {s.observacao_decisao}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          s.status === "recusada"
+                            ? "bg-slate-100 text-slate-500"
+                            : falhouAlgo
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-green-50 text-green-700"
+                        }`}
+                      >
+                        {s.status === "recusada" ? "Recusada" : falhouAlgo ? "Parcial" : "Aprovada"}
+                      </span>
+                    </button>
+
+                    {expandidaId === s.id && s.status === "aprovada" && (
+                      <div className="border-t border-slate-100 p-3">
+                        <p className="mb-2 text-xs text-slate-500">
+                          Tentar de novo só reprocessa os módulos marcados abaixo — o que já deu certo
+                          não é afetado.
+                        </p>
+                        <FormularioDecisao
+                          solicitacao={s}
+                          {...catalogos}
+                          onDecidido={() => setExpandidaId(null)}
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       )}
     </section>
   );
@@ -193,6 +268,18 @@ function FormularioDecisao({
     decisoes.numera = { role: roleNumera, documentos: docsNumera };
   }
 
+  // Validação client-side: o banco recusa (com erro cru de RPC/constraint)
+  // perfil que exige setor/secretaria sem um selecionado — checar aqui
+  // evita a viagem ao servidor e mostra uma mensagem legível em vez do
+  // erro interno.
+  const faltaSetorCompras =
+    !!decisoes.compras && !PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) && !setorCompras;
+  const faltaSecretariaRequerimentos =
+    !!decisoes.requerimentos && perfilRequerimentos === "secretaria" && !secretariaRequerimentos;
+  const semDocumentosNumera =
+    !!decisoes.numera && roleNumera === "user_restricted" && docsNumera.length === 0;
+  const podeAprovar = !faltaSetorCompras && !faltaSecretariaRequerimentos;
+
   return (
     <div className="space-y-4">
       {solicitacao.secretaria_sugerida && (
@@ -236,6 +323,9 @@ function FormularioDecisao({
               </select>
             )}
           </div>
+          {faltaSetorCompras && (
+            <p className="mt-1.5 text-xs text-red-700">Este perfil exige um setor selecionado.</p>
+          )}
         </div>
       )}
 
@@ -269,6 +359,9 @@ function FormularioDecisao({
               </select>
             )}
           </div>
+          {faltaSecretariaRequerimentos && (
+            <p className="mt-1.5 text-xs text-red-700">Este perfil exige uma secretaria selecionada.</p>
+          )}
         </div>
       )}
 
@@ -312,32 +405,42 @@ function FormularioDecisao({
               })}
             </div>
           )}
+          {semDocumentosNumera && (
+            <p className="mt-1.5 text-xs text-amber-700">
+              Nenhum documento selecionado — a pessoa não verá nenhum documento até você conceder
+              algum (dá para ajustar depois em Configurações → Usuários, no próprio Numera).
+            </p>
+          )}
         </div>
       )}
 
       {erroAprovar && <p className="text-xs text-red-700">{erroAprovar}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" disabled={aprovando} onClick={handleAprovar}>
+        <Button size="sm" disabled={aprovando || !podeAprovar} onClick={handleAprovar}>
           {aprovando ? "Aprovando…" : "Aprovar"}
         </Button>
 
-        <input
-          value={observacao}
-          onChange={(e) => setObservacao(e.target.value)}
-          placeholder="Motivo da recusa (opcional)"
-          className={`${ESTILO_CAMPO} w-56`}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={acaoRecusar.pendente}
-          onClick={() =>
-            acaoRecusar.executar(() => recusarSolicitacao(solicitacao.id, observacao), onDecidido)
-          }
-        >
-          {acaoRecusar.pendente ? "Recusando…" : "Recusar"}
-        </Button>
+        {solicitacao.status === "pendente" && (
+          <>
+            <input
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              placeholder="Motivo da recusa (opcional)"
+              className={`${ESTILO_CAMPO} w-56`}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={acaoRecusar.pendente}
+              onClick={() =>
+                acaoRecusar.executar(() => recusarSolicitacao(solicitacao.id, observacao), onDecidido)
+              }
+            >
+              {acaoRecusar.pendente ? "Recusando…" : "Recusar"}
+            </Button>
+          </>
+        )}
       </div>
       {acaoRecusar.erro && <p className="text-xs text-red-700">{acaoRecusar.erro}</p>}
     </div>

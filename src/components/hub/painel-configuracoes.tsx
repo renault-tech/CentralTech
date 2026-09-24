@@ -231,6 +231,12 @@ function FormularioAcesso({
             );
           })}
         </div>
+        {usuario?.modulos.includes("numera") && !modulos.includes("numera") && (
+          <p className="mt-1.5 text-xs text-amber-700">
+            Numera tem projeto próprio, sem SSO — desmarcar aqui só tira o cartão do Hub, a conta de
+            lá continua ativa. Para desativar de verdade, entre no Numera → Configurações → Usuários.
+          </p>
+        )}
       </div>
 
       <div className="mt-3 flex gap-4">

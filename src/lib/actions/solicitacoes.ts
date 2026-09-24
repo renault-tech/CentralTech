@@ -8,6 +8,7 @@ import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin"
 import { criarClienteCompras } from "@/lib/supabase/compras-cliente";
 import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
+import { MODULOS } from "@/lib/modulos-info";
 import type { Modulo, SolicitacaoAcesso } from "@/types/database";
 
 export type DecisaoCompras = { perfil: string; setorId: string | null };
@@ -242,12 +243,16 @@ export async function aprovarSolicitacao(
   const { data: solicitacao, error: erroSolicitacao } = await hub
     .from("solicitacoes_acesso")
     .select("*")
+    // Aceita retentativa sobre uma solicitação já "aprovada" (ex.: um
+    // módulo falhou na primeira vez, tudo idempotente — reprocessar o
+    // que já deu certo não tem efeito colateral) — só uma "recusada" de
+    // propósito não pode ser reaberta por aqui.
+    .in("status", ["pendente", "aprovada"])
     .eq("id", solicitacaoId)
-    .eq("status", "pendente")
     .single();
 
   if (erroSolicitacao || !solicitacao) {
-    return { sucesso: false, erro: "Solicitação não encontrada ou já decidida." };
+    return { sucesso: false, erro: "Solicitação não encontrada ou recusada." };
   }
 
   if (!decisoes.compras && !decisoes.requerimentos && !decisoes.numera) {
@@ -257,55 +262,55 @@ export async function aprovarSolicitacao(
   const resultados: Partial<Record<Modulo, ResultadoModulo>> = {};
 
   // Conta compartilhada (Compras/Requerimentos/Hub são o MESMO projeto
-  // Supabase) — precisa existir sempre, inclusive quando só Numera é
-  // aprovado, porque é ela quem identifica a pessoa no Hub.
-  if (decisoes.compras || decisoes.requerimentos) {
-    const adminCompartilhado = criarClienteAdmin();
-    const conta = await encontrarOuCriarConta(adminCompartilhado, solicitacao.email, solicitacao.nome);
-    if (!conta) {
-      return {
-        sucesso: false,
-        erro: "Não foi possível criar ou localizar a conta compartilhada (Compras/Requerimentos/Hub).",
-      };
-    }
-
-    const linkCompartilhado = conta.criadaAgora
-      ? await gerarLinkPrimeiroAcesso(adminCompartilhado, solicitacao.email)
-      : undefined;
-
-    if (decisoes.compras) {
-      resultados.compras = await aprovarCompras(conta.id, solicitacao, decisoes.compras, linkCompartilhado);
-    }
-    if (decisoes.requerimentos) {
-      resultados.requerimentos = await aprovarRequerimentos(solicitacao, decisoes.requerimentos, linkCompartilhado);
-    }
-
-    await atualizarBookkeepingHub(hub, conta.id, solicitacao, resultados);
+  // Supabase) — resolvida SEMPRE, mesmo quando só Numera é aprovado,
+  // porque é ela quem identifica a pessoa no Hub ("Usuários e acessos").
+  // Importante: isto roda uma única vez, e o bookkeeping do Hub (abaixo)
+  // só acontece DEPOIS de processar os 3 módulos — uma versão anterior
+  // fazia o bookkeeping logo após Compras/Requerimentos e só voltava a
+  // gravar Numera se ele fosse o ÚNICO módulo da solicitação, perdendo o
+  // registro de Numera sempre que ele vinha combinado com outro módulo
+  // (a conta era criada certinho lá, só o "cartão" no Hub não aparecia).
+  const adminCompartilhado = criarClienteAdmin();
+  const conta = await encontrarOuCriarConta(adminCompartilhado, solicitacao.email, solicitacao.nome);
+  if (!conta) {
+    return {
+      sucesso: false,
+      erro: "Não foi possível criar ou localizar a conta compartilhada (Compras/Requerimentos/Hub).",
+    };
   }
 
+  const linkCompartilhado = conta.criadaAgora
+    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, solicitacao.email)
+    : undefined;
+
+  if (decisoes.compras) {
+    resultados.compras = await aprovarCompras(conta.id, solicitacao, decisoes.compras, linkCompartilhado);
+  }
+  if (decisoes.requerimentos) {
+    resultados.requerimentos = await aprovarRequerimentos(solicitacao, decisoes.requerimentos, linkCompartilhado);
+  }
   if (decisoes.numera) {
     resultados.numera = await aprovarNumera(solicitacao, decisoes.numera);
-    if (resultados.numera.sucesso) {
-      // Numera não compartilha auth.users com o Hub — mas se a pessoa
-      // também ganhou um módulo do grupo compartilhado nesta mesma
-      // aprovação, o bookkeeping acima já cobriu 'numera' via
-      // `resultados`; se Numera foi o ÚNICO módulo aprovado, ainda assim
-      // registramos o "cartão" no Hub usando a conta compartilhada — que,
-      // neste caso, precisa ser criada só para servir de identidade do
-      // Hub (sem ela a pessoa não aparece em "Usuários e acessos").
-      if (!decisoes.compras && !decisoes.requerimentos) {
-        const adminCompartilhado = criarClienteAdmin();
-        const conta = await encontrarOuCriarConta(adminCompartilhado, solicitacao.email, solicitacao.nome);
-        if (conta) {
-          await atualizarBookkeepingHub(hub, conta.id, solicitacao, resultados);
-        }
-      }
-    }
   }
+
+  await atualizarBookkeepingHub(hub, conta.id, solicitacao, resultados);
+
+  // Resumo por módulo persistido em `observacao_decisao` — sem isso, uma
+  // falha parcial (ex.: Numera sem a chave configurada) desaparecia da
+  // lista de pendentes junto com a solicitação inteira, sem deixar
+  // nenhum rastro do que ainda precisa de nova tentativa.
+  const resumo = (Object.entries(resultados) as [Modulo, ResultadoModulo][])
+    .map(([m, r]) => `${MODULOS[m].nomeCurto}: ${r.sucesso ? "ok" : `falhou (${r.mensagem ?? "erro"})`}`)
+    .join(" · ");
 
   await hub
     .from("solicitacoes_acesso")
-    .update({ status: "aprovada", decidido_por: usuario.id, decidido_em: new Date().toISOString() })
+    .update({
+      status: "aprovada",
+      decidido_por: usuario.id,
+      decidido_em: new Date().toISOString(),
+      observacao_decisao: resumo,
+    })
     .eq("id", solicitacaoId);
 
   revalidatePath("/configuracoes");

@@ -5,6 +5,7 @@ import { listarUsuariosComAcessos } from "@/lib/dados/usuarios";
 import { listarUsuariosNumera } from "@/lib/dados/numera";
 import {
   listarSolicitacoesPendentes,
+  listarSolicitacoesDecididas,
   listarSetoresCompras,
   listarSecretariasRequerimentos,
   listarDocumentosNumera,
@@ -23,8 +24,15 @@ export default async function PaginaConfiguracoes() {
   if (!usuario) redirect("/login");
   if (!usuario.admin_hub) redirect("/");
 
-  const [usuarios, usuariosNumera, solicitacoes, setoresCompras, secretariasRequerimentos, documentosNumera] =
-    await Promise.all([
+  const [
+    usuarios,
+    usuariosNumera,
+    solicitacoes,
+    decididas,
+    setoresCompras,
+    secretariasRequerimentos,
+    documentosNumera,
+  ] = await Promise.all([
       listarUsuariosComAcessos(),
       // Env vars do Numera podem ainda não estar configuradas na Vercel —
       // nesse caso a seção de importação só fica vazia, não derruba a tela
@@ -34,6 +42,7 @@ export default async function PaginaConfiguracoes() {
         return [];
       }),
       listarSolicitacoesPendentes(),
+      listarSolicitacoesDecididas(),
       listarSetoresCompras().catch((e) => {
         console.error("[PaginaConfiguracoes] setores do Compras indisponíveis:", e);
         return [];
@@ -60,6 +69,7 @@ export default async function PaginaConfiguracoes() {
 
         <PainelSolicitacoes
           solicitacoes={solicitacoes}
+          decididas={decididas}
           setoresCompras={setoresCompras}
           secretariasRequerimentos={secretariasRequerimentos}
           documentosNumera={documentosNumera}

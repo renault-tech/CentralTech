@@ -166,6 +166,71 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   `?origem=hub`) e a ler `app_config.loginDiretoBloqueado` — ver
   `app-numera--o-de-docs` (sem CLAUDE.md próprio ainda).
 
+- **Varredura pós-entrega do cadastro unificado (pedido do usuário logo
+  em seguida): 5 achados reais corrigidos.** Confirmado a ele, antes de
+  começar: quem já tinha acesso a algum app **mantém esse acesso** —
+  nada nesta entrega desativa conta nenhuma sozinho; a revogação em
+  cascata (migration `20260924010000`) só age quando um admin
+  explicitamente desmarca um módulo.
+  1. **Bug real: bookkeeping do Numera perdido quando combinado com
+     outro módulo.** `aprovarSolicitacao` fazia o bookkeeping do Hub
+     (`hub.acessos_modulo`) logo depois de processar Compras/
+     Requerimentos, e só voltava a gravar Numera se ele fosse o ÚNICO
+     módulo da solicitação — aprovar Compras+Numera juntos criava a
+     conta certinho no projeto do Numera, mas o "cartão" nunca aparecia
+     no Hub nem em "Usuários e acessos". Corrigido resolvendo a conta
+     compartilhada uma única vez, processando os 3 módulos, e só então
+     fazendo o bookkeeping (uma vez, com o resultado completo).
+  2. **Validação client-side no formulário de aprovação.** Perfil que
+     exige setor (Compras) ou secretaria (Requerimentos) sem nada
+     selecionado antes só falhava no servidor com erro cru de RPC/
+     `CHECK` constraint (`secretaria_so_para_perfil_secretaria`,
+     confirmado existir no banco). Agora o botão "Aprovar" fica
+     desabilitado com aviso inline nesses casos; nível "Restrito" do
+     Numera sem nenhum documento marcado ganha aviso (não bloqueia,
+     documentos dá pra ajustar depois).
+  3. **Reativação simétrica em `hub.definir_acesso`.** A revogação em
+     cascata (desativar a conta no app quando um módulo é removido)
+     não tinha o inverso: marcar o módulo de novo não reativava — o
+     admin via a caixa marcada e achava que tinha resolvido, mas a
+     pessoa continuava barrada, exigindo um segundo passo manual direto
+     no Compras/Requerimentos. Corrigido em
+     `20260924030000_definir_acesso_reativacao_simetrica.sql`: um
+     módulo **adicionado** nesta chamada (não estava, passa a estar)
+     também reativa a conta — só quando adicionado, não quando
+     resubmetido sem mudança (preserva uma desativação feita
+     diretamente no app por outro motivo). Testado transacionalmente
+     (remove→desativa, readiciona→reativa, resubmete a mesma lista→não
+     mexe).
+  4. **Histórico de solicitações decididas + retentativa.** Uma vez
+     "aprovada", a solicitação sumia de vista pra sempre — inclusive
+     quando um módulo tinha falhado (ex.: Numera sem a chave
+     configurada), sem nenhum rastro do que precisava de nova
+     tentativa. Agora `atualizarBookkeepingHub`/`aprovarSolicitacao`
+     grava um resumo por módulo em `observacao_decisao`
+     (`"Compras: ok · Numera: falhou (...)"`), e uma seção "Decididas
+     recentemente" (`listarSolicitacoesDecididas`, últimas 15) mostra
+     esse resumo com um badge (Aprovada/Parcial/Recusada) e permite
+     reabrir o formulário para tentar de novo só os módulos que
+     falharam — a busca da solicitação em `aprovarSolicitacao` passou a
+     aceitar `status in ('pendente', 'aprovada')` (nunca uma
+     'recusada', essa é definitiva). O botão "Recusar" some nesse
+     modo de retentativa (a RPC `rejeitar_solicitacao` só aceita
+     'pendente', recusaria com erro sem sentido).
+  5. **Cache-busting do Numera não avançou.** `app.js`/`auth-service.js`
+     foram editados (recuperação de senha) mas o `?v=...` em
+     `index.html` continuava apontando pro build antigo — navegador com
+     cache guardado continuaria rodando a versão sem a correção. Corrigido
+     avançando a versão nos dois `<script src>`.
+  Também um aviso de UX (não um bug): a tela "Conceder acesso" existente
+  em Configurações ganhou uma nota quando o admin desmarca Numera —
+  lembrando que isso só tira o cartão do Hub, a conta de lá (projeto
+  separado, sem SSO) continua ativa até ser desativada direto no Numera.
+  `tsc`/`eslint`/`vitest`/`next build` verdes nos 3 repos Next.js depois
+  de cada correção; `get_advisors` conferido sem categoria nova de
+  exposição (15 anon-executável — os 2 já esperados desta entrega — e
+  83 authenticated-executável, mesma contagem de antes).
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
