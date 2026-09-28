@@ -11,8 +11,12 @@
  * `requerimentos.definir_acesso` também exigem que `auth.users` já tenha o
  * e-mail — por isso o erro "A pessoa precisa já ter login em algum módulo da
  * plataforma" aparecia mesmo sendo essa a TELA pensada para dar o primeiro
- * acesso. As funções abaixo resolvem os dois problemas juntas: criam a conta
- * quando não existe e chamam a RPC de cada módulo de verdade.
+ * acesso. As funções `aprovar*` abaixo resolvem os dois problemas juntas:
+ * criam a conta quando não existe e chamam a RPC de cada módulo de verdade.
+ * Reaproveitadas pelos dois fluxos (aprovação de solicitação e concessão
+ * direta) — só o bookkeeping do Hub em si (`sincronizarBookkeepingHub`, no
+ * fim deste arquivo) é específico da aprovação de solicitação, porque a
+ * concessão direta precisa de uma semântica diferente (ver comentário lá).
  */
 
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
@@ -112,7 +116,8 @@ export async function aprovarCompras(
   authId: string,
   pessoa: PessoaAlvo,
   decisao: DecisaoCompras,
-  linkPrimeiroAcesso: string | undefined
+  linkPrimeiroAcesso: string | undefined,
+  ativo: boolean = true
 ): Promise<ResultadoModulo> {
   const compras = await criarClienteCompras();
   const adminBruto = criarClienteAdminBruto();
@@ -124,13 +129,16 @@ export async function aprovarCompras(
     .eq("id", authId)
     .maybeSingle();
 
+  // admin_criar_usuario não tem parâmetro p_ativo (conta nova sempre nasce
+  // ativa, por definição da própria RPC) — `ativo` só se aplica ao
+  // atualizar uma conta existente.
   const { error } = existente
     ? await compras.rpc("admin_atualizar_usuario", {
         p_usuario_id: authId,
         p_nome: pessoa.nome,
         p_perfil: decisao.perfil,
         p_setor_id: decisao.setorId,
-        p_ativo: true,
+        p_ativo: ativo,
       })
     : await compras.rpc("admin_criar_usuario", {
         p_id: authId,
@@ -150,7 +158,8 @@ export async function aprovarCompras(
 export async function aprovarRequerimentos(
   pessoa: PessoaAlvo,
   decisao: DecisaoRequerimentos,
-  linkPrimeiroAcesso: string | undefined
+  linkPrimeiroAcesso: string | undefined,
+  ativo: boolean = true
 ): Promise<ResultadoModulo> {
   const requerimentos = await criarClienteRequerimentos();
   const { error } = await requerimentos.rpc("definir_acesso", {
@@ -158,7 +167,7 @@ export async function aprovarRequerimentos(
     p_nome: pessoa.nome,
     p_perfil: decisao.perfil,
     p_secretaria_id: decisao.secretariaId,
-    p_ativo: true,
+    p_ativo: ativo,
   });
 
   if (error) {
@@ -168,7 +177,11 @@ export async function aprovarRequerimentos(
   return { sucesso: true, linkPrimeiroAcesso };
 }
 
-export async function aprovarNumera(pessoa: PessoaAlvo, decisao: DecisaoNumera): Promise<ResultadoModulo> {
+export async function aprovarNumera(
+  pessoa: PessoaAlvo,
+  decisao: DecisaoNumera,
+  ativo: boolean = true
+): Promise<ResultadoModulo> {
   let numeraAdmin;
   try {
     numeraAdmin = criarClienteNumeraAdmin();
@@ -204,7 +217,7 @@ export async function aprovarNumera(pessoa: PessoaAlvo, decisao: DecisaoNumera):
     name: pessoa.nome,
     role: decisao.role,
     allowed_documents: decisao.documentos,
-    approved: true,
+    approved: ativo,
   };
   if (!existente) {
     const usuarioBase = pessoa.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "usuario";
@@ -230,14 +243,18 @@ export async function aprovarNumera(pessoa: PessoaAlvo, decisao: DecisaoNumera):
 
 /** Soma os módulos aprovados nesta chamada aos que a pessoa já tinha, e
  * grava via `hub.definir_acesso` — nunca revoga aqui (revogar é uma ação à
- * parte, no formulário de "Usuários e acessos"). Reaproveitada tanto pela
- * aprovação de solicitação quanto pela concessão direta em Configurações. */
+ * parte). Usada só por `aprovarSolicitacao`: uma solicitação nunca pede pra
+ * TIRAR um módulo, só somar, então "união com o que já existia" é a
+ * semântica certa aqui. A concessão direta em Configurações
+ * (`definirAcesso`) precisa do comportamento oposto — o conjunto final é
+ * exatamente o que o admin marcou no formulário, inclusive podendo
+ * DESMARCAR um módulo — por isso ela grava o bookkeeping com sua própria
+ * chamada a `hub.definir_acesso`, sem passar por esta função. */
 export async function sincronizarBookkeepingHub(
   hub: Awaited<ReturnType<typeof criarClienteServidor>>,
   authId: string,
   pessoa: PessoaAlvo,
-  resultados: Partial<Record<Modulo, ResultadoModulo>>,
-  adminHubDesejado?: boolean
+  resultados: Partial<Record<Modulo, ResultadoModulo>>
 ): Promise<void> {
   const modulosAprovados = (Object.keys(resultados) as Modulo[]).filter((m) => resultados[m]?.sucesso);
   if (modulosAprovados.length === 0) return;
@@ -252,7 +269,7 @@ export async function sincronizarBookkeepingHub(
   const { error } = await hub.rpc("definir_acesso", {
     p_email: pessoa.email,
     p_nome: pessoa.nome,
-    p_admin_hub: adminHubDesejado ?? hubUsuario?.admin_hub ?? false,
+    p_admin_hub: hubUsuario?.admin_hub ?? false,
     p_modulos: Array.from(conjunto),
     p_ativo: true,
   });

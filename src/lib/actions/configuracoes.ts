@@ -24,6 +24,7 @@ function traduzirErro(mensagem: string | undefined): string {
 }
 
 const esquemaAcesso = z.object({
+  usuarioId: z.uuid().optional(),
   email: z.email("Informe um e-mail válido"),
   nome: z.string().trim().min(2, "Informe o nome"),
   adminHub: z.boolean(),
@@ -62,6 +63,7 @@ export type ResultadoAcesso =
  * própria RPC daquele app, e só depois o bookkeeping do Hub é gravado.
  */
 export async function definirAcesso(dados: {
+  usuarioId?: string;
   email: string;
   nome: string;
   adminHub: boolean;
@@ -79,13 +81,16 @@ export async function definirAcesso(dados: {
     return { sucesso: false, erro: "Sem permissão para conceder acesso." };
   }
 
-  const { email, nome, adminHub, modulos, ativo, decisoes } = analise.data;
+  const { usuarioId, email, nome, adminHub, modulos, ativo, decisoes } = analise.data;
 
-  // Conta compartilhada (Compras/Requerimentos/Hub são o mesmo projeto
-  // Supabase) — resolvida sempre, criando quando ainda não existe, mesmo
-  // padrão já usado na aprovação de solicitações.
+  // Quando já se sabe o id (editando alguém que já aparece na tabela do
+  // Hub, e-mail travado no formulário), pula a resolução via Admin API —
+  // evita um createUser fadado a falhar seguido de paginar listUsers só
+  // para redescobrir um id que o chamador já tinha.
   const adminCompartilhado = criarClienteAdmin();
-  const conta = await encontrarOuCriarConta(adminCompartilhado, email, nome);
+  const conta = usuarioId
+    ? { id: usuarioId, criadaAgora: false }
+    : await encontrarOuCriarConta(adminCompartilhado, email, nome);
   if (!conta) {
     return {
       sucesso: false,
@@ -101,13 +106,13 @@ export async function definirAcesso(dados: {
   const resultados: Partial<Record<Modulo, ResultadoModulo>> = {};
 
   if (decisoes?.compras) {
-    resultados.compras = await aprovarCompras(conta.id, pessoa, decisoes.compras, linkCompartilhado);
+    resultados.compras = await aprovarCompras(conta.id, pessoa, decisoes.compras, linkCompartilhado, ativo);
   }
   if (decisoes?.requerimentos) {
-    resultados.requerimentos = await aprovarRequerimentos(pessoa, decisoes.requerimentos, linkCompartilhado);
+    resultados.requerimentos = await aprovarRequerimentos(pessoa, decisoes.requerimentos, linkCompartilhado, ativo);
   }
   if (decisoes?.numera) {
-    resultados.numera = await aprovarNumera(pessoa, decisoes.numera);
+    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo);
   }
 
   const hub = await criarClienteServidor();

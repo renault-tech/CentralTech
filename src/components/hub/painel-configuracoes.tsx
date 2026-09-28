@@ -6,14 +6,8 @@ import { Check, Copy, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
 import { definirAcesso } from "@/lib/actions/configuracoes";
-import {
-  PERFIS_COMPRAS,
-  PERFIS_COMPRAS_SEM_SETOR,
-  PERFIS_REQUERIMENTOS,
-  NIVEIS_NUMERA,
-  type CatalogoItem,
-  type DocumentoNumera,
-} from "@/lib/catalogos-solicitacao";
+import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
+import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
 import type { UsuarioComAcessos } from "@/lib/dados/usuarios";
 import type { DecisaoAprovacao, ResultadoModulo } from "@/lib/actions/provisionamento-modulos";
@@ -226,52 +220,28 @@ function FormularioAcesso({
   // rebaixar um perfil sem querer só por reabrir este formulário.
   const jaTinha = React.useCallback((m: Modulo) => !!usuario?.modulos.includes(m), [usuario]);
   const precisaDecisao = (m: Modulo) => modulos.includes(m) && !jaTinha(m);
-
-  const [perfilCompras, setPerfilCompras] = React.useState((PERFIS_COMPRAS[0] as string) ?? "");
-  const [setorCompras, setSetorCompras] = React.useState<string>("");
-
-  const [perfilRequerimentos, setPerfilRequerimentos] = React.useState(
-    (PERFIS_REQUERIMENTOS[3] as string) ?? ""
-  );
-  const [secretariaRequerimentos, setSecretariaRequerimentos] = React.useState<string>("");
-
-  const [roleNumera, setRoleNumera] = React.useState("user_restricted");
-  const [docsNumera, setDocsNumera] = React.useState<string[]>([]);
+  const modulosParaDecisao = (["compras", "requerimentos", "numera"] as Modulo[]).filter(precisaDecisao);
 
   function alternarModulo(m: Modulo, marcado: boolean) {
     setModulos((prev) => (marcado ? [...prev, m] : prev.filter((x) => x !== m)));
   }
 
-  const decisoes: DecisaoAprovacao = {};
-  if (precisaDecisao("compras")) {
-    decisoes.compras = {
-      perfil: perfilCompras,
-      setorId: PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) ? null : setorCompras || null,
-    };
-  }
-  if (precisaDecisao("requerimentos")) {
-    decisoes.requerimentos = {
-      perfil: perfilRequerimentos,
-      secretariaId: perfilRequerimentos === "secretaria" ? secretariaRequerimentos || null : null,
-    };
-  }
-  if (precisaDecisao("numera")) {
-    decisoes.numera = { role: roleNumera, documentos: docsNumera };
-  }
-
-  // Mesma validação client-side já usada na aprovação de solicitações: o
-  // banco recusaria (com erro cru de RPC/constraint) perfil que exige
-  // setor/secretaria sem um selecionado.
-  const faltaSetorCompras =
-    !!decisoes.compras && !PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) && !setorCompras;
-  const faltaSecretariaRequerimentos =
-    !!decisoes.requerimentos && perfilRequerimentos === "secretaria" && !secretariaRequerimentos;
-  const podeSalvar = !!email && !!nome && !faltaSetorCompras && !faltaSecretariaRequerimentos;
+  const [decisoes, setDecisoes] = React.useState<DecisaoAprovacao>({});
+  const [decisoesValidas, setDecisoesValidas] = React.useState(true);
+  const podeSalvar = !!email && !!nome && decisoesValidas;
 
   async function salvar() {
     setPendente(true);
     setErro(null);
-    const resultado = await definirAcesso({ email, nome, adminHub, modulos, ativo, decisoes });
+    const resultado = await definirAcesso({
+      usuarioId: usuario?.id,
+      email,
+      nome,
+      adminHub,
+      modulos,
+      ativo,
+      decisoes,
+    });
     setPendente(false);
     if (!resultado.sucesso) {
       setErro(resultado.erro);
@@ -370,102 +340,18 @@ function FormularioAcesso({
         )}
       </div>
 
-      {precisaDecisao("compras") && (
-        <div className="mt-3 rounded-md border border-slate-200 p-3">
-          <p className="text-xs font-semibold text-slate-600">Compras — perfil e setor</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <select className={ESTILO_CAMPO} value={perfilCompras} onChange={(e) => setPerfilCompras(e.target.value)}>
-              {PERFIS_COMPRAS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-            {!PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) && (
-              <select className={ESTILO_CAMPO} value={setorCompras} onChange={(e) => setSetorCompras(e.target.value)}>
-                <option value="">Selecione o setor…</option>
-                {setoresCompras.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nome}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {faltaSetorCompras && <p className="mt-1.5 text-xs text-red-700">Este perfil exige um setor selecionado.</p>}
-        </div>
-      )}
-
-      {precisaDecisao("requerimentos") && (
-        <div className="mt-3 rounded-md border border-slate-200 p-3">
-          <p className="text-xs font-semibold text-slate-600">Requerimentos — perfil e secretaria</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <select
-              className={ESTILO_CAMPO}
-              value={perfilRequerimentos}
-              onChange={(e) => setPerfilRequerimentos(e.target.value)}
-            >
-              {PERFIS_REQUERIMENTOS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-            {perfilRequerimentos === "secretaria" && (
-              <select
-                className={ESTILO_CAMPO}
-                value={secretariaRequerimentos}
-                onChange={(e) => setSecretariaRequerimentos(e.target.value)}
-              >
-                <option value="">Selecione a secretaria…</option>
-                {secretariasRequerimentos.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nome}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {faltaSecretariaRequerimentos && (
-            <p className="mt-1.5 text-xs text-red-700">Este perfil exige uma secretaria selecionada.</p>
-          )}
-        </div>
-      )}
-
-      {precisaDecisao("numera") && (
-        <div className="mt-3 rounded-md border border-slate-200 p-3">
-          <p className="text-xs font-semibold text-slate-600">Numera — nível e documentos</p>
-          <select className={`${ESTILO_CAMPO} mt-2`} value={roleNumera} onChange={(e) => setRoleNumera(e.target.value)}>
-            {NIVEIS_NUMERA.map((n) => (
-              <option key={n.valor} value={n.valor}>
-                {n.rotulo}
-              </option>
-            ))}
-          </select>
-          {roleNumera === "user_restricted" && (
-            <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-md border border-slate-100 p-2">
-              {documentosNumera.length === 0 && (
-                <p className="text-xs text-slate-400">
-                  Lista de documentos indisponível (configure NUMERA_SUPABASE_URL/ANON_KEY).
-                </p>
-              )}
-              {documentosNumera.map((d) => {
-                const marcado = docsNumera.includes(d.id);
-                return (
-                  <label key={d.id} className="flex items-center gap-2 text-xs text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={marcado}
-                      onChange={(e) =>
-                        setDocsNumera((prev) => (e.target.checked ? [...prev, d.id] : prev.filter((x) => x !== d.id)))
-                      }
-                    />
-                    {d.name}
-                  </label>
-                );
-              })}
-            </div>
-          )}
+      {modulosParaDecisao.length > 0 && (
+        <div className="mt-3">
+          <FormularioDecisaoModulos
+            modulosVisiveis={modulosParaDecisao}
+            setoresCompras={setoresCompras}
+            secretariasRequerimentos={secretariasRequerimentos}
+            documentosNumera={documentosNumera}
+            onMudar={(d, valido) => {
+              setDecisoes(d);
+              setDecisoesValidas(valido);
+            }}
+          />
         </div>
       )}
 
