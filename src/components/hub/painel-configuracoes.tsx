@@ -1,19 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { Check, ShieldCheck } from "lucide-react";
+import { Check, Copy, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useAcao } from "@/lib/hooks/usar-acao";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
 import { definirAcesso } from "@/lib/actions/configuracoes";
-import { MODULOS } from "@/lib/modulos-info";
+import {
+  PERFIS_COMPRAS,
+  PERFIS_COMPRAS_SEM_SETOR,
+  PERFIS_REQUERIMENTOS,
+  NIVEIS_NUMERA,
+  type CatalogoItem,
+  type DocumentoNumera,
+} from "@/lib/catalogos-solicitacao";
+import { MODULOS, moduloInfo } from "@/lib/modulos-info";
 import type { UsuarioComAcessos } from "@/lib/dados/usuarios";
+import type { DecisaoAprovacao, ResultadoModulo } from "@/lib/actions/provisionamento-modulos";
 import type { Modulo } from "@/types/database";
 
 const TODOS_MODULOS = Object.values(MODULOS);
 
-export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[] }) {
+type Catalogos = {
+  setoresCompras: CatalogoItem[];
+  secretariasRequerimentos: CatalogoItem[];
+  documentosNumera: DocumentoNumera[];
+};
+
+export function PainelConfiguracoes({
+  usuarios,
+  setoresCompras,
+  secretariasRequerimentos,
+  documentosNumera,
+}: { usuarios: UsuarioComAcessos[] } & Catalogos) {
   // Bug real reportado pelo usuário: o formulário de edição abria sempre
   // ABAIXO da tabela inteira (estado único compartilhado), então clicar em
   // "Editar" numa das primeiras linhas de uma tabela longa mudava o estado
@@ -24,6 +43,7 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
   const [editandoId, setEditandoId] = React.useState<string | null>(null);
   const [criandoNovo, setCriandoNovo] = React.useState(false);
 
+  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera };
   const colunas = 3 + TODOS_MODULOS.length; // Usuário, Admin, Ativo, Ações + 1 por módulo
 
   function alternarEdicao(id: string) {
@@ -37,7 +57,8 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
         <div>
           <h2 className="text-sm font-semibold text-cataguases-marinho">Usuários e acessos</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Cada coluna colorida mostra se a pessoa já tem aquele módulo liberado.
+            Marcar um módulo aqui cria (ou reaproveita) a conta e o cadastro de verdade naquele
+            app — não é preciso a pessoa já ter login em nenhum outro módulo antes.
           </p>
         </div>
       </div>
@@ -141,7 +162,7 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
                   {aberto && (
                     <tr className="border-b border-slate-100">
                       <td colSpan={colunas} className="bg-slate-50 p-3">
-                        <FormularioAcesso usuario={u} onFechar={() => setEditandoId(null)} />
+                        <FormularioAcesso usuario={u} {...catalogos} onFechar={() => setEditandoId(null)} />
                       </td>
                     </tr>
                   )}
@@ -172,7 +193,7 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
         </Button>
       ) : (
         <div className="mt-3">
-          <FormularioAcesso usuario={null} onFechar={() => setCriandoNovo(false)} />
+          <FormularioAcesso usuario={null} {...catalogos} onFechar={() => setCriandoNovo(false)} />
         </div>
       )}
     </section>
@@ -181,17 +202,116 @@ export function PainelConfiguracoes({ usuarios }: { usuarios: UsuarioComAcessos[
 
 function FormularioAcesso({
   usuario,
+  setoresCompras,
+  secretariasRequerimentos,
+  documentosNumera,
   onFechar,
 }: {
   usuario: UsuarioComAcessos | null;
   onFechar: () => void;
-}) {
-  const acao = useAcao();
+} & Catalogos) {
   const [email, setEmail] = React.useState(usuario?.email ?? "");
   const [nome, setNome] = React.useState(usuario?.nome ?? "");
   const [adminHub, setAdminHub] = React.useState(usuario?.adminHub ?? false);
   const [modulos, setModulos] = React.useState<Modulo[]>(usuario?.modulos ?? []);
   const [ativo, setAtivo] = React.useState(usuario?.ativo ?? true);
+
+  const [pendente, setPendente] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [resultados, setResultados] = React.useState<Partial<Record<Modulo, ResultadoModulo>> | null>(null);
+
+  // Só módulos que a pessoa AINDA não tinha (ou o cadastro inteiro, se está
+  // sendo criado agora) precisam de perfil/setor/secretaria — um módulo já
+  // liberado continua marcado sem pedir a decisão de novo, para não arriscar
+  // rebaixar um perfil sem querer só por reabrir este formulário.
+  const jaTinha = React.useCallback((m: Modulo) => !!usuario?.modulos.includes(m), [usuario]);
+  const precisaDecisao = (m: Modulo) => modulos.includes(m) && !jaTinha(m);
+
+  const [perfilCompras, setPerfilCompras] = React.useState((PERFIS_COMPRAS[0] as string) ?? "");
+  const [setorCompras, setSetorCompras] = React.useState<string>("");
+
+  const [perfilRequerimentos, setPerfilRequerimentos] = React.useState(
+    (PERFIS_REQUERIMENTOS[3] as string) ?? ""
+  );
+  const [secretariaRequerimentos, setSecretariaRequerimentos] = React.useState<string>("");
+
+  const [roleNumera, setRoleNumera] = React.useState("user_restricted");
+  const [docsNumera, setDocsNumera] = React.useState<string[]>([]);
+
+  function alternarModulo(m: Modulo, marcado: boolean) {
+    setModulos((prev) => (marcado ? [...prev, m] : prev.filter((x) => x !== m)));
+  }
+
+  const decisoes: DecisaoAprovacao = {};
+  if (precisaDecisao("compras")) {
+    decisoes.compras = {
+      perfil: perfilCompras,
+      setorId: PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) ? null : setorCompras || null,
+    };
+  }
+  if (precisaDecisao("requerimentos")) {
+    decisoes.requerimentos = {
+      perfil: perfilRequerimentos,
+      secretariaId: perfilRequerimentos === "secretaria" ? secretariaRequerimentos || null : null,
+    };
+  }
+  if (precisaDecisao("numera")) {
+    decisoes.numera = { role: roleNumera, documentos: docsNumera };
+  }
+
+  // Mesma validação client-side já usada na aprovação de solicitações: o
+  // banco recusaria (com erro cru de RPC/constraint) perfil que exige
+  // setor/secretaria sem um selecionado.
+  const faltaSetorCompras =
+    !!decisoes.compras && !PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) && !setorCompras;
+  const faltaSecretariaRequerimentos =
+    !!decisoes.requerimentos && perfilRequerimentos === "secretaria" && !secretariaRequerimentos;
+  const podeSalvar = !!email && !!nome && !faltaSetorCompras && !faltaSecretariaRequerimentos;
+
+  async function salvar() {
+    setPendente(true);
+    setErro(null);
+    const resultado = await definirAcesso({ email, nome, adminHub, modulos, ativo, decisoes });
+    setPendente(false);
+    if (!resultado.sucesso) {
+      setErro(resultado.erro);
+      return;
+    }
+    if (Object.keys(resultado.resultados).length > 0) {
+      setResultados(resultado.resultados);
+      return;
+    }
+    onFechar();
+  }
+
+  if (resultados) {
+    return (
+      <div className="space-y-3">
+        {(Object.entries(resultados) as [Modulo, ResultadoModulo][]).map(
+          ([m, r]) =>
+            r && (
+              <div
+                key={m}
+                className={`rounded-md border px-3 py-2 text-sm ${
+                  r.sucesso
+                    ? "border-green-200 bg-green-50 text-green-800"
+                    : "border-red-200 bg-red-50 text-red-800"
+                }`}
+              >
+                <p className="font-medium">
+                  {moduloInfo(m).nome}: {r.sucesso ? "acesso concedido" : "falhou"}
+                </p>
+                {r.mensagem && <p className="mt-0.5 text-xs">{r.mensagem}</p>}
+                {r.linkPrimeiroAcesso && <LinkCopiavel link={r.linkPrimeiroAcesso} />}
+              </div>
+            )
+        )}
+        <Button size="sm" variant="outline" onClick={onFechar}>
+          Fechar
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-3">
@@ -200,7 +320,7 @@ function FormularioAcesso({
       </p>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         <div>
-          <label className="text-xs text-slate-500">E-mail (já cadastrado na plataforma)</label>
+          <label className="text-xs text-slate-500">E-mail</label>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -234,17 +354,9 @@ function FormularioAcesso({
                 <input
                   type="checkbox"
                   checked={marcado}
-                  onChange={(e) =>
-                    setModulos((prev) =>
-                      e.target.checked ? [...prev, m.chave] : prev.filter((x) => x !== m.chave)
-                    )
-                  }
+                  onChange={(e) => alternarModulo(m.chave, e.target.checked)}
                 />
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: m.cor }}
-                  aria-hidden
-                />
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: m.cor }} aria-hidden />
                 <span className={marcado ? "font-medium text-slate-700" : undefined}>{m.nome}</span>
               </label>
             );
@@ -258,13 +370,108 @@ function FormularioAcesso({
         )}
       </div>
 
+      {precisaDecisao("compras") && (
+        <div className="mt-3 rounded-md border border-slate-200 p-3">
+          <p className="text-xs font-semibold text-slate-600">Compras — perfil e setor</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <select className={ESTILO_CAMPO} value={perfilCompras} onChange={(e) => setPerfilCompras(e.target.value)}>
+              {PERFIS_COMPRAS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            {!PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) && (
+              <select className={ESTILO_CAMPO} value={setorCompras} onChange={(e) => setSetorCompras(e.target.value)}>
+                <option value="">Selecione o setor…</option>
+                {setoresCompras.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {faltaSetorCompras && <p className="mt-1.5 text-xs text-red-700">Este perfil exige um setor selecionado.</p>}
+        </div>
+      )}
+
+      {precisaDecisao("requerimentos") && (
+        <div className="mt-3 rounded-md border border-slate-200 p-3">
+          <p className="text-xs font-semibold text-slate-600">Requerimentos — perfil e secretaria</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <select
+              className={ESTILO_CAMPO}
+              value={perfilRequerimentos}
+              onChange={(e) => setPerfilRequerimentos(e.target.value)}
+            >
+              {PERFIS_REQUERIMENTOS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            {perfilRequerimentos === "secretaria" && (
+              <select
+                className={ESTILO_CAMPO}
+                value={secretariaRequerimentos}
+                onChange={(e) => setSecretariaRequerimentos(e.target.value)}
+              >
+                <option value="">Selecione a secretaria…</option>
+                {secretariasRequerimentos.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {faltaSecretariaRequerimentos && (
+            <p className="mt-1.5 text-xs text-red-700">Este perfil exige uma secretaria selecionada.</p>
+          )}
+        </div>
+      )}
+
+      {precisaDecisao("numera") && (
+        <div className="mt-3 rounded-md border border-slate-200 p-3">
+          <p className="text-xs font-semibold text-slate-600">Numera — nível e documentos</p>
+          <select className={`${ESTILO_CAMPO} mt-2`} value={roleNumera} onChange={(e) => setRoleNumera(e.target.value)}>
+            {NIVEIS_NUMERA.map((n) => (
+              <option key={n.valor} value={n.valor}>
+                {n.rotulo}
+              </option>
+            ))}
+          </select>
+          {roleNumera === "user_restricted" && (
+            <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-md border border-slate-100 p-2">
+              {documentosNumera.length === 0 && (
+                <p className="text-xs text-slate-400">
+                  Lista de documentos indisponível (configure NUMERA_SUPABASE_URL/ANON_KEY).
+                </p>
+              )}
+              {documentosNumera.map((d) => {
+                const marcado = docsNumera.includes(d.id);
+                return (
+                  <label key={d.id} className="flex items-center gap-2 text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={(e) =>
+                        setDocsNumera((prev) => (e.target.checked ? [...prev, d.id] : prev.filter((x) => x !== d.id)))
+                      }
+                    />
+                    {d.name}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex gap-4">
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
-          <input
-            type="checkbox"
-            checked={adminHub}
-            onChange={(e) => setAdminHub(e.target.checked)}
-          />
+          <input type="checkbox" checked={adminHub} onChange={(e) => setAdminHub(e.target.checked)} />
           Admin do hub (vê e gerencia tudo)
         </label>
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -273,24 +480,41 @@ function FormularioAcesso({
         </label>
       </div>
 
-      {acao.erro && <p className="mt-2 text-xs text-red-700">{acao.erro}</p>}
+      {erro && <p className="mt-2 text-xs text-red-700">{erro}</p>}
       <div className="mt-3 flex gap-2">
-        <Button
-          size="sm"
-          disabled={acao.pendente || !email || !nome}
-          onClick={() =>
-            acao.executar(
-              () => definirAcesso({ email, nome, adminHub, modulos, ativo }),
-              onFechar
-            )
-          }
-        >
-          {acao.pendente ? "Salvando…" : "Salvar"}
+        <Button size="sm" disabled={pendente || !podeSalvar} onClick={salvar}>
+          {pendente ? "Salvando…" : "Salvar"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onFechar}>
           Cancelar
         </Button>
       </div>
+    </div>
+  );
+}
+
+function LinkCopiavel({ link }: { link: string }) {
+  const [copiado, setCopiado] = React.useState(false);
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5">
+      <input
+        readOnly
+        value={link}
+        className="flex-1 truncate rounded border border-green-300 bg-white px-2 py-1 text-[11px] text-slate-600"
+        onFocus={(e) => e.currentTarget.select()}
+      />
+      <button
+        type="button"
+        className="rounded border border-green-300 bg-white p-1 text-green-700 hover:bg-green-100"
+        title="Copiar link"
+        onClick={async () => {
+          await navigator.clipboard.writeText(link);
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 1500);
+        }}
+      >
+        {copiado ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
     </div>
   );
 }

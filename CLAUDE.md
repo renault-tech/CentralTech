@@ -389,6 +389,64 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   antes de trocar (`signInWithPassword` como checagem, não como troca de
   sessão) e usa `updateUser`, exatamente como o equivalente do Compras.
 
+- **Bug real: "Conceder acesso" em Configurações → Usuários e acessos não
+  dava acesso nenhum de verdade — corrigido.** Relatado pelo usuário: a
+  coordenação tentou liberar Requerimentos para uma usuária que só tinha
+  conta no Numera (projeto Supabase à parte) e recebeu "Nenhuma conta
+  encontrada com o e-mail ... A pessoa precisa já ter login em algum
+  módulo da plataforma" — justamente na tela pensada para ser "a forma"
+  de dar acesso, sem passar por `/solicitar-acesso`.
+  **Causa raiz**: `definirAcesso` (`src/lib/actions/configuracoes.ts`)
+  sempre chamou só `hub.definir_acesso`, que (a) exige que `auth.users`
+  já tenha o e-mail (`select id into v_auth_id from auth.users where
+  lower(email) = ...; if v_auth_id is null then raise exception`) e (b)
+  mesmo quando a conta já existia, só grava o cartão em
+  `hub.acessos_modulo` — nunca chamou a RPC do módulo em si
+  (`admin_criar_usuario` no Compras, `requerimentos.definir_acesso` no
+  Requerimentos, upsert em `users` no Numera), então marcar um módulo
+  aqui nunca criou o cadastro real, só um indicador visual sem
+  permissão nenhuma por trás. O fluxo de `/solicitar-acesso` →
+  `aprovarSolicitacao` já resolvia os dois problemas (cria a conta
+  compartilhada via Admin API antes de tudo, chama a RPC de cada módulo)
+  — só a concessão DIRETA pelo admin nunca tinha recebido a mesma
+  correção.
+  **Correção**: extraídas para `src/lib/actions/provisionamento-
+  modulos.ts` as funções que antes só existiam em `solicitacoes.ts`
+  (`encontrarOuCriarConta`, `gerarLinkPrimeiroAcesso`, `aprovarCompras`,
+  `aprovarRequerimentos`, `aprovarNumera`, `sincronizarBookkeepingHub`),
+  agora recebendo `{ nome, email, secretariaSugerida? }` em vez do objeto
+  inteiro de uma solicitação — reaproveitável por quem não tem uma linha
+  em `solicitacoes_acesso`. `definirAcesso` passou a aceitar um campo
+  `decisoes` (mesmo formato `DecisaoAprovacao` da aprovação de
+  solicitações) e, para cada módulo presente ali: cria/reaproveita a
+  conta compartilhada primeiro (por isso a RPC de bookkeeping nunca mais
+  falha por "conta não encontrada" — a conta já existe quando ela é
+  chamada), chama a RPC do módulo de verdade, e só grava no
+  `hub.acessos_modulo` os módulos que realmente foram provisionados com
+  sucesso (uma falha num módulo não marca o cartão do Hub com acesso que
+  a pessoa não tem).
+  **UI** (`src/components/hub/painel-configuracoes.tsx`): o formulário
+  "Conceder acesso"/"Editar" ganhou os mesmos blocos de decisão
+  (perfil+setor do Compras, perfil+secretaria do Requerimentos,
+  nível+documentos do Numera) já usados em "Solicitações de acesso" —
+  só aparecem para um módulo que a pessoa **ainda não tinha** antes desta
+  edição (`precisaDecisao`), para não arriscar reabrir o formulário e
+  rebaixar sem querer o perfil de alguém que já tinha o módulo. Página
+  `/configuracoes/usuarios` passou a buscar os mesmos catálogos
+  (setores do Compras, secretarias do Requerimentos, documentos do
+  Numera) que `/configuracoes/solicitacoes` já buscava, via as mesmas
+  funções de `lib/dados/solicitacoes.ts`. Resultado por módulo (sucesso/
+  falha + link de primeiro acesso copiável quando a conta acabou de ser
+  criada) mostrado do mesmo jeito que na aprovação de solicitação.
+  **Nenhuma migration** — as RPCs (`hub.definir_acesso`,
+  `requerimentos.definir_acesso`) continuam exigindo a conta já existir;
+  a correção garante que ela é criada ANTES de chamá-las, na camada de
+  aplicação, não no banco. Verificado com `tsc`/`eslint`/`vitest`/
+  `next build` limpos. **Não testado ponta a ponta** (mesma limitação de
+  sempre, sandbox sem acesso a `*.supabase.co`) — pendente confirmação do
+  usuário concedendo Requerimentos de verdade para a usuária do caso
+  real que motivou a correção.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
