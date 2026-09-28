@@ -58,6 +58,31 @@ export function envNumeraAdmin() {
   });
 }
 
+// Credenciais da API HTTPS da Brevo (Transactional Email,
+// https://api.brevo.com/v3/smtp/email) — usada para contornar o bug de
+// SMTP nativo do Supabase no projeto do Numera (ver changelog "Bypass do
+// SMTP quebrado do Numera para recuperação de senha"). É uma "Chave API"
+// da Brevo (aba "Chaves API" em SMTP & API), diferente das chaves de SMTP
+// AUTH configuradas (sem efeito) no painel do Supabase.
+// `BREVO_REMETENTE_EMAIL` precisa ser um remetente validado na conta
+// Brevo (o mesmo endereço já usado no SMTP do Supabase serve).
+const esquemaBrevo = z.object({
+  BREVO_API_KEY: z.string().min(20, "BREVO_API_KEY ausente ou inválida"),
+  BREVO_REMETENTE_EMAIL: z.email({ message: "BREVO_REMETENTE_EMAIL deve ser um e-mail válido" }),
+  BREVO_REMETENTE_NOME: z.string().min(1).default("Numera"),
+});
+
+export function envBrevo() {
+  if (typeof window !== "undefined") {
+    throw new Error("envBrevo() não pode ser chamado no cliente");
+  }
+  return esquemaBrevo.parse({
+    BREVO_API_KEY: process.env.BREVO_API_KEY,
+    BREVO_REMETENTE_EMAIL: process.env.BREVO_REMETENTE_EMAIL,
+    BREVO_REMETENTE_NOME: process.env.BREVO_REMETENTE_NOME,
+  });
+}
+
 export function envPublico() {
   return esquemaPublico.parse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

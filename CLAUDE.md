@@ -447,6 +447,69 @@ algum lugar mantém a MESMA conta (nunca duplica usuário).
   usuário concedendo Requerimentos de verdade para a usuária do caso
   real que motivou a correção.
 
+## Bypass do SMTP quebrado do Numera para recuperação de senha
+
+O "esqueci minha senha" do app do Numera falhava silenciosamente:
+diagnosticado numa sessão anterior (logs, testes de credencial isolados
+via PowerShell `Send-MailMessage`, descarte de IP-block da Brevo) até
+isolar que o SMTP nativo do Supabase tem um bug confirmado de
+PLATAFORMA especificamente naquele projeto — as credenciais Brevo
+funcionam de verdade (e-mail chegou e apareceu no log "Tempo real" da
+Brevo quando testadas fora do Supabase), só o envio disparado pelo
+GoTrue nunca chega. Chamado de suporte ao Supabase já aberto; esta
+correção não depende da resposta deles.
+
+**Arquitetura**: em vez de tentar consertar o SMTP-on-587 (fora do
+nosso controle), o fluxo passou a usar dois mecanismos que já provaram
+funcionar — a Admin API do Supabase (`generateLink`, que nunca envia
+e-mail sozinha, só devolve o link pronto na resposta — sem SMTP
+envolvido) e a API HTTPS da Brevo (porta 443, a mesma testada com
+sucesso via PowerShell), chamadas as duas a partir do Hub, que é quem
+já tem a `NUMERA_SUPABASE_SERVICE_ROLE_KEY` (do cadastro unificado).
+- `src/lib/email/brevo.ts` (`enviarEmailBrevo`): POST para
+  `https://api.brevo.com/v3/smtp/email`, autenticado por header
+  `api-key` (uma **Chave API** da Brevo — aba "Chaves API" em SMTP & API,
+  diferente das chaves de SMTP AUTH já configuradas, sem efeito, no
+  painel do Supabase). Nunca lança — erro de rede/API vira
+  `{ ok: false }`, logado, para quem chama decidir (a rota abaixo sempre
+  responde genérico de qualquer forma).
+- `src/app/api/numera/recuperar-senha/route.ts` (rota pública, primeira
+  API Route deste repo — até aqui só Server Actions): recebe
+  `{ email }`, chama `criarClienteNumeraAdmin().auth.admin.generateLink
+  ({ type: 'recovery', email, options: { redirectTo:
+  MODULOS.numera.url + '/' } })`, e se um link voltou, manda o e-mail
+  via `enviarEmailBrevo`. **Sempre responde a mesma mensagem genérica**
+  (200, `{ mensagem: "Se este e-mail estiver cadastrado..." }`), erro de
+  `generateLink` (e-mail sem conta) incluído — mesmo cuidado
+  anti-enumeração que `resetPasswordForEmail` já tinha. CORS restrito à
+  origem do próprio Numera (`MODULOS.numera.url`), com handler `OPTIONS`
+  para o preflight — o app do Numera é site estático servido de outra
+  origem, então precisa de `fetch` cross-origin, não Server Action.
+- `envBrevo()` em `lib/env.ts`: exige `BREVO_API_KEY` e
+  `BREVO_REMETENTE_EMAIL` (`BREVO_REMETENTE_NOME` tem default
+  `"Numera"`). **Passo manual do dono da plataforma** (mesmo padrão já
+  usado para `NUMERA_SUPABASE_SERVICE_ROLE_KEY`): colar as duas nas env
+  vars do projeto `centraltech` na Vercel — `BREVO_API_KEY` vem da aba
+  "Chaves API" da Brevo (gerar uma nova lá, é diferente das chaves SMTP
+  já expostas numa sessão anterior), `BREVO_REMETENTE_EMAIL` precisa ser
+  um remetente validado na conta Brevo (o mesmo já usado no SMTP do
+  Supabase serve). Sem as duas, `enviarEmailBrevo` falha graciosamente
+  (loga e devolve `ok:false`) — a rota continua respondendo genérico,
+  só o e-mail não sai, mesmo padrão "pronto, só falta a chave" já usado
+  no resto deste ecossistema.
+- Do lado do Numera: `auth-service.js` (`requestPasswordReset`) trocou a
+  chamada direta a `supabase.auth.resetPasswordForEmail` por um `fetch`
+  a este endpoint — ver CLAUDE.md do `app-numera--o-de-docs` para o lado
+  de lá.
+- **Nenhuma migration, nenhuma mudança em `redirectTo`/`showResetPasswordView`
+  do Numera** — só troca ONDE o link é gerado e QUEM manda o e-mail; o
+  resto do fluxo de recuperação (evento `PASSWORD_RECOVERY`, tela de
+  nova senha) continua exatamente igual.
+  Verificado com `tsc`/`eslint`/`next build` limpos. **Não testado ponta
+  a ponta** (mesma limitação de sempre, sandbox sem acesso a
+  `*.supabase.co`/`api.brevo.com`) — pendente o usuário configurar as
+  duas env vars da Brevo e confirmar o recebimento real de um e-mail.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
