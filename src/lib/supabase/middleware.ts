@@ -3,8 +3,23 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { envPublico } from "@/lib/env";
 
-/** Rotas públicas (auth) — tudo o mais neste hub exige sessão. */
-const ROTAS_PUBLICAS = ["/login", "/recuperar-senha", "/redefinir-senha", "/auth/confirm"];
+/** Rotas públicas (auth) — tudo o mais neste hub exige sessão.
+ *
+ * Bug real encontrado ao investigar por que /api/numera/recuperar-senha
+ * nunca funcionava: essa rota (chamada sem sessão, via fetch cross-origin
+ * do site estático do Numera) não estava nesta lista, então o middleware
+ * redirecionava (307) TUDO que chegava nela — inclusive o preflight
+ * OPTIONS do CORS — direto para /login, antes mesmo do código da rota
+ * rodar. Confirmado nos logs de runtime da Vercel: OPTIONS
+ * /api/numera/recuperar-senha 307, nenhum POST chegando a executar. */
+const ROTAS_PUBLICAS = [
+  "/login",
+  "/recuperar-senha",
+  "/redefinir-senha",
+  "/auth/confirm",
+  "/solicitar-acesso",
+  "/api/numera/recuperar-senha",
+];
 
 /**
  * Renova a sessão do Supabase a cada requisição e aplica o redirecionamento
