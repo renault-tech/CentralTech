@@ -4,20 +4,15 @@ import { redirect } from "next/navigation";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { MODULOS } from "@/lib/modulos-info";
-import { criarClienteAdminBruto } from "@/lib/supabase/admin";
-import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
-import { criarClienteServidor } from "@/lib/supabase/server";
+import { gerarLinkSso } from "@/lib/sso/gerar-link";
 import type { Modulo } from "@/types/database";
 
 /**
- * SSO por magic link: elimina a segunda senha ao abrir um módulo pelo Hub.
- *
- * Cada app (Compras, Requerimentos, Numera) continua com login próprio —
- * não existe SSO real de sessão entre os projetos Supabase (dois deles nem
- * compartilham o mesmo projeto). Em vez disso, esta action gera um link de
- * autenticação de USO ÚNICO (`generateLink({type:"magiclink"})`) pelo lado
- * do servidor, com a chave `service_role`, e manda o navegador direto pra
- * lá — o app de destino nunca vê nem pede a senha de novo.
+ * SSO por magic link ao clicar num módulo liberado na home do Hub. Ver
+ * `src/lib/sso/gerar-link.ts` para o núcleo (compartilhado com
+ * `/sso/silencioso`, a checagem automática que cada app faz quando não tem
+ * sessão própria — ver comentário lá para o desenho completo do login
+ * unificado).
  *
  * Duas garantias de segurança, deliberadas:
  * 1. O e-mail usado no `generateLink` vem SEMPRE da sessão do Hub já
@@ -26,38 +21,7 @@ import type { Modulo } from "@/types/database";
  * 2. Confere de novo que a pessoa tem acesso ao módulo (mesma checagem que
  *    já decide o que aparece na home) antes de gerar qualquer link — defesa
  *    em profundidade, não confia só na UI ter escondido o botão certo.
- *
- * O link é gerado na hora, a cada clique — nunca cacheado/persistido — e
- * expira sozinho pelas regras padrão do Supabase Auth, minimizando exposição
- * se por algum motivo a URL acabar retida em algum log de proxy/histórico.
  */
-
-/** Página de destino em cada app que consome o fragmento da URL e loga
- * sozinha (mesmo mecanismo já usado e validado na recuperação de senha:
- * `detectSessionInUrl` do cliente do navegador). Numera não tem uma rota
- * dedicada — a raiz do app já estabelece a sessão a partir do fragmento
- * (mesmo comportamento que a recuperação de senha de lá já usa). */
-const DESTINO_SSO: Record<Modulo, string> = {
-  compras: "/auth/entrar-via-hub",
-  requerimentos: "/auth/entrar-via-hub",
-  numera: "/",
-};
-
-async function temAcessoAoModulo(usuarioId: string, adminHub: boolean, modulo: Modulo): Promise<boolean> {
-  if (adminHub) return true;
-  const hub = await criarClienteServidor();
-  const { data } = await hub
-    .from("acessos_modulo")
-    .select("modulo")
-    .eq("usuario_id", usuarioId)
-    .eq("modulo", modulo)
-    .maybeSingle();
-  return !!data;
-}
-
-/** Auth Admin API mínima usada aqui — `generateLink` com `type: "magiclink"`
- * não está no tipo estreito já existente em `provisionamento-modulos.ts`
- * (que só cobre invite/recovery), então usa o client de verdade direto. */
 export async function abrirModulo(modulo: Modulo): Promise<void> {
   const usuario = await obterUsuarioAtual();
   if (!usuario) {
@@ -67,33 +31,16 @@ export async function abrirModulo(modulo: Modulo): Promise<void> {
     redirect("/login?motivo=desativado");
   }
 
-  const liberado = await temAcessoAoModulo(usuario.id, usuario.admin_hub, modulo);
-  if (!liberado) {
-    redirect("/?erro=sem_acesso");
-  }
-
-  const info = MODULOS[modulo];
-  const redirectTo = `${info.url}${DESTINO_SSO[modulo]}`;
-
-  let actionLink: string | undefined;
-  try {
-    const admin = modulo === "numera" ? criarClienteNumeraAdmin() : criarClienteAdminBruto();
-    const { data, error } = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email: usuario.email,
-      options: { redirectTo },
-    });
-    if (error) {
-      console.error(`[abrirModulo] generateLink falhou (${modulo}):`, error);
-    } else {
-      actionLink = data?.properties?.action_link ?? undefined;
+  const resultado = await gerarLinkSso(usuario, modulo);
+  if (!resultado.ok) {
+    if (resultado.motivo === "sem_acesso") {
+      redirect("/?erro=sem_acesso");
     }
-  } catch (e) {
-    // Numera lança se a env var da chave service_role dele não estiver
-    // configurada nesta implantação (ver `criarClienteNumeraAdmin`) — cai
-    // pro link direto de sempre em vez de travar o acesso ao módulo.
-    console.error(`[abrirModulo] falha inesperada (${modulo}):`, e);
+    // Falha ao gerar o link (API fora do ar, chave do Numera ausente etc.)
+    // — cai pro login direto do próprio app, nunca trava o acesso ao
+    // módulo. `ssoFalhou=1` evita que o /login de lá tente a checagem
+    // silenciosa de novo e reproduza a mesma falha em loop.
+    redirect(`${MODULOS[modulo].url}/login?ssoFalhou=1`);
   }
-
-  redirect(actionLink ?? info.url);
+  redirect(resultado.link);
 }

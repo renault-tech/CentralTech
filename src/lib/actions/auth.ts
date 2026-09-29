@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
+import { destinoSeguro } from "@/lib/seguranca/destino-seguro";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteSchemaComSessao } from "@/lib/supabase/schema-com-sessao";
 import {
@@ -87,14 +88,6 @@ async function origemDaRequisicao(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-/** Impede open redirect: só aceita caminhos internos de um único segmento raiz. */
-function destinoSeguro(valor: FormDataEntryValue | null): string {
-  if (typeof valor === "string" && valor.startsWith("/") && !valor.startsWith("//")) {
-    return valor;
-  }
-  return "/dashboard";
-}
-
 export async function entrar(
   _estadoAnterior: EstadoLogin,
   formData: FormData
@@ -140,7 +133,8 @@ export async function entrar(
     return { erro: "Usuário desativado. Contate o administrador." };
   }
 
-  redirect(destinoSeguro(formData.get("proximo")));
+  const proximo = formData.get("proximo");
+  redirect(destinoSeguro(typeof proximo === "string" ? proximo : null, "/dashboard"));
 }
 
 export async function sair(): Promise<void> {

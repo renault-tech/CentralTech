@@ -889,6 +889,88 @@ compartilham o mesmo projeto — não dá).
   mecanismo já validado separadamente; falta só confirmar o fluxo
   completo no deploy.
 
+## Login unificado: SSO silencioso, não só no clique
+
+Pedido do usuário, na sequência direta do SSO por clique acima: "quero que a
+pessoa faça login pelo hub e que esse login já libere a pessoa a entrar
+direto no app... sem precisar fazer login em cada app". Decisão confirmada
+via `AskUserQuestion`: quando ninguém está logado em lugar nenhum, a tela
+de login que aparece é a do **Hub**, não a do app — login único, sempre no
+mesmo lugar (o usuário reforçou isso numa mensagem em seguida: "a tela de
+login que deve aparecer é a do Hub", e adiantou a intenção de, mais pra
+frente, desativar o login direto de cada app de vez — o toggle pra isso
+**já existe**, `esta_bloqueado_login_direto`/Configurações → Login direto
+por aplicativo, criado antes deste SSO silencioso existir; não precisa de
+toggle novo).
+
+- **`GET /sso/silencioso?app=<modulo>&proximo=<caminho>`**
+  (`src/app/sso/silencioso/route.ts`): cada app, ao NÃO achar sessão
+  própria — inclusive entrando DIRETO pela URL do app, sem nunca ter
+  passado pelo Hub —, navega pra cá (página inteira, nunca `fetch`: o
+  cookie de sessão do Hub é first-party só numa navegação de verdade;
+  um `fetch` cross-origin não o enviaria, e mesmo enviando esbarraria em
+  CORS) antes de mostrar o próprio formulário de senha:
+  - **Sessão do Hub válida + acesso ao módulo** → gera o link mágico de
+    uso único (mesmo núcleo de `abrirModulo`, extraído pra
+    `src/lib/sso/gerar-link.ts`: `gerarLinkSso(usuario, modulo, proximo?)`,
+    usado pelos dois — clique e silencioso — pra não duplicar a regra de
+    segurança) e manda o navegador direto pro app, autenticado.
+  - **Sem sessão nenhuma (nem no Hub)** → redireciona pro `/login` do
+    **Hub**, com `proximo=/sso/silencioso?app=X&proximo=Y` — depois de
+    logar aqui, volta pra esta rota, que agora acha a sessão e completa o
+    SSO. Nunca mostra formulário de senha de app nenhum quando ninguém
+    está logado em lugar algum, por decisão do usuário.
+  - **Sessão do Hub válida mas SEM acesso ao módulo, ou falha ao gerar o
+    link** → devolve pro `/login` do PRÓPRIO app, com `ssoFalhou=1`
+    (guarda de loop: aquele app não tenta a checagem de novo) — nunca
+    trava: quem tem conta direta nesse app fora do Hub ainda consegue
+    entrar por ela.
+- **Cada app precisa de duas mudanças pra participar** (feitas nos três):
+  1. `/login` (Next.js) ou o boot da SPA (Numera) redireciona pra cá
+     sempre que não há sessão E não há `ssoFalhou=1`/`motivo` já
+     preenchido (esse último sinaliza que o SERVIDOR já tem algo
+     específico pra mostrar — conta desativada, link expirado — e
+     mostrar isso importa mais que tentar de novo; sem essa exceção,
+     "conta desativada" entraria em loop, porque o Hub não sabe do
+     `ativo` específico de cada app).
+  2. `sair()`/`handleLogout()` passa a redirecionar pro próprio `/login`
+     com `ssoFalhou=1` em vez de um `/login` limpo — sem isso, "Sair"
+     tentaria a checagem silenciosa de novo e, com a sessão do Hub ainda
+     de pé, relogaria na hora (o botão pareceria não funcionar). Sair é
+     LOCAL (só daquele app); pra sair de tudo, a pessoa usa o "Sair" do
+     próprio Hub — mesma semântica de qualquer SSO (sign-out do serviço
+     ≠ sign-out do provedor de identidade), não perguntado, mas o default
+     de menor surpresa e fácil de mudar depois se pedirem.
+- **Numera** (SPA sem rotas de URL, `checkAutoLogin()`/`tentarSsoSilenciosoOuMostrarLogin()`
+  em `app.js`): mesmo mecanismo, sem `proximo` (não há "caminho" pra
+  preservar numa SPA cujo estado de tela vive em JS, não na URL).
+  `handleLogout()` passou a fazer uma navegação de verdade
+  (`window.location.href`) em vez de só re-renderizar em memória — só
+  assim dá pra gravar `ssoFalhou=1` na URL (sem isso, um F5 logo depois
+  do "Sair" cairia no mesmo problema do item acima).
+- **Achado de segurança de carona, corrigido nos 3 repos com CLAUDE.md**
+  (App-Compras, `centraltech`; Requerimentos idem, sem entrada própria
+  aqui): a auditoria de open redirect (ver "Auditoria de segurança
+  completa da plataforma" no CLAUDE.md do App-Compras) tinha corrigido
+  `/auth/confirm/route.ts` nos 3 repos, mas **não** a função homônima
+  dentro de `entrar()` (`src/lib/actions/auth.ts`) do Hub e do
+  App-Compras — mesmo filtro ingênuo (`startsWith("/") &&
+  !startsWith("//")`), mesmo bypass (`/\evil.com`), só que alcançável
+  pelo campo oculto `proximo` do formulário de login em vez do link de
+  e-mail. Achado ao escrever a validação de `proximo` num TERCEIRO lugar
+  (`/sso/silencioso` e `/auth/entrar-via-hub`) e notar que `entrar()`
+  ainda usava o padrão antigo. Corrigido extraindo
+  `src/lib/seguranca/destino-seguro.ts` (a versão já corrigida,
+  reaproveitada por `/auth/confirm`, `entrar()` e `/sso/silencioso`) —
+  Requerimentos já tinha essa correção em `entrar()` desde a auditoria
+  original (só não estava extraída; extraída agora pelo mesmo motivo:
+  `/auth/entrar-via-hub` precisa dela também).
+- Testado: `tsc`/`eslint`/`npm test` e `next build` verdes nos três repos
+  Next.js (Hub, Compras, Requerimentos); `node --check` no `app.js` do
+  Numera (sem framework de build/lint lá). **Não testado ponta a ponta
+  entre apps de verdade** (sandbox não alcança `*.vercel.app`) — mesma
+  limitação de sempre.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
