@@ -203,6 +203,29 @@ export async function aprovarNumera(
   let criadaAgora = false;
 
   if (!userId) {
+    // Achado real (caso da Leandra Delgado, 29/09/2026): o Numera tem
+    // usuários migrados de antes do cadastro unificado cujo e-mail lá é
+    // DIFERENTE do e-mail cadastrado no Hub (ex.: conta antiga sem e-mail
+    // próprio, resolvida na migração com um e-mail pessoal informado à
+    // parte). Sem checar por nome também, a busca por e-mail exato não
+    // encontra ninguém e cria uma conta NOVA duplicada — foi exatamente
+    // isso que aconteceu, precisou de limpeza manual no banco depois.
+    // Nome igual (trim + case-insensitive) com e-mail diferente é sinal
+    // forte demais pra decidir sozinho (risco de juntar duas pessoas
+    // diferentes homônimas) — para, e deixa o admin resolver olhando os
+    // dois cadastros antes de tentar de novo.
+    const { data: porNome } = await numeraAdmin
+      .from("users")
+      .select("id, email, username")
+      .ilike("name", pessoa.nome.trim());
+    if (porNome && porNome.length > 0) {
+      const emails = porNome.map((u) => u.email || u.username).join(", ");
+      return {
+        sucesso: false,
+        mensagem: `Já existe conta no Numera com o mesmo nome, mas e-mail diferente (${emails}) — provável cadastro antigo. Confirme com a pessoa qual é a conta certa antes de aprovar (evita duplicar).`,
+      };
+    }
+
     const conta = await encontrarOuCriarConta(numeraAdmin, pessoa.email, pessoa.nome);
     if (!conta) {
       return { sucesso: false, mensagem: "Não foi possível criar a conta no projeto do Numera." };

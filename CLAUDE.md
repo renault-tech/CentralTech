@@ -536,12 +536,34 @@ já tem a `NUMERA_SUPABASE_SERVICE_ROLE_KEY` (do cadastro unificado).
   username inexistente — mesmo padrão anti-enumeração (tempo constante +
   janela de repetição) do endpoint de recuperação, extraído para
   `src/lib/anti-enumeracao.ts` (`completarNoTempoMinimo`/
-  `criarLimitadorPorChave`) para não duplicar entre os dois. Endpoint
-  publicado, mas **ainda não é chamado por nada** — o Numera só vai usá-lo
-  quando o PR3 (virada do front, janela combinada com o dono) for
-  publicado; até lá, zero efeito visível, mesma lógica de "aditivo,
-  seguro de publicar a qualquer hora" já usada nas migrations do PR1 do
-  Numera.
+  `criarLimitadorPorChave`) para não duplicar entre os dois.
+  **Atualização (29/09/2026): PR3 do Numera publicado** (o próprio dono
+  pediu para adiantar, sem usuários ativos no momento) — este endpoint
+  está em uso de verdade agora.
+
+- **Bug real: `aprovarNumera` criava conta duplicada para gente com
+  e-mail diferente entre Hub e Numera (achado no dia da publicação do
+  PR3).** Caso real: Leandra Delgado tem conta migrada no Numera desde
+  antes do cadastro unificado, sem e-mail próprio lá (resolvida na
+  migração do Numera com o e-mail pessoal dela); no Hub, o cadastro dela
+  usa um e-mail diferente. Ao conceder o módulo Numera pra ela em
+  Configurações, `aprovarNumera` buscou por e-mail exato, não achou
+  ninguém, e **criou uma conta nova do zero** — duplicando a pessoa no
+  banco do Numera, com senha aleatória que ninguém conhece. Achado só
+  na checagem de `crypt` feita antes de publicar o PR3 (comparando
+  `public.users.password` com `auth.users.encrypted_password` no
+  projeto do Numera); a duplicata (0 reservas, 0 logs — criada minutos
+  antes) foi apagada manualmente do banco depois de confirmar que não
+  tinha uso nenhum.
+  **Corrigido**: antes de criar conta nova, `aprovarNumera` agora
+  também busca por **nome** (case-insensitive) no Numera. Achando
+  alguém com o mesmo nome e e-mail diferente, **para e devolve um erro
+  pedindo confirmação do admin** — não tenta decidir sozinho (risco de
+  juntar duas pessoas homônimas por engano), só evita repetir a
+  duplicação silenciosa. `tsc`/`eslint`/`vitest`/`next build` limpos;
+  não testado com um caso real de homônimo de propósito (baixa
+  probabilidade e mensagem de erro clara o bastante para o admin
+  resolver na hora).
 
 ## Como continuar de outro computador
 
