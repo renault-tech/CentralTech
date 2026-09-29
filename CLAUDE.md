@@ -611,6 +611,61 @@ já tem a `NUMERA_SUPABASE_SERVICE_ROLE_KEY` (do cadastro unificado).
     solicitação de teste com o módulo Numera marcado) continua sendo o
     critério de pronto real antes de considerar o PR5 liberado.
 
+## Bug real: aprovação de solicitação com vários módulos era tudo-ou-nada
+
+Relato do dono: ao liberar Requerimentos para alguém que só tinha Compras,
+"apareceram todos" os módulos. Investigação (consulta direta em
+`hub.acessos_modulo`/`hub.solicitacoes_acesso`, só leitura):
+`hub.definir_acesso` faz `delete` + `insert` do conjunto exato recebido —
+não há união/soma escondida ali, confirmado lendo a função. O bookkeeping
+de `aprovarSolicitacao` (`sincronizarBookkeepingHub`) também está correto
+(só inclui módulos com `resultados[m].sucesso`). A concessão direta
+(`definirAcesso`, Configurações → Usuários) também está correta: os
+checkboxes de módulo (`modulos`) são independentes entre si.
+
+**O bug real estava em `FormularioDecisaoModulos`**, usado por
+`PainelSolicitacoes` (aprovação/reabertura de solicitação): o conjunto de
+módulos decididos era sempre `modulosVisiveis` (= `solicitacao.
+modulos_solicitados`, o que a PESSOA marcou no formulário público em
+`/solicitar-acesso`) — sem nenhum jeito de o admin excluir um deles da
+decisão. Isso significa duas coisas ruins, achadas juntas:
+1. **Solicitação nova com vários módulos pedidos**: o admin só podia
+   aprovar TODOS de uma vez (clicar "Aprovar" decide os 3) ou recusar
+   tudo — sem meio-termo. Confirmado no banco: há uma solicitação
+   pendente real agora (Ana Carolina Marinho Pacheco) pedindo os 3
+   módulos ao mesmo tempo, exatamente o caso que travava.
+2. **Reabrir uma solicitação já decidida (aba "Decididas", ex.: para
+   corrigir um módulo que falhou)**: como `modulosVisiveis` nunca muda
+   (é sempre o pedido original), reabrir para consertar SÓ um módulo
+   reprocessava os outros dois também — inofensivo quando o outro módulo
+   já tinha dado certo antes (reprocessar é idempotente), mas silenciava
+   qualquer intenção do admin de NÃO conceder um módulo específico ainda.
+   **Suspeita mais provável do caso relatado**: a pessoa provavelmente já
+   tinha Numera de uma aprovação anterior (não veio de uma solicitação —
+   não há registro em `hub.solicitacoes_acesso` para os dois usuários
+   mais prováveis, Leandra Delgado e Majella, ambas com os 3 módulos hoje
+   via concessão direta em sessões anteriores) e o checkbox de Numera já
+   vinha marcado ao abrir o formulário de edição; sem uma forma de ver
+   "isso já tinha, isso é novo" claramente separada, pareceu que os 3
+   apareceram juntos quando só Requerimentos era de fato novo.
+
+**Corrigido**: `FormularioDecisaoModulos` ganhou um checkbox "Incluir X
+nesta decisão" por módulo (só aparece quando há mais de 1 módulo visível
+— o caso comum de 1 módulo só continua sem nenhuma mudança visual),
+desmarcado exclui o módulo de `decisoes` por completo (não entra em
+`resultados`, não é reprocessado, não é gravado no bookkeeping). Todos
+vêm marcados por padrão (mesmo comportamento de antes quando só há 1
+módulo). Adicionado também: `aprovarSolicitacao` grava no resumo
+(`observacao_decisao`) "não incluído nesta decisão" para módulos pedidos
+mas deixados de fora — antes o resumo simplesmente omitia esses módulos,
+escondendo que a solicitação ainda não estava 100% resolvida; e o badge
+"Parcial" na lista de decididas agora também dispara para esse texto (não
+só para "falhou"), porque nos dois casos ainda falta decisão.
+Validação (`valido`) passou a exigir pelo menos 1 módulo incluído.
+Verificado com `tsc`/`eslint`/`vitest`/`next build`, todos limpos. **Não
+testado visualmente num navegador** (mesma limitação de sempre — sandbox
+sem acesso a `*.vercel.app`).
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

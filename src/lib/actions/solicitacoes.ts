@@ -115,9 +115,17 @@ export async function aprovarSolicitacao(
   // Resumo por módulo persistido em `observacao_decisao` — sem isso, uma
   // falha parcial (ex.: Numera sem a chave configurada) desaparecia da
   // lista de pendentes junto com a solicitação inteira, sem deixar
-  // nenhum rastro do que ainda precisa de nova tentativa.
-  const resumo = (Object.entries(resultados) as [Modulo, ResultadoModulo][])
-    .map(([m, r]) => `${MODULOS[m].nomeCurto}: ${r.sucesso ? "ok" : `falhou (${r.mensagem ?? "erro"})`}`)
+  // nenhum rastro do que ainda precisa de nova tentativa. Cobre também o
+  // módulo que o admin deixou de propósito fora da decisão (checkbox
+  // "incluir" desmarcado no formulário) — sem isso o resumo silenciava
+  // que aquele módulo pedido ainda não foi decidido, e reabrir a
+  // solicitação depois (aba "Decididas") era o único jeito de descobrir.
+  const resumo = solicitacao.modulos_solicitados
+    .map((m: Modulo) => {
+      const r = resultados[m];
+      if (!r) return `${MODULOS[m].nomeCurto}: não incluído nesta decisão`;
+      return `${MODULOS[m].nomeCurto}: ${r.sucesso ? "ok" : `falhou (${r.mensagem ?? "erro"})`}`;
+    })
     .join(" · ");
 
   await hub

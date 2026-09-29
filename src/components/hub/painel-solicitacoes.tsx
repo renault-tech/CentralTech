@@ -114,7 +114,12 @@ export function PainelSolicitacoes({
           {historicoAberto && (
             <ul className="mt-2 space-y-1.5">
               {decididas.map((s) => {
-                const falhouAlgo = s.observacao_decisao?.includes("falhou");
+                // "falhou" = erro real ao provisionar; "não incluído" = o admin
+                // deixou de propósito fora desta decisão (checkbox desmarcado) —
+                // os dois casos precisam do mesmo aviso, porque nos dois a
+                // solicitação não está 100% resolvida ainda.
+                const falhouAlgo =
+                  s.observacao_decisao?.includes("falhou") || s.observacao_decisao?.includes("não incluído");
                 return (
                   <li key={s.id} className="rounded-md border border-slate-100">
                     <button
