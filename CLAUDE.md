@@ -863,6 +863,25 @@ compartilham o mesmo projeto — não dá).
   nesta implantação), a action cai pro link direto de sempre
   (`redirect(info.url)`) — só perde o atalho de SSO, não perde o acesso ao
   módulo.
+- **Bug real no primeiro uso, ação pendente do usuário (não é bug de
+  código)**: clicar em "Requerimentos" no Hub abriu o Compras. Reproduzido
+  via `auth_logs` do projeto compartilhado (`nfijlzndlioefayctbsh`):
+  `POST /admin/generate_link` seguido de `GET /verify` com `status 303`
+  (redirecionamento OK, sem erro nenhum) — comportamento padrão do GoTrue
+  (Supabase Auth) quando o `redirect_to` pedido não está na allow-list de
+  "Redirect URLs" do projeto: em vez de falhar, ele silenciosamente cai
+  pra `Site URL` configurada. Esse allow-list foi configurado (item A2 do
+  guia de implantação) só para o domínio do Compras, quando só o Compras
+  existia como consumidor de redirect da Auth deste projeto — Requerimentos
+  nunca foi adicionado. **Não corrigível por código**: a allow-list vive só
+  no painel do Supabase (Authentication › URL Configuration › Redirect
+  URLs, mesmo caminho já usado no A2), sem tool de MCP que a exponha.
+  **Ação pendente do usuário**: adicionar
+  `https://app-requerimentos-camara.vercel.app/**` (e, se algum dia o
+  Hub também virar destino de um redirect, a própria URL dele) àquela
+  lista. Numera não precisa de mudança — projeto Supabase à parte, com o
+  próprio Site URL/allow-list já configurado para o domínio dele (mesmo
+  que a recuperação de senha de lá já usa).
 - Testado: `tsc`/`eslint`/`npm test` (10 testes) e `next build` verdes nos
   três repos (Hub, Compras, Requerimentos). **Não testado ponta a ponta
   entre apps de verdade** (sandbox não alcança `*.vercel.app`) — cada
