@@ -245,7 +245,14 @@ export async function aprovarNumera(
   if (!existente) {
     const usuarioBase = pessoa.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "usuario";
     payload.username = `${usuarioBase}.${userId.slice(0, 6)}`;
-    payload.password = crypto.randomUUID();
+    // PR4: não grava mais uma senha (nem placeholder aleatório) aqui — a
+    // credencial de verdade mora em auth.users, criada por
+    // encontrarOuCriarConta() acima. Quando o upsert é INSERT de verdade
+    // (linha ainda não existe), `password` (NOT NULL sem default) precisa
+    // de algo: usa a mesma string vazia que o trigger `criar_perfil_usuario`
+    // (PR1, projeto do Numera) já grava como placeholder para contas
+    // criadas só pela Admin API — mesma convenção dos dois lados.
+    payload.password = "";
   }
   if (pessoa.secretariaSugerida) {
     payload.secretaria = pessoa.secretariaSugerida;

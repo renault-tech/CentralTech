@@ -1,6 +1,6 @@
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
-import { criarClienteNumera } from "@/lib/supabase/numera-cliente";
+import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import type { ConfigModulo, Modulo } from "@/types/database";
 
 export type AdocaoModulo = {
@@ -10,9 +10,11 @@ export type AdocaoModulo = {
   bloqueado: boolean;
 };
 
+// PR4: lê com a service_role do Numera (não mais a anon key) — a RLS de
+// lá deixa de liberar geral a partir do PR5.
 async function contarAdocaoNumera(): Promise<{ ativos: number; jaViaHub: number }> {
   try {
-    const { data, error } = await criarClienteNumera()
+    const { data, error } = await criarClienteNumeraAdmin()
       .from("users")
       .select("id, ultimo_acesso_origem")
       .eq("approved", true);

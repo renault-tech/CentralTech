@@ -1,6 +1,6 @@
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
-import { criarClienteNumera } from "@/lib/supabase/numera-cliente";
+import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import type { SolicitacaoAcesso } from "@/types/database";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 
@@ -79,8 +79,10 @@ export async function listarSecretariasRequerimentos(): Promise<CatalogoItem[]> 
   return (data ?? []) as CatalogoItem[];
 }
 
+// PR4: lê com a service_role do Numera (não mais a anon key) — a RLS de
+// lá deixa de liberar geral a partir do PR5.
 export async function listarDocumentosNumera(): Promise<DocumentoNumera[]> {
-  const { data, error } = await criarClienteNumera()
+  const { data, error } = await criarClienteNumeraAdmin()
     .from("documents")
     .select("id,name")
     .eq("enabled", true)

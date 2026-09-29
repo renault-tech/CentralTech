@@ -1,4 +1,4 @@
-import { criarClienteNumera } from "@/lib/supabase/numera-cliente";
+import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 
 export type UsuarioNumera = {
@@ -19,12 +19,25 @@ export type UsuarioNumera = {
  * ainda não tem o módulo Numera. Checar só a existência da conta
  * escondia essas pessoas da lista de pendentes e elas nunca ganhavam o
  * módulo extra (bug real, encontrado em uso).
+ *
+ * PR4: lê com a service_role do Numera (não mais a anon key) — a RLS de
+ * lá deixa de liberar geral a partir do PR5, então a leitura tem que
+ * passar por trás dela desde já.
  */
 export async function listarUsuariosNumera(): Promise<UsuarioNumera[]> {
   const supabase = await criarClienteServidor();
 
+  let numeraAdmin;
+  try {
+    numeraAdmin = criarClienteNumeraAdmin();
+  } catch {
+    throw new Error(
+      "NUMERA_SUPABASE_SERVICE_ROLE_KEY não configurada nesta implantação — cole a chave nas variáveis de ambiente antes de importar usuários do Numera."
+    );
+  }
+
   const [numera, usuarios, acessos] = await Promise.all([
-    criarClienteNumera()
+    numeraAdmin
       .from("users")
       .select("id, name, email")
       .eq("approved", true)

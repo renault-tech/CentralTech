@@ -565,6 +565,52 @@ já tem a `NUMERA_SUPABASE_SERVICE_ROLE_KEY` (do cadastro unificado).
   probabilidade e mensagem de erro clara o bastante para o admin
   resolver na hora).
 
+- **PR4 do plano de migração do Numera: concluído (29/09/2026)** — ver
+  `docs/PLANO_MIGRACAO_AUTH.md` do repositório `app-numera--o-de-docs`
+  para o plano completo. Obrigatório antes do PR5 (fechar a RLS aberta do
+  Numera): as 3 leituras do projeto Supabase do Numera feitas por este
+  Hub usavam a **anon key** (`src/lib/supabase/numera-cliente.ts`),
+  confiando na RLS de lá estar aberta (`qual: true`) — assim que o PR5
+  fechar a RLS de verdade, essas 3 telas parariam de funcionar sem essa
+  mudança.
+  - `src/lib/dados/numera.ts` (`listarUsuariosNumera`, alimenta
+    Configurações → Numera/Importar), `src/lib/dados/login-direto.ts`
+    (`contarAdocaoNumera`, alimenta o card Numera de Configurações →
+    Login direto) e `src/lib/dados/solicitacoes.ts`
+    (`listarDocumentosNumera`, alimenta o formulário de solicitação de
+    acesso) passaram a usar `criarClienteNumeraAdmin()`
+    (`src/lib/supabase/numera-admin.ts`, service_role, já existia e já
+    era usado por `aprovarNumera`/os 2 endpoints `/api/numera/*`) em vez
+    do cliente anon.
+  - `src/lib/supabase/numera-cliente.ts` (cliente anon) e `envNumera()`/
+    `NUMERA_SUPABASE_ANON_KEY` (`src/lib/env.ts`) **removidos** — ficaram
+    sem nenhum chamador depois da troca; a variável `NUMERA_SUPABASE_
+    ANON_KEY` pode ser removida da Vercel quando o dono quiser (não
+    quebra nada continuar lá, só não é mais lida).
+  - **`aprovarNumera` parou de gravar senha** (`src/lib/actions/
+    provisionamento-modulos.ts`): `payload.password = crypto.randomUUID()`
+    virou `payload.password = ""`. A credencial de verdade já mora em
+    `auth.users` (criada por `encontrarOuCriarConta`, que já roda antes);
+    a coluna `password` de `public.users` é `NOT NULL` sem default, então
+    o upsert ainda precisa de **algum** valor quando a linha é criada na
+    hora (não quando já existe, criada pelo trigger `criar_perfil_usuario`
+    do PR1 no projeto do Numera) — usa a mesma string vazia que esse
+    próprio trigger já grava como placeholder para contas nascidas só
+    pela Admin API (mesma convenção nos dois lados, documentada no
+    comentário da função do trigger). Fecha o motivo de PR6 existir
+    (apagar as senhas em texto puro): esta era a única gravação nova de
+    senha ainda acontecendo depois do PR3.
+  - Verificado: `tsc`/`eslint`/`vitest` (10 testes)/`next build` limpos.
+    **Não testado ponta a ponta** (mesma limitação de sempre — sandbox
+    sem acesso a `*.vercel.app`/`*.supabase.co`); confiança adicional:
+    o `service_role` do Numera já tem GRANT completo em `public` desde a
+    correção do PR2 (`20260928215347_fix_grant_service_role_tabelas_
+    public.sql`), então as 3 leituras novas não deveriam topar com
+    `permission denied` — mas o roteiro manual do dono (abrir
+    Configurações → Numera/Importar, → Login direto, e aprovar uma
+    solicitação de teste com o módulo Numera marcado) continua sendo o
+    critério de pronto real antes de considerar o PR5 liberado.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
