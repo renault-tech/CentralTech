@@ -704,6 +704,82 @@ Numera antes de publicar: o upsert antigo reproduz `null value in column
 tocar `username`/`password`, preservando os valores existentes.
 `tsc`/`eslint`/`vitest`/`next build` limpos.
 
+## Bug real: usuária de outro app "não conseguia acesso" — foi parar na tela errada
+
+Relato do dono: Lídia (conta só de Numera/Hub) "não conseguia acesso pelo
+hub" e "tentou redefinir a senha e não deu certo". Investigação por
+consulta direta (só leitura, `nfijlzndlioefayctbsh` e `uxdjhdnsnditivvjktzf`)
+mais `query_logs` (`auth_logs` dos dois projetos) reconstruiu a timeline
+exata — **nenhum dos dois backends estava quebrado**:
+
+- `hub.usuarios`: conta criada 22/09, senha existe, **`last_sign_in_at`
+  nulo** — ela nunca conseguiu entrar no Hub nem uma vez.
+- `hub.acessos_modulo`: módulo `numera` concedido, sem `solicitacoes_
+  acesso` correspondente (concessão direta, não fluxo de solicitação).
+- Numera (`uxdjhdnsnditivvjktzf`): conta `approved=true`, `ativo=true`,
+  senha real funcionando (logins com `grant_type: password`, status 200,
+  confirmados nos `auth_logs` de lá).
+- **A causa real**: os logs do projeto `nfijlzndlioefayctbsh` mostram
+  3 pedidos de recuperação (`user_recovery_requested`, `/recover`) e os
+  cliques no link (`/verify`, 303) todos com `referer:
+  https://app-compras-brown.vercel.app` — ela foi parar na tela de
+  "esqueci minha senha" do **Compras**, não do Hub nem do Numera. Como
+  Hub e Compras compartilham o MESMO `auth.users` (mesmo projeto
+  Supabase, só schemas diferentes), a troca de senha ali **funciona
+  de verdade** (`updateUser` não sabe nem precisa saber em qual app a
+  pessoa tem cadastro) — só que ela não tem `public.usuarios` (schema do
+  Compras) nenhum, então ao tentar logar em seguida caía em "Usuário
+  autenticado, mas sem cadastro na plataforma. Contate o administrador."
+  **Sem nenhuma pista de que o problema era estar no site errado** — daí
+  ela reportar que a redefinição "não funcionou".
+- A senha do Numera (projeto à parte) é **completamente independente**
+  dessa troca — nada no Compras/Hub afeta ela. `public.users.password`
+  (legado, texto puro) segue com o valor antigo, mas não é mais lido pra
+  autenticar desde o PR3 (`auth-service.js`, já publicado) — irrelevante
+  aqui.
+
+**Corrigido a classe do bug, nos dois lados** (não só o caso dela): quando
+o Supabase Auth autentica mas não há cadastro no app local, em vez do
+texto genérico único, checa (com o token de sessão já emitido, respeitando
+as policies de "leio meu próprio cadastro" — nunca como leitura anônima)
+se a pessoa tem cadastro em outro app do MESMO projeto Supabase, e avisa
+qual usar:
+- **App-Compras** (`src/lib/actions/auth.ts`, `sugestaoHubSeExistir`):
+  checa `hub.acessos_modulo` via `criarClienteHubComSessao` (nova função em
+  `src/lib/supabase/hub-cliente.ts`, mesmo cliente mínimo já usado pelo
+  bloqueio de login direto, só que carregando o `access_token` da sessão
+  recém-autenticada em vez de anônimo) — lista os módulos e aponta a URL
+  do Hub (`URL_CENTRAL_CATAGUASES`, extraída para `src/lib/constantes/
+  hub.ts` para não duplicar com `login/page.tsx`).
+- **Hub** (`src/lib/actions/auth.ts`, `sugestaoOutroAppSeExistir`): checa
+  `public.usuarios` (Compras) e `requerimentos.usuarios` via a mesma
+  ideia (`criarClienteSchemaComSessao`, novo, `src/lib/supabase/schema-
+  com-sessao.ts`) e devolve nome + URL de cada um encontrado, usando o
+  catálogo `MODULOS` já existente.
+- **Numera é projeto à parte** (`uxdjhdnsnditivvjktzf`) — não dá pra
+  checar por essa via (não compartilha `auth.users`); fora do alcance
+  desta correção, que cobre só o trio que já divide um projeto Supabase.
+- Roda só DEPOIS de senha já validada (não é consulta de enumeração —
+  quem chega até aqui já provou que é dono da conta), timeout curto por
+  schema consultado, qualquer falha (rede, RLS, schema fora do ar) cai no
+  texto genérico de sempre — nunca faz o diagnóstico atrapalhar o caminho
+  de erro comum ("e-mail ou senha incorretos" continua intocado).
+- **A conta de Lídia em si não foi alterada** — mecanicamente ela já
+  funciona nos dois backends (Hub tem senha própria nunca usada; Numera
+  tem senha real confirmada funcionando). A orientação passada ao dono:
+  ela deve usar "esqueci minha senha" na tela de login do **Numera**
+  (`https://app-numera-o-de-docs.vercel.app`), não do Compras — esse
+  fluxo já está confirmado funcionando de ponta a ponta (bypass Brevo,
+  testado com e-mail real nesta mesma sessão) e vai dar a ela uma senha
+  que ela mesma escolhe, sem precisar de nenhuma intervenção manual no
+  banco. Não gravei/enviei nenhuma senha por ela — o sandbox de
+  desenvolvimento não alcança `*.vercel.app`/`*.supabase.co` para disparar
+  o endpoint por ela mesmo se quisesse, e criar uma senha às cegas sem
+  ela saber não resolveria nada.
+- Verificado: `tsc`/`eslint`/`vitest`/`next build` limpos nos dois repos
+  (Compras: 236 testes; Hub: 10 testes). **Não testado visualmente num
+  navegador** (mesma limitação de sempre).
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

@@ -3,13 +3,63 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { MODULOS } from "@/lib/modulos-info";
 import { criarClienteServidor } from "@/lib/supabase/server";
+import { criarClienteSchemaComSessao } from "@/lib/supabase/schema-com-sessao";
 import {
   esquemaLogin,
   esquemaNovaSenha,
   esquemaRecuperacao,
   esquemaMudarSenhaLogado,
 } from "@/lib/validacao/auth";
+
+/**
+ * Hub, Compras e Requerimentos compartilham o MESMO `auth.users` (mesmo
+ * projeto Supabase, só schemas diferentes) — Numera é um projeto à parte,
+ * fora deste alcance. Uma senha válida aqui não significa cadastro aqui:
+ * achado real, uma usuária só do Numera (com conta TAMBÉM neste projeto,
+ * de uma época anterior) foi parar na recuperação de senha do Compras,
+ * trocou a senha normalmente e só travou tentando logar lá — sem pista
+ * nenhuma de que faltava usar o app certo. Mesma classe de bug corrigida
+ * aqui e no Compras: quando a autenticação funciona mas não há cadastro
+ * neste schema, checa os outros dois (`public`=Compras,
+ * `requerimentos`) antes de cair no texto genérico. Roda só depois de
+ * senha já validada (não é consulta de enumeração), nunca atrasa o
+ * caminho comum — timeout curto por schema, qualquer falha cai no
+ * genérico.
+ */
+async function sugestaoOutroAppSeExistir(usuarioId: string, accessToken: string): Promise<string> {
+  const GENERICA = "Usuário autenticado, mas sem cadastro na plataforma. Contate o administrador.";
+  const ALVOS = [
+    { schema: "public" as const, modulo: MODULOS.compras },
+    { schema: "requerimentos" as const, modulo: MODULOS.requerimentos },
+  ];
+  try {
+    const achados = await Promise.all(
+      ALVOS.map(async ({ schema, modulo }) => {
+        try {
+          const cliente = criarClienteSchemaComSessao(schema, accessToken);
+          const consulta = cliente.from("usuarios").select("id").eq("id", usuarioId).maybeSingle();
+          const resultado = await Promise.race([
+            consulta,
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+          ]);
+          if (!resultado || resultado.error || !resultado.data) return null;
+          return modulo;
+        } catch {
+          return null;
+        }
+      })
+    );
+    const encontrados = achados.filter((m): m is (typeof MODULOS)[keyof typeof MODULOS] => m !== null);
+    if (encontrados.length === 0) return GENERICA;
+    const lista = encontrados.map((m) => `${m.nomeCurto} (${m.url})`).join(", ");
+    return `Esta conta não tem acesso ao Hub — ela tem acesso a: ${lista}. Acesse direto por lá.`;
+  } catch (e) {
+    console.error("[sugestaoOutroAppSeExistir] falha inesperada:", e);
+    return GENERICA;
+  }
+}
 
 export type EstadoLogin = {
   erro?: string;
@@ -77,10 +127,12 @@ export async function entrar(
     .single();
 
   if (erroUsuario || !usuario) {
+    const accessToken = data.session?.access_token;
+    const erro = accessToken
+      ? await sugestaoOutroAppSeExistir(data.user.id, accessToken)
+      : "Usuário autenticado, mas sem cadastro na plataforma. Contate o administrador.";
     await supabase.auth.signOut();
-    return {
-      erro: "Usuário autenticado, mas sem cadastro na plataforma. Contate o administrador.",
-    };
+    return { erro };
   }
 
   if (!usuario.ativo) {
