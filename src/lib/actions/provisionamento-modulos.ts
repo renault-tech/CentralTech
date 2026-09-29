@@ -234,34 +234,45 @@ export async function aprovarNumera(
     criadaAgora = conta.criadaAgora;
   }
 
-  const payload: Record<string, unknown> = {
-    id: userId,
+  const camposComuns: Record<string, unknown> = {
     email: pessoa.email,
     name: pessoa.nome,
     role: decisao.role,
     allowed_documents: decisao.documentos,
     approved: ativo,
   };
-  if (!existente) {
-    const usuarioBase = pessoa.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "usuario";
-    payload.username = `${usuarioBase}.${userId.slice(0, 6)}`;
-    // PR4: não grava mais uma senha (nem placeholder aleatório) aqui — a
-    // credencial de verdade mora em auth.users, criada por
-    // encontrarOuCriarConta() acima. Quando o upsert é INSERT de verdade
-    // (linha ainda não existe), `password` (NOT NULL sem default) precisa
-    // de algo: usa a mesma string vazia que o trigger `criar_perfil_usuario`
-    // (PR1, projeto do Numera) já grava como placeholder para contas
-    // criadas só pela Admin API — mesma convenção dos dois lados.
-    payload.password = "";
-  }
   if (pessoa.secretariaSugerida) {
-    payload.secretaria = pessoa.secretariaSugerida;
+    camposComuns.secretaria = pessoa.secretariaSugerida;
   }
 
-  const { error: erroUpsert } = await numeraAdmin.from("users").upsert(payload, { onConflict: "id" });
-  if (erroUpsert) {
-    console.error("[aprovarNumera] falha ao gravar users:", erroUpsert);
-    return { sucesso: false, mensagem: erroUpsert.message };
+  // Achado real (Ana Carolina Marinho Pacheco, 29/09/2026): `upsert(...,
+  // {onConflict:"id"})` falhava com "null value in column username
+  // violates not-null constraint" mesmo quando a linha JÁ EXISTIA (ia
+  // atualizar, não inserir) — o Postgres valida as colunas NOT NULL sem
+  // default da parte INSERT do `insert ... on conflict do update` ANTES
+  // de decidir se vai mesmo inserir ou só atualizar, então omitir
+  // `username`/`password` do payload (o que este código fazia sempre que
+  // `existente` era true) quebra mesmo sem nunca chegar a tentar inserir
+  // de verdade. Trocado por dois caminhos explícitos — update quando a
+  // linha já existe, insert só quando não existe — em vez de depender
+  // dessa lacuna do `upsert`.
+  const { error: erroGravar } = existente
+    ? await numeraAdmin.from("users").update(camposComuns).eq("id", userId)
+    : await numeraAdmin.from("users").insert({
+        id: userId,
+        username: `${pessoa.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._-]/g, "") || "usuario"}.${userId.slice(0, 6)}`,
+        // PR4: não grava mais uma senha aleatória aqui — a credencial de
+        // verdade mora em auth.users, criada por encontrarOuCriarConta()
+        // acima. `password` é NOT NULL sem default; usa a mesma string
+        // vazia que o trigger `criar_perfil_usuario` (PR1, projeto do
+        // Numera) já grava como placeholder para contas criadas só pela
+        // Admin API — mesma convenção dos dois lados.
+        password: "",
+        ...camposComuns,
+      });
+  if (erroGravar) {
+    console.error("[aprovarNumera] falha ao gravar users:", erroGravar);
+    return { sucesso: false, mensagem: erroGravar.message };
   }
 
   const linkPrimeiroAcesso = criadaAgora

@@ -666,6 +666,44 @@ Verificado com `tsc`/`eslint`/`vitest`/`next build`, todos limpos. **Não
 testado visualmente num navegador** (mesma limitação de sempre — sandbox
 sem acesso a `*.vercel.app`).
 
+## Bug real: `aprovarNumera` falhava ao atualizar um usuário JÁ EXISTENTE no Numera
+
+Achado ao vivo pelo dono (print do erro, caso real de Ana Carolina Marinho
+Pacheco): aprovar o módulo Numera de uma solicitação para alguém que **já
+tinha conta lá** (ela já aparecia com o módulo Numera no Hub antes desta
+aprovação) falhava com `null value in column "username" of relation
+"users" violates not-null constraint` — mesmo a linha já existindo, sem
+nenhuma tentativa de criar uma nova.
+
+**Causa raiz, confirmada reproduzindo o erro exato no banco antes de
+corrigir**: `aprovarNumera` usava `numeraAdmin.from("users").upsert(payload,
+{onConflict:"id"})`, e só incluía `username`/`password` no `payload`
+quando `!existente` (linha ainda não existia). Parecia seguro — quando a
+linha já existe, o upsert vai fazer `UPDATE`, que não precisa tocar
+`username`/`password` mesmo. **Mas não é assim que o Postgres avalia
+`INSERT ... ON CONFLICT DO UPDATE`**: a parte `INSERT` do comando monta a
+linha candidata (e valida NOT NULL/defaults dela) **antes** de decidir se
+vai aplicar o insert ou desviar para o update por causa do conflito — ou
+seja, omitir uma coluna NOT NULL sem default do `payload` quebra o
+comando inteiro mesmo quando o resultado final seria só um `UPDATE`.
+`username` e `password` em `public.users` (projeto do Numera) são as
+duas colunas NOT NULL sem default deste payload.
+
+**Corrigido**: trocado o `upsert` por dois caminhos explícitos —
+`update()` (sem `username`/`password`, exatamente como já era a intenção)
+quando `existente`, `insert()` (com `username`/`password` computados,
+como antes) só quando a linha não existe. Mesmo resultado final, sem
+depender dessa armadilha do `upsert`. Bug pré-existente desde antes do
+PR4 (a condição `if (!existente)` já estava assim; o PR4 só mudou o QUE
+era atribuído a `password` dentro dela, não a condição) — só não tinha
+aparecido ainda porque nenhuma solicitação real tinha caído nesse caminho
+específico (aprovar Numera para alguém que já tem conta lá) até agora.
+**Reproduzido e confirmado corrigido transacionalmente** no banco do
+Numera antes de publicar: o upsert antigo reproduz `null value in column
+"username"...` byte a byte igual ao erro real; o update novo funciona sem
+tocar `username`/`password`, preservando os valores existentes.
+`tsc`/`eslint`/`vitest`/`next build` limpos.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
