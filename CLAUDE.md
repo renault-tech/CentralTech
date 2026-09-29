@@ -780,6 +780,52 @@ qual usar:
   (Compras: 236 testes; Hub: 10 testes). **Não testado visualmente num
   navegador** (mesma limitação de sempre).
 
+## Transparência de módulos na página inicial: mostra todos, trava os sem acesso
+
+Pedido do dono a partir do caso da Lídia: "quando a pessoa não tem acesso a
+algum app, deve aparecer em transparência no hub e não permitir tentar
+acesso". Antes, `listarMeusModulos` só devolvia os módulos JÁ liberados —
+a página inicial simplesmente **escondia** os outros por completo. Dois
+problemas nisso: (1) ninguém sabia que um módulo existia para poder pedir
+acesso a ele (nada de transparência), e (2) mesmo assim nada impedia
+alguém de digitar a URL de um app direto (bookmark antigo, link
+compartilhado) e tentar logar onde não tem cadastro — exatamente a classe
+de confusão já corrigida na entrada anterior deste arquivo ("tentei por
+um, era por outro").
+
+- `src/lib/dados/modulos.ts`: `listarMeusModulos` → `listarModulosComAcesso`,
+  devolve **todo** o catálogo `MODULOS` (não só os liberados), cada item
+  com `temAcesso: boolean`. Única chamadora era `src/app/page.tsx`.
+- `src/app/page.tsx`: todo módulo aparece como card, sempre. Com acesso:
+  o card de sempre, linkando pro app. **Sem acesso**: card visualmente
+  travado (borda tracejada, opacidade reduzida, ícone de cadeado) que
+  **não linka para o app** — linka para `/solicitar-acesso?modulo=<chave>`.
+  Nunca deixa a pessoa "tentar" um login onde não tem cadastro.
+- `/solicitar-acesso` (`page.tsx` + `SolicitarAcessoForm`): passou a
+  aceitar `?modulo=` (pré-marca o checkbox do módulo pedido) e, se a
+  pessoa já está logada no Hub (veio do card travado, não de fora),
+  pré-preenche nome/e-mail a partir da própria sessão — a mesma
+  `solicitarAcesso()` de sempre já aceitava chamada autenticada
+  (comentário já dizia isso), só a UI não aproveitava. Continua
+  funcionando igual para quem chega de fora sem sessão nenhuma (o
+  cadastro-zero original).
+- **Não implementado ainda, registrado para decisão futura**: o pedido
+  também citou "muitos logins... login pro hub e depois pra cada app" —
+  hoje não há SSO real nenhum entre os 4 apps (3 deles dividem o mesmo
+  `auth.users`, mas cada um pede a senha de novo; Numera é projeto
+  separado de verdade). Dá pra eliminar boa parte disso com um "abrir com
+  um clique" via `generateLink({type:'magiclink'})` no momento do clique
+  no card (o Hub já tem `service_role` do projeto compartilhado E do
+  Numera — service_role de ambos já usados hoje para outras coisas):
+  gera o link autenticado como a própria pessoa, na hora, e manda o
+  navegador direto pra lá já logado, sem pedir senha de novo. Ficou de
+  fora desta entrega por ser mudança de superfície bem maior (mexe no
+  fluxo de entrada dos 3 apps de destino, não só do Hub) e mais sensível
+  (qualquer bug aqui é bug de autenticação) — feita só se o dono confirmar
+  que quer, com tempo pra desenhar/testar direito.
+- Verificado: `tsc`/`eslint`/`vitest` (10 testes)/`next build` limpos.
+  **Não testado visualmente num navegador** (mesma limitação de sempre).
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

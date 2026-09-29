@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { solicitarAcesso, type EstadoSolicitacao } from "@/lib/actions/solicitar-acesso";
 import { Button } from "@/components/ui/button";
 import { MODULOS } from "@/lib/modulos-info";
+import type { Modulo } from "@/types/database";
 
 const ESTILO_CAMPO =
   "w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-cataguases-dourado focus:ring-1 focus:ring-cataguases-dourado";
@@ -13,7 +14,13 @@ const ESTADO_INICIAL: EstadoSolicitacao = {};
 
 const TODOS_MODULOS = Object.values(MODULOS);
 
-export function SolicitarAcessoForm() {
+export function SolicitarAcessoForm({
+  valoresIniciais,
+}: {
+  /** Preenchido quando se chega aqui já logado (card "sem acesso" do
+   * início) — evita redigitar nome/e-mail que o Hub já conhece. */
+  valoresIniciais?: { nome?: string; email?: string; modulo?: Modulo };
+} = {}) {
   const [estado, formAction, pendente] = useActionState(solicitarAcesso, ESTADO_INICIAL);
 
   if (estado.enviado) {
@@ -33,7 +40,14 @@ export function SolicitarAcessoForm() {
         <label htmlFor="nome" className="text-sm font-medium text-slate-200">
           Nome completo
         </label>
-        <input id="nome" name="nome" required placeholder="Seu nome" className={ESTILO_CAMPO} />
+        <input
+          id="nome"
+          name="nome"
+          required
+          defaultValue={valoresIniciais?.nome}
+          placeholder="Seu nome"
+          className={ESTILO_CAMPO}
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -45,6 +59,7 @@ export function SolicitarAcessoForm() {
           name="email"
           type="email"
           required
+          defaultValue={valoresIniciais?.email}
           placeholder="nome@cataguases.mg.gov.br"
           className={ESTILO_CAMPO}
         />
@@ -58,7 +73,12 @@ export function SolicitarAcessoForm() {
               key={m.chave}
               className="flex cursor-pointer items-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-200"
             >
-              <input type="checkbox" name="modulos" value={m.chave} />
+              <input
+                type="checkbox"
+                name="modulos"
+                value={m.chave}
+                defaultChecked={valoresIniciais?.modulo === m.chave}
+              />
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: m.cor }}
