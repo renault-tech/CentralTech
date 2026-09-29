@@ -826,6 +826,50 @@ um, era por outro").
 - Verificado: `tsc`/`eslint`/`vitest` (10 testes)/`next build` limpos.
   **Não testado visualmente num navegador** (mesma limitação de sempre).
 
+## SSO por magic link ao abrir um módulo
+
+Pedido do usuário, na sequência direta da transparência de módulos acima
+("Confirme como funcionará o sistema de login que sugeriu e prossiga"):
+elimina a segunda senha ao abrir Compras/Requerimentos/Numera pelo Hub, sem
+inventar SSO real de sessão entre projetos Supabase (dois deles nem
+compartilham o mesmo projeto — não dá).
+
+- **`src/lib/actions/sso.ts` (`abrirModulo(modulo)`)**: cada card de módulo
+  LIBERADO na home (`src/app/page.tsx`) virou um `<form action={abrirModulo
+  .bind(null, m.chave)}>` em vez de um `<a href>` comum. No clique, a
+  action confirma de novo (defesa em profundidade — a UI já só mostra os
+  liberados) que a sessão atual tem acesso ao módulo
+  (`hub.acessos_modulo`/`admin_hub`), chama
+  `generateLink({type:"magiclink", email: <e-mail da PRÓPRIA sessão do
+  Hub>, options:{redirectTo}})` — nunca aceita e-mail vindo do cliente,
+  pra ninguém conseguir gerar link pra conta alheia — e redireciona o
+  navegador DIRETO pro `action_link` que o Supabase devolve. Compras e
+  Requerimentos (mesmo projeto Supabase, `nfijlzndlioefayctbsh`) usam
+  `criarClienteAdminBruto()` (já existente); Numera (projeto à parte) usa
+  `criarClienteNumeraAdmin()` (já existente, mesmo client já usado no
+  bypass de recuperação de senha do Numera). Link gerado NA HORA a cada
+  clique — nunca cacheado nem persistido — e de uso único, pelas regras
+  padrão do próprio Supabase Auth.
+- **Página de destino em cada app**: `redirectTo` aponta pra
+  `/auth/entrar-via-hub` (Compras e Requerimentos — página de CLIENTE
+  nova nos dois repos, `criarClienteNavegador`/`detectSessionInUrl`
+  processa o fragmento da URL sozinho, mesmo mecanismo já validado na
+  correção do link de recuperação de senha) ou pra raiz `/` do Numera
+  (não precisou de página nova — a raiz de lá já processa o fragmento do
+  mesmo jeito, comportamento que a recuperação de senha do Numera já
+  usa).
+- **Falha nunca trava o acesso**: se `generateLink` falhar por qualquer
+  motivo (erro da API, ou a chave `service_role` do Numera não configurada
+  nesta implantação), a action cai pro link direto de sempre
+  (`redirect(info.url)`) — só perde o atalho de SSO, não perde o acesso ao
+  módulo.
+- Testado: `tsc`/`eslint`/`npm test` (10 testes) e `next build` verdes nos
+  três repos (Hub, Compras, Requerimentos). **Não testado ponta a ponta
+  entre apps de verdade** (sandbox não alcança `*.vercel.app`) — cada
+  metade (geração do link aqui, consumo do fragmento lá) reaproveita
+  mecanismo já validado separadamente; falta só confirmar o fluxo
+  completo no deploy.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

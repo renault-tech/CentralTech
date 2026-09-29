@@ -3,14 +3,19 @@ import { Lock } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
+import { abrirModulo } from "@/lib/actions/sso";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { GerenciadorTours } from "@/components/ajuda/gerenciador-tours";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaInicial() {
-  const usuario = await obterUsuarioAtual();
+export default async function PaginaInicial({
+  searchParams,
+}: {
+  searchParams: Promise<{ erro?: string }>;
+}) {
+  const [usuario, { erro }] = await Promise.all([obterUsuarioAtual(), searchParams]);
   if (!usuario) {
     redirect("/login");
   }
@@ -40,33 +45,46 @@ export default async function PaginaInicial() {
           </p>
         )}
 
+        {erro === "sem_acesso" && (
+          <p
+            role="alert"
+            className="mt-8 rounded-lg border border-semaforo-vermelho/30 bg-red-50 p-4 text-sm text-red-700"
+          >
+            Este módulo não está liberado para a sua conta. Peça acesso abaixo.
+          </p>
+        )}
+
         {/* Todos os módulos aparecem, sempre — não só os liberados
             (transparência: a pessoa precisa saber que "Requerimentos"
             existe para poder pedir acesso). Os sem acesso não levam a
             lugar nenhum além do pedido de acesso — nunca ao login do
             app, que só ia confirmar a senha certa e travar depois, sem
             explicar por quê (o mesmo tipo de confusão já investigado:
-            "tentei por um, era por outro"). */}
+            "tentei por um, era por outro"). Os liberados não são mais um
+            link comum: `abrirModulo` gera um magic link de uso único na
+            hora e manda o navegador já autenticado — sem pedir senha de
+            novo (ver comentário em `src/lib/actions/sso.ts`). */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2" data-tour="cards-modulos">
           {modulos.map((m) =>
             m.temAcesso ? (
-              <a
-                key={m.chave}
-                href={`${m.url}?origem=hub`}
-                className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                style={{ borderTopColor: m.cor, borderTopWidth: 4 }}
-              >
-                <h2 className="text-base font-semibold text-slate-800 group-hover:text-cataguases-azul">
-                  {m.nome}
-                </h2>
-                <p className="mt-1.5 text-sm text-slate-500">{m.descricao}</p>
-                <span
-                  className="mt-3 inline-block text-xs font-medium"
-                  style={{ color: m.corTexto }}
+              <form key={m.chave} action={abrirModulo.bind(null, m.chave)}>
+                <button
+                  type="submit"
+                  className="group w-full rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ borderTopColor: m.cor, borderTopWidth: 4 }}
                 >
-                  Abrir →
-                </span>
-              </a>
+                  <h2 className="text-base font-semibold text-slate-800 group-hover:text-cataguases-azul">
+                    {m.nome}
+                  </h2>
+                  <p className="mt-1.5 text-sm text-slate-500">{m.descricao}</p>
+                  <span
+                    className="mt-3 inline-block text-xs font-medium"
+                    style={{ color: m.corTexto }}
+                  >
+                    Abrir →
+                  </span>
+                </button>
+              </form>
             ) : (
               <a
                 key={m.chave}
