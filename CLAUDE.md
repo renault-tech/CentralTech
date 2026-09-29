@@ -971,6 +971,50 @@ toggle novo).
   entre apps de verdade** (sandbox não alcança `*.vercel.app`) — mesma
   limitação de sempre.
 
+## Interruptor de login direto habilitado para o Numera
+
+Achado ao revisar `PainelLoginDireto` (Configurações → Login direto por
+aplicativo) depois do SSO silencioso acima: o comentário/UI dali dizia que
+Numera "não tem substituto de login pelo Hub" e por isso o interruptor de
+bloqueio só aparecia pra Compras/Requerimentos — verdade quando foi escrito
+(antes do SSO existir), **falsa agora**: o Numera já tem os dois caminhos
+de SSO (clique em `abrirModulo` e a checagem silenciosa em
+`/sso/silencioso?app=numera`), então bloquear o login direto dele deixou
+de significar "ninguém mais entra".
+
+- **`alternarBloqueioLoginDireto`** (`src/lib/actions/login-direto.ts`):
+  continua gravando em `hub.config_modulo` via
+  `definir_bloqueio_login_direto` (RPC já existente, sempre aceitou
+  qualquer `Modulo`) — mas quando `modulo === "numera"`, agora TAMBÉM
+  escreve `app_config.loginDiretoBloqueado` no projeto SEPARADO do Numera
+  (`criarClienteNumeraAdmin()`, já usada para outras escritas
+  cross-projeto, como a criação de conta na aprovação de solicitação de
+  acesso). Necessário porque o app do Numera (`app.js`,
+  `checkAutoLogin()`/`showLoginView()`) lê essa flag do PRÓPRIO banco dele,
+  não do `config_modulo` do Hub — os dois projetos não se enxergam.
+  **Sem transação cross-projeto de verdade** (impossível entre dois
+  bancos Supabase distintos): grava no Hub primeiro, Numera depois; se o
+  segundo falhar, devolve erro explícito ("Gravado no Hub, mas falhou ao
+  espelhar no projeto do Numera") em vez de mascarar a inconsistência.
+- **`PainelLoginDireto`**: `InterruptorBloqueio` passa a renderizar pros
+  3 módulos (antes só Compras/Requerimentos, com um parágrafo explicando
+  por que Numera não tinha); o Numera ganha só uma nota informativa
+  (grava em dois lugares) em vez do texto antigo, que estava desatualizado.
+- **Achado de segurança, já documentado, não é novo**: `public.app_config`
+  no projeto do Numera tem RLS **totalmente aberta**
+  (`using (true) with check (true)`, `schema.sql` linha 81) — mesmo
+  problema já registrado no CLAUDE.md do próprio Numera com prioridade
+  máxima ("RLS totalmente aberta + senha em texto puro"). A escrita desta
+  action usa `service_role` (ignora RLS de qualquer jeito), então não é
+  afetada por essa falha, mas registrado aqui para não parecer que o
+  achado foi descoberto agora — é o mesmo de sempre.
+- Verificado: `tsc`/`eslint`/`npm test` (10 testes) e `next build` verdes.
+  **Não testado ponta a ponta** (sandbox não alcança `*.vercel.app`/
+  `*.supabase.co`) — a lógica de escrita dupla é direta o bastante (dois
+  `upsert`/RPC sequenciais, cada um já usado isoladamente em produção) pra
+  não precisar de mock; falta só confirmar no deploy que o toggle do
+  Numera realmente aparece e funciona nos dois sentidos.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

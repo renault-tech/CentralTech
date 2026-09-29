@@ -15,8 +15,9 @@ export async function PainelLoginDireto() {
       </div>
       <p className="mt-0.5 text-xs text-slate-500">
         Bloquear desliga o formulário de senha do próprio app — a pessoa passa a precisar entrar por
-        aqui. Desligado por padrão em todos os 3; ligue só depois que o &ldquo;já acessou pelo
-        Hub&rdquo; abaixo mostrar que a maioria já migrou.
+        aqui (ou, já logada aqui, entrar automaticamente sem digitar senha de novo). Desligado por
+        padrão em todos os 3; ligue só depois que o &ldquo;já acessou pelo Hub&rdquo; abaixo mostrar
+        que a maioria já migrou.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -40,13 +41,12 @@ export async function PainelLoginDireto() {
                 usuários ativos já acessaram pelo Hub ({pct}%)
               </p>
 
-              {a.modulo === "numera" ? (
-                <p className="mt-3 text-[11px] text-slate-400">
-                  Numera tem projeto próprio, sem substituto de login pelo Hub — bloquear aqui deixaria
-                  as pessoas sem conseguir entrar. Só o sinal de adoção acima é mostrado.
+              <InterruptorBloqueio modulo={a.modulo} bloqueadoInicial={a.bloqueado} />
+              {a.modulo === "numera" && (
+                <p className="mt-2 text-[11px] text-slate-400">
+                  Numera tem projeto Supabase próprio — este interruptor grava lá também
+                  (`app_config.loginDiretoBloqueado`), separado do bookkeeping do Hub.
                 </p>
-              ) : (
-                <InterruptorBloqueio modulo={a.modulo} bloqueadoInicial={a.bloqueado} />
               )}
             </div>
           );
