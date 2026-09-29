@@ -4,6 +4,7 @@ import { z } from "zod";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { enviarEmailBrevo } from "@/lib/email/brevo";
 import { MODULOS } from "@/lib/modulos-info";
+import { completarNoTempoMinimo, criarLimitadorPorChave } from "@/lib/anti-enumeracao";
 
 export const dynamic = "force-dynamic";
 
@@ -45,40 +46,9 @@ export async function OPTIONS() {
 const MENSAGEM_GENERICA =
   "Se este e-mail estiver cadastrado, você vai receber um link para definir uma nova senha.";
 
-/** Achado de auditoria: sem isto, o caminho "conta existe" sempre demora
- * mais que "conta não existe" (chamada extra à Brevo), dando pra distinguir
- * os dois casos só medindo o tempo de resposta — o mesmo problema que a
- * mensagem genérica tenta evitar, só que pelo relógio em vez do texto.
- * Sempre espera até completar este piso antes de responder, faça o que
- * fizer dentro dele. */
 const TEMPO_MINIMO_RESPOSTA_MS = 1200;
-
-/** Trava por e-mail: best-effort (em memória, por instância — reseta em
- * cold start e não é compartilhado entre instâncias do Vercel), mas já
- * eleva o custo de "encher a caixa de entrada de alguém"/varrer uma lista
- * de e-mails candidatos, que o endpoint anterior (`resetPasswordForEmail`
- * direto do navegador) também não tinha. Não pretende ser rate limit de
- * produção robusto — se abuso real aparecer, o próximo passo é um serviço
- * dedicado (Upstash/Vercel KV), não mais Map em memória. */
-const ULTIMA_TENTATIVA_POR_EMAIL = new Map<string, number>();
 const JANELA_REPETICAO_MS = 60_000;
-
-function podeTentar(email: string): boolean {
-  const chave = email.toLowerCase();
-  const agora = Date.now();
-  const ultima = ULTIMA_TENTATIVA_POR_EMAIL.get(chave);
-  if (ultima && agora - ultima < JANELA_REPETICAO_MS) return false;
-  ULTIMA_TENTATIVA_POR_EMAIL.set(chave, agora);
-  return true;
-}
-
-async function completarNoTempoMinimo<T>(inicio: number, trabalho: Promise<T>): Promise<T> {
-  const [resultado] = await Promise.all([
-    trabalho,
-    new Promise((resolve) => setTimeout(resolve, Math.max(0, TEMPO_MINIMO_RESPOSTA_MS - (Date.now() - inicio)))),
-  ]);
-  return resultado;
-}
+const podeTentar = criarLimitadorPorChave(JANELA_REPETICAO_MS);
 
 export async function POST(request: NextRequest) {
   const inicio = Date.now();
@@ -135,7 +105,8 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error("[recuperar-senha numera] erro inesperado:", e);
       }
-    })()
+    })(),
+    TEMPO_MINIMO_RESPOSTA_MS
   );
 
   return comCors(NextResponse.json({ mensagem: MENSAGEM_GENERICA }));

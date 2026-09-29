@@ -18,7 +18,10 @@ const ROTAS_PUBLICAS = [
   "/redefinir-senha",
   "/auth/confirm",
   "/solicitar-acesso",
-  "/api/numera/recuperar-senha",
+  // Prefixo, não rota exata: todo endpoint sob /api/numera/* é chamado sem
+  // sessão (fetch cross-origin do site estático do Numera) — listar cada
+  // rota nova aqui uma a uma é como o bug acima aconteceu.
+  "/api/numera/",
 ];
 
 /**

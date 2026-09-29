@@ -509,6 +509,39 @@ já tem a `NUMERA_SUPABASE_SERVICE_ROLE_KEY` (do cadastro unificado).
   a ponta** (mesma limitação de sempre, sandbox sem acesso a
   `*.supabase.co`/`api.brevo.com`) — pendente o usuário configurar as
   duas env vars da Brevo e confirmar o recebimento real de um e-mail.
+  **Atualização (29/09/2026), bug real encontrado no primeiro uso**: o
+  e-mail chegou depois de configurar a Brevo, mas o teste inicial "não
+  funcionava" — causa raiz era o middleware (`src/lib/supabase/
+  middleware.ts`), que redireciona (307) qualquer rota fora de
+  `ROTAS_PUBLICAS` para `/login` quando não há sessão. `/api/numera/
+  recuperar-senha` nunca esteve nessa lista, então o preflight `OPTIONS`
+  do CORS já vinha com 307 — confirmado nos runtime logs da Vercel
+  (`OPTIONS /api/numera/recuperar-senha 307`), a rota nunca chegava a
+  executar. Corrigido acrescentando o **prefixo** `/api/numera/` a
+  `ROTAS_PUBLICAS` (não a rota exata — evita repetir o mesmo bug para a
+  próxima rota sob esse caminho). De carona, mesmo bug em
+  `/solicitar-acesso` (nunca tinha sido adicionada à lista — o link
+  "Solicitar acesso" do `/login` levava direto de volta pro `/login`,
+  em loop, para qualquer pessoa sem sessão).
+
+- **Endpoint novo: `/api/numera/resolver-login`** (preparação do PR3 do
+  plano de migração de auth do Numera — `docs/PLANO_MIGRACAO_AUTH.md`
+  no repo `app-numera--o-de-docs`). O login do Numera aceita "usuário ou
+  e-mail"; a decisão do plano foi manter isso resolvendo username→e-mail
+  **por uma função no servidor, não uma RPC pública direta** (uma RPC
+  livre deixaria qualquer um consultar `username, email` via REST — o
+  mesmo problema que a RLS aberta da tabela já tem hoje). Este endpoint
+  faz exatamente essa resolução via `criarClienteNumeraAdmin()`
+  (service role, sem RLS), sempre devolvendo `{email: null}` para
+  username inexistente — mesmo padrão anti-enumeração (tempo constante +
+  janela de repetição) do endpoint de recuperação, extraído para
+  `src/lib/anti-enumeracao.ts` (`completarNoTempoMinimo`/
+  `criarLimitadorPorChave`) para não duplicar entre os dois. Endpoint
+  publicado, mas **ainda não é chamado por nada** — o Numera só vai usá-lo
+  quando o PR3 (virada do front, janela combinada com o dono) for
+  publicado; até lá, zero efeito visível, mesma lógica de "aditivo,
+  seguro de publicar a qualquer hora" já usada nas migrations do PR1 do
+  Numera.
 
 ## Como continuar de outro computador
 
