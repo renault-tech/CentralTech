@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
 import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
+import { completarNoTempoMinimo } from "@/lib/anti-enumeracao";
+import { enviarEmailBrevo } from "@/lib/email/brevo";
+import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { destinoSeguro } from "@/lib/seguranca/destino-seguro";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteSchemaComSessao } from "@/lib/supabase/schema-com-sessao";
@@ -185,16 +188,49 @@ export async function solicitarRecuperacao(
     return { erro: analise.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const supabase = await criarClienteServidor();
+  // 30/09/2026: `resetPasswordForEmail` passa pelo `/verify` do GoTrue, que
+  // só respeita `redirectTo` se ele estiver na allow-list — o domínio do
+  // Hub não está (nenhum evento do projeto compartilhado foi aceito com
+  // destino aqui), então o link caía na Site URL (raiz do Compras), sem o
+  // cookie do verificador PKCE deste domínio: recuperação de senha do Hub
+  // não funcionava. Agora o link é gerado pela Admin API e o token é
+  // validado aqui mesmo (`/auth/confirm`), sem redirect do GoTrue.
+  const email = analise.data.email;
+  const inicio = Date.now();
   const origem = await origemDaRequisicao();
-
-  const { error } = await supabase.auth.resetPasswordForEmail(analise.data.email, {
-    redirectTo: `${origem}/redefinir-senha`,
-  });
-
-  if (error) {
-    console.error("[solicitarRecuperacao] erro:", error);
-  }
+  await completarNoTempoMinimo(
+    inicio,
+    (async () => {
+      const { data, error } = await criarClienteAdminBruto().auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+      const tokenHash = data?.properties?.hashed_token;
+      if (error || !tokenHash) {
+        // Inclui o caso "e-mail sem conta" — não pode vazar para fora.
+        if (error) console.error("[solicitarRecuperacao] generateLink:", error.message);
+        return;
+      }
+      const link = `${origem}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fredefinir-senha`;
+      const resultado = await enviarEmailBrevo({
+        destinatarioEmail: email,
+        assunto: "Recuperação de senha — Central Cataguases",
+        html: `
+          <p>Olá,</p>
+          <p>Recebemos um pedido para definir uma nova senha da sua conta na <b>Central
+          Cataguases</b> (a mesma senha vale para Compras e Requerimentos).</p>
+          <p><a href="${link}" style="display:inline-block;background:#0C1D33;color:#fff;
+          padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600;">
+          Definir nova senha</a></p>
+          <p>Se você não pediu isso, pode ignorar este e-mail — sua senha continua a mesma.</p>
+          <p style="color:#94a3b8;font-size:12px;">Este link expira em algumas horas e só
+          pode ser usado uma vez.</p>
+        `,
+      });
+      if (!resultado.ok) console.error("[solicitarRecuperacao] Brevo:", resultado.erro);
+    })(),
+    1200
+  );
 
   return { enviado: true };
 }

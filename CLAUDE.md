@@ -1142,6 +1142,35 @@ de significar "ninguém mais entra".
     testado ponta a ponta** (sandbox não alcança `*.supabase.co`/
     `*.vercel.app`); conferir nos `auth_logs` após o deploy.
 
+- **Auditoria de todos os cadastros (58 no projeto compartilhado, 42 no
+  Numera) atrás das mesmas barreiras.** Cruzamento por e-mail entre
+  `auth.users`/`hub.usuarios`/`hub.acessos_modulo`/`public.usuarios`/
+  `requerimentos.usuarios` e `auth.users`/`public.users` do Numera, com a
+  senha do Numera conferida contra a legada via `crypt()` (sem expor nada).
+  - 29 contas do Hub nunca fizeram login (senha aleatória do
+    provisionamento). 27 têm conta aprovada no Numera com o mesmo e-mail e
+    senha conhecida → cobertas por `alinharSenhaComNumera`. As outras:
+    **Majella** (a senha "legada" dela no Numera tem 36 caracteres — é o UUID
+    aleatório do próprio provisionamento, e nem bate com o `auth.users` de
+    lá: não conhece senha nenhuma em lugar nenhum) e
+    `serv.contratos@cataguases.teste` (conta de teste ativa, nunca usada).
+  - Único recurso para quem não conhece senha é o "esqueci a senha" do Hub
+    — e ele também dependia do redirect do GoTrue: nenhum evento do projeto
+    compartilhado jamais teve destino aceito no domínio do Hub, então o
+    link caía na raiz do Compras, sem o cookie do verificador PKCE.
+    `solicitarRecuperacao` passou a gerar o link pela Admin API, validar em
+    `/auth/confirm` do próprio Hub e enviar pela Brevo (`enviarEmailBrevo`),
+    com tempo mínimo de resposta (anti-enumeração).
+  - Pendências de cadastro, não de código (decisão do dono): **Leandra**
+    tem e-mail diferente no Hub (`leandraoliveiradelgado@`) e no Numera
+    (`leandra.cataguases@`) → o clique em Numera no Hub não acha a conta
+    dela lá; **Ludmila Fontoura** tem conta aprovada no Numera mas o Hub não
+    lista o módulo; conta órfã no Auth do Numera com e-mail digitado errado
+    (`barbosagabriel2004g@gmai.com`, sem perfil). Risco residual: 10 pessoas
+    têm senha de 6 caracteres no Numera — se o projeto compartilhado exigir
+    mais que isso, `updateUserById` recusa e elas precisam do "esqueci a
+    senha" do Hub.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
