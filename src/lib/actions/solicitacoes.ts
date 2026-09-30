@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
+import { origemDaRequisicao } from "@/lib/actions/auth";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { MODULOS } from "@/lib/modulos-info";
@@ -91,7 +92,11 @@ export async function aprovarSolicitacao(
   }
 
   const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, solicitacao.email)
+    ? await gerarLinkPrimeiroAcesso(
+        adminCompartilhado,
+        solicitacao.email,
+        `${await origemDaRequisicao()}/redefinir-senha`
+      )
     : undefined;
 
   const pessoa = {

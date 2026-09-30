@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
+import { origemDaRequisicao } from "@/lib/actions/auth";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import {
@@ -99,7 +100,7 @@ export async function definirAcesso(dados: {
   }
 
   const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email)
+    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email, `${await origemDaRequisicao()}/redefinir-senha`)
     : undefined;
 
   const pessoa = { nome, email };

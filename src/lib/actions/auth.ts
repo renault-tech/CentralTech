@@ -80,8 +80,10 @@ export type EstadoMudarSenhaLogado = {
   sucesso?: boolean;
 };
 
-/** Origem (protocolo + host) da requisição atual, para montar links de retorno. */
-async function origemDaRequisicao(): Promise<string> {
+/** Origem (protocolo + host) da requisição atual, para montar links de retorno.
+ * Exportada porque `gerarLinkPrimeiroAcesso` (provisionamento-modulos.ts)
+ * precisa do mesmo cálculo para montar o `redirectTo` do link de convite. */
+export async function origemDaRequisicao(): Promise<string> {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? "https";

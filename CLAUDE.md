@@ -1015,6 +1015,83 @@ de significar "ninguém mais entra".
   não precisar de mock; falta só confirmar no deploy que o toggle do
   Numera realmente aparece e funciona nos dois sentidos.
 
+- **Bug real de produção: loop infinito de login + link de primeiro
+  acesso sem `redirectTo`** (relato do usuário via print: navegador preso
+  em `localhost:3000/#access_token=...`, `ERR_CONNECTION_REFUSED`, ao
+  tentar entrar pelo link do Hub). Investigação por `query_logs`
+  (`auth_logs`, projeto compartilhado `nfijlzndlioefayctbsh`): um usuário
+  real (`odomarribeiro@gmail.com`, conta e acesso ao Compras já válidos —
+  não é problema de cadastro) preso gerando um magic link novo a cada
+  8-40 segundos por 8 minutos seguidos, sempre com `referer` apontando
+  pro `/auth/entrar-via-hub` do Compras e `/verify` retornando sucesso
+  (303) a cada vez — o SSO "funcionava" a cada tentativa, mas algo sempre
+  mandava o usuário de volta pro início.
+  - **Duas causas encaixadas, uma corrigível aqui e outra não**:
+    (1) suspeita forte, **não confirmável por nenhum tool desta sessão**:
+    o `redirectTo` do magic link (`gerarLinkSso`,
+    `https://app-compras-brown.vercel.app/auth/entrar-via-hub?proximo=...`)
+    provavelmente não bate com nenhuma entrada da allow-list "Redirect
+    URLs" do projeto Supabase compartilhado — sem match, o GoTrue ignora
+    o `redirectTo` pedido e usa a "Site URL" do projeto, plausivelmente
+    ainda o padrão de fábrica `http://localhost:3000` — exatamente o
+    destino do print. Mesma classe de configuração já suspeita numa sessão
+    anterior para o caso "clicar em Requerimentos abria o Compras".
+    (2) bug de CÓDIGO, real e corrigido: em App-Compras e Requerimentos,
+    `(protegido)/layout.tsx` fazia `redirect("/login")` sem flag quando
+    não achava usuário — e a lógica de SSO silencioso de `/login`
+    (construída nesta sessão) tenta autenticar de novo automaticamente
+    sempre que a URL não tem `motivo`/`ssoFalhou=1`. Se o SSO "der certo"
+    mas a sessão não for reconhecida de volta no layout por qualquer razão
+    (a mais provável sendo justamente cair em `localhost` e nunca voltar),
+    o resultado é um loop 100% automático — bate com o padrão observado.
+    Corrigido nos dois repositórios (`App-Compras` PR #9, merged;
+    `app-requerimentos-camara`, commit direto em `main`): todo
+    `redirect("/login")` sem flag na área protegida agora usa
+    `redirect("/login?ssoFalhou=1")`, mesmo guard que `sair()` já usava.
+  - **A causa (1) não pode ser corrigida por código** — é configuração do
+    painel do Supabase (Authentication → URL Configuration), sem nenhum
+    tool nesta sessão para ler/escrever "Site URL"/"Redirect URLs".
+    Repassado ao usuário: confirmar que "Site URL" não é mais
+    `http://localhost:3000` (o mais coerente é apontar pra este Hub, já
+    que é o "dono" das contas compartilhadas) e que "Redirect URLs" inclui
+    pelo menos `https://app-compras-brown.vercel.app/**` e
+    `https://<domínio do Requerimentos>/**` — coringas cobrem qualquer
+    caminho/query string sem cadastrar um por um.
+  - **Bug relacionado, mais antigo, corrigido aqui de carona**:
+    `gerarLinkPrimeiroAcesso()` (`src/lib/actions/
+    provisionamento-modulos.ts`, usada no link de primeiro acesso de quem
+    é aprovado numa solicitação ou tem acesso concedido direto em
+    Configurações) nunca passava `redirectTo` ao
+    `generateLink({type:"invite"})` — dependia 100% da mesma "Site URL"
+    (idem, possivelmente `localhost:3000`) pra saber pra onde mandar a
+    pessoa no primeiro clique. `ClienteComAuthAdmin.generateLink` ganhou
+    `options?: { redirectTo?: string }`; `gerarLinkPrimeiroAcesso` passou
+    a exigir `redirectTo` do chamador. Conta compartilhada
+    (Compras/Requerimentos/Hub, mesmo `auth.users`): aponta pra
+    `/redefinir-senha` **deste** Hub — reaproveita a mesma página de
+    CLIENTE que já trata o fragmento `#access_token=...` da recuperação de
+    senha via `GuardaRecuperacao` (um link de invite usa o mesmo mecanismo
+    de token único no fragmento), funciona independente de quais módulos
+    exatos foram concedidos porque é uma senha só, compartilhada. `origem
+    DaRequisicao()` (antes privada em `auth.ts`) foi exportada para os dois
+    call sites (`solicitacoes.ts`, `configuracoes.ts`) reaproveitarem, em
+    vez de duplicar o cálculo de protocolo+host. Numera (projeto à parte):
+    aponta pra `MODULOS.numera.url` (a raiz do app) — mesma convenção já
+    usada em `gerar-link.ts` (`DESTINO_SSO.numera`), mas **sem resolver o
+    gap estrutural já conhecido**: o `app.js` do Numera só escuta o evento
+    `PASSWORD_RECOVERY`, não `SIGNED_IN` genérico, então um convite
+    (`type: "invite"`) pode não disparar a tela de definir senha lá — não
+    corrigido nesta rodada por exigir mudança no próprio `app.js` do
+    Numera e não ter evidência de que este incidente específico passou por
+    esse caminho (a conta do usuário afetado já existia há 16 dias — isto
+    é sobre convites de conta NOVA).
+  - Verificado: `tsc`/`eslint`/`npm test` e `next build` verdes nos 3
+    repositórios (Compras, Requerimentos, Hub). **Não verificado ponta a
+    ponta no navegador** (sandbox não alcança `*.vercel.app`/
+    `*.supabase.co`) — a correção do guard `ssoFalhou=1` quebra o loop por
+    construção, mas a causa-raiz de fábrica (Site URL/Redirect URLs) só o
+    usuário pode confirmar e corrigir no painel do Supabase.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`
