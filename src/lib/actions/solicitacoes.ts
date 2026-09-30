@@ -10,6 +10,7 @@ import { MODULOS } from "@/lib/modulos-info";
 import {
   encontrarOuCriarConta,
   gerarLinkPrimeiroAcesso,
+  linkPrimeiroAcessoHub,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -95,7 +96,7 @@ export async function aprovarSolicitacao(
     ? await gerarLinkPrimeiroAcesso(
         adminCompartilhado,
         solicitacao.email,
-        `${await origemDaRequisicao()}/redefinir-senha`
+        linkPrimeiroAcessoHub(await origemDaRequisicao())
       )
     : undefined;
 

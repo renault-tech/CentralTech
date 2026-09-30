@@ -24,7 +24,7 @@ import { criarClienteCompras } from "@/lib/supabase/compras-cliente";
 import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { MODULOS } from "@/lib/modulos-info";
+import { origemDaRequisicao } from "@/lib/actions/auth";
 import type { Modulo } from "@/types/database";
 
 export type DecisaoCompras = { perfil: string; setorId: string | null };
@@ -60,9 +60,8 @@ export type ClienteComAuthAdmin = {
       generateLink: (args: {
         type: "invite" | "recovery";
         email: string;
-        options?: { redirectTo?: string };
       }) => Promise<{
-        data: { properties?: { action_link?: string } | null } | null;
+        data: { properties?: { action_link?: string; hashed_token?: string } | null } | null;
         error: { message: string } | null;
       }>;
     };
@@ -106,36 +105,43 @@ export async function encontrarOuCriarConta(
 }
 
 /**
- * Bug real corrigido (30/09/2026): esta função nunca passou `redirectTo` ao
- * `generateLink` — sem ele, o GoTrue usa a "Site URL" configurada no painel
- * do projeto Supabase para montar o destino do link, que é `http://localhost:3000`
- * por padrão (o valor de fábrica do Supabase) até alguém trocar
- * manualmente. Um convite gerado assim manda a pessoa para
- * `localhost:3000` no primeiro clique — exatamente o "ERR_CONNECTION_REFUSED"
- * relatado por um usuário nesta data. Agora `redirectTo` é obrigatório no
- * chamador: para a conta compartilhada (Compras/Requerimentos/Hub) aponta
- * para `/redefinir-senha` do próprio Hub (mesma página de CLIENTE que já
- * trata o fragmento `#access_token=...` da recuperação de senha via
- * `GuardaRecuperacao` — um link de invite usa o mesmo mecanismo de token
- * único no fragmento); para o Numera (projeto Supabase separado) aponta
- * para a raiz do app. Isso não depende mais da "Site URL" de nenhum dos
- * dois projetos estar configurada corretamente.
+ * Link de primeiro acesso ("defina sua senha"). Dois bugs reais corrigidos
+ * em 30/09/2026:
+ * - era `type: "invite"`, mas a conta já acabou de ser criada por
+ *   `encontrarOuCriarConta` — o GoTrue recusa convite para e-mail já
+ *   cadastrado, então o link simplesmente não era gerado (as contas do Hub
+ *   criadas assim ficaram com uma senha aleatória que ninguém conhece);
+ * - o `action_link` passa pelo `/verify` do GoTrue, que ignora o destino
+ *   pedido se ele não estiver na allow-list e cai na "Site URL"
+ *   (`localhost:3000` no Numera).
+ * Agora é `recovery` (vale para conta existente) e só o `hashed_token` é
+ * usado: `montarLink` leva a um endpoint nosso que valida no servidor.
  */
 export async function gerarLinkPrimeiroAcesso(
   admin: ClienteComAuthAdmin,
   email: string,
-  redirectTo: string
+  montarLink: (tokenHash: string) => string
 ): Promise<string | undefined> {
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "invite",
-    email,
-    options: { redirectTo },
-  });
-  if (error) {
+  const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
+  const tokenHash = data?.properties?.hashed_token;
+  if (error || !tokenHash) {
     console.error("[gerarLinkPrimeiroAcesso] falhou:", error);
     return undefined;
   }
-  return data?.properties?.action_link;
+  return montarLink(tokenHash);
+}
+
+/** Primeiro acesso da conta compartilhada: o `/auth/confirm` do Hub valida o
+ * token, grava a sessão em cookie e leva a `/redefinir-senha`. */
+export function linkPrimeiroAcessoHub(origemHub: string) {
+  return (tokenHash: string) =>
+    `${origemHub}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fredefinir-senha`;
+}
+
+/** Primeiro acesso no Numera: passa pelo Hub (`/api/numera/abrir-link`). */
+export function linkPrimeiroAcessoNumera(origemHub: string) {
+  return (tokenHash: string) =>
+    `${origemHub}/api/numera/abrir-link?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 }
 
 export async function aprovarCompras(
@@ -302,7 +308,11 @@ export async function aprovarNumera(
   }
 
   const linkPrimeiroAcesso = criadaAgora
-    ? await gerarLinkPrimeiroAcesso(numeraAdmin, pessoa.email, MODULOS.numera.url)
+    ? await gerarLinkPrimeiroAcesso(
+        numeraAdmin,
+        pessoa.email,
+        linkPrimeiroAcessoNumera(await origemDaRequisicao())
+      )
     : undefined;
 
   return { sucesso: true, linkPrimeiroAcesso };

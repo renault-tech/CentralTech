@@ -10,6 +10,7 @@ import { criarClienteAdmin } from "@/lib/supabase/admin";
 import {
   encontrarOuCriarConta,
   gerarLinkPrimeiroAcesso,
+  linkPrimeiroAcessoHub,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -100,7 +101,7 @@ export async function definirAcesso(dados: {
   }
 
   const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email, `${await origemDaRequisicao()}/redefinir-senha`)
+    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email, linkPrimeiroAcessoHub(await origemDaRequisicao()))
     : undefined;
 
   const pessoa = { nome, email };

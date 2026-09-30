@@ -1092,6 +1092,56 @@ de significar "ninguém mais entra".
     construção, mas a causa-raiz de fábrica (Site URL/Redirect URLs) só o
     usuário pode confirmar e corrigir no painel do Supabase.
 
+- **Quatro usuários, três barreiras (Lídia entra; Odomar, Alexandre e Junia
+  não) — SSO e primeiro acesso deixam de depender do `/verify` do GoTrue.**
+  Diagnóstico pelos `auth_logs` dos DOIS projetos: o campo `referer` de lá é
+  o destino que o GoTrue aceitou após conferir a allow-list (ou a Site URL,
+  quando recusa). O projeto do **Numera** registra `http://localhost:3000`
+  em todo evento (Site URL de fábrica, domínio do app fora da allow-list) —
+  foi dali o print de `localhost:3000`, não do projeto compartilhado como
+  suposto no item anterior.
+  - **Lídia**: entra direto no Numera com a senha dela — sem redirect, OK.
+  - **Odomar**: Hub → Numera caía em localhost (~40 cliques entre 10:24 e
+    11:23). Hub → Compras também nunca gravava a sessão: o
+    `createBrowserClient` do `@supabase/ssr` usa fluxo PKCE, que recusa
+    `#access_token=` no fragmento ("Not a valid PKCE flow url").
+  - **Alexandre e Junia**: sabem a senha do Numera (conferido comparando o
+    hash de `auth.users` de lá com a senha legada, sem expor nada), mas a
+    conta do Hub foi criada por `encontrarOuCriarConta` com senha aleatória,
+    e o link de primeiro acesso nunca existiu: `generateLink({type:
+    "invite"})` para e-mail que acabou de ser criado é recusado pelo GoTrue.
+  - **Correções**:
+    - `gerarLinkSso` (`src/lib/sso/gerar-link.ts`): usa só o
+      `hashed_token`. Compras/Requerimentos → `{app}/auth/confirm?
+      token_hash=...&type=magiclink&next=...` (o app valida no servidor com
+      `verifyOtp` e grava cookie). Numera → o próprio Hub faz `verifyOtp` e
+      redireciona com a sessão no fragmento (`urlComSessaoNoFragmento`,
+      mesmo formato do GoTrue; o Numera usa cliente implícito, aceita).
+    - `/api/numera/abrir-link` (novo, público pelo prefixo `/api/numera/`):
+      destino dos e-mails de recuperação do Numera e do primeiro acesso de
+      lá; valida o token no servidor e entrega `type=recovery` ao Numera
+      (dispara a tela de definir senha, `PASSWORD_RECOVERY`).
+    - `gerarLinkPrimeiroAcesso`: `invite` → `recovery` (vale para conta já
+      existente) + `montarLink` (`linkPrimeiroAcessoHub` → `/auth/confirm`
+      do Hub com `next=/redefinir-senha`; `linkPrimeiroAcessoNumera` →
+      `/api/numera/abrir-link`).
+    - `alinharSenhaComNumera` (`src/lib/auth/senha-numera.ts`), chamada por
+      `entrar()` quando a senha falha: se a conta do Hub existe, está ativa
+      e **nunca fez login** (`last_sign_in_at` nulo — ainda com a senha
+      aleatória), e o Numera aceita a mesma senha para o mesmo e-mail com
+      conta aprovada, grava essa senha no Hub e tenta de novo. Nunca mexe
+      em conta já usada (não sobrescreve senha de Compras/Requerimentos).
+      A sessão aberta no Numera para conferir é encerrada com `scope:
+      "local"` (o padrão `global` derrubaria as sessões da pessoa lá).
+  - Nada disso depende mais da Site URL/Redirect URLs dos projetos. Continua
+    valendo corrigir o painel do Numera (Site URL = domínio do app) por
+    higiene, e incluir `https://app-requerimentos-camara.vercel.app/**` na
+    allow-list do projeto compartilhado para o "esqueci a senha" do
+    Requerimentos (o do Compras foi contornado no próprio app).
+  - Verificado: `tsc`/`eslint`/`npm test`/`next build` verdes. **Não
+    testado ponta a ponta** (sandbox não alcança `*.supabase.co`/
+    `*.vercel.app`); conferir nos `auth_logs` após o deploy.
+
 ## Como continuar de outro computador
 
 1. `git clone`, `nvm use` (`.nvmrc`), `npm install --legacy-peer-deps`

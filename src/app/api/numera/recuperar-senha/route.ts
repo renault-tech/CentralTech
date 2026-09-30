@@ -70,10 +70,17 @@ export async function POST(request: NextRequest) {
         const { data, error } = await numeraAdmin.auth.admin.generateLink({
           type: "recovery",
           email,
-          options: { redirectTo: `${ORIGEM_NUMERA}/` },
         });
 
-        const link = data?.properties?.action_link;
+        // Não usa o `action_link` do GoTrue: o `/verify` de lá mandava pra
+        // "Site URL" (`localhost:3000`) porque o domínio do Numera não está
+        // na allow-list do projeto. O link aponta pro Hub, que valida o
+        // token no servidor e entrega a sessão ao Numera (ver
+        // `/api/numera/abrir-link`).
+        const tokenHash = data?.properties?.hashed_token;
+        const link = tokenHash
+          ? `${request.nextUrl.origin}/api/numera/abrir-link?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`
+          : null;
         if (error || !link) {
           // `generateLink` retorna erro quando o e-mail não tem conta — é
           // exatamente o caso que não deve vazar pra fora. Loga só para

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
+import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
 import { destinoSeguro } from "@/lib/seguranca/destino-seguro";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteSchemaComSessao } from "@/lib/supabase/schema-com-sessao";
@@ -105,10 +106,17 @@ export async function entrar(
 
   const supabase = await criarClienteServidor();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  let { data, error } = await supabase.auth.signInWithPassword({
     email: analise.data.email,
     password: analise.data.senha,
   });
+
+  if ((error || !data.user) && (await alinharSenhaComNumera(analise.data.email, analise.data.senha))) {
+    ({ data, error } = await supabase.auth.signInWithPassword({
+      email: analise.data.email,
+      password: analise.data.senha,
+    }));
+  }
 
   if (error || !data.user) {
     console.error("[entrar] erro do Supabase Auth:", error);
