@@ -4,7 +4,11 @@ import type { AppFeedback, FeedbackCentral, StatusFeedback, TipoFeedback } from 
 
 export type FeedbackComAnexos = FeedbackCentral & { anexosUrl: string[] };
 
-export type FiltrosFeedback = { app?: AppFeedback; tipo?: TipoFeedback; status?: StatusFeedback };
+/** `status` pode ser um único valor ou uma lista (ex.: os pendentes = novo + lido). */
+export type FiltrosFeedback = { app?: AppFeedback; tipo?: TipoFeedback; status?: StatusFeedback | StatusFeedback[] };
+
+/** Ainda exigem ação de quem gerencia — a visão padrão da gestão. */
+export const STATUS_PENDENTES: StatusFeedback[] = ["novo", "lido"];
 
 const VALIDADE_URL_SEGUNDOS = 60 * 10;
 const BUCKET = "feedback-anexos";
@@ -29,7 +33,9 @@ export async function listarFeedbackGestao(filtros: FiltrosFeedback = {}): Promi
   let q = supabase.from("feedback").select("*").order("criado_em", { ascending: false }).limit(300);
   if (filtros.app) q = q.eq("app", filtros.app);
   if (filtros.tipo) q = q.eq("tipo", filtros.tipo);
-  if (filtros.status) q = q.eq("status", filtros.status);
+  if (filtros.status) {
+    q = Array.isArray(filtros.status) ? q.in("status", filtros.status) : q.eq("status", filtros.status);
+  }
   const { data, error } = await q;
   if (error) throw new Error("Não foi possível carregar os feedbacks.");
   return comUrls(data ?? []);

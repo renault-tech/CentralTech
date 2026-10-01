@@ -5,7 +5,7 @@ import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { CartaoFeedback } from "@/components/feedback/cartao-feedback";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { listarFeedbackGestao, listarMeusFeedbacks, podeGerirFeedback } from "@/lib/dados/feedback";
+import { listarFeedbackGestao, listarMeusFeedbacks, podeGerirFeedback, STATUS_PENDENTES } from "@/lib/dados/feedback";
 import { APPS_FEEDBACK, ORDEM_APPS, ROTULO_STATUS, ROTULO_TIPO } from "@/lib/feedback/apps";
 import { cn, ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
 import type { AppFeedback, StatusFeedback, TipoFeedback } from "@/types/database";
@@ -26,7 +26,17 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
   const aba = gerencia && busca.aba !== "meus" ? "gestao" : "meus";
   const app = ORDEM_APPS.includes(busca.app as AppFeedback) ? (busca.app as AppFeedback) : undefined;
   const tipo = busca.tipo === "suporte" || busca.tipo === "sugestao" ? (busca.tipo as TipoFeedback) : undefined;
-  const status = busca.status && busca.status in ROTULO_STATUS ? (busca.status as StatusFeedback) : undefined;
+  // Padrão da gestão: só o que ainda não foi resolvido. "todos" ou um status
+  // específico no filtro mostra o resto.
+  const filtroStatus = busca.status ?? "pendentes";
+  const status: StatusFeedback | StatusFeedback[] | undefined =
+    filtroStatus === "pendentes"
+      ? STATUS_PENDENTES
+      : filtroStatus === "todos"
+        ? undefined
+        : filtroStatus in ROTULO_STATUS
+          ? (filtroStatus as StatusFeedback)
+          : STATUS_PENDENTES;
 
   const itens =
     aba === "gestao" ? await listarFeedbackGestao({ app, tipo, status }) : await listarMeusFeedbacks(usuario.id);
@@ -66,12 +76,18 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
             {[
               { name: "app", rotulo: "Aplicativo", valor: busca.app, opcoes: ORDEM_APPS.map((a) => [a, APPS_FEEDBACK[a].nome]) },
               { name: "tipo", rotulo: "Tipo", valor: busca.tipo, opcoes: Object.entries(ROTULO_TIPO) },
-              { name: "status", rotulo: "Status", valor: busca.status, opcoes: Object.entries(ROTULO_STATUS) },
+              {
+                name: "status",
+                rotulo: "Status",
+                valor: filtroStatus,
+                semTodos: true,
+                opcoes: [["pendentes", "Pendentes (novo + em análise)"], ["todos", "Todos"], ...Object.entries(ROTULO_STATUS)],
+              },
             ].map((c) => (
               <div key={c.name} className="flex flex-col gap-1">
                 <label htmlFor={`f-${c.name}`} className="text-xs text-slate-500">{c.rotulo}</label>
                 <select id={`f-${c.name}`} name={c.name} defaultValue={c.valor ?? ""} className={ESTILO_CAMPO}>
-                  <option value="">Todos</option>
+                  {!("semTodos" in c) && <option value="">Todos</option>}
                   {c.opcoes.map(([v, r]) => (
                     <option key={v} value={v}>{r}</option>
                   ))}
@@ -81,7 +97,7 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
             <button type="submit" className="rounded-md bg-cataguases-marinho px-4 py-1.5 text-sm font-medium text-white hover:bg-cataguases-marinho/90">
               Filtrar
             </button>
-            {(app || tipo || status) && (
+            {(app || tipo || filtroStatus !== "pendentes") && (
               <Link href="/feedback" className="text-sm text-slate-500 hover:underline">Limpar</Link>
             )}
           </form>
@@ -89,6 +105,7 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
 
         <p className="mt-4 text-xs text-slate-500">
           {itens.length} {itens.length === 1 ? "item" : "itens"}
+          {aba === "gestao" && filtroStatus === "pendentes" && " pendentes — use o filtro Status para ver os resolvidos"}
         </p>
         <div className="mt-2 space-y-3">
           {itens.length === 0 ? (
