@@ -1194,3 +1194,30 @@ de significar "ninguém mais entra".
    antes de aplicar (mesmo processo documentado no CLAUDE.md do
    App-Compras — este repo compartilha o banco, não as regras têm que
    ser reinventadas).
+
+- **Feedback centralizado (01/10/2026).** Todo app grava em `hub.feedback`
+  (migration `20261001000000`, já aplicada) com `app` = origem; quem gerencia
+  é `hub.pode_gerir_feedback()` (admin do Hub OU admin/diretor do Compras).
+  - **Envio**: apps do projeto compartilhado (Compras, Requerimentos, Hub)
+    chamam a RPC `hub.enviar_feedback` com o token da sessão (app fixo
+    nos apps; escolhido pela pessoa só no Hub). O Numera (outro projeto)
+    manda para `/api/feedback` (CORS só para o domínio dele) com o token de
+    lá, validado com a service_role do Numera; anexos vão para
+    `numera/{uid}/...` no mesmo bucket `feedback-anexos`. Identidade vem
+    sempre do token.
+  - **Gestão** em `/feedback` (todos os apps, filtros, status novo/em
+    análise/resolvido/não possível, selo de novos no header); qualquer pessoa
+    vê "Meus envios" (histórico + status) — dentro de cada app também.
+  - **Cor por app** (`src/lib/feedback/apps.ts` + `hub.apps_feedback`):
+    compras #0C1D33, requerimentos #C63B22, numera #0071e3, hub #E9A63B.
+    **App novo = 1 linha em `hub.apps_feedback` + 1 entrada em `APPS_FEEDBACK`
+    + megafone com o slug dele.**
+  - A tabela antiga `public.feedback_usuarios` (Compras) ficou intacta; os
+    registros foram copiados. Compras perdeu a rota `/feedback`.
+  - Armadilha: DDL em `storage.objects` pelo `execute_sql` estoura o tempo
+    limite; `apply_migration` com só o `create policy` funcionou.
+- **Padrão de header (todos os apps)**: faixa de 3px no topo na cor do app;
+  marca à esquerda; à direita, nesta ordem: megafone de feedback → ajuda →
+  usuário → Sair. Hub e Requerimentos (header escuro) e Compras (claro, com
+  barra lateral) seguem; Numera (sem header, só barra lateral) leva a faixa
+  na barra e o megafone ao lado do "?" flutuante.
