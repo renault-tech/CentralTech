@@ -8,7 +8,15 @@ import { PainelConfiguracoes } from "@/components/hub/painel-configuracoes";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaUsuarios() {
+export default async function PaginaUsuarios({
+  searchParams,
+}: {
+  searchParams: Promise<{ novo?: string }>;
+}) {
+  // `?novo=1`: os apps (Compras, Requerimentos, Numera) mandam "Conceder
+  // acesso" para cá — o acesso é gerenciado só no Hub, e o formulário já
+  // abre pronto.
+  const { novo } = await searchParams;
   const [usuarios, setoresCompras, secretariasRequerimentos, documentosNumera] = await Promise.all([
     listarUsuariosComAcessos(),
     listarSetoresCompras().catch((e) => {
@@ -28,6 +36,7 @@ export default async function PaginaUsuarios() {
   return (
     <PainelConfiguracoes
       usuarios={usuarios}
+      abrirNovo={novo === "1"}
       setoresCompras={setoresCompras}
       secretariasRequerimentos={secretariasRequerimentos}
       documentosNumera={documentosNumera}

@@ -30,7 +30,8 @@ export function PainelConfiguracoes({
   setoresCompras,
   secretariasRequerimentos,
   documentosNumera,
-}: { usuarios: UsuarioComAcessos[] } & Catalogos) {
+  abrirNovo = false,
+}: { usuarios: UsuarioComAcessos[]; abrirNovo?: boolean } & Catalogos) {
   // Bug real reportado pelo usuário: o formulário de edição abria sempre
   // ABAIXO da tabela inteira (estado único compartilhado), então clicar em
   // "Editar" numa das primeiras linhas de uma tabela longa mudava o estado
@@ -39,7 +40,7 @@ export function PainelConfiguracoes({
   // linha (mesmo padrão de linha expansível já usado em Processos/Contratos
   // no App-Compras), sem precisar rolar até o fim da tabela.
   const [editandoId, setEditandoId] = React.useState<string | null>(null);
-  const [criandoNovo, setCriandoNovo] = React.useState(false);
+  const [criandoNovo, setCriandoNovo] = React.useState(abrirNovo);
   const [busca, setBusca] = React.useState("");
 
   // Busca por nome, e-mail, módulo liberado ("compras", "numera"...) ou
