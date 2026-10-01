@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Inbox, ShieldAlert, UploadCloud, Users } from "lucide-react";
+import { Inbox, ShieldAlert, Users } from "lucide-react";
 
 import { listarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 
@@ -19,7 +19,7 @@ type CardConfig = {
  * Índice de Configurações: um card por área, mesmo padrão já usado no
  * App-Compras. O gate de admin_hub já é feito no layout (`layout.tsx`),
  * então esta página só busca a contagem para o selo de "Solicitações"
- * (o único indicador acionável — usuários/importação/bloqueio não têm
+ * (o único indicador acionável — usuários/bloqueio não têm
  * um "pendente" natural para destacar).
  */
 export default async function PaginaConfiguracoes() {
@@ -40,13 +40,6 @@ export default async function PaginaConfiguracoes() {
       descricao: "Quem já tem conta, quais módulos vê, e quem é admin do hub.",
       Icone: Users,
       cor: "#639922",
-    },
-    {
-      href: "/configuracoes/numera",
-      titulo: "Importar do Numera",
-      descricao: "Traz para o Hub quem já tem conta aprovada só lá.",
-      Icone: UploadCloud,
-      cor: "#7C3AED",
     },
     {
       href: "/configuracoes/login-direto",

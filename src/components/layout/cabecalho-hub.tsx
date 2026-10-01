@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Brasao } from "@/components/brasao";
 import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 import { sair } from "@/lib/actions/auth";
+import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 import { Button } from "@/components/ui/button";
 import type { UsuarioHub } from "@/types/database";
 
@@ -14,7 +15,12 @@ import type { UsuarioHub } from "@/types/database";
  * testando como usuário). Clicar no brasão/nome sempre leva à Início
  * (mesmo padrão já aplicado dentro de cada módulo).
  */
-export function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
+export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
+  // Pedido do usuário: "preciso ser avisado no hub que há pedido pendente".
+  // O selo fica no próprio link de Configurações (visível em toda tela) e
+  // o link leva direto à lista de pedidos quando há algum.
+  const pendentes = usuario.admin_hub ? await contarSolicitacoesPendentes() : 0;
+
   return (
     <header className="flex items-center justify-between border-b border-slate-200 bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
       <Link
@@ -38,10 +44,17 @@ export function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
         </Link>
         {usuario.admin_hub && (
           <Link
-            href="/configuracoes"
-            className="rounded-md px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+            href={pendentes > 0 ? "/configuracoes/solicitacoes" : "/configuracoes"}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+            title={pendentes > 0 ? `${pendentes} pedido(s) de acesso aguardando decisão` : undefined}
           >
             Configurações
+            {pendentes > 0 && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cataguases-vermelho px-1.5 text-[11px] font-semibold text-white">
+                {pendentes}
+                <span className="sr-only"> pedido(s) de acesso pendente(s)</span>
+              </span>
+            )}
           </Link>
         )}
         <BotaoAjuda />

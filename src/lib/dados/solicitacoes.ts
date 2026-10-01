@@ -17,6 +17,27 @@ export {
   type DocumentoNumera,
 } from "@/lib/catalogos-solicitacao";
 
+/** Só a contagem (sem trazer as linhas) — alimenta o selo do cabeçalho e a
+ * faixa da Início, que rodam em toda navegação do admin. Qualquer falha
+ * devolve 0: o aviso nunca pode derrubar a página que o mostra. */
+export async function contarSolicitacoesPendentes(): Promise<number> {
+  try {
+    const supabase = await criarClienteServidor();
+    const { count, error } = await supabase
+      .from("solicitacoes_acesso")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente");
+    if (error) {
+      console.error("[contarSolicitacoesPendentes] falha:", error);
+      return 0;
+    }
+    return count ?? 0;
+  } catch (e) {
+    console.error("[contarSolicitacoesPendentes] erro inesperado:", e);
+    return 0;
+  }
+}
+
 export async function listarSolicitacoesPendentes(): Promise<SolicitacaoAcesso[]> {
   const supabase = await criarClienteServidor();
   const { data, error } = await supabase

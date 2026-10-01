@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Lock } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
+import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 import { abrirModulo } from "@/lib/actions/sso";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
@@ -23,7 +25,10 @@ export default async function PaginaInicial({
     redirect("/login?motivo=desativado");
   }
 
-  const modulos = await listarModulosComAcesso(usuario);
+  const [modulos, pendentes] = await Promise.all([
+    listarModulosComAcesso(usuario),
+    usuario.admin_hub ? contarSolicitacoesPendentes() : Promise.resolve(0),
+  ]);
   const temAlgumAcesso = modulos.some((m) => m.temAcesso);
 
   return (
@@ -37,6 +42,21 @@ export default async function PaginaInicial({
           subtitulo="Escolha o sistema que deseja acessar. O login de cada um continua sendo o mesmo que você já usa."
           tamanho="grande"
         />
+
+        {pendentes > 0 && (
+          <Link
+            href="/configuracoes/solicitacoes"
+            className="mt-6 flex items-center justify-between gap-3 rounded-lg border border-cataguases-vermelho/30 bg-red-50 px-4 py-3 text-sm text-red-800 transition-colors hover:bg-red-100"
+          >
+            <span>
+              <b>
+                {pendentes} {pendentes === 1 ? "pedido de acesso aguarda" : "pedidos de acesso aguardam"}
+              </b>{" "}
+              a sua decisão.
+            </span>
+            <span className="shrink-0 font-medium">Ver pedidos →</span>
+          </Link>
+        )}
 
         {!temAlgumAcesso && (
           <p className="mt-8 rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500">

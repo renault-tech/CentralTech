@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, Copy, ShieldCheck } from "lucide-react";
+import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
@@ -14,6 +14,10 @@ import type { DecisaoAprovacao, ResultadoModulo } from "@/lib/actions/provisiona
 import type { Modulo } from "@/types/database";
 
 const TODOS_MODULOS = Object.values(MODULOS);
+
+function normalizar(texto: string): string {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
 
 type Catalogos = {
   setoresCompras: CatalogoItem[];
@@ -36,6 +40,28 @@ export function PainelConfiguracoes({
   // no App-Compras), sem precisar rolar até o fim da tabela.
   const [editandoId, setEditandoId] = React.useState<string | null>(null);
   const [criandoNovo, setCriandoNovo] = React.useState(false);
+  const [busca, setBusca] = React.useState("");
+
+  // Busca por nome, e-mail, módulo liberado ("compras", "numera"...) ou
+  // "admin"/"inativo" — sem acento nem caixa, para achar "Júnia" digitando
+  // "junia". Tudo no cliente: a lista inteira já está carregada (dezenas de
+  // contas), então não há por que ir ao servidor a cada tecla.
+  const itens = React.useMemo(() => {
+    const termo = normalizar(busca.trim());
+    if (!termo) return usuarios;
+    return usuarios.filter((u) => {
+      const alvo = normalizar(
+        [
+          u.nome,
+          u.email,
+          u.adminHub ? "admin" : "",
+          u.ativo ? "ativo" : "inativo",
+          ...u.modulos.map((m) => `${m} ${moduloInfo(m).nome}`),
+        ].join(" ")
+      );
+      return termo.split(/\s+/).every((parte) => alvo.includes(parte));
+    });
+  }, [usuarios, busca]);
 
   const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera };
   const colunas = 3 + TODOS_MODULOS.length; // Usuário, Admin, Ativo, Ações + 1 por módulo
@@ -57,9 +83,55 @@ export function PainelConfiguracoes({
         </div>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
+      {/* Barra de ações no topo (pedido do usuário): busca à esquerda,
+          "Conceder acesso" à direita — antes o botão ficava depois da
+          tabela inteira, fora da vista. O formulário abre logo abaixo. */}
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden
+          />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome, e-mail ou módulo"
+            aria-label="Buscar usuário"
+            className={`${ESTILO_CAMPO} w-full pl-8`}
+          />
+        </div>
+        <Button
+          size="sm"
+          className="shrink-0"
+          onClick={() => {
+            setEditandoId(null);
+            setCriandoNovo(true);
+          }}
+          disabled={criandoNovo}
+        >
+          <Plus className="mr-1 h-4 w-4" aria-hidden />
+          Conceder acesso
+        </Button>
+      </div>
+
+      {criandoNovo && (
+        <div className="mt-3">
+          <FormularioAcesso usuario={null} {...catalogos} onFechar={() => setCriandoNovo(false)} />
+        </div>
+      )}
+
+      <p className="mt-3 text-xs text-slate-400" aria-live="polite">
+        {busca.trim()
+          ? `${itens.length} de ${usuarios.length} usuários`
+          : `${usuarios.length} usuários`}
+      </p>
+
+      {/* Rolagem interna: a lista nunca empurra o resto da página — o
+          cabeçalho da tabela fica fixo enquanto se rola. */}
+      <div className="mt-1 max-h-[65vh] overflow-auto rounded-md border border-slate-100">
         <table className="w-full min-w-[640px] text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr className="text-left text-[11px] text-slate-400">
               <th />
               <th
@@ -88,7 +160,7 @@ export function PainelConfiguracoes({
             </tr>
           </thead>
           <tbody>
-            {usuarios.map((u) => {
+            {itens.map((u) => {
               const aberto = editandoId === u.id;
               return (
                 <React.Fragment key={u.id}>
@@ -163,10 +235,12 @@ export function PainelConfiguracoes({
                 </React.Fragment>
               );
             })}
-            {usuarios.length === 0 && (
+            {itens.length === 0 && (
               <tr>
-                <td colSpan={colunas} className="py-4 text-center text-xs text-slate-400">
-                  Nenhum usuário com acesso ainda.
+                <td colSpan={colunas} className="py-6 text-center text-xs text-slate-400">
+                  {usuarios.length === 0
+                    ? "Nenhum usuário com acesso ainda."
+                    : "Nenhum usuário encontrado para essa busca."}
                 </td>
               </tr>
             )}
@@ -174,22 +248,6 @@ export function PainelConfiguracoes({
         </table>
       </div>
 
-      {!criandoNovo ? (
-        <Button
-          size="sm"
-          className="mt-3"
-          onClick={() => {
-            setEditandoId(null);
-            setCriandoNovo(true);
-          }}
-        >
-          Conceder acesso
-        </Button>
-      ) : (
-        <div className="mt-3">
-          <FormularioAcesso usuario={null} {...catalogos} onFechar={() => setCriandoNovo(false)} />
-        </div>
-      )}
     </section>
   );
 }

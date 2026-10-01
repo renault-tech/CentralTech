@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Antes /configuracoes era uma única página empilhando as 4 seções
- * (Solicitações, Usuários, Importar do Numera, Login direto) — em
+ * (Solicitações, Usuários, Login direto) — em
  * qualquer tela normal era preciso rolar bastante para chegar na última.
  * Virou um hub de cards (mesmo padrão já usado no App-Compras:
  * `configuracoes/layout.tsx` + `AbasNavegacao`) com uma sub-rota por área;
@@ -41,7 +41,6 @@ export default async function LayoutConfiguracoes({
             abas={[
               { href: "/configuracoes/solicitacoes", rotulo: "Solicitações" },
               { href: "/configuracoes/usuarios", rotulo: "Usuários e acessos" },
-              { href: "/configuracoes/numera", rotulo: "Importar do Numera" },
               { href: "/configuracoes/login-direto", rotulo: "Login direto" },
             ]}
           />
