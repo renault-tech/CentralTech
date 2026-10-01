@@ -41,6 +41,25 @@ export type ConfigModulo = {
   login_direto_bloqueado: boolean;
 };
 
+export type AppFeedback = Modulo | "hub";
+export type TipoFeedback = "suporte" | "sugestao";
+export type StatusFeedback = "novo" | "lido" | "resolvido" | "nao_possivel";
+
+export type FeedbackCentral = {
+  id: string;
+  app: AppFeedback;
+  usuario_id: string;
+  autor_nome: string;
+  autor_email: string | null;
+  tipo: TipoFeedback;
+  mensagem: string;
+  pagina: string | null;
+  anexos: string[];
+  status: StatusFeedback;
+  criado_em: string;
+  atualizado_em: string | null;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -55,9 +74,21 @@ export type Database = {
       acessos_modulo: Tabela<AcessoModulo, "usuario_id" | "modulo", "id">;
       solicitacoes_acesso: Tabela<SolicitacaoAcesso, "nome" | "email" | "modulos_solicitados", "id" | "criado_em">;
       config_modulo: Tabela<ConfigModulo, "modulo", never>;
+      feedback: Tabela<FeedbackCentral, "app" | "usuario_id" | "autor_nome" | "mensagem", "id" | "criado_em">;
     };
     Views: Record<string, never>;
     Functions: {
+      enviar_feedback: {
+        Args: {
+          p_app: AppFeedback;
+          p_tipo: TipoFeedback;
+          p_mensagem: string;
+          p_pagina: string | null;
+          p_anexos: string[];
+        };
+        Returns: string;
+      };
+      pode_gerir_feedback: { Args: Record<string, never>; Returns: boolean };
       definir_acesso: {
         Args: {
           p_email: string;

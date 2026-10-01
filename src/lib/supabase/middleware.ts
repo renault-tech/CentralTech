@@ -22,6 +22,8 @@ const ROTAS_PUBLICAS = [
   // sessão (fetch cross-origin do site estático do Numera) — listar cada
   // rota nova aqui uma a uma é como o bug acima aconteceu.
   "/api/numera/",
+  // Chamado pelo Numera (outro projeto) com o token de lá, sem sessão do Hub.
+  "/api/feedback",
 ];
 
 /**
