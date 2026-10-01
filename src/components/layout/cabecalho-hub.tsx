@@ -28,7 +28,7 @@ export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
   const feedbackNovos = gerenciaFeedback ? await contarFeedbackNovos() : 0;
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-200 bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
+    <header className="flex items-center justify-between border-b border-t-[3px] border-b-slate-200 border-t-[#E9A63B] bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
       <Link
         href="/"
         className="flex items-center gap-3 transition-opacity hover:opacity-85"
