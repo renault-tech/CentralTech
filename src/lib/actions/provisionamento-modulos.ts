@@ -288,7 +288,22 @@ export async function aprovarNumera(
   // de verdade. Trocado por dois caminhos explícitos — update quando a
   // linha já existe, insert só quando não existe — em vez de depender
   // dessa lacuna do `upsert`.
-  const { error: erroGravar } = existente
+  // Bug real (Thalia, 01/10/2026): conta NOVA no Numera falhava aqui com
+  // `duplicate key ... users_pkey`. `existente` só olha a linha ANTES de
+  // criar a conta de Auth, mas o gatilho `criar_perfil_usuario` do Numera
+  // grava a linha em `public.users` NO MOMENTO em que `auth.users` é criado
+  // (nome = usuário, `approved=false`, sem documentos). O insert abaixo
+  // então batia na linha do próprio gatilho, o cadastro ficava incompleto e
+  // a pessoa aparecia como pendente DENTRO do Numera — uma segunda
+  // aprovação que não deveria existir (o que o Hub libera vale direto).
+  // Agora decide por update/insert olhando a linha DEPOIS de criar a conta.
+  const { data: linhaDoPerfil } = await numeraAdmin
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const { error: erroGravar } = linhaDoPerfil
     ? await numeraAdmin.from("users").update(camposComuns).eq("id", userId)
     : await numeraAdmin.from("users").insert({
         id: userId,
@@ -307,7 +322,16 @@ export async function aprovarNumera(
     return { sucesso: false, mensagem: erroGravar.message };
   }
 
-  const linkPrimeiroAcesso = criadaAgora
+  // Conta que nunca entrou (inclusive a que ficou pela metade numa
+  // tentativa anterior que falhou) também precisa do link de primeiro
+  // acesso — sem ele a pessoa fica com a senha aleatória do provisionamento.
+  let precisaPrimeiroAcesso = criadaAgora;
+  if (!precisaPrimeiroAcesso) {
+    const { data: contaNumera } = await numeraAdmin.auth.admin.getUserById(userId);
+    precisaPrimeiroAcesso = !!contaNumera.user && !contaNumera.user.last_sign_in_at;
+  }
+
+  const linkPrimeiroAcesso = precisaPrimeiroAcesso
     ? await gerarLinkPrimeiroAcesso(
         numeraAdmin,
         pessoa.email,
