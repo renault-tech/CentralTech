@@ -1209,7 +1209,7 @@ de significar "ninguém mais entra".
     análise/resolvido/não possível, selo de novos no header); qualquer pessoa
     vê "Meus envios" (histórico + status) — dentro de cada app também.
   - **Cor por app** (`src/lib/feedback/apps.ts` + `hub.apps_feedback`):
-    compras #0C1D33, requerimentos #C63B22, numera #0071e3, hub #E9A63B.
+    compras #0D9488, requerimentos #C63B22, numera #0071e3, hub #E9A63B.
     **App novo = 1 linha em `hub.apps_feedback` + 1 entrada em `APPS_FEEDBACK`
     + megafone com o slug dele.**
   - A tabela antiga `public.feedback_usuarios` (Compras) ficou intacta; os
