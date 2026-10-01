@@ -1219,5 +1219,5 @@ de significar "ninguém mais entra".
 - **Padrão de header (todos os apps)**: faixa de 3px no topo na cor do app;
   marca à esquerda; à direita, nesta ordem: megafone de feedback → ajuda →
   usuário → Sair. Hub e Requerimentos (header escuro) e Compras (claro, com
-  barra lateral) seguem; Numera (sem header, só barra lateral) leva a faixa
-  na barra e o megafone ao lado do "?" flutuante.
+  barra lateral) seguem; o Numera ganhou um cabeçalho igual (marca, Central,
+  megafone, ajuda, usuário, Sair) acima da barra lateral.
