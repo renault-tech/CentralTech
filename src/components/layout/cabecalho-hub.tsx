@@ -6,6 +6,7 @@ import { sair } from "@/lib/actions/auth";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 import { contarFeedbackNovos, podeGerirFeedback } from "@/lib/dados/feedback";
 import { BotaoFeedback } from "@/components/feedback/botao-feedback";
+import { SinoNotificacoes } from "@/components/notificacoes/sino";
 import { Button } from "@/components/ui/button";
 import type { UsuarioHub } from "@/types/database";
 
@@ -90,6 +91,7 @@ export async function CabecalhoHub({
             )}
           </Link>
         )}
+        <SinoNotificacoes usuarioId={usuario.id} />
         <BotaoFeedback appInicial={modulo?.app ?? "hub"} />
         <BotaoAjuda />
         <Link

@@ -1394,3 +1394,56 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   o arquivo da migration é reexecutável. Tabelas, FKs e gatilhos passaram por
   MCP. O banco de produção já tem as 215 emendas importadas: testar sempre em
   transação com rollback.
+
+## Avisos (notificações) ao vivo em toda a plataforma (23/10/2026)
+
+Pedido do dono: a ciência dada pela secretaria no Requerimentos "não chegava"
+ao Gabinete/Admin. Diagnóstico: a ciência era gravada (`ciencia_em` +
+evento `secretaria_deu_ciencia`, e o Gabinete conseguia lê-la), mas não havia
+aviso nenhum — só um texto pequeno dentro do requerimento. Construído um
+sistema de avisos da plataforma, entregue ao vivo pelo Supabase Realtime.
+
+- **Banco** (migration `20261023000000_hub_notificacoes.sql`, aplicada por
+  MCP em partes): `hub.notificacoes` (destinatário, app, tipo, título,
+  mensagem, link = caminho dentro do app, `chave_unica` para não repetir,
+  `lida_em`), RLS "só os meus", na publicação `supabase_realtime`. Escrita só
+  por `hub.notificar(...)` (security definer, sem EXECUTE para
+  authenticated/anon; quem age nunca recebe aviso da própria ação). Leitura:
+  `hub.resumo_notificacoes()` (não lidas por módulo) e
+  `hub.marcar_notificacoes_lidas(ids?, app?)`.
+- **Produtores** (gatilhos que engolem erro com WARNING — avisar nunca desfaz a
+  ação de origem):
+  - Requerimentos (`requerimentos.notificar_evento` em `eventos_timeline`):
+    ciência/resposta/prorrogação → Gabinete e Admin
+    (`destinatarios_gabinete`: perfis gabinete/admin + permissão
+    `atua_como_gabinete`; diretor fica de fora, decisão do dono);
+    distribuição → pessoas da secretaria de destino; devolução e documento
+    novo → secretarias vinculadas. Prazo: `requerimentos.avisar_prazos()`
+    via pg_cron `requerimentos-avisar-prazos` (8h de Brasília), a 3 dias e
+    no dia do vencimento, só secretarias sem resposta + Gabinete.
+  - Emendas (`emendas.notificar_execucao` em andamentos, impedimentos e
+    movimentos): → gestores do módulo e admins do Hub; a importação da
+    planilha não avisa (`current_query()` com "importar"); empenho/pagamento
+    gravado junto com o andamento não gera aviso duplicado.
+  - Central (`hub.notificar_solicitacao_acesso`): pedido de acesso → admins.
+  - **Compras** já tinha `public.notificacoes` (com ~1.800 não lidas
+    acumuladas): continua lá; a Central só CONTA os não lidos criados a
+    partir de `hub.config_notificacoes.corte_compras` (decisão do dono).
+  - **Numera**: segunda etapa (projeto separado).
+- **Central**: `SinoNotificacoes` no `CabecalhoHub` (toda tela, inclusive
+  Emendas) e `SeloModulo` nos cards da Início — os dois leem o mesmo store
+  do navegador (`src/lib/notificacoes/store.ts`, uma assinatura Realtime por
+  aba em `hub.notificacoes` e `public.notificacoes`). Clique leva ao ponto
+  certo: Central/Emendas direto; apps externos por
+  `/sso/silencioso?app=X&proximo=<link>` (`destinoDoAviso`).
+- **Requerimentos** (repo `app-requerimentos-camara`): `SinoRequerimentos` no
+  cabeçalho (avisos do app, ao vivo; ao chegar um aviso faz
+  `router.refresh()` — a lista atualiza sozinha), `/dashboard?req=<id>` abre
+  e rola até o requerimento, e os selos de secretaria na lista têm três
+  estados (○ aguardando ciência, ◉ ciente, ✓ respondida).
+- **Testado** em transação desfeita pelo caminho real (`dar_ciencia` como a
+  secretaria → Gabinete e Admin recebem, quem deu ciência não, diretor não),
+  distribuição, prazo (sem repetir no mesmo dia), Emendas, pedido de acesso
+  anônimo e privilégios; `get_advisors` sem exposição nova. **Não testado ao
+  vivo no navegador** (sandbox sem acesso a Supabase/Vercel): o primeiro uso
+  confirma a entrega em tempo real.

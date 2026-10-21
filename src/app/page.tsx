@@ -10,6 +10,7 @@ import { solicitarAcessoAoModulo } from "@/lib/actions/solicitar-modulo";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { GerenciadorTours } from "@/components/ajuda/gerenciador-tours";
+import { SeloModulo } from "@/components/notificacoes/sino";
 
 export const dynamic = "force-dynamic";
 
@@ -91,10 +92,11 @@ export default async function PaginaInicial({
               <form key={m.chave} action={abrirModulo.bind(null, m.chave)}>
                 <button
                   type="submit"
-                  className="group w-full rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="group relative w-full rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   style={{ borderTopColor: m.cor, borderTopWidth: 4 }}
                 >
-                  <h2 className="text-base font-semibold text-slate-800 group-hover:text-cataguases-azul">
+                  <SeloModulo usuarioId={usuario.id} app={m.chave} />
+                  <h2 className="pr-10 text-base font-semibold text-slate-800 group-hover:text-cataguases-azul">
                     {m.nome}
                   </h2>
                   <p className="mt-1.5 text-sm text-slate-500">{m.descricao}</p>

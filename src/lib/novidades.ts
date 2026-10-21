@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-23",
+    titulo: "Avisos ao vivo em toda a plataforma",
+    descricao:
+      "Novo sino no cabeçalho da Central e do Requerimentos: os avisos chegam na hora, sem atualizar a página, com um alerta no canto da tela. Cada card de módulo na Início mostra quantos avisos não lidos vieram dele. No Requerimentos, o Gabinete e o Admin são avisados quando uma secretaria dá ciência, responde ou pede prorrogação; a secretaria é avisada quando recebe um requerimento, quando há documento novo e quando ele é devolvido à Câmara; e todos recebem lembrete 3 dias antes do prazo e no dia do vencimento. A lista de requerimentos mostra a situação de cada secretaria (aguardando ciência, ciente, respondida) e se atualiza sozinha. No Emendas, gestores são avisados de andamentos, impedimentos, empenhos e pagamentos; na Central, admins são avisados de cada pedido de acesso. Os avisos do Compras continuam no próprio Compras e passam a contar no selo do card a partir de hoje.",
+  },
+  {
     data: "2026-10-22",
     titulo: "Emendas: fases do fluxo editáveis",
     descricao:
