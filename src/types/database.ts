@@ -60,6 +60,25 @@ export type FeedbackCentral = {
   atualizado_em: string | null;
 };
 
+/** Origem do aviso: um módulo ou a própria Central. */
+export type AppNotificacao = Modulo | "hub";
+
+/** `hub.notificacoes` — avisos da plataforma (sino e selos dos cards). */
+export type NotificacaoHub = {
+  id: string;
+  destinatario_id: string;
+  app: AppNotificacao;
+  tipo: string;
+  titulo: string;
+  mensagem: string | null;
+  /** Caminho dentro do app de origem (sempre começa com "/"). */
+  link: string | null;
+  referencia_id: string | null;
+  chave_unica: string | null;
+  criado_em: string;
+  lida_em: string | null;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -75,6 +94,7 @@ export type Database = {
       solicitacoes_acesso: Tabela<SolicitacaoAcesso, "nome" | "email" | "modulos_solicitados", "id" | "criado_em">;
       config_modulo: Tabela<ConfigModulo, "modulo", never>;
       feedback: Tabela<FeedbackCentral, "app" | "usuario_id" | "autor_nome" | "mensagem", "id" | "criado_em">;
+      notificacoes: Tabela<NotificacaoHub, "destinatario_id" | "app" | "tipo" | "titulo", "id" | "criado_em">;
     };
     Views: Record<string, never>;
     Functions: {
@@ -89,6 +109,8 @@ export type Database = {
         Returns: string;
       };
       pode_gerir_feedback: { Args: Record<string, never>; Returns: boolean };
+      resumo_notificacoes: { Args: Record<string, never>; Returns: { app: AppNotificacao; nao_lidas: number }[] };
+      marcar_notificacoes_lidas: { Args: { p_ids?: string[] | null; p_app?: AppNotificacao | null }; Returns: number };
       definir_acesso: {
         Args: {
           p_email: string;
