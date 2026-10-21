@@ -63,5 +63,7 @@ export async function GET(request: NextRequest) {
   if (!resultado.ok) {
     return NextResponse.redirect(`${info.url}/login?ssoFalhou=1`);
   }
-  return NextResponse.redirect(resultado.link);
+  // `new URL(..., request.url)`: o link do módulo interno (Emendas) é um
+  // caminho relativo deste próprio Hub; os externos já vêm absolutos.
+  return NextResponse.redirect(new URL(resultado.link, request.url));
 }

@@ -3,6 +3,7 @@ import {
   listarSetoresCompras,
   listarSecretariasRequerimentos,
   listarDocumentosNumera,
+  listarSecretariasEmendas,
 } from "@/lib/dados/solicitacoes";
 import { PainelConfiguracoes } from "@/components/hub/painel-configuracoes";
 
@@ -17,7 +18,7 @@ export default async function PaginaUsuarios({
   // acesso" para cá — o acesso é gerenciado só no Hub, e o formulário já
   // abre pronto.
   const { novo } = await searchParams;
-  const [usuarios, setoresCompras, secretariasRequerimentos, documentosNumera] = await Promise.all([
+  const [usuarios, setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas] = await Promise.all([
     listarUsuariosComAcessos(),
     listarSetoresCompras().catch((e) => {
       console.error("[PaginaUsuarios] setores do Compras indisponíveis:", e);
@@ -31,6 +32,10 @@ export default async function PaginaUsuarios({
       console.error("[PaginaUsuarios] documentos do Numera indisponíveis:", e);
       return [];
     }),
+    listarSecretariasEmendas().catch((e) => {
+      console.error("[PaginaUsuarios] secretarias do Emendas indisponíveis:", e);
+      return [];
+    }),
   ]);
 
   return (
@@ -40,6 +45,7 @@ export default async function PaginaUsuarios({
       setoresCompras={setoresCompras}
       secretariasRequerimentos={secretariasRequerimentos}
       documentosNumera={documentosNumera}
+      secretariasEmendas={secretariasEmendas}
     />
   );
 }

@@ -22,10 +22,10 @@ const MAX_ANEXOS = 5;
  * app é fixo: o feedback é daquele app). Anexos sobem direto para o bucket
  * privado, na pasta da própria pessoa; só os caminhos vão para a RPC.
  */
-export function BotaoFeedback() {
+export function BotaoFeedback({ appInicial = "hub" }: { appInicial?: AppFeedback } = {}) {
   const pathname = usePathname();
   const [aberto, setAberto] = React.useState(false);
-  const [app, setApp] = React.useState<AppFeedback>("hub");
+  const [app, setApp] = React.useState<AppFeedback>(appInicial);
   const [tipo, setTipo] = React.useState<TipoFeedback>("sugestao");
   const [mensagem, setMensagem] = React.useState("");
   const [arquivos, setArquivos] = React.useState<File[]>([]);
@@ -36,7 +36,7 @@ export function BotaoFeedback() {
   function limparEFechar(novo: boolean) {
     setAberto(novo);
     if (!novo) {
-      setApp("hub");
+      setApp(appInicial);
       setTipo("sugestao");
       setMensagem("");
       setArquivos([]);

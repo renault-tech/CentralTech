@@ -38,3 +38,14 @@ export const NIVEIS_NUMERA = [
   { valor: "user_restricted", rotulo: "Usuário Restrito" },
   { valor: "user_readonly", rotulo: "Somente Leitura" },
 ] as const;
+
+/** Perfis do módulo Emendas (`emendas.usuarios.perfil`). */
+export const PERFIS_EMENDAS = [
+  { valor: "gestor", rotulo: "Gestor de emendas (vê e edita tudo)" },
+  { valor: "admin_secretaria", rotulo: "Admin de secretaria" },
+  { valor: "operador", rotulo: "Operador da secretaria" },
+  { valor: "consulta", rotulo: "Consulta (só visualiza)" },
+] as const;
+
+/** Perfis do Emendas que precisam de uma secretaria "própria". */
+export const PERFIS_EMENDAS_COM_SECRETARIA = ["admin_secretaria", "operador"];

@@ -71,6 +71,11 @@ export async function gerarLinkSso(
 
   const info = MODULOS[modulo];
 
+  // Módulo interno (Emendas): mesma sessão do Hub, nada a gerar.
+  if (info.interno) {
+    return { ok: true, link: proximo && proximo.startsWith(info.url) ? proximo : info.url };
+  }
+
   // Bug real de produção (30/09/2026): antes, o link devolvido era o
   // `action_link` do GoTrue (`.../auth/v1/verify?...&redirect_to=...`), que
   // só respeita o `redirect_to` se ele estiver na allow-list "Redirect URLs"

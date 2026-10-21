@@ -15,6 +15,10 @@ export type InfoModulo = {
    * WCAG AA) — o azul vivo do Numera (#0071e3) mede ~4,54:1 sozinho,
    * abaixo da margem de segurança que o resto da plataforma usa. */
   corTexto: string;
+  /** Módulo que roda DENTRO do próprio Hub (rotas deste repositório, mesma
+   * sessão): o card leva direto para `url` (caminho interno), sem link
+   * mágico nem login próprio. */
+  interno?: boolean;
 };
 
 /**
@@ -22,7 +26,8 @@ export type InfoModulo = {
  * independente (repo/deploy/banco próprios ou compartilhados — Compras e
  * Requerimentos já dividem o mesmo Supabase, Numera é isolado), sem SSO
  * real entre eles: o card só leva pra URL de produção, o login de lá é o
- * de sempre.
+ * de sempre. Exceção: Emendas (`interno: true`) mora dentro do próprio Hub
+ * (`/emendas`), então já entra com a sessão da Central.
  *
  * Módulo sem dependência de servidor (sem next/headers), para poder ser
  * importado por Client Components. `src/lib/dados/modulos.ts` reexporta.
@@ -54,6 +59,16 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "https://app-requerimentos-camara.vercel.app",
     cor: "#C63B22",
     corTexto: "#C63B22",
+  },
+  emendas: {
+    chave: "emendas",
+    nome: "Emendas Impositivas",
+    nomeCurto: "Emendas",
+    descricao: "Cadastro e acompanhamento da execução das emendas dos vereadores, por secretaria.",
+    url: "/emendas",
+    cor: "#6B4FBB",
+    corTexto: "#5B3FA8",
+    interno: true,
   },
 };
 

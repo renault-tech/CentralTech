@@ -23,6 +23,7 @@ import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteCompras } from "@/lib/supabase/compras-cliente";
 import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
+import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/actions/auth";
 import type { Modulo } from "@/types/database";
@@ -30,11 +31,20 @@ import type { Modulo } from "@/types/database";
 export type DecisaoCompras = { perfil: string; setorId: string | null };
 export type DecisaoRequerimentos = { perfil: string; secretariaId: string | null };
 export type DecisaoNumera = { role: string; documentos: string[] };
+/** Acesso inicial ao Emendas: perfil + secretaria "própria" + se vê as
+ * outras. O ajuste fino secretaria a secretaria fica na matriz de
+ * permissões do próprio módulo (Emendas → Configurações → Usuários). */
+export type DecisaoEmendas = {
+  perfil: "gestor" | "admin_secretaria" | "operador" | "consulta";
+  secretariaId: string | null;
+  verOutras: boolean;
+};
 
 export type DecisaoAprovacao = {
   compras?: DecisaoCompras;
   requerimentos?: DecisaoRequerimentos;
   numera?: DecisaoNumera;
+  emendas?: DecisaoEmendas;
 };
 
 export type ResultadoModulo = { sucesso: boolean; mensagem?: string; linkPrimeiroAcesso?: string };
@@ -339,6 +349,53 @@ export async function aprovarNumera(
       )
     : undefined;
 
+  return { sucesso: true, linkPrimeiroAcesso };
+}
+
+/**
+ * Emendas mora no MESMO projeto (conta compartilhada já resolvida pelo
+ * chamador) e dentro do próprio Hub: nada de conta nova nem link de
+ * primeiro acesso próprio — só o perfil/permissões via
+ * `emendas.definir_acesso`, com a sessão do admin (a RPC confere
+ * `emendas.meu_perfil()` = admin/gestor).
+ */
+export async function aprovarEmendas(
+  authId: string,
+  decisao: DecisaoEmendas,
+  linkPrimeiroAcesso: string | undefined,
+  ativo: boolean = true
+): Promise<ResultadoModulo> {
+  const emendas = await criarClienteEmendas();
+  const { data: secretarias, error: erroSecretarias } = await emendas.from("secretarias").select("id");
+  if (erroSecretarias) {
+    console.error("[aprovarEmendas] secretarias:", erroSecretarias);
+    return {
+      sucesso: false,
+      mensagem:
+        "Não foi possível ler as secretarias do módulo Emendas (o schema “emendas” está exposto na API do Supabase?).",
+    };
+  }
+
+  const editaPropria = decisao.perfil === "admin_secretaria" || decisao.perfil === "operador";
+  const permissoes =
+    decisao.perfil === "gestor"
+      ? []
+      : (secretarias ?? []).map((s) => {
+          const propria = s.id === decisao.secretariaId;
+          return { secretaria_id: s.id, ver: propria || decisao.verOutras, editar: propria && editaPropria };
+        });
+
+  const { error } = await emendas.rpc("definir_acesso", {
+    p_usuario: authId,
+    p_perfil: decisao.perfil,
+    p_secretaria: decisao.secretariaId,
+    p_permissoes: permissoes,
+    p_ativo: ativo,
+  });
+  if (error) {
+    console.error("[aprovarEmendas] falha:", error);
+    return { sucesso: false, mensagem: error.message };
+  }
   return { sucesso: true, linkPrimeiroAcesso };
 }
 

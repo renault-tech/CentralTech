@@ -8,6 +8,8 @@ import {
   PERFIS_COMPRAS_SEM_SETOR,
   PERFIS_REQUERIMENTOS,
   NIVEIS_NUMERA,
+  PERFIS_EMENDAS,
+  PERFIS_EMENDAS_COM_SECRETARIA,
   type CatalogoItem,
   type DocumentoNumera,
 } from "@/lib/catalogos-solicitacao";
@@ -30,6 +32,7 @@ export function FormularioDecisaoModulos({
   setoresCompras,
   secretariasRequerimentos,
   documentosNumera,
+  secretariasEmendas,
   onMudar,
 }: {
   /** Módulos para os quais mostrar o bloco de decisão (o pai decide quais —
@@ -41,6 +44,7 @@ export function FormularioDecisaoModulos({
   setoresCompras: CatalogoItem[];
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
+  secretariasEmendas: CatalogoItem[];
   onMudar: (decisoes: DecisaoAprovacao, valido: boolean) => void;
 }) {
   // Por padrão todos os módulos visíveis entram na decisão (comportamento
@@ -59,6 +63,10 @@ export function FormularioDecisaoModulos({
   const [roleNumera, setRoleNumera] = React.useState("user_restricted");
   const [docsNumera, setDocsNumera] = React.useState<string[]>([]);
 
+  const [perfilEmendas, setPerfilEmendas] = React.useState<string>("admin_secretaria");
+  const [secretariaEmendas, setSecretariaEmendas] = React.useState<string>("");
+  const [verOutrasEmendas, setVerOutrasEmendas] = React.useState(true);
+
   function alternarIncluido(m: Modulo, marcado: boolean) {
     setIncluidos((prev) => {
       const novo = new Set(prev);
@@ -71,11 +79,13 @@ export function FormularioDecisaoModulos({
   const mostraCompras = modulosVisiveis.includes("compras");
   const mostraRequerimentos = modulosVisiveis.includes("requerimentos");
   const mostraNumera = modulosVisiveis.includes("numera");
+  const mostraEmendas = modulosVisiveis.includes("emendas");
   const incluiVarios = modulosVisiveis.length > 1;
 
   const incluiCompras = mostraCompras && incluidos.has("compras");
   const incluiRequerimentos = mostraRequerimentos && incluidos.has("requerimentos");
   const incluiNumera = mostraNumera && incluidos.has("numera");
+  const incluiEmendas = mostraEmendas && incluidos.has("emendas");
 
   const decisoes: DecisaoAprovacao = {};
   if (incluiCompras) {
@@ -93,6 +103,13 @@ export function FormularioDecisaoModulos({
   if (incluiNumera) {
     decisoes.numera = { role: roleNumera, documentos: docsNumera };
   }
+  if (incluiEmendas) {
+    decisoes.emendas = {
+      perfil: perfilEmendas as NonNullable<DecisaoAprovacao["emendas"]>["perfil"],
+      secretariaId: perfilEmendas === "gestor" ? null : secretariaEmendas || null,
+      verOutras: perfilEmendas === "gestor" ? true : verOutrasEmendas,
+    };
+  }
 
   // Validação: o banco recusaria (com erro cru de RPC/constraint) perfil
   // que exige setor/secretaria sem um selecionado — checar aqui evita a
@@ -104,8 +121,14 @@ export function FormularioDecisaoModulos({
   const faltaSecretariaRequerimentos =
     incluiRequerimentos && perfilRequerimentos === "secretaria" && !secretariaRequerimentos;
   const semDocumentosNumera = incluiNumera && roleNumera === "user_restricted" && docsNumera.length === 0;
-  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera;
-  const valido = !faltaSetorCompras && !faltaSecretariaRequerimentos && !nenhumIncluido;
+  // Emendas: admin de secretaria/operador precisam da secretaria "própria";
+  // consulta precisa de alguma coisa para ver (a própria ou todas).
+  const faltaSecretariaEmendas =
+    incluiEmendas &&
+    ((PERFIS_EMENDAS_COM_SECRETARIA.includes(perfilEmendas) && !secretariaEmendas) ||
+      (perfilEmendas === "consulta" && !secretariaEmendas && !verOutrasEmendas));
+  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera && !incluiEmendas;
+  const valido = !faltaSetorCompras && !faltaSecretariaRequerimentos && !faltaSecretariaEmendas && !nenhumIncluido;
 
   // Reporta pro pai a cada mudança relevante — evita o pai duplicar esta
   // mesma lógica de montagem/validação de `decisoes`.
@@ -116,6 +139,10 @@ export function FormularioDecisaoModulos({
     incluiCompras,
     incluiRequerimentos,
     incluiNumera,
+    incluiEmendas,
+    perfilEmendas,
+    secretariaEmendas,
+    verOutrasEmendas,
     perfilCompras,
     setorCompras,
     perfilRequerimentos,
@@ -124,7 +151,7 @@ export function FormularioDecisaoModulos({
     docsNumera,
   ]);
 
-  if (!mostraCompras && !mostraRequerimentos && !mostraNumera) return null;
+  if (!mostraCompras && !mostraRequerimentos && !mostraNumera && !mostraEmendas) return null;
 
   return (
     <div className="space-y-3">
@@ -285,6 +312,80 @@ export function FormularioDecisaoModulos({
                   algum (dá para ajustar depois em Configurações → Usuários, no próprio Numera).
                 </p>
               )}
+            </>
+          )}
+        </div>
+      )}
+      {mostraEmendas && (
+        <div className="rounded-md border border-slate-200 p-3">
+          {incluiVarios && (
+            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={incluiEmendas}
+                onChange={(e) => alternarIncluido("emendas", e.target.checked)}
+              />
+              Incluir Emendas nesta decisão
+            </label>
+          )}
+          {incluiEmendas && (
+            <>
+              <p className="text-xs font-semibold text-slate-600">Emendas — perfil e secretaria</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <select
+                  className={ESTILO_CAMPO}
+                  value={perfilEmendas}
+                  onChange={(e) => setPerfilEmendas(e.target.value)}
+                >
+                  {PERFIS_EMENDAS.map((p) => (
+                    <option key={p.valor} value={p.valor}>
+                      {p.rotulo}
+                    </option>
+                  ))}
+                </select>
+                {perfilEmendas !== "gestor" && (
+                  <select
+                    className={ESTILO_CAMPO}
+                    value={secretariaEmendas}
+                    onChange={(e) => setSecretariaEmendas(e.target.value)}
+                  >
+                    <option value="">
+                      {perfilEmendas === "consulta" ? "Secretaria (opcional)…" : "Secretaria da pessoa…"}
+                    </option>
+                    {secretariasEmendas.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              {perfilEmendas !== "gestor" && (
+                <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={verOutrasEmendas}
+                    onChange={(e) => setVerOutrasEmendas(e.target.checked)}
+                  />
+                  Pode visualizar as outras secretarias
+                </label>
+              )}
+              {secretariasEmendas.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-700">
+                  Lista de secretarias indisponível — confira se o schema “emendas” está exposto na API do
+                  Supabase.
+                </p>
+              )}
+              {faltaSecretariaEmendas && (
+                <p className="mt-1.5 text-xs text-red-700">
+                  {perfilEmendas === "consulta"
+                    ? "Escolha a secretaria ou marque “visualizar as outras” — senão a pessoa não vê nada."
+                    : "Este perfil exige a secretaria da pessoa."}
+                </p>
+              )}
+              <p className="mt-1.5 text-xs text-slate-500">
+                Ajuste fino (secretaria a secretaria) fica em Emendas → Configurações → Usuários.
+              </p>
             </>
           )}
         </div>

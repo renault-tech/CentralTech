@@ -14,6 +14,7 @@ import {
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
+  aprovarEmendas,
   sincronizarBookkeepingHub,
   type DecisaoCompras,
   type DecisaoRequerimentos,
@@ -68,7 +69,7 @@ export async function aprovarSolicitacao(
     return { sucesso: false, erro: "Solicitação não encontrada ou recusada." };
   }
 
-  if (!decisoes.compras && !decisoes.requerimentos && !decisoes.numera) {
+  if (!decisoes.compras && !decisoes.requerimentos && !decisoes.numera && !decisoes.emendas) {
     return { sucesso: false, erro: "Escolha ao menos um módulo para aprovar." };
   }
 
@@ -114,6 +115,9 @@ export async function aprovarSolicitacao(
   }
   if (decisoes.numera) {
     resultados.numera = await aprovarNumera(pessoa, decisoes.numera);
+  }
+  if (decisoes.emendas) {
+    resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado);
   }
 
   await sincronizarBookkeepingHub(hub, conta.id, pessoa, resultados);
