@@ -366,12 +366,14 @@ export function DetalheEmendaCliente({
         </div>
       )}
 
+      {dialogo === "andamento" && (
       <DialogoAndamento
-        aberto={dialogo === "andamento"}
+        aberto
         aoFechar={() => setDialogo(null)}
         emenda={emenda}
         aoSalvar={(d) => executar(() => registrarAndamento({ emendaId: emenda.id, ...d }))}
       />
+      )}
       <DialogoImpedimento
         aberto={dialogo === "impedimento"}
         aoFechar={() => setDialogo(null)}
@@ -436,30 +438,21 @@ function DialogoAndamento({
   const t = trilha(emenda.modalidade).filter((e) => e !== "indicada") as Exclude<EtapaEmenda, "indicada">[];
   const pos = t.indexOf(emenda.etapa as Exclude<EtapaEmenda, "indicada">);
   const sugerida = t[Math.min(t.length - 1, pos + 1)] ?? t[0];
+  const valorSugerido = (k: string) => {
+    const base = k === "empenhada" ? emenda.empenhado : k === "liquidada" ? emenda.liquidado : emenda.pago;
+    const restante = Math.max(0, (k === "empenhada" ? emenda.valor : emenda.empenhado || emenda.valor) - base);
+    return restante ? restante.toFixed(2).replace(".", ",") : "";
+  };
+  // Estado inicial a cada abertura: o pai só monta este diálogo quando ele
+  // abre (sem efeitos para "resetar" o formulário).
   const [etapa, setEtapa] = React.useState<Exclude<EtapaEmenda, "indicada">>(sugerida);
   const [data, setData] = React.useState(hojeLocal());
   const [documento, setDocumento] = React.useState("");
-  const [valor, setValor] = React.useState("");
+  const [valor, setValor] = React.useState(valorSugerido(sugerida));
   const [observacao, setObservacao] = React.useState("");
   const { enviando, erro, enviar } = useEnvio();
 
-  React.useEffect(() => {
-    if (aberto) {
-      setEtapa(sugerida);
-      setData(hojeLocal());
-      setDocumento("");
-      setObservacao("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto]);
-
   const financeira = etapa === "empenhada" || etapa === "liquidada" || etapa === "paga";
-  const base = etapa === "empenhada" ? emenda.empenhado : etapa === "liquidada" ? emenda.liquidado : emenda.pago;
-  const restante = Math.max(0, (etapa === "empenhada" ? emenda.valor : emenda.empenhado || emenda.valor) - base);
-  React.useEffect(() => {
-    if (aberto && financeira) setValor(restante ? restante.toFixed(2).replace(".", ",") : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, etapa]);
 
   const rotuloDoc =
     etapa === "empenhada" ? "Nº do empenho" : etapa === "liquidada" ? "Nº da liquidação / nota fiscal" : etapa === "paga" ? "Nº da ordem de pagamento" : etapa === "plano_trabalho" ? "Termo / protocolo" : etapa === "processo_compra" ? "Nº do processo (Compras)" : "Documento de referência";
@@ -482,7 +475,14 @@ function DialogoAndamento({
           }}
         >
           <Campo rotulo="Nova etapa">
-            <select className={CAMPO} value={etapa} onChange={(e) => setEtapa(e.target.value as typeof etapa)}>
+            <select
+              className={CAMPO}
+              value={etapa}
+              onChange={(e) => {
+                setEtapa(e.target.value as typeof etapa);
+                setValor(valorSugerido(e.target.value));
+              }}
+            >
               {t.map((k) => (
                 <option key={k} value={k}>
                   {infoEtapa(k).nome}
