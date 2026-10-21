@@ -3,14 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { origemDaRequisicao } from "@/lib/actions/auth";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { MODULOS } from "@/lib/modulos-info";
 import {
   encontrarOuCriarConta,
-  gerarLinkPrimeiroAcesso,
-  linkPrimeiroAcessoHub,
+  linkPrimeiroAcessoDaConta,
+  enviarLinkNoEmailEAnotar,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -93,13 +92,7 @@ export async function aprovarSolicitacao(
     };
   }
 
-  const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(
-        adminCompartilhado,
-        solicitacao.email,
-        linkPrimeiroAcessoHub(await origemDaRequisicao())
-      )
-    : undefined;
+  const linkCompartilhado = conta.criadaAgora ? await linkPrimeiroAcessoDaConta(conta.id) : undefined;
 
   const pessoa = {
     nome: solicitacao.nome,
@@ -114,11 +107,18 @@ export async function aprovarSolicitacao(
     resultados.requerimentos = await aprovarRequerimentos(pessoa, decisoes.requerimentos, linkCompartilhado);
   }
   if (decisoes.numera) {
-    resultados.numera = await aprovarNumera(pessoa, decisoes.numera);
+    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, true, linkCompartilhado);
   }
   if (decisoes.emendas) {
     resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado);
   }
+
+  await enviarLinkNoEmailEAnotar(
+    pessoa,
+    linkCompartilhado,
+    (Object.keys(resultados) as Modulo[]).filter((m) => resultados[m]?.sucesso),
+    resultados
+  );
 
   await sincronizarBookkeepingHub(hub, conta.id, pessoa, resultados);
 

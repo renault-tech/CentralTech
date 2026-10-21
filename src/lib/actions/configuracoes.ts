@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { origemDaRequisicao } from "@/lib/actions/auth";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
+import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
 import {
   encontrarOuCriarConta,
-  gerarLinkPrimeiroAcesso,
-  linkPrimeiroAcessoHub,
+  linkPrimeiroAcessoDaConta,
+  enviarLinkNoEmailEAnotar,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -108,9 +108,7 @@ export async function definirAcesso(dados: {
     };
   }
 
-  const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email, linkPrimeiroAcessoHub(await origemDaRequisicao()))
-    : undefined;
+  const linkCompartilhado = conta.criadaAgora ? await linkPrimeiroAcessoDaConta(conta.id) : undefined;
 
   const pessoa = { nome, email };
   const resultados: Partial<Record<Modulo, ResultadoModulo>> = {};
@@ -122,11 +120,13 @@ export async function definirAcesso(dados: {
     resultados.requerimentos = await aprovarRequerimentos(pessoa, decisoes.requerimentos, linkCompartilhado, ativo);
   }
   if (decisoes?.numera) {
-    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo);
+    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo, linkCompartilhado);
   }
   if (decisoes?.emendas) {
     resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado, ativo);
   }
+
+  await enviarLinkNoEmailEAnotar(pessoa, linkCompartilhado, modulos, resultados);
 
   const hub = await criarClienteServidor();
 
@@ -157,4 +157,66 @@ export async function definirAcesso(dados: {
   revalidatePath("/configuracoes");
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true, resultados };
+}
+
+/**
+ * Gera (ou devolve o que já está pendente) o link de primeiro acesso de quem
+ * ainda não entrou. Recusa contas que já acessaram: um link de definir senha
+ * para uma conta em uso seria, na prática, a chave dela.
+ */
+export async function obterLinkPrimeiroAcesso(
+  usuarioId: string
+): Promise<{ sucesso: true; link: string } | { sucesso: false; erro: string }> {
+  const usuario = await obterUsuarioAtual();
+  if (!usuario?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+
+  const { data: conta } = await criarClienteAdminBruto().auth.admin.getUserById(usuarioId);
+  if (!conta.user) return { sucesso: false, erro: "Conta não encontrada." };
+  if (conta.user.last_sign_in_at) {
+    return {
+      sucesso: false,
+      erro: "Esta pessoa já acessou. Se esqueceu a senha, ela mesma pede em “Esqueci minha senha”.",
+    };
+  }
+
+  const link = await linkPrimeiroAcessoDaConta(usuarioId);
+  if (!link) return { sucesso: false, erro: "Não foi possível gerar o link agora. Tente de novo." };
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true, link };
+}
+
+/** Reenvia (ou envia pela primeira vez) o link de primeiro acesso por e-mail.
+ * Mesma regra de `obterLinkPrimeiroAcesso`: só para quem ainda não acessou. */
+export async function enviarLinkPrimeiroAcessoPorEmail(
+  usuarioId: string
+): Promise<{ sucesso: true; link: string; email: string } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+
+  const admin = criarClienteAdminBruto();
+  const { data: conta } = await admin.auth.admin.getUserById(usuarioId);
+  if (!conta.user?.email) return { sucesso: false, erro: "Conta não encontrada." };
+  if (conta.user.last_sign_in_at) {
+    return { sucesso: false, erro: "Esta pessoa já acessou. Ela mesma pode usar “Esqueci minha senha”." };
+  }
+
+  const [{ data: perfil }, { data: acessos }] = await Promise.all([
+    admin.schema("hub").from("usuarios").select("nome").eq("id", usuarioId).maybeSingle(),
+    admin.schema("hub").from("acessos_modulo").select("modulo").eq("usuario_id", usuarioId),
+  ]);
+
+  const link = await linkPrimeiroAcessoDaConta(usuarioId);
+  if (!link) return { sucesso: false, erro: "Não foi possível gerar o link agora. Tente de novo." };
+
+  const enviado = await enviarEmailPrimeiroAcesso({
+    nome: (perfil?.nome as string | undefined) ?? conta.user.email,
+    email: conta.user.email,
+    link,
+    modulos: (acessos ?? []).map((a) => a.modulo as Modulo),
+  });
+  revalidatePath("/configuracoes/usuarios");
+  if (!enviado) {
+    return { sucesso: false, erro: "Não foi possível enviar o e-mail agora. Copie o link e envie à pessoa." };
+  }
+  return { sucesso: true, link, email: conta.user.email };
 }

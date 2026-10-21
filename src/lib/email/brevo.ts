@@ -2,6 +2,10 @@ import "server-only";
 
 import { envBrevo } from "@/lib/env";
 
+/** Remetente dos e-mails da Central (primeiro acesso, recuperação de senha do
+ * Hub). Definido no código — não depende de `BREVO_REMETENTE_NOME` na Vercel. */
+export const REMETENTE_CENTRAL = "Central Cataguases";
+
 /**
  * Envia e-mail transacional via a API HTTPS da Brevo
  * (`https://api.brevo.com/v3/smtp/email`), sem passar pelo SMTP-on-587 do
@@ -23,6 +27,8 @@ export async function enviarEmailBrevo(args: {
   destinatarioNome?: string;
   assunto: string;
   html: string;
+  /** Nome exibido como remetente; padrão: `BREVO_REMETENTE_NOME`. */
+  remetenteNome?: string;
 }): Promise<{ ok: boolean; erro?: string }> {
   let env: ReturnType<typeof envBrevo>;
   try {
@@ -41,7 +47,7 @@ export async function enviarEmailBrevo(args: {
         "api-key": env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { email: env.BREVO_REMETENTE_EMAIL, name: env.BREVO_REMETENTE_NOME },
+        sender: { email: env.BREVO_REMETENTE_EMAIL, name: args.remetenteNome ?? env.BREVO_REMETENTE_NOME },
         to: [{ email: args.destinatarioEmail, name: args.destinatarioNome ?? args.destinatarioEmail }],
         subject: args.assunto,
         htmlContent: args.html,

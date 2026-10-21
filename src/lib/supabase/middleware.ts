@@ -17,6 +17,7 @@ const ROTAS_PUBLICAS = [
   "/recuperar-senha",
   "/redefinir-senha",
   "/auth/confirm",
+  "/primeiro-acesso",
   "/solicitar-acesso",
   // Prefixo, não rota exata: todo endpoint sob /api/numera/* é chamado sem
   // sessão (fetch cross-origin do site estático do Numera) — listar cada

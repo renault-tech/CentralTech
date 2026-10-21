@@ -1310,3 +1310,51 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   `tsc`/`eslint`/`vitest` (30 testes)/`next build` limpos; telas conferidas
   em 1280px e 390px com os dados reais. **Não testado ponta a ponta no
   deploy** (sandbox sem acesso a `*.vercel.app`/`*.supabase.co`).
+
+- **Link de primeiro acesso persistente (21/10/2026).** Caso real: a conta
+  nova de uma usuária só do Emendas respondia "E-mail ou senha incorretos" —
+  toda conta criada pelo provisionamento nasce com senha aleatória e o único
+  caminho era o link de uso único do Supabase (recovery, ~1 h), mostrado uma
+  vez na tela do admin. Agora `hub.convites_acesso` (migration
+  `20261021050000`; RLS: só admin do Hub lê, só service_role grava) guarda um
+  token da Central por pessoa. `/primeiro-acesso?t=<token>` (rota pública)
+  valida o token, gera na hora um recovery do Supabase e segue para
+  `/auth/confirm` → `/redefinir-senha`: cliques extras só gastam o token do
+  Supabase daquele clique, o convite continua valendo. **Uma senha só**:
+  `redefinirSenha`, quando há convite pendente, também grava a senha na conta
+  do Numera (`sincronizarSenhaNumera`) — nunca para quem só pediu "esqueci
+  minha senha" sem convite. O convite vira `usado_em` ao definir a senha ou ao
+  fazer login (`entrar`). Em Configurações → Usuários e acessos o link aparece
+  sob o nome de quem nunca entrou (`last_sign_in_at` nulo) e some sozinho;
+  quem ainda não tem convite ganha o botão "Gerar link"
+  (`obterLinkPrimeiroAcesso`, recusa contas que já acessaram). Contas novas
+  (`definirAcesso`, `aprovarSolicitacao`) usam esse link em vez dos de uso
+  único (`linkPrimeiroAcessoDaConta`). De carona: o destino padrão de
+  `entrar()` era `/dashboard` (não existe no Hub) → `/`. Lição: `execute_sql`
+  do MCP estoura 60 s em DDL de função/`drop` neste projeto às vezes; `create
+  table`/`alter`/`policy` em comandos separados passam, e `create or replace
+  function` em `hub.definir_acesso` precisou ser rodado no SQL Editor do painel.
+
+- **Link por e-mail e pedido de acesso com um clique (21/10/2026).**
+  (1) O link de primeiro acesso é enviado por e-mail (Brevo,
+  `enviarEmailPrimeiroAcesso`, remetente "Central Cataguases") quando a conta
+  é criada (`enviarLinkNoEmailEAnotar`, em `definirAcesso` e
+  `aprovarSolicitacao`: o resultado — enviado ou falhou — vai na mensagem do
+  módulo, ao lado do link copiável, que continua valendo se o e-mail falhar) e
+  pode ser reenviado em Configurações → Usuários e acessos
+  (`enviarLinkPrimeiroAcessoPorEmail`, só para quem nunca entrou). Depende de
+  `BREVO_API_KEY`/`BREVO_REMETENTE_EMAIL` na Vercel (já usadas pela
+  recuperação de senha). (2) Na tela inicial o card de módulo sem acesso é um
+  botão "Solicitar acesso" (`solicitarAcessoAoModulo`): nome/e-mail vêm da
+  sessão, nunca do navegador; não duplica pedido pendente; depois do clique o
+  card mostra "Solicitação enviada — aguardando aprovação"
+  (`pedidoPendente`, lido com a service_role só para o e-mail da própria
+  sessão). Armadilha evitada: função exportada de arquivo `"use server"` é
+  chamável pelo navegador — a leitura de pendências mora em `lib/dados/` (só
+  servidor), nunca na action.
+- **Remetente dos e-mails padronizado (21/10/2026).** Primeiro acesso e
+  recuperação de senha do Hub saem como "Central Cataguases"
+  (`REMETENTE_CENTRAL`, em `lib/email/brevo.ts`, definido no código — não
+  depende de `BREVO_REMETENTE_NOME` na Vercel); a recuperação do Numera
+  continua "Numera" (texto do próprio app). Aviso de pedidos de acesso ao
+  admin: só o banner da tela inicial (decisão do dono; sem e-mail por ora).

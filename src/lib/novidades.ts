@@ -14,6 +14,18 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-21",
+    titulo: "Solicitar acesso a um módulo com um clique",
+    descricao:
+      "Na tela inicial, os módulos que você ainda não tem continuam aparecendo, em cinza, com o botão “Solicitar acesso”. Basta clicar para enviar o pedido ao administrador — sem preencher nada, porque seu nome e e-mail já vêm da sua conta. Enquanto o pedido não for decidido, o card mostra “Solicitação enviada — aguardando aprovação”, e o mesmo pedido não é enviado duas vezes.",
+  },
+  {
+    data: "2026-10-21",
+    titulo: "Link de primeiro acesso que não expira até ser usado",
+    descricao:
+      "Quem acaba de ganhar acesso recebe um único link para definir a senha, que vale para todos os módulos (a senha do Numera acompanha a da Central). Em Configurações → Usuários e acessos, o link fica visível sob o nome da pessoa enquanto ela não acessar, com botão de copiar, e some sozinho depois do primeiro acesso. O link também é enviado por e-mail à pessoa assim que a conta é criada, e o administrador pode reenviá-lo a qualquer momento pelo botão “Enviar por e-mail”. Para quem já estava na lista e ainda não entrou, há o botão “Gerar link de primeiro acesso”. Também corrigimos o destino logo após o login pela tela inicial de entrada, que podia cair numa página inexistente.",
+  },
+  {
+    data: "2026-10-21",
     titulo: "Novo módulo: Emendas Impositivas",
     descricao:
       "As emendas dos vereadores agora são acompanhadas dentro da própria Central, sem segundo login: painel com execução por vereador e por secretaria, funil de etapas, curva de pagamentos e alertas (paradas, impedidas, empenho repetido…); lista com a situação de cada emenda; detalhe com andamentos, empenhos e pagamentos, documentos anexados e histórico de remanejamentos. O sistema confere a cota de cada vereador e a regra dos 50% na Saúde. Cada pessoa vê e edita só as secretarias liberadas para ela — o acesso é concedido pela Central, como nos outros módulos. A planilha de acompanhamento de 2026 pode ser importada direto em Configurações → Importar planilha.",

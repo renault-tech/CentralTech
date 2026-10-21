@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 const MENSAGENS: Record<string, string> = {
   desativado: "Sua conta foi desativada. Contate o administrador da plataforma.",
   link_invalido: "O link de recuperação é inválido ou expirou. Solicite um novo abaixo.",
+  convite_invalido:
+    "Este link de primeiro acesso não vale mais (já foi usado ou foi substituído). Se você já definiu sua senha, entre abaixo; se não, use “Esqueci minha senha” ou peça um novo link ao administrador.",
   senha_redefinida: "Senha redefinida com sucesso. Entre com a sua nova senha.",
 };
 

@@ -48,7 +48,7 @@ export function envNumeraAdmin() {
 const esquemaBrevo = z.object({
   BREVO_API_KEY: z.string().min(20, "BREVO_API_KEY ausente ou inválida"),
   BREVO_REMETENTE_EMAIL: z.email({ message: "BREVO_REMETENTE_EMAIL deve ser um e-mail válido" }),
-  BREVO_REMETENTE_NOME: z.string().min(1).default("Numera"),
+  BREVO_REMETENTE_NOME: z.string().min(1).default("Central Cataguases"),
 });
 
 export function envBrevo() {
