@@ -56,6 +56,35 @@ export const TOURS: Tour[] = [
       },
     ],
   },
+  {
+    id: "emendas-painel",
+    nome: "Emendas Impositivas",
+    descricao: "Como ler o painel das emendas e acompanhar a execução",
+    rota: "/emendas",
+    passos: [
+      {
+        seletor: '[data-tour="nav-emendas"]',
+        titulo: "Módulo Emendas",
+        descricao:
+          "Painel para a visão geral, Emendas para a lista completa, Vereadores para a cota de cada um (com relatório em PDF) e Secretarias para a execução por área.",
+        lado: "bottom",
+      },
+      {
+        seletor: '[data-tour="filtros-emendas"]',
+        titulo: "Recortes",
+        descricao:
+          "Filtre por vereador, secretaria, Saúde, modalidade ou etapa. O recorte fica no endereço da página — dá para mandar o link para alguém.",
+        lado: "bottom",
+      },
+      {
+        seletor: '[data-tour="indicadores-emendas"]',
+        titulo: "Números do recorte",
+        descricao:
+          "Total indicado, empenhado, pago, o que falta executar, a parcela na Saúde (mínimo de 50%) e as emendas impedidas. Clicar numa barra de qualquer gráfico abaixo filtra o painel inteiro.",
+        lado: "bottom",
+      },
+    ],
+  },
 ];
 
 /** Tour cuja rota é prefixo exato do pathname atual (a rota vazia do boas-vindas nunca "casa" aqui). */

@@ -1221,3 +1221,92 @@ de significar "ninguém mais entra".
   usuário → Sair. Hub e Requerimentos (header escuro) e Compras (claro, com
   barra lateral) seguem; o Numera ganhou um cabeçalho igual (marca, Central,
   megafone, ajuda, usuário, Sair) acima da barra lateral.
+
+## Módulo Emendas Impositivas (4º módulo — roda DENTRO do Hub)
+
+Pedido do dono: acompanhar e cadastrar as emendas impositivas dos vereadores
+(antes numa planilha), com painéis, execução por etapas e permissão por
+secretaria. Diferente dos outros 3, **não é um app separado**: rotas
+`/emendas/*` deste repositório, mesma sessão (sem link mágico, sem segundo
+login), schema próprio `emendas` no projeto compartilhado
+(`nfijlzndlioefayctbsh`). Cor do módulo: violeta `#6B4FBB` (faixa de 3px no
+cabeçalho; `CabecalhoHub` aceita `modulo={{nome, cor, app}}`). Mockup
+aprovado pelo dono antes de construir (artifact "Emendas Impositivas —
+Mockup"); a planilha original de 2026 serviu de modelo de dados.
+
+- **Passo manual do dono (obrigatório)**: Supabase → Project Settings → API →
+  *Exposed schemas* → adicionar `emendas`. Sem isso toda tela do módulo
+  falha (PGRST106) e o bloco "Emendas" do formulário de acesso avisa
+  "secretarias indisponíveis".
+- **Banco** (`supabase/migrations/20261021*`): `exercicios` (cota por
+  vereador, mínimo de Saúde), `vereadores`, `secretarias` (= unidade de
+  PERMISSÃO), `unidades_orcamentarias` (02.09 Fundo de Saúde → Saúde),
+  `beneficiarios`, `emendas`, `andamentos`, `movimentos_financeiros`,
+  `impedimentos`, `remanejamentos` (antes/depois em jsonb), `documentos`
+  (bucket privado `emendas-documentos`), `usuarios`/`permissoes`,
+  `auditoria` (trigger genérico) e a view `v_emendas` (`security_invoker`).
+  Regras no BANCO, não só na tela: soma por vereador ≤ cota (trigger +
+  advisory lock), etapa × modalidade (`etapa_compativel_modalidade`:
+  repasse tem plano de trabalho/prestação de contas, aplicação direta tem
+  processo de compra), empenhado ≤ valor e pago ≤ empenhado (constraint
+  trigger deferrable). Modalidade vem da natureza da despesa (3º grupo:
+  50 = repasse; 90/91/93 = direta). Os 50% na Saúde são ALERTA, não bloqueio.
+  `etapa` é cache mantido por trigger a partir de `andamentos`.
+- **Perfis**: admin do Hub (acesso total) · `gestor` (tudo, inclusive valor/
+  dotação/remanejamento/importação) · `admin_secretaria` (registra a execução
+  da própria secretaria e ajusta a equipe dela) · `operador` · `consulta`.
+  Para os três últimos, `emendas.permissoes(usuario, secretaria, pode_ver,
+  pode_editar)` decide por secretaria (editar a própria, ver as outras ou
+  não). RLS: `select` por `pode_ver_secretaria`; escrever execução por
+  `pode_editar_emenda`; campos centrais só gestor; remanejamento e
+  `definir_acesso` só por RPC. Funções de permissão são `security definer`
+  com `revoke ... from public, anon` explícito (lição do cadastro unificado).
+- **Telas nunca usam service_role** — `criarClienteEmendas()` (mesma sessão,
+  schema `emendas`); quem decide o que cada pessoa vê é a RLS. Única exceção:
+  `/emendas/configuracoes/usuarios` lê nome/e-mail em `hub.usuarios` com a
+  service_role, só para ids que a RLS do módulo já liberou.
+- **Integração com a Central**: `Modulo` ganhou `"emendas"`; `MODULOS.emendas`
+  tem `interno: true` (`url: "/emendas"`; `gerarLinkSso` devolve o caminho,
+  sem link mágico); `hub.acessos_modulo`/`solicitacoes_acesso` aceitam o novo
+  valor; `hub.definir_acesso` desativa/reativa `emendas.usuarios.ativo` em
+  cascata (mesma simetria de Compras/Requerimentos); `aprovarEmendas`
+  (`provisionamento-modulos.ts`) grava perfil + permissões iniciais
+  (secretaria própria + "vê as outras") via `emendas.definir_acesso`, e o
+  `FormularioDecisaoModulos` ganhou o bloco Emendas; o ajuste fino por
+  secretaria fica na matriz do próprio módulo. Emendas NÃO entra em
+  `hub.config_modulo` (não tem login direto para bloquear). Feedback:
+  linha em `hub.apps_feedback` + `APPS_FEEDBACK` (`#6B4FBB`), e o megafone
+  de dentro do módulo já abre com "Emendas".
+- **Código**: `src/app/emendas/*` (painel, lista, `[id]`, nova, vereadores,
+  secretarias, configuracoes/*, exportar), `src/components/emendas/*`,
+  `src/lib/emendas/` (`regras.ts` puro e testado, `dados.ts` leituras,
+  `actions.ts` execução/cadastro, `actions-config.ts` catálogos/permissões/
+  importação, `importacao/` leitor da planilha). Painel: tudo calculado no
+  cliente sobre as emendas que a RLS liberou, filtros na URL, filtro
+  cruzado por clique nas barras. Relatório do vereador = CSS de impressão
+  (salvar como PDF); Excel = `exceljs` em `/emendas/exportar`.
+- **Importação da planilha** (Configurações → Importar): prévia (nada
+  gravado) → revisão (casos ambíguos de STATUS) → `emendas.importar`, uma
+  transação só (reimportar não duplica: ignora o mesmo ano+número). Aba
+  "Após" = situação atual; diferença para a aba original vira
+  `remanejamentos`. Decisão do dono: "EXECUTADA" = paga; "DP" = data do
+  pagamento; "EXECUÇÃO" = empenhada. O leitor de STATUS foi testado com as
+  63 grafias reais de 2026 (EMP8677, "Nº EMPENHO 2328", "EMP:V 32856"…).
+  Conferência da planilha de 2026: 215 emendas, R$ 5.157.490,05, Saúde
+  R$ 2.583.661,43 (50,1%), 15 × R$ 343.832,67, 62 pagas, 1 em execução, 8
+  remanejadas. Achados nos próprios dados: nº 90 e 167 "executadas" sem
+  empenho; 6 pagas sem data de pagamento; EMP 6366 e 7207 repetidos em
+  duas emendas cada.
+- **Lições deste módulo**: (1) `apply_migration`/`execute_sql` estouram o
+  tempo limite (60s) com migrations grandes — enviar em partes (tabelas,
+  funções de permissão, triggers, RLS+view, RPCs uma a uma); (2) um `delete`
+  dentro de função plpgsql chamada em lote travou a RPC — `definir_acesso`
+  zera com `update` e regrava com `upsert`; (3) `next dev` reescreve um bloco
+  "nextjs-agent-rules" no CLAUDE.md: não commitar.
+- **Testado**: transações forçadas com `set local role authenticated` e
+  `request.jwt.claims` de cada perfil (gestor edita tudo; admin de secretaria
+  só a própria e não remaneja; consulta só lê; sem acesso não vê nada; cota,
+  modalidade, empenho/pago e cascata do Hub) — 22 cenários, rollback.
+  `tsc`/`eslint`/`vitest` (30 testes)/`next build` limpos; telas conferidas
+  em 1280px e 390px com os dados reais. **Não testado ponta a ponta no
+  deploy** (sandbox sem acesso a `*.vercel.app`/`*.supabase.co`).

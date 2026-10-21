@@ -17,7 +17,7 @@ export function NavModulo({ itens, podeCriar }: { itens: Item[]; podeCriar: bool
   return (
     <div className="border-b border-slate-200 bg-white print:hidden">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 sm:px-6">
-        <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Seções do módulo Emendas">
+        <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Seções do módulo Emendas" data-tour="nav-emendas">
           {itens.map((item) => {
             const ativo = item.exato ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (

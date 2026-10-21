@@ -235,7 +235,7 @@ export function PainelEmendas({
                   aria-pressed={ativo}
                   title={`${l.nome}: ${brl(l.total)} indicados, ${brl(l.pago)} pagos`}
                   className={cn(
-                    "grid grid-cols-[minmax(120px,190px)_1fr_48px] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-violet-50 sm:grid-cols-[minmax(140px,200px)_1fr_48px_70px]",
+                    "grid grid-cols-[minmax(0,1fr)_minmax(90px,1fr)_40px] items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-violet-50 sm:grid-cols-[minmax(140px,200px)_1fr_48px_70px] sm:gap-2.5",
                     ativo && "bg-violet-50",
                     f.v && !ativo && "opacity-50"
                   )}
@@ -280,7 +280,7 @@ export function PainelEmendas({
                     type="button"
                     onClick={() => alternar("etapa", etapa.chave)}
                     aria-pressed={ativo}
-                    className={cn("grid grid-cols-[150px_1fr_96px] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-violet-50", ativo && "bg-violet-50")}
+                    className={cn("grid grid-cols-[118px_1fr_84px] items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-violet-50 sm:grid-cols-[150px_1fr_96px] sm:gap-2.5", ativo && "bg-violet-50")}
                   >
                     <span className="flex items-center gap-2 text-[13px] text-cataguases-marinho">
                       <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: etapa.cor }} aria-hidden />
@@ -374,7 +374,7 @@ export function PainelEmendas({
                   onClick={() => alternar("s", l.secretariaId)}
                   aria-pressed={ativo}
                   className={cn(
-                    "grid grid-cols-[minmax(110px,170px)_1fr_120px] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-violet-50",
+                    "grid grid-cols-[minmax(0,1fr)_minmax(70px,1fr)_104px] items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-violet-50 sm:grid-cols-[minmax(110px,170px)_1fr_120px] sm:gap-2.5",
                     ativo && "bg-violet-50",
                     f.s && !ativo && "opacity-50"
                   )}
