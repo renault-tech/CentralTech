@@ -17,7 +17,16 @@ import type { UsuarioHub } from "@/types/database";
  * testando como usuário). Clicar no brasão/nome sempre leva à Início
  * (mesmo padrão já aplicado dentro de cada módulo).
  */
-export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
+export async function CabecalhoHub({
+  usuario,
+  modulo,
+}: {
+  usuario: UsuarioHub;
+  /** Módulo interno (Emendas): faixa do topo na cor dele e o nome do
+   * módulo no lugar de "Prefeitura de Cataguases" — mesmo padrão de header
+   * de todos os apps (faixa de 3px na cor do app). */
+  modulo?: { nome: string; cor: string; app?: "emendas" };
+}) {
   // Pedido do usuário: "preciso ser avisado no hub que há pedido pendente".
   // O selo fica no próprio link de Configurações (visível em toda tela) e
   // o link leva direto à lista de pedidos quando há algum.
@@ -28,7 +37,10 @@ export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
   const feedbackNovos = gerenciaFeedback ? await contarFeedbackNovos() : 0;
 
   return (
-    <header className="flex items-center justify-between border-b border-t-[3px] border-b-slate-200 border-t-[#E9A63B] bg-cataguases-marinho px-4 py-3 text-white sm:px-6">
+    <header
+      className="flex items-center justify-between border-b border-t-[3px] border-b-slate-200 border-t-[#E9A63B] bg-cataguases-marinho px-4 py-3 text-white sm:px-6 print:hidden"
+      style={modulo ? { borderTopColor: modulo.cor } : undefined}
+    >
       <Link
         href="/"
         className="flex items-center gap-3 transition-opacity hover:opacity-85"
@@ -37,7 +49,7 @@ export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
         <Brasao tamanho={32} />
         <div>
           <p className="text-sm font-semibold leading-tight">Central Cataguases</p>
-          <p className="text-[11px] leading-tight text-slate-300">Prefeitura de Cataguases</p>
+          <p className="text-[11px] leading-tight text-slate-300">{modulo?.nome ?? "Prefeitura de Cataguases"}</p>
         </div>
       </Link>
       <nav className="flex items-center gap-1 text-sm sm:gap-2">
@@ -78,7 +90,7 @@ export async function CabecalhoHub({ usuario }: { usuario: UsuarioHub }) {
             )}
           </Link>
         )}
-        <BotaoFeedback />
+        <BotaoFeedback appInicial={modulo?.app ?? "hub"} />
         <BotaoAjuda />
         <Link
           href="/conta"

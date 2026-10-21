@@ -202,6 +202,17 @@ export type UsuarioEmendas = {
   atualizado_em: string;
 };
 
+export type RegistroAuditoria = {
+  id: number;
+  tabela: string;
+  registro_id: string | null;
+  acao: "INSERT" | "UPDATE" | "DELETE";
+  usuario_id: string | null;
+  em: string;
+  antes: Record<string, unknown> | null;
+  depois: Record<string, unknown> | null;
+};
+
 export type PermissaoSecretaria = {
   usuario_id: string;
   secretaria_id: string;
@@ -236,6 +247,7 @@ export type DatabaseEmendas = {
       documentos: Tabela<DocumentoEmenda, "emenda_id" | "tipo" | "nome_arquivo" | "caminho", "id" | "criado_em">;
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;
+      auditoria: Tabela<RegistroAuditoria, "tabela" | "acao", "id" | "em">;
     };
     Views: {
       v_emendas: { Row: EmendaResumo; Relationships: [] };
