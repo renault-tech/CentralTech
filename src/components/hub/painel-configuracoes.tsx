@@ -5,7 +5,7 @@ import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
-import { definirAcesso, obterLinkPrimeiroAcesso } from "@/lib/actions/configuracoes";
+import { definirAcesso, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso } from "@/lib/actions/configuracoes";
 import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
@@ -449,6 +449,22 @@ function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string;
   const [link, setLink] = React.useState(linkInicial);
   const [gerando, setGerando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
+  const [enviando, setEnviando] = React.useState(false);
+  const [enviadoPara, setEnviadoPara] = React.useState<string | null>(null);
+
+  async function enviarPorEmail() {
+    setEnviando(true);
+    setErro(null);
+    setEnviadoPara(null);
+    const r = await enviarLinkPrimeiroAcessoPorEmail(usuarioId);
+    setEnviando(false);
+    if (r.sucesso) {
+      setLink(r.link);
+      setEnviadoPara(r.email);
+    } else {
+      setErro(r.erro);
+    }
+  }
 
   async function gerar() {
     setGerando(true);
@@ -476,6 +492,15 @@ function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string;
           {gerando ? "Gerando…" : "Gerar link de primeiro acesso"}
         </button>
       )}
+      <button
+        type="button"
+        onClick={enviarPorEmail}
+        disabled={enviando}
+        className="mt-1 text-[11px] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
+      >
+        {enviando ? "Enviando…" : link ? "Reenviar por e-mail" : "Enviar por e-mail"}
+      </button>
+      {enviadoPara && <p className="mt-0.5 text-[11px] text-green-700">Enviado para {enviadoPara}.</p>}
       {erro && <p className="mt-0.5 text-[11px] text-red-700">{erro}</p>}
     </div>
   );

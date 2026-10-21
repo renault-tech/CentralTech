@@ -23,6 +23,8 @@ export async function enviarEmailBrevo(args: {
   destinatarioNome?: string;
   assunto: string;
   html: string;
+  /** Nome exibido como remetente; padrão: `BREVO_REMETENTE_NOME`. */
+  remetenteNome?: string;
 }): Promise<{ ok: boolean; erro?: string }> {
   let env: ReturnType<typeof envBrevo>;
   try {
@@ -41,7 +43,7 @@ export async function enviarEmailBrevo(args: {
         "api-key": env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { email: env.BREVO_REMETENTE_EMAIL, name: env.BREVO_REMETENTE_NOME },
+        sender: { email: env.BREVO_REMETENTE_EMAIL, name: args.remetenteNome ?? env.BREVO_REMETENTE_NOME },
         to: [{ email: args.destinatarioEmail, name: args.destinatarioNome ?? args.destinatarioEmail }],
         subject: args.assunto,
         htmlContent: args.html,

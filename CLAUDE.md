@@ -1334,3 +1334,21 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   do MCP estoura 60 s em DDL de função/`drop` neste projeto às vezes; `create
   table`/`alter`/`policy` em comandos separados passam, e `create or replace
   function` em `hub.definir_acesso` precisou ser rodado no SQL Editor do painel.
+
+- **Link por e-mail e pedido de acesso com um clique (21/10/2026).**
+  (1) O link de primeiro acesso é enviado por e-mail (Brevo,
+  `enviarEmailPrimeiroAcesso`, remetente "Central Cataguases") quando a conta
+  é criada (`enviarLinkNoEmailEAnotar`, em `definirAcesso` e
+  `aprovarSolicitacao`: o resultado — enviado ou falhou — vai na mensagem do
+  módulo, ao lado do link copiável, que continua valendo se o e-mail falhar) e
+  pode ser reenviado em Configurações → Usuários e acessos
+  (`enviarLinkPrimeiroAcessoPorEmail`, só para quem nunca entrou). Depende de
+  `BREVO_API_KEY`/`BREVO_REMETENTE_EMAIL` na Vercel (já usadas pela
+  recuperação de senha). (2) Na tela inicial o card de módulo sem acesso é um
+  botão "Solicitar acesso" (`solicitarAcessoAoModulo`): nome/e-mail vêm da
+  sessão, nunca do navegador; não duplica pedido pendente; depois do clique o
+  card mostra "Solicitação enviada — aguardando aprovação"
+  (`pedidoPendente`, lido com a service_role só para o e-mail da própria
+  sessão). Armadilha evitada: função exportada de arquivo `"use server"` é
+  chamável pelo navegador — a leitura de pendências mora em `lib/dados/` (só
+  servidor), nunca na action.

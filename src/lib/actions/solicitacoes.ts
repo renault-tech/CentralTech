@@ -9,6 +9,7 @@ import { MODULOS } from "@/lib/modulos-info";
 import {
   encontrarOuCriarConta,
   linkPrimeiroAcessoDaConta,
+  enviarLinkNoEmailEAnotar,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -111,6 +112,13 @@ export async function aprovarSolicitacao(
   if (decisoes.emendas) {
     resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado);
   }
+
+  await enviarLinkNoEmailEAnotar(
+    pessoa,
+    linkCompartilhado,
+    (Object.keys(resultados) as Modulo[]).filter((m) => resultados[m]?.sucesso),
+    resultados
+  );
 
   await sincronizarBookkeepingHub(hub, conta.id, pessoa, resultados);
 

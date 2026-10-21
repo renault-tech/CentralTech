@@ -27,6 +27,7 @@ import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/actions/auth";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
+import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
 import type { Modulo } from "@/types/database";
 
 export type DecisaoCompras = { perfil: string; setorId: string | null };
@@ -154,6 +155,27 @@ export async function linkPrimeiroAcessoDaConta(usuarioId: string): Promise<stri
   } catch (e) {
     console.error("[linkPrimeiroAcessoDaConta] falhou:", e);
     return undefined;
+  }
+}
+
+/**
+ * Conta nova: manda o link de primeiro acesso por e-mail e registra o
+ * resultado na mensagem dos módulos que levam o link (a tela do admin mostra
+ * isso junto do link copiável, que continua valendo se o e-mail falhar).
+ */
+export async function enviarLinkNoEmailEAnotar(
+  pessoa: PessoaAlvo,
+  link: string | undefined,
+  modulos: Modulo[],
+  resultados: Partial<Record<Modulo, ResultadoModulo>>
+): Promise<void> {
+  if (!link) return;
+  const enviado = await enviarEmailPrimeiroAcesso({ nome: pessoa.nome, email: pessoa.email, link, modulos });
+  const aviso = enviado
+    ? `Link de primeiro acesso enviado para ${pessoa.email}.`
+    : "Não foi possível enviar o e-mail agora — copie o link abaixo e envie à pessoa.";
+  for (const r of Object.values(resultados)) {
+    if (r?.linkPrimeiroAcesso) r.mensagem = r.mensagem ? `${r.mensagem} ${aviso}` : aviso;
   }
 }
 

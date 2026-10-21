@@ -6,6 +6,7 @@ import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 import { abrirModulo } from "@/lib/actions/sso";
+import { solicitarAcessoAoModulo } from "@/lib/actions/solicitar-modulo";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { GerenciadorTours } from "@/components/ajuda/gerenciador-tours";
@@ -105,21 +106,37 @@ export default async function PaginaInicial({
                   </span>
                 </button>
               </form>
-            ) : (
-              <a
+            ) : m.pedidoPendente ? (
+              <div
                 key={m.chave}
-                href={`/solicitar-acesso?modulo=${m.chave}`}
-                className="group rounded-xl border border-dashed border-slate-300 bg-slate-100/60 p-5 opacity-75 transition-opacity hover:opacity-100"
+                className="rounded-xl border border-dashed border-slate-300 bg-slate-100/60 p-5 opacity-80"
               >
                 <div className="flex items-center gap-2">
                   <Lock className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
                   <h2 className="text-base font-semibold text-slate-500">{m.nome}</h2>
                 </div>
                 <p className="mt-1.5 text-sm text-slate-400">{m.descricao}</p>
-                <span className="mt-3 inline-block text-xs font-medium text-slate-500 group-hover:text-cataguases-azul">
-                  Sem acesso — solicitar →
+                <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                  Solicitação enviada — aguardando aprovação
                 </span>
-              </a>
+              </div>
+            ) : (
+              <form key={m.chave} action={solicitarAcessoAoModulo.bind(null, m.chave)}>
+                <button
+                  type="submit"
+                  className="group w-full rounded-xl border border-dashed border-slate-300 bg-slate-100/60 p-5 text-left opacity-75 transition-opacity hover:opacity-100"
+                  title={`Clique para solicitar acesso a ${m.nome}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    <h2 className="text-base font-semibold text-slate-500">{m.nome}</h2>
+                  </div>
+                  <p className="mt-1.5 text-sm text-slate-400">{m.descricao}</p>
+                  <span className="mt-3 inline-block rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-500 transition-colors group-hover:border-cataguases-azul group-hover:text-cataguases-azul">
+                    Solicitar acesso
+                  </span>
+                </button>
+              </form>
             )
           )}
         </div>
