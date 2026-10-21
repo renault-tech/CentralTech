@@ -1,12 +1,13 @@
 "use client";
 
+import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Cartao, Kpi } from "@/components/emendas/ui";
 import {
-  ETAPAS,
+  etapasEmOrdem,
   GRUPOS_EXECUCAO,
   alertas as calcularAlertas,
   brl,
@@ -82,16 +83,17 @@ export function PainelEmendas({
     (ignorar === "etapa" || !f.etapa || r.etapa === f.etapa);
 
   const filtradas = emendas.filter((r) => passa(r));
-  const ind = indicadores(filtradas);
+  const catalogo = useCatalogo();
+  const ind = indicadores(filtradas, catalogo);
   const temFiltro = CHAVES.some((k) => f[k]);
   const recorteSoVereadorOuNada = !f.s && !f.saude && !f.mod && !f.etapa;
 
   // ----- por vereador
-  const linhasV = porVereador(emendas.filter((r) => passa(r, "v")), vereadores);
+  const linhasV = porVereador(emendas.filter((r) => passa(r, "v")), vereadores, catalogo);
   const maxV = Math.max(1, ...linhasV.map((l) => l.total));
 
   // ----- funil
-  const funil = porEtapa(emendas.filter((r) => passa(r, "etapa")));
+  const funil = porEtapa(emendas.filter((r) => passa(r, "etapa")), catalogo);
   const totalFunil = Math.max(1, funil.reduce((t, x) => t + x.valor, 0));
 
   // ----- secretarias
@@ -110,12 +112,13 @@ export function PainelEmendas({
     hoje: dataHoje,
     ano: exercicio.ano,
     diasParado: 30,
+    catalogo,
   });
 
   const resumo = [
     f.v && vereadores.find((v) => v.id === f.v)?.nome,
     f.s && secretarias.find((s) => s.id === f.s)?.nome,
-    f.etapa && infoEtapa(f.etapa).nome,
+    f.etapa && infoEtapa(f.etapa, catalogo).nome,
     f.saude === "1" ? "Saúde" : f.saude === "0" ? "Fora da Saúde" : "",
     f.mod === "repasse" ? "Repasse a entidade" : f.mod === "direta" ? "Aplicação direta" : "",
   ].filter(Boolean);
@@ -169,7 +172,7 @@ export function PainelEmendas({
         <Campo rotulo="Etapa">
           <select className={ESTILO_SELECT} value={f.etapa} onChange={(e) => definir({ etapa: e.target.value })}>
             <option value="">Todas</option>
-            {ETAPAS.map((e) => (
+            {etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa))).map((e) => (
               <option key={e.chave} value={e.chave}>
                 {e.nome}
               </option>

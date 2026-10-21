@@ -1358,3 +1358,39 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   depende de `BREVO_REMETENTE_NOME` na Vercel); a recuperação do Numera
   continua "Numera" (texto do próprio app). Aviso de pedidos de acesso ao
   admin: só o banner da tela inicial (decisão do dono; sem e-mail por ora).
+
+- **Fases do fluxo editáveis (22/10/2026).** Configurações do módulo →
+  "Fases do fluxo" (`/emendas/configuracoes/fases`, só admin do Hub e gestor).
+  Banco (migration `20261022000000`): `emendas.etapas` (chave, nome, cor,
+  grupo 0-3, fixa — global aos dois fluxos) e `emendas.fluxo_etapas`
+  (modalidade, chave, ordem, ativa — um fluxo por modalidade). Os CHECKs de
+  lista fixa (`emendas.etapa`, `andamentos.etapa`, `etapa_compativel_
+  modalidade`) viraram FK para `etapas` + gatilhos: `validar_etapa_andamento`
+  (andamento só em fase ATIVA do fluxo da modalidade da emenda) e
+  `zz_ajustar_etapa_modalidade` (mudou a natureza → a fase atual não existe no
+  fluxo novo → volta para `etapa_de_retorno`, a primeira fase ativa depois de
+  Indicada). `salvar_fluxo(modalidade, itens)` é a única forma de escrever
+  (security definer, `eh_gestor`): fixas (indicada, empenhada, liquidada, paga,
+  concluida) não saem nem se desativam e seguem essa ordem, Indicada primeiro e
+  Concluída por último; nomes únicos entre as ativas; "remover" só fase nunca
+  usada no fluxo, senão desativar (histórico fica). O `grupo` (0 sem andamento,
+  1 em andamento, 2 empenhada/liquidada, 3 paga ou adiante) é derivado da
+  posição em relação a Empenhada/Paga ao salvar — é ele que alimenta barras e
+  indicadores. `remanejar` deixou de citar fases no código (volta para
+  `etapa_de_retorno`). **Permissões**: `emendas.definir_acesso` agora só aceita
+  admin/gestor (o admin de secretaria deixou de ajustar a equipe; decisão do
+  dono: todo acesso passa por ele ou pelo gestor).
+  App: `CatalogoEtapas` (`regras.ts`: `infoEtapa`/`trilha`/`proximasEtapas`/
+  `posicaoNaTrilha`/`etapasEmOrdem`/`porEtapa`/`validarFluxo`, com
+  `CATALOGO_PADRAO` de reserva) carregado por `obterCatalogoEtapas()` e levado
+  aos componentes de cliente por `ProvedorCatalogo` (layout de `/emendas`) /
+  `useCatalogo()`; páginas de servidor chamam `obterCatalogoEtapas()` e
+  passam `catalogo` para `BarraEtapas`/`SeloEtapa`/`LinhaEtapas`. Fase
+  desativada com emenda nela continua aparecendo (funil/filtro) e a barra usa a
+  última fase ativa antes dela. **Lição**: o MCP do Supabase trava (60 s) em
+  `drop function`, em `create or replace` de função existente e em funções
+  grandes (cause não isolada; não é lock nem tamanho puro) — `salvar_fluxo`,
+  `remanejar` e `definir_acesso` precisam ser rodadas no SQL Editor do painel;
+  o arquivo da migration é reexecutável. Tabelas, FKs e gatilhos passaram por
+  MCP. O banco de produção já tem as 215 emendas importadas: testar sempre em
+  transação com rollback.

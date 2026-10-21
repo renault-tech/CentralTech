@@ -30,20 +30,10 @@ const COR_PERFIL: Record<PerfilEfetivo, string> = {
   consulta: "bg-slate-100 text-slate-700",
 };
 
-/** Matriz usuário × secretaria (Ver / Editar), como no mockup aprovado. O
- * banco (`emendas.definir_acesso`) é quem garante os limites — inclusive
- * que um admin de secretaria só mexe na própria equipe. */
-export function MatrizPermissoes({
-  usuarios,
-  secretarias,
-  meuPerfil,
-  minhaSecretaria,
-}: {
-  usuarios: UsuarioMatriz[];
-  secretarias: Secretaria[];
-  meuPerfil: PerfilEfetivo;
-  minhaSecretaria: string | null;
-}) {
+/** Matriz usuário × secretaria (Ver / Editar), como no mockup aprovado. Só o
+ * administrador do Hub e o gestor chegam aqui; o banco
+ * (`emendas.definir_acesso`) repete essa regra. */
+export function MatrizPermissoes({ usuarios, secretarias }: { usuarios: UsuarioMatriz[]; secretarias: Secretaria[] }) {
   const router = useRouter();
   const [selId, setSelId] = React.useState<string | null>(usuarios.find((u) => !u.adminHub)?.id ?? usuarios[0]?.id ?? null);
   const sel = usuarios.find((u) => u.id === selId) ?? null;
@@ -91,27 +81,14 @@ export function MatrizPermissoes({
         </p>
       </section>
 
-      {sel && <Editor key={sel.id} usuario={sel} secretarias={secretarias} meuPerfil={meuPerfil} minhaSecretaria={minhaSecretaria} aoSalvar={() => router.refresh()} />}
+      {sel && <Editor key={sel.id} usuario={sel} secretarias={secretarias} aoSalvar={() => router.refresh()} />}
     </div>
   );
 }
 
-function Editor({
-  usuario,
-  secretarias,
-  meuPerfil,
-  minhaSecretaria,
-  aoSalvar,
-}: {
-  usuario: UsuarioMatriz;
-  secretarias: Secretaria[];
-  meuPerfil: PerfilEfetivo;
-  minhaSecretaria: string | null;
-  aoSalvar: () => void;
-}) {
-  const souAdmSecretaria = meuPerfil === "admin_secretaria";
-  const [perfil, setPerfil] = React.useState<PerfilEmendas>(usuario.perfil ?? (souAdmSecretaria ? "operador" : "admin_secretaria"));
-  const [secretariaId, setSecretariaId] = React.useState<string>(usuario.secretariaId ?? (souAdmSecretaria ? minhaSecretaria ?? "" : ""));
+function Editor({ usuario, secretarias, aoSalvar }: { usuario: UsuarioMatriz; secretarias: Secretaria[]; aoSalvar: () => void }) {
+  const [perfil, setPerfil] = React.useState<PerfilEmendas>(usuario.perfil ?? "admin_secretaria");
+  const [secretariaId, setSecretariaId] = React.useState<string>(usuario.secretariaId ?? "");
   const [mapa, setMapa] = React.useState<Record<string, { ver: boolean; editar: boolean }>>(usuario.permissoes);
   const [salvando, setSalvando] = React.useState(false);
   const [msg, setMsg] = React.useState<{ ok: boolean; texto: string } | null>(null);
@@ -144,7 +121,7 @@ function Editor({
         })
       )
     );
-  const perfisPermitidos: PerfilEmendas[] = souAdmSecretaria ? ["operador", "consulta"] : ["gestor", "admin_secretaria", "operador", "consulta"];
+  const perfisPermitidos: PerfilEmendas[] = ["gestor", "admin_secretaria", "operador", "consulta"];
 
   async function salvar() {
     setSalvando(true);
@@ -182,7 +159,7 @@ function Editor({
           {!total && (
             <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
               Secretaria da pessoa
-              <select className={CAMPO} value={secretariaId} disabled={souAdmSecretaria} onChange={(e) => setSecretariaId(e.target.value)}>
+              <select className={CAMPO} value={secretariaId} onChange={(e) => setSecretariaId(e.target.value)}>
                 <option value="">{consulta ? "(nenhuma)" : "Escolha…"}</option>
                 {secretarias.map((s) => (
                   <option key={s.id} value={s.id}>

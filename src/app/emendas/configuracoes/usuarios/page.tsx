@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Quem enxerga quem: `emendas.usuarios`/`permissoes` vêm pela RLS (gestor
- * vê todos; admin de secretaria, a própria equipe). Nome/e-mail moram em
+ * vê todos). Nome/e-mail moram em
  * `hub.usuarios`, que só o admin do Hub lê pela RLS — então só para os ids
  * que a RLS do módulo já liberou, eles são lidos com a service_role.
  * Gestor/admin também veem quem foi liberado na Central mas ainda não tem
@@ -23,11 +23,10 @@ export default async function PaginaUsuariosEmendas() {
   const gestor = ehGestor(ctx.perfil);
 
   const emendas = await criarClienteEmendas();
-  const [secretarias, { data: usuarios }, { data: permissoes }, { data: minha }] = await Promise.all([
+  const [secretarias, { data: usuarios }, { data: permissoes }] = await Promise.all([
     listarSecretarias(),
     emendas.from("usuarios").select("*").eq("ativo", true),
     emendas.from("permissoes").select("*"),
-    emendas.rpc("minha_secretaria"),
   ]);
 
   const admin = criarClienteAdmin();
@@ -69,5 +68,5 @@ export default async function PaginaUsuariosEmendas() {
     return <Vazio>{gestor ? "Ninguém tem acesso ao módulo ainda. Libere pela Central: Configurações → Usuários e acessos." : "Sua secretaria ainda não tem outras pessoas no módulo."}</Vazio>;
   }
 
-  return <MatrizPermissoes usuarios={linhas} secretarias={secretarias.filter((s) => s.ativo)} meuPerfil={ctx.perfil} minhaSecretaria={(minha as string | null) ?? null} />;
+  return <MatrizPermissoes usuarios={linhas} secretarias={secretarias.filter((s) => s.ativo)} />;
 }

@@ -18,7 +18,8 @@ import {
   resolverImpedimento,
   type Resultado,
 } from "@/lib/emendas/actions";
-import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, trilha } from "@/lib/emendas/regras";
+import { useCatalogo } from "@/components/emendas/catalogo-etapas";
+import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
@@ -98,6 +99,7 @@ export function DetalheEmendaCliente({
   auditoria: { id: number; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
   nomesUsuarios: Record<string, string>;
 }) {
+  const catalogo = useCatalogo();
   const router = useRouter();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
   const [aba, setAba] = React.useState<Aba>("andamentos");
@@ -116,7 +118,7 @@ export function DetalheEmendaCliente({
     if (campo === "unidade_id") return nomeUnidade(v);
     if (campo === "valor") return brl(Number(v));
     if (campo === "saude") return v ? "Sim" : "Não";
-    if (campo === "etapa") return infoEtapa(String(v)).nome;
+    if (campo === "etapa") return infoEtapa(String(v), catalogo).nome;
     return String(v);
   };
 
@@ -203,11 +205,11 @@ export function DetalheEmendaCliente({
                 <li key={a.id} className="grid grid-cols-[92px_20px_1fr] gap-3">
                   <span className="pt-0.5 text-xs tabular-nums text-slate-600">{dataBr(a.data)}</span>
                   <span className="flex flex-col items-center" aria-hidden>
-                    <span className="mt-1 h-3 w-3 rounded-full" style={{ backgroundColor: infoEtapa(a.etapa).cor === "#CBD5E1" ? "#94A3B8" : infoEtapa(a.etapa).cor }} />
+                    <span className="mt-1 h-3 w-3 rounded-full" style={{ backgroundColor: infoEtapa(a.etapa, catalogo).cor === "#CBD5E1" ? "#94A3B8" : infoEtapa(a.etapa, catalogo).cor }} />
                     {i < andamentos.length - 1 && <span className="min-h-7 w-0.5 flex-1 bg-slate-200" />}
                   </span>
                   <div className="pb-5">
-                    <strong className="text-sm text-cataguases-marinho">{infoEtapa(a.etapa).nome}</strong>
+                    <strong className="text-sm text-cataguases-marinho">{infoEtapa(a.etapa, catalogo).nome}</strong>
                     {a.documento && <span className="ml-2 font-mono text-xs text-slate-600">{a.documento}</span>}
                     {a.observacao && <p className="mt-0.5 text-[13px] text-slate-600">{a.observacao}</p>}
                     <p className="mt-0.5 text-xs text-slate-500">
@@ -435,9 +437,9 @@ function DialogoAndamento({
   emenda: DetalheEmenda["emenda"];
   aoSalvar: (d: { etapa: EtapaEmenda & Exclude<EtapaEmenda, "indicada">; data: string; documento?: string; observacao?: string; valor?: number | null }) => Promise<Resultado>;
 }) {
-  const t = trilha(emenda.modalidade).filter((e) => e !== "indicada") as Exclude<EtapaEmenda, "indicada">[];
-  const pos = t.indexOf(emenda.etapa as Exclude<EtapaEmenda, "indicada">);
-  const sugerida = t[Math.min(t.length - 1, pos + 1)] ?? t[0];
+  const catalogo = useCatalogo();
+  const t = trilha(emenda.modalidade, catalogo).filter((e) => e !== "indicada") as Exclude<EtapaEmenda, "indicada">[];
+  const sugerida = proximasEtapas(emenda.modalidade, emenda.etapa, catalogo)[0] ?? t[t.length - 1] ?? t[0];
   const valorSugerido = (k: string) => {
     const base = k === "empenhada" ? emenda.empenhado : k === "liquidada" ? emenda.liquidado : emenda.pago;
     const restante = Math.max(0, (k === "empenhada" ? emenda.valor : emenda.empenhado || emenda.valor) - base);
@@ -485,7 +487,7 @@ function DialogoAndamento({
             >
               {t.map((k) => (
                 <option key={k} value={k}>
-                  {infoEtapa(k).nome}
+                  {infoEtapa(k, catalogo).nome}
                   {k === emenda.etapa ? " (atual)" : ""}
                 </option>
               ))}

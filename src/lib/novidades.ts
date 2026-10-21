@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-22",
+    titulo: "Emendas: fases do fluxo editáveis",
+    descricao:
+      "Em Emendas → Configurações → Fases do fluxo, o administrador e o gestor podem adicionar, renomear, recolorir, reordenar, desativar ou excluir as fases do fluxo, com um fluxo para repasse a entidade e outro para aplicação direta. Indicada, Empenhada, Liquidada, Paga e Concluída são fixas (alimentam os totais de empenhado e pago). Desativar uma fase tira ela das novas opções sem perder o histórico; só uma fase nunca usada pode ser excluída. Painel, lista, detalhe e exportação passam a usar as fases configuradas. Também mudou: as permissões do módulo agora são definidas só pelo administrador ou pelo gestor — o admin de secretaria deixou de ajustar a própria equipe.",
+  },
+  {
     data: "2026-10-21",
     titulo: "Solicitar acesso a um módulo com um clique",
     descricao:

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { Vazio } from "@/components/emendas/ui";
-import { listarEmendas, listarVereadores, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendas, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { GRUPOS_EXECUCAO, brl, brlCurto, cumpreSaude, numeroVereador, pct, porVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +13,11 @@ export default async function PaginaVereadores({ searchParams }: { searchParams:
   const { exercicio } = await resolverExercicio(ano);
   if (!exercicio) return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
 
-  const [emendas, vereadores] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores()]);
+  const [emendas, vereadores, catalogo] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores(), obterCatalogoEtapas()]);
   const linhas = porVereador(
     emendas.filter((e) => e.situacao !== "cancelada"),
-    vereadores.filter((v) => v.ativo || emendas.some((e) => e.vereador_id === v.id))
+    vereadores.filter((v) => v.ativo || emendas.some((e) => e.vereador_id === v.id)),
+    catalogo
   );
 
   return (

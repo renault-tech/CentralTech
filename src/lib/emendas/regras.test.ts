@@ -1,18 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CATALOGO_PADRAO,
   alertas,
   brlCurto,
   cumpreSaude,
   curvaPagamentos,
   diasAteFimDoAno,
+  etapasEmOrdem,
   indicadores,
   modalidadePorNatureza,
   porVereador,
+  posicaoNaTrilha,
   proximasEtapas,
   trilha,
+  validarFluxo,
   valorPorGrupo,
 } from "@/lib/emendas/regras";
+import type { CatalogoEtapas } from "@/lib/emendas/regras";
 import type { EmendaResumo } from "@/types/emendas";
 
 function emenda(p: Partial<EmendaResumo>): EmendaResumo {
@@ -165,5 +170,92 @@ describe("formatação", () => {
   it("abrevia milhões e milhares", () => {
     expect(brlCurto(5157490.05)).toBe("R$ 5,16 mi");
     expect(brlCurto(425000)).toBe("R$ 425 mil");
+  });
+});
+
+describe("fluxo de fases editável", () => {
+  const cat: CatalogoEtapas = {
+    etapas: {
+      ...CATALOGO_PADRAO.etapas,
+      vistoria: { chave: "vistoria", nome: "Vistoria", cor: "#BBAAEE", grupo: 1 },
+    },
+    fluxos: {
+      repasse: [
+        { chave: "indicada", ativa: true },
+        { chave: "analise", ativa: true },
+        { chave: "vistoria", ativa: true },
+        { chave: "plano_trabalho", ativa: false },
+        { chave: "empenhada", ativa: true },
+        { chave: "liquidada", ativa: true },
+        { chave: "paga", ativa: true },
+        { chave: "prestacao_contas", ativa: true },
+        { chave: "concluida", ativa: true },
+      ],
+      direta: CATALOGO_PADRAO.fluxos.direta,
+    },
+  };
+
+  it("a trilha só tem fases ativas, na ordem do fluxo", () => {
+    expect(trilha("repasse", cat)).toEqual(["indicada", "analise", "vistoria", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]);
+    expect(trilha("direta", cat)).toEqual(trilha("direta"));
+  });
+
+  it("fase desativada com emenda nela usa a posição da última fase ativa antes", () => {
+    expect(posicaoNaTrilha("repasse", "vistoria", cat)).toBe(2);
+    expect(posicaoNaTrilha("repasse", "plano_trabalho", cat)).toBe(2);
+    expect(posicaoNaTrilha("repasse", "paga", cat)).toBe(5);
+  });
+
+  it("as próximas fases saltam as desativadas", () => {
+    expect(proximasEtapas("repasse", "analise", cat)).toEqual(["vistoria", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]);
+    expect(proximasEtapas("repasse", "plano_trabalho", cat)).toEqual(["empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]);
+  });
+
+  it("une os dois fluxos numa lista só e esconde desativadas sem uso", () => {
+    const chaves = etapasEmOrdem(cat).map((e) => e.chave);
+    expect(chaves.indexOf("analise")).toBeLessThan(chaves.indexOf("vistoria"));
+    expect(chaves.indexOf("analise")).toBeLessThan(chaves.indexOf("processo_compra"));
+    expect(chaves.indexOf("empenhada")).toBeGreaterThan(chaves.indexOf("vistoria"));
+    expect(chaves.indexOf("empenhada")).toBeGreaterThan(chaves.indexOf("processo_compra"));
+  });
+
+  it("fase desativada só aparece se houver emenda nela", () => {
+    expect(etapasEmOrdem(cat).map((e) => e.chave)).not.toContain("plano_trabalho");
+    expect(etapasEmOrdem(cat, new Set(["plano_trabalho"])).map((e) => e.chave)).toContain("plano_trabalho");
+  });
+
+  it("o catálogo padrão reproduz as trilhas de origem", () => {
+    expect(trilha("repasse")).toEqual(["indicada", "analise", "plano_trabalho", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]);
+    expect(trilha("direta")).toEqual(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]);
+  });
+});
+
+describe("validarFluxo", () => {
+  const base = (chaves: string[]) => chaves.map((chave) => ({ chave, nome: chave === "indicada" ? "Indicada" : chave, ativa: true }));
+  const ok = base(["indicada", "analise", "empenhada", "liquidada", "paga", "concluida"]);
+
+  it("aceita o fluxo mínimo e fases novas no meio", () => {
+    expect(validarFluxo(ok)).toBeNull();
+    expect(validarFluxo([...ok.slice(0, 2), { chave: null, nome: "Vistoria técnica", ativa: true }, ...ok.slice(2)])).toBeNull();
+  });
+
+  it("recusa tirar, desativar ou reordenar fases fixas", () => {
+    expect(validarFluxo(ok.filter((i) => i.chave !== "liquidada"))).toMatch(/fixas/);
+    expect(validarFluxo(ok.map((i) => (i.chave === "paga" ? { ...i, ativa: false } : i)))).toMatch(/desativadas/);
+    expect(validarFluxo([ok[0], ok[3], ok[2], ...ok.slice(4)])).toMatch(/ordem/);
+    expect(validarFluxo(ok.map((i) => (i.chave === "paga" ? { ...i, remover: true } : i)))).toMatch(/removidas/);
+  });
+
+  it("Indicada fica primeiro e Concluída por último", () => {
+    expect(validarFluxo([ok[1], ok[0], ...ok.slice(2)])).toMatch(/primeira/);
+    expect(validarFluxo([...ok.slice(0, 5), { chave: null, nome: "Arquivamento", ativa: true }, ok[5]])).toBeNull();
+    expect(validarFluxo([...ok, { chave: null, nome: "Arquivamento", ativa: true }])).toMatch(/última/);
+  });
+
+  it("recusa nome curto e nomes repetidos entre as ativas", () => {
+    expect(validarFluxo([...ok.slice(0, 2), { chave: null, nome: "A", ativa: true }, ...ok.slice(2)])).toMatch(/2 a 60/);
+    expect(
+      validarFluxo([...ok.slice(0, 2), { chave: null, nome: "ANALISE", ativa: true }, ...ok.slice(2)])
+    ).toMatch(/mesmo nome/);
   });
 });

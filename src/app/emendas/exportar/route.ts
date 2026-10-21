@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { listarEmendas, listarMovimentos, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendas, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { NOME_MODALIDADE, infoEtapa } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   const numeros = (p.get("numeros") ?? "").split(",").filter(Boolean).map(Number);
   const q = normalizar(p.get("q") ?? "");
-  const todas = await listarEmendas(exercicio.ano);
+  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano), obterCatalogoEtapas()]);
   const emendas = todas.filter(
     (r) =>
       (!p.get("v") || r.vereador_id === p.get("v")) &&
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       secretaria: e.secretaria_nome,
       saude: e.saude ? "Sim" : "Não",
       modalidade: NOME_MODALIDADE[e.modalidade],
-      etapa: infoEtapa(e.etapa).nome,
+      etapa: infoEtapa(e.etapa, catalogo).nome,
       situacao: e.situacao === "normal" ? "" : e.situacao === "impedida" ? "Impedida" : "Cancelada",
       empenhos: (empenhos.get(e.id) ?? []).join(", "),
       empenhado: e.empenhado,

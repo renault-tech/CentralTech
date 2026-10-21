@@ -175,14 +175,15 @@ const esquemaAcesso = z.object({
   permissoes: z.array(z.object({ secretaria_id: z.uuid(), ver: z.boolean(), editar: z.boolean() })),
 });
 
-/** Matriz de permissões. Gestor/admin mexem em qualquer pessoa; admin de
- * secretaria só na própria equipe — quem decide é `emendas.definir_acesso`. */
+/** Matriz de permissões. Só o administrador do Hub e o gestor definem acessos
+ * (decisão do dono: todo acesso passa por eles) — quem decide de verdade é
+ * `emendas.definir_acesso`. */
 export async function definirPermissoes(dados: z.input<typeof esquemaAcesso>): Promise<Resultado> {
   const a = esquemaAcesso.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   const ctx = await obterContextoEmendas();
-  if (ctx.situacao !== "ok" || !(ehGestor(ctx.perfil) || ctx.perfil === "admin_secretaria")) {
-    return { sucesso: false, erro: "Sem permissão para ajustar acessos." };
+  if (ctx.situacao !== "ok" || !ehGestor(ctx.perfil)) {
+    return { sucesso: false, erro: "Só o administrador ou o gestor ajusta acessos." };
   }
   if (["admin_secretaria", "operador"].includes(a.data.perfil) && !a.data.secretariaId) {
     return { sucesso: false, erro: "Este perfil precisa da secretaria da pessoa." };
@@ -200,6 +201,41 @@ export async function definirPermissoes(dados: z.input<typeof esquemaAcesso>): P
     return { sucesso: false, erro: traduzir(error) };
   }
   revalidatePath("/emendas/configuracoes/usuarios");
+  return { sucesso: true };
+}
+
+// ------------------------------------------------------------------- fases
+
+const esquemaFluxo = z.object({
+  modalidade: z.enum(["repasse", "direta"]),
+  itens: z
+    .array(
+      z.object({
+        chave: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/).nullable(),
+        nome: z.string().trim().min(2, "O nome de cada fase precisa ter de 2 a 60 caracteres.").max(60, "O nome de cada fase precisa ter de 2 a 60 caracteres."),
+        cor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor inválida."),
+        ativa: z.boolean(),
+        remover: z.boolean().optional(),
+      })
+    )
+    .min(1, "Informe ao menos uma fase.")
+    .max(40, "Fases demais neste fluxo."),
+});
+
+/** Salva o fluxo de uma modalidade (ordem, nomes, cores, ativação, novas
+ * fases e exclusão de fases nunca usadas). As regras (fixas, ordem, uso)
+ * vivem em `emendas.salvar_fluxo`; `validarFluxo` só antecipa o aviso. */
+export async function salvarFluxo(dados: z.input<typeof esquemaFluxo>): Promise<Resultado> {
+  const a = esquemaFluxo.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só o administrador ou o gestor edita as fases." };
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas.rpc("salvar_fluxo", { p_modalidade: a.data.modalidade, p_itens: a.data.itens });
+  if (error) {
+    console.error("[salvarFluxo]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
   return { sucesso: true };
 }
 

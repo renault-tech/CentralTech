@@ -7,24 +7,22 @@ import { ehGestor } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
 
-/** Configurações do módulo. Gestor/admin: tudo. Admin de secretaria: só a
- * aba de usuários (a própria equipe). */
+/** Configurações do módulo: só o administrador do Hub e o gestor (todo
+ * acesso e toda regra passam por eles). */
 export default async function LayoutConfiguracoesEmendas({ children }: { children: React.ReactNode }) {
   const ctx = await obterContextoEmendas();
   if (ctx.situacao !== "ok") redirect("/emendas");
-  const gestor = ehGestor(ctx.perfil);
-  if (!gestor && ctx.perfil !== "admin_secretaria") redirect("/emendas");
+  if (!ehGestor(ctx.perfil)) redirect("/emendas");
 
-  const abas = gestor
-    ? [
-        { href: "/emendas/configuracoes/exercicio", rotulo: "Exercício" },
-        { href: "/emendas/configuracoes/vereadores", rotulo: "Vereadores" },
-        { href: "/emendas/configuracoes/secretarias", rotulo: "Secretarias e unidades" },
-        { href: "/emendas/configuracoes/beneficiarios", rotulo: "Beneficiários" },
-        { href: "/emendas/configuracoes/usuarios", rotulo: "Usuários e permissões" },
-        { href: "/emendas/configuracoes/importar", rotulo: "Importar planilha" },
-      ]
-    : [{ href: "/emendas/configuracoes/usuarios", rotulo: "Minha equipe" }];
+  const abas = [
+    { href: "/emendas/configuracoes/exercicio", rotulo: "Exercício" },
+    { href: "/emendas/configuracoes/fases", rotulo: "Fases do fluxo" },
+    { href: "/emendas/configuracoes/vereadores", rotulo: "Vereadores" },
+    { href: "/emendas/configuracoes/secretarias", rotulo: "Secretarias e unidades" },
+    { href: "/emendas/configuracoes/beneficiarios", rotulo: "Beneficiários" },
+    { href: "/emendas/configuracoes/usuarios", rotulo: "Usuários e permissões" },
+    { href: "/emendas/configuracoes/importar", rotulo: "Importar planilha" },
+  ];
 
   return (
     <div className="flex flex-col gap-5">

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
-import { listarBeneficiarios, listarUnidades, obterContextoEmendas, obterDetalheEmenda, podeEditarSecretaria } from "@/lib/emendas/dados";
+import { listarBeneficiarios, listarUnidades, obterCatalogoEtapas, obterContextoEmendas, obterDetalheEmenda, podeEditarSecretaria } from "@/lib/emendas/dados";
 import { NOME_MODALIDADE, brl, dataBr, ehGestor, numeroVereador } from "@/lib/emendas/regras";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -17,7 +17,7 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
   const ctx = await obterContextoEmendas();
   if (ctx.situacao !== "ok") redirect("/emendas");
 
-  const detalhe = await obterDetalheEmenda(id);
+  const [detalhe, catalogo] = await Promise.all([obterDetalheEmenda(id), obterCatalogoEtapas()]);
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos } = detalhe;
   const gestor = ehGestor(ctx.perfil);
@@ -73,7 +73,7 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
           </div>
           <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
         </div>
-        <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} />
+        <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} catalogo={catalogo} />
       </section>
 
       <div className="flex flex-wrap items-start gap-5">

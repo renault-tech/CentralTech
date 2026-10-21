@@ -22,7 +22,7 @@ function traduzir(erro: { message?: string; code?: string } | null | undefined):
   }
   if (/duplicate key.*\(ano, numero\)|emendas_ano_numero_key/i.test(m)) return "Já existe uma emenda com este número neste exercício.";
   if (/emendas_ano_vereador_id_numero_vereador_key/i.test(m)) return "Este vereador já tem uma emenda com este ID neste exercício.";
-  if (/etapa_compativel_modalidade/i.test(m)) return "Esta etapa não existe para a modalidade da emenda (repasse × aplicação direta).";
+  if (/não faz parte do fluxo ativo/i.test(m)) return "Esta fase não faz parte do fluxo ativo desta emenda (repasse × aplicação direta).";
   if (/beneficiarios_nome_unico/i.test(m)) return "Já existe um beneficiário com este nome.";
   // Mensagens das RPCs/triggers já são escritas em português para o usuário.
   if (m && /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(m) && !/^(new row|null value|insert|update|permission)/i.test(m)) return m;
@@ -53,7 +53,9 @@ const textoOpcional = (max: number) =>
 
 const esquemaAndamento = z.object({
   emendaId: z.uuid(),
-  etapa: z.enum(["analise", "plano_trabalho", "processo_compra", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]),
+  // A lista de fases é editável (Configurações → Fases): quem decide se a fase
+  // vale para a emenda é o banco (`validar_etapa_andamento`).
+  etapa: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/, "Fase inválida").refine((e) => e !== "indicada", "Fase inválida"),
   data,
   documento: textoOpcional(100),
   observacao: textoOpcional(4000),

@@ -5,6 +5,7 @@ import { cache } from "react";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
+import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emendas/regras";
 import type {
   Andamento,
   Beneficiario,
@@ -194,4 +195,48 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     remanejamentos: remanejamentos.data ?? [],
     documentos: documentos.data ?? [],
   };
+}
+
+/**
+ * Fases e fluxos (Configurações → Fases). Se as tabelas não responderem, cai no
+ * catálogo padrão — as telas seguem funcionando com as fases de origem.
+ */
+export const obterCatalogoEtapas = cache(async (): Promise<CatalogoEtapas> => {
+  const emendas = await criarClienteEmendas();
+  const [{ data: etapas, error: erroEtapas }, { data: fluxo, error: erroFluxo }] = await Promise.all([
+    emendas.from("etapas").select("*"),
+    emendas.from("fluxo_etapas").select("*").order("ordem"),
+  ]);
+  if (erroEtapas || erroFluxo || !etapas?.length || !fluxo?.length) {
+    console.error("[obterCatalogoEtapas] usando o catálogo padrão:", erroEtapas ?? erroFluxo);
+    return CATALOGO_PADRAO;
+  }
+  const mapa: Record<string, InfoEtapa> = {};
+  for (const e of etapas) mapa[e.chave] = { chave: e.chave, nome: e.nome, cor: e.cor, grupo: e.grupo, fixa: e.fixa };
+  const fluxos: CatalogoEtapas["fluxos"] = { repasse: [], direta: [] };
+  for (const f of fluxo) if (mapa[f.chave]) fluxos[f.modalidade].push({ chave: f.chave, ativa: f.ativa });
+  return { etapas: mapa, fluxos };
+});
+
+/** Quantas emendas estão hoje em cada fase e quantos andamentos já a usaram,
+ * por modalidade — a tela de Fases usa para decidir entre desativar e excluir. */
+export type UsoEtapa = { emendas: number; andamentos: number };
+
+export async function usoDasEtapas(): Promise<Record<"repasse" | "direta", Record<string, UsoEtapa>>> {
+  const emendas = await criarClienteEmendas();
+  const [{ data: lista, error: e1 }, { data: andamentos, error: e2 }] = await Promise.all([
+    emendas.from("emendas").select("id, modalidade, etapa"),
+    emendas.from("andamentos").select("emenda_id, etapa"),
+  ]);
+  if (e1) falhou("emendas", e1);
+  if (e2) falhou("andamentos", e2);
+  const uso: Record<"repasse" | "direta", Record<string, UsoEtapa>> = { repasse: {}, direta: {} };
+  const modalidadeDe = new Map((lista ?? []).map((e) => [e.id, e.modalidade]));
+  const ref = (m: "repasse" | "direta", c: string) => (uso[m][c] ??= { emendas: 0, andamentos: 0 });
+  for (const e of lista ?? []) ref(e.modalidade, e.etapa).emendas += 1;
+  for (const a of andamentos ?? []) {
+    const m = modalidadeDe.get(a.emenda_id);
+    if (m) ref(m, a.etapa).andamentos += 1;
+  }
+  return uso;
 }
