@@ -1352,3 +1352,9 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   sessão). Armadilha evitada: função exportada de arquivo `"use server"` é
   chamável pelo navegador — a leitura de pendências mora em `lib/dados/` (só
   servidor), nunca na action.
+- **Remetente dos e-mails padronizado (21/10/2026).** Primeiro acesso e
+  recuperação de senha do Hub saem como "Central Cataguases"
+  (`REMETENTE_CENTRAL`, em `lib/email/brevo.ts`, definido no código — não
+  depende de `BREVO_REMETENTE_NOME` na Vercel); a recuperação do Numera
+  continua "Numera" (texto do próprio app). Aviso de pedidos de acesso ao
+  admin: só o banner da tela inicial (decisão do dono; sem e-mail por ora).

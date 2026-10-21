@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
 
         const resultado = await enviarEmailBrevo({
           destinatarioEmail: email,
+          remetenteNome: "Numera",
           assunto: "Recuperação de senha — Numera",
           html: `
             <p>Olá,</p>

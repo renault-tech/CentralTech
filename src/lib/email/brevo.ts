@@ -2,6 +2,10 @@ import "server-only";
 
 import { envBrevo } from "@/lib/env";
 
+/** Remetente dos e-mails da Central (primeiro acesso, recuperação de senha do
+ * Hub). Definido no código — não depende de `BREVO_REMETENTE_NOME` na Vercel. */
+export const REMETENTE_CENTRAL = "Central Cataguases";
+
 /**
  * Envia e-mail transacional via a API HTTPS da Brevo
  * (`https://api.brevo.com/v3/smtp/email`), sem passar pelo SMTP-on-587 do

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { enviarEmailBrevo } from "@/lib/email/brevo";
+import { enviarEmailBrevo, REMETENTE_CENTRAL } from "@/lib/email/brevo";
 import { moduloInfo } from "@/lib/modulos-info";
 import type { Modulo } from "@/types/database";
 
@@ -22,7 +22,7 @@ export async function enviarEmailPrimeiroAcesso(args: {
   const resultado = await enviarEmailBrevo({
     destinatarioEmail: args.email,
     destinatarioNome: args.nome,
-    remetenteNome: "Central Cataguases",
+    remetenteNome: REMETENTE_CENTRAL,
     assunto: "Seu acesso à Central Cataguases",
     html: `
       <p>Olá${primeiroNome ? `, ${primeiroNome}` : ""}!</p>

@@ -7,7 +7,7 @@ import { MODULOS } from "@/lib/modulos-info";
 import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
 import { marcarConviteUsado, sincronizarSenhaNumera, temConvitePendente } from "@/lib/auth/convite";
 import { completarNoTempoMinimo } from "@/lib/anti-enumeracao";
-import { enviarEmailBrevo } from "@/lib/email/brevo";
+import { enviarEmailBrevo, REMETENTE_CENTRAL } from "@/lib/email/brevo";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { destinoSeguro } from "@/lib/seguranca/destino-seguro";
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -220,6 +220,7 @@ export async function solicitarRecuperacao(
       const link = `${origem}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fredefinir-senha`;
       const resultado = await enviarEmailBrevo({
         destinatarioEmail: email,
+        remetenteNome: REMETENTE_CENTRAL,
         assunto: "Recuperação de senha — Central Cataguases",
         html: `
           <p>Olá,</p>
