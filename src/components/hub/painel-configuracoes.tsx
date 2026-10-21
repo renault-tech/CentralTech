@@ -5,7 +5,7 @@ import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
-import { definirAcesso } from "@/lib/actions/configuracoes";
+import { definirAcesso, obterLinkPrimeiroAcesso } from "@/lib/actions/configuracoes";
 import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
@@ -171,6 +171,7 @@ export function PainelConfiguracoes({
                     <td className="py-2 pr-3">
                       <p className="font-medium text-slate-800">{u.nome}</p>
                       <p className="text-xs text-slate-500">{u.email}</p>
+                      {u.nuncaEntrou && <PrimeiroAcessoPendente usuarioId={u.id} linkInicial={u.linkPrimeiroAcesso} />}
                     </td>
                     {TODOS_MODULOS.map((m) => {
                       const liberado = u.modulos.includes(m.chave);
@@ -438,6 +439,44 @@ function FormularioAcesso({
           Cancelar
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** Sob o nome de quem ainda não acessou: o link de primeiro acesso, que
+ * continua aqui até a pessoa definir a senha (e então some sozinho). */
+function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string; linkInicial: string | null }) {
+  const [link, setLink] = React.useState(linkInicial);
+  const [gerando, setGerando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+
+  async function gerar() {
+    setGerando(true);
+    setErro(null);
+    const r = await obterLinkPrimeiroAcesso(usuarioId);
+    setGerando(false);
+    if (r.sucesso) setLink(r.link);
+    else setErro(r.erro);
+  }
+
+  return (
+    <div className="mt-1 max-w-sm">
+      <p className="text-[11px] font-medium text-amber-700">
+        Ainda não acessou{link ? " — envie este link de primeiro acesso (vale para todos os módulos):" : ""}
+      </p>
+      {link ? (
+        <LinkCopiavel link={link} />
+      ) : (
+        <button
+          type="button"
+          onClick={gerar}
+          disabled={gerando}
+          className="mt-0.5 text-[11px] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
+        >
+          {gerando ? "Gerando…" : "Gerar link de primeiro acesso"}
+        </button>
+      )}
+      {erro && <p className="mt-0.5 text-[11px] text-red-700">{erro}</p>}
     </div>
   );
 }

@@ -1310,3 +1310,27 @@ Mockup"); a planilha original de 2026 serviu de modelo de dados.
   `tsc`/`eslint`/`vitest` (30 testes)/`next build` limpos; telas conferidas
   em 1280px e 390px com os dados reais. **Não testado ponta a ponta no
   deploy** (sandbox sem acesso a `*.vercel.app`/`*.supabase.co`).
+
+- **Link de primeiro acesso persistente (21/10/2026).** Caso real: a conta
+  nova de uma usuária só do Emendas respondia "E-mail ou senha incorretos" —
+  toda conta criada pelo provisionamento nasce com senha aleatória e o único
+  caminho era o link de uso único do Supabase (recovery, ~1 h), mostrado uma
+  vez na tela do admin. Agora `hub.convites_acesso` (migration
+  `20261021050000`; RLS: só admin do Hub lê, só service_role grava) guarda um
+  token da Central por pessoa. `/primeiro-acesso?t=<token>` (rota pública)
+  valida o token, gera na hora um recovery do Supabase e segue para
+  `/auth/confirm` → `/redefinir-senha`: cliques extras só gastam o token do
+  Supabase daquele clique, o convite continua valendo. **Uma senha só**:
+  `redefinirSenha`, quando há convite pendente, também grava a senha na conta
+  do Numera (`sincronizarSenhaNumera`) — nunca para quem só pediu "esqueci
+  minha senha" sem convite. O convite vira `usado_em` ao definir a senha ou ao
+  fazer login (`entrar`). Em Configurações → Usuários e acessos o link aparece
+  sob o nome de quem nunca entrou (`last_sign_in_at` nulo) e some sozinho;
+  quem ainda não tem convite ganha o botão "Gerar link"
+  (`obterLinkPrimeiroAcesso`, recusa contas que já acessaram). Contas novas
+  (`definirAcesso`, `aprovarSolicitacao`) usam esse link em vez dos de uso
+  único (`linkPrimeiroAcessoDaConta`). De carona: o destino padrão de
+  `entrar()` era `/dashboard` (não existe no Hub) → `/`. Lição: `execute_sql`
+  do MCP estoura 60 s em DDL de função/`drop` neste projeto às vezes; `create
+  table`/`alter`/`policy` em comandos separados passam, e `create or replace
+  function` em `hub.definir_acesso` precisou ser rodado no SQL Editor do painel.

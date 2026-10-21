@@ -4,13 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { origemDaRequisicao } from "@/lib/actions/auth";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
 import {
   encontrarOuCriarConta,
-  gerarLinkPrimeiroAcesso,
-  linkPrimeiroAcessoHub,
+  linkPrimeiroAcessoDaConta,
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
@@ -108,9 +106,7 @@ export async function definirAcesso(dados: {
     };
   }
 
-  const linkCompartilhado = conta.criadaAgora
-    ? await gerarLinkPrimeiroAcesso(adminCompartilhado, email, linkPrimeiroAcessoHub(await origemDaRequisicao()))
-    : undefined;
+  const linkCompartilhado = conta.criadaAgora ? await linkPrimeiroAcessoDaConta(conta.id) : undefined;
 
   const pessoa = { nome, email };
   const resultados: Partial<Record<Modulo, ResultadoModulo>> = {};
@@ -122,7 +118,7 @@ export async function definirAcesso(dados: {
     resultados.requerimentos = await aprovarRequerimentos(pessoa, decisoes.requerimentos, linkCompartilhado, ativo);
   }
   if (decisoes?.numera) {
-    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo);
+    resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo, linkCompartilhado);
   }
   if (decisoes?.emendas) {
     resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado, ativo);
@@ -157,4 +153,30 @@ export async function definirAcesso(dados: {
   revalidatePath("/configuracoes");
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true, resultados };
+}
+
+/**
+ * Gera (ou devolve o que já está pendente) o link de primeiro acesso de quem
+ * ainda não entrou. Recusa contas que já acessaram: um link de definir senha
+ * para uma conta em uso seria, na prática, a chave dela.
+ */
+export async function obterLinkPrimeiroAcesso(
+  usuarioId: string
+): Promise<{ sucesso: true; link: string } | { sucesso: false; erro: string }> {
+  const usuario = await obterUsuarioAtual();
+  if (!usuario?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+
+  const { data: conta } = await criarClienteAdminBruto().auth.admin.getUserById(usuarioId);
+  if (!conta.user) return { sucesso: false, erro: "Conta não encontrada." };
+  if (conta.user.last_sign_in_at) {
+    return {
+      sucesso: false,
+      erro: "Esta pessoa já acessou. Se esqueceu a senha, ela mesma pede em “Esqueci minha senha”.",
+    };
+  }
+
+  const link = await linkPrimeiroAcessoDaConta(usuarioId);
+  if (!link) return { sucesso: false, erro: "Não foi possível gerar o link agora. Tente de novo." };
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true, link };
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
 import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
+import { marcarConviteUsado, sincronizarSenhaNumera, temConvitePendente } from "@/lib/auth/convite";
 import { completarNoTempoMinimo } from "@/lib/anti-enumeracao";
 import { enviarEmailBrevo } from "@/lib/email/brevo";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
@@ -146,8 +147,13 @@ export async function entrar(
     return { erro: "Usuário desativado. Contate o administrador." };
   }
 
+  // Entrou de verdade: se havia um link de primeiro acesso pendente, ele
+  // não precisa mais aparecer para o admin.
+  await marcarConviteUsado(data.user.id);
+
   const proximo = formData.get("proximo");
-  redirect(destinoSeguro(typeof proximo === "string" ? proximo : null, "/dashboard"));
+  // `/dashboard` não existe no Hub (herdado do App-Compras): a Início é `/`.
+  redirect(destinoSeguro(typeof proximo === "string" ? proximo : null, "/"));
 }
 
 export async function sair(): Promise<void> {
@@ -271,6 +277,14 @@ export async function redefinirSenha(
     console.error("[redefinirSenha] erro:", error);
     return { erro: "Não foi possível redefinir a senha. Tente novamente." };
   }
+
+  // Primeiro acesso (convite pendente): a senha escolhida vale também no
+  // Numera, e o link some da lista do admin. Quem só pediu "esqueci minha
+  // senha" (sem convite pendente) não mexe na senha do Numera.
+  if (await temConvitePendente(user.id)) {
+    if (user.email) await sincronizarSenhaNumera(user.email, analise.data.senha);
+  }
+  await marcarConviteUsado(user.id);
 
   await supabase.auth.signOut();
   redirect("/login?motivo=senha_redefinida");

@@ -26,6 +26,7 @@ import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/actions/auth";
+import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import type { Modulo } from "@/types/database";
 
 export type DecisaoCompras = { perfil: string; setorId: string | null };
@@ -141,6 +142,21 @@ export async function gerarLinkPrimeiroAcesso(
   return montarLink(tokenHash);
 }
 
+/**
+ * Link de primeiro acesso ÚNICO da pessoa, persistente (`hub.convites_acesso`):
+ * vale para todos os módulos (uma senha só — a do Numera é alinhada quando ela
+ * define a senha) e continua disponível para o admin até o primeiro acesso de
+ * fato. Substitui os links de uso único do Supabase, que expiravam em ~1 hora.
+ */
+export async function linkPrimeiroAcessoDaConta(usuarioId: string): Promise<string | undefined> {
+  try {
+    return linkDoConvite(await origemDaRequisicao(), await garantirConvite(usuarioId));
+  } catch (e) {
+    console.error("[linkPrimeiroAcessoDaConta] falhou:", e);
+    return undefined;
+  }
+}
+
 /** Primeiro acesso da conta compartilhada: o `/auth/confirm` do Hub valida o
  * token, grava a sessão em cookie e leva a `/redefinir-senha`. */
 export function linkPrimeiroAcessoHub(origemHub: string) {
@@ -222,7 +238,8 @@ export async function aprovarRequerimentos(
 export async function aprovarNumera(
   pessoa: PessoaAlvo,
   decisao: DecisaoNumera,
-  ativo: boolean = true
+  ativo: boolean = true,
+  linkCompartilhado?: string
 ): Promise<ResultadoModulo> {
   let numeraAdmin;
   try {
@@ -341,7 +358,14 @@ export async function aprovarNumera(
     precisaPrimeiroAcesso = !!contaNumera.user && !contaNumera.user.last_sign_in_at;
   }
 
-  const linkPrimeiroAcesso = precisaPrimeiroAcesso
+  // Conta nova da plataforma: vale o link único da pessoa (a senha escolhida
+  // nele é replicada no Numera). Só cai no link próprio do Numera quando a
+  // conta de lá é antiga e o chamador não tem um link compartilhado.
+  const linkPrimeiroAcesso = linkCompartilhado
+    ? precisaPrimeiroAcesso
+      ? linkCompartilhado
+      : undefined
+    : precisaPrimeiroAcesso
     ? await gerarLinkPrimeiroAcesso(
         numeraAdmin,
         pessoa.email,
