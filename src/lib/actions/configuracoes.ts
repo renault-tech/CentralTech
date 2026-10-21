@@ -14,6 +14,7 @@ import {
   aprovarCompras,
   aprovarRequerimentos,
   aprovarNumera,
+  aprovarEmendas,
   type DecisaoAprovacao,
   type ResultadoModulo,
 } from "@/lib/actions/provisionamento-modulos";
@@ -30,13 +31,20 @@ const esquemaAcesso = z.object({
   email: z.email("Informe um e-mail válido"),
   nome: z.string().trim().min(2, "Informe o nome"),
   adminHub: z.boolean(),
-  modulos: z.array(z.enum(["compras", "numera", "requerimentos"])),
+  modulos: z.array(z.enum(["compras", "numera", "requerimentos", "emendas"])),
   ativo: z.boolean(),
   decisoes: z
     .object({
       compras: z.object({ perfil: z.string(), setorId: z.string().nullable() }).optional(),
       requerimentos: z.object({ perfil: z.string(), secretariaId: z.string().nullable() }).optional(),
       numera: z.object({ role: z.string(), documentos: z.array(z.string()) }).optional(),
+      emendas: z
+        .object({
+          perfil: z.enum(["gestor", "admin_secretaria", "operador", "consulta"]),
+          secretariaId: z.string().nullable(),
+          verOutras: z.boolean(),
+        })
+        .optional(),
     })
     .default({}),
 });
@@ -115,6 +123,9 @@ export async function definirAcesso(dados: {
   }
   if (decisoes?.numera) {
     resultados.numera = await aprovarNumera(pessoa, decisoes.numera, ativo);
+  }
+  if (decisoes?.emendas) {
+    resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado, ativo);
   }
 
   const hub = await criarClienteServidor();

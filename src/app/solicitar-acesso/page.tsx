@@ -8,7 +8,7 @@ import type { Modulo } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Solicitar acesso · Central Cataguases",
-  description: "Peça acesso a Compras, Numera ou Requerimentos da Câmara.",
+  description: "Peça acesso a Compras, Numera, Requerimentos da Câmara ou Emendas Impositivas.",
 };
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function PaginaSolicitarAcesso({
   return (
     <MolduraAuth
       titulo="Solicitar acesso"
-      subtitulo="Compras, Numera e Requerimentos da Câmara em um só pedido"
+      subtitulo="Compras, Numera, Requerimentos e Emendas em um só pedido"
     >
       <SolicitarAcessoForm
         valoresIniciais={{

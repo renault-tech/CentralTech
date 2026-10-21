@@ -114,3 +114,19 @@ export async function listarDocumentosNumera(): Promise<DocumentoNumera[]> {
   }
   return (data ?? []) as DocumentoNumera[];
 }
+
+/** Secretarias do módulo Emendas (unidade de permissão de lá). */
+export async function listarSecretariasEmendas(): Promise<CatalogoItem[]> {
+  const admin = criarClienteAdminBruto();
+  const { data, error } = await admin
+    .schema("emendas")
+    .from("secretarias")
+    .select("id,nome")
+    .eq("ativo", true)
+    .order("nome");
+  if (error) {
+    console.error("[listarSecretariasEmendas] falha:", error);
+    throw new Error("Não foi possível carregar as secretarias do Emendas.");
+  }
+  return (data ?? []) as CatalogoItem[];
+}

@@ -13,7 +13,7 @@ export type EstadoSolicitacao = {
 const esquema = z.object({
   nome: z.string().trim().min(2, "Informe o nome"),
   email: z.email("Informe um e-mail válido"),
-  modulos: z.array(z.enum(["compras", "numera", "requerimentos"])).min(1, "Selecione ao menos um módulo"),
+  modulos: z.array(z.enum(["compras", "numera", "requerimentos", "emendas"])).min(1, "Selecione ao menos um módulo"),
   secretaria: z.string().trim().max(120).optional(),
   justificativa: z.string().trim().max(2000).optional(),
 });

@@ -8,7 +8,7 @@ import type { AppFeedback, StatusFeedback, TipoFeedback } from "@/types/database
 
 export type ResultadoFeedback = { sucesso: true } | { sucesso: false; erro: string };
 
-const APPS = ["compras", "requerimentos", "numera", "hub"] as const;
+const APPS = ["compras", "requerimentos", "numera", "emendas", "hub"] as const;
 
 const esquemaEnvio = z.object({
   app: z.enum(APPS),

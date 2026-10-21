@@ -16,7 +16,7 @@ export async function PainelLoginDireto() {
       <p className="mt-0.5 text-xs text-slate-500">
         Bloquear desliga o formulário de senha do próprio app — a pessoa passa a precisar entrar por
         aqui (ou, já logada aqui, entrar automaticamente sem digitar senha de novo). Desligado por
-        padrão em todos os 3; ligue só depois que o &ldquo;já acessou pelo Hub&rdquo; abaixo mostrar
+        padrão em todos; ligue só depois que o &ldquo;já acessou pelo Hub&rdquo; abaixo mostrar
         que a maioria já migrou.
       </p>
 
