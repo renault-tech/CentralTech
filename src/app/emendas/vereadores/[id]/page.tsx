@@ -4,7 +4,7 @@ import { Download } from "lucide-react";
 
 import { BotaoImprimir } from "@/components/emendas/botao-imprimir";
 import { BarraEtapas, Chip, LinkVoltar, SeloEtapa } from "@/components/emendas/ui";
-import { listarEmendas, listarVereadores, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendas, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, cumpreSaude, dataBr, numeroVereador, pct, porSecretaria } from "@/lib/emendas/regras";
 import { dataNoFuso } from "@/lib/fuso";
 
@@ -16,7 +16,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
   const [{ id }, { ano }] = await Promise.all([params, searchParams]);
   const { exercicio } = await resolverExercicio(ano);
   if (!exercicio) notFound();
-  const [emendas, vereadores] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores()]);
+  const [emendas, vereadores, catalogo] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores(), obterCatalogoEtapas()]);
   const vereador = vereadores.find((v) => v.id === id);
   if (!vereador) notFound();
 
@@ -133,9 +133,9 @@ export default async function PaginaVereador({ params, searchParams }: { params:
                 <td className="px-4 py-2.5">{e.secretaria_nome}</td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">{brl(e.valor)}</td>
                 <td className="px-4 py-2.5">
-                  <BarraEtapas modalidade={e.modalidade} etapa={e.etapa} situacao={e.situacao} />
+                  <BarraEtapas modalidade={e.modalidade} etapa={e.etapa} situacao={e.situacao} catalogo={catalogo} />
                   <div className="mt-1.5">
-                    <SeloEtapa etapa={e.etapa} situacao={e.situacao} />
+                    <SeloEtapa etapa={e.etapa} situacao={e.situacao} catalogo={catalogo} />
                   </div>
                 </td>
               </tr>

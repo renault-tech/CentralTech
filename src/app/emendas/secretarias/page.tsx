@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { Vazio } from "@/components/emendas/ui";
-import { listarEmendas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendas, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, brlCurto, infoEtapa, pct, porSecretaria } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,8 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
   const [{ exercicio }, ctx] = await Promise.all([resolverExercicio(ano), obterContextoEmendas()]);
   if (!exercicio || ctx.situacao !== "ok") return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
 
-  const emendas = (await listarEmendas(exercicio.ano)).filter((e) => e.situacao !== "cancelada");
+  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano), obterCatalogoEtapas()]);
+  const emendas = todas.filter((e) => e.situacao !== "cancelada");
   const linhas = porSecretaria(emendas);
 
   return (
@@ -24,7 +25,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
           const daSec = emendas.filter((e) => e.secretaria_id === l.secretariaId);
           const semAndamento = daSec.filter((e) => e.etapa === "indicada").length;
           const impedidas = daSec.filter((e) => e.situacao === "impedida").length;
-          const emExecucao = daSec.filter((e) => infoEtapa(e.etapa).grupo > 0 && infoEtapa(e.etapa).grupo < 3).length;
+          const emExecucao = daSec.filter((e) => infoEtapa(e.etapa, catalogo).grupo > 0 && infoEtapa(e.etapa, catalogo).grupo < 3).length;
           const edita = podeEditarSecretaria(ctx, l.secretariaId);
           return (
             <div key={l.secretariaId} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">

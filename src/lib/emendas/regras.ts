@@ -16,24 +16,48 @@ export type InfoEtapa = {
   cor: string;
   /** 0 sem andamento · 1 em andamento · 2 empenhada/liquidada · 3 paga ou adiante */
   grupo: 0 | 1 | 2 | 3;
+  /** Fase fixa: só renomeia/recolore, não sai do fluxo. */
+  fixa?: boolean;
 };
 
+/** Uma fase dentro do fluxo de uma modalidade (a ordem é a do array). */
+export type ItemFluxo = { chave: EtapaEmenda; ativa: boolean };
+
+/** Fases (nome, cor, grupo) + o fluxo de cada modalidade. Vem do banco
+ * (`emendas.etapas` / `emendas.fluxo_etapas`, editável em Configurações →
+ * Fases); `CATALOGO_PADRAO` é o ponto de partida e o reserva. */
+export type CatalogoEtapas = {
+  etapas: Record<string, InfoEtapa>;
+  fluxos: Record<Modalidade, ItemFluxo[]>;
+};
+
+/** Fases que nunca saem do fluxo; ficam nesta ordem, "Indicada" primeiro e "Concluída" por último. */
+export const ETAPAS_FIXAS: EtapaEmenda[] = ["indicada", "empenhada", "liquidada", "paga", "concluida"];
+
 export const ETAPAS: InfoEtapa[] = [
-  { chave: "indicada", nome: "Indicada", cor: "#CBD5E1", grupo: 0 },
+  { chave: "indicada", nome: "Indicada", cor: "#CBD5E1", grupo: 0, fixa: true },
   { chave: "analise", nome: "Análise técnica", cor: "#DDD6F7", grupo: 1 },
   { chave: "plano_trabalho", nome: "Plano de trabalho", cor: "#BBAAEE", grupo: 1 },
   { chave: "processo_compra", nome: "Processo de compra", cor: "#BBAAEE", grupo: 1 },
-  { chave: "empenhada", nome: "Empenhada", cor: "#9479DD", grupo: 2 },
-  { chave: "liquidada", nome: "Liquidada", cor: "#7556C7", grupo: 2 },
-  { chave: "paga", nome: "Paga", cor: "#563A9E", grupo: 3 },
+  { chave: "empenhada", nome: "Empenhada", cor: "#9479DD", grupo: 2, fixa: true },
+  { chave: "liquidada", nome: "Liquidada", cor: "#7556C7", grupo: 2, fixa: true },
+  { chave: "paga", nome: "Paga", cor: "#563A9E", grupo: 3, fixa: true },
   { chave: "prestacao_contas", nome: "Prestação de contas", cor: "#43307E", grupo: 3 },
-  { chave: "concluida", nome: "Concluída", cor: "#2A1C55", grupo: 3 },
+  { chave: "concluida", nome: "Concluída", cor: "#2A1C55", grupo: 3, fixa: true },
 ];
 
-const POR_CHAVE = new Map(ETAPAS.map((e) => [e.chave, e]));
+const itens = (chaves: string[]): ItemFluxo[] => chaves.map((chave) => ({ chave, ativa: true }));
 
-export function infoEtapa(chave: string): InfoEtapa {
-  return POR_CHAVE.get(chave as EtapaEmenda) ?? { chave: chave as EtapaEmenda, nome: chave, cor: "#CBD5E1", grupo: 0 };
+export const CATALOGO_PADRAO: CatalogoEtapas = {
+  etapas: Object.fromEntries(ETAPAS.map((e) => [e.chave, e])),
+  fluxos: {
+    repasse: itens(["indicada", "analise", "plano_trabalho", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]),
+    direta: itens(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]),
+  },
+};
+
+export function infoEtapa(chave: string, cat: CatalogoEtapas = CATALOGO_PADRAO): InfoEtapa {
+  return cat.etapas[chave] ?? { chave, nome: chave, cor: "#CBD5E1", grupo: 0 };
 }
 
 export const GRUPOS_EXECUCAO = [
@@ -43,21 +67,84 @@ export const GRUPOS_EXECUCAO = [
   { grupo: 0, nome: "Sem andamento", cor: "#CBD5E1" },
 ] as const;
 
-/** Trilha de etapas conforme a modalidade (mesma regra do CHECK
- * `etapa_compativel_modalidade`). */
-export function trilha(modalidade: Modalidade): EtapaEmenda[] {
-  return modalidade === "repasse"
-    ? ["indicada", "analise", "plano_trabalho", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]
-    : ["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"];
+/** Trilha de fases ATIVAS da modalidade, na ordem do fluxo. */
+export function trilha(modalidade: Modalidade, cat: CatalogoEtapas = CATALOGO_PADRAO): EtapaEmenda[] {
+  return cat.fluxos[modalidade].filter((i) => i.ativa).map((i) => i.chave);
+}
+
+/** Posição da fase atual na trilha ATIVA. Se a fase foi desativada depois
+ * (a emenda ficou nela), vale a posição da última fase ativa antes dela. */
+export function posicaoNaTrilha(modalidade: Modalidade, etapa: EtapaEmenda, cat: CatalogoEtapas = CATALOGO_PADRAO): number {
+  const completo = cat.fluxos[modalidade];
+  const i = completo.findIndex((x) => x.chave === etapa);
+  if (i < 0) return -1;
+  return completo.slice(0, i + 1).filter((x) => x.ativa).length - 1;
 }
 
 /** Etapas que podem vir a seguir (registrar um andamento). Inclui a
- * própria trilha inteira à frente — pular etapa é permitido (ex.: a
- * planilha só sabia "executada"); a validação forte é a de modalidade. */
-export function proximasEtapas(modalidade: Modalidade, atual: EtapaEmenda): EtapaEmenda[] {
-  const t = trilha(modalidade);
-  const i = t.indexOf(atual);
-  return t.slice(Math.max(0, i + 1));
+ * trilha inteira à frente — pular fase é permitido (a planilha só sabia
+ * "executada"). Se a fase atual foi desativada depois, a trilha ativa inteira
+ * (menos "Indicada") continua disponível. */
+export function proximasEtapas(modalidade: Modalidade, atual: EtapaEmenda, cat: CatalogoEtapas = CATALOGO_PADRAO): EtapaEmenda[] {
+  const completo = cat.fluxos[modalidade];
+  const i = completo.findIndex((x) => x.chave === atual);
+  return completo.filter((x, idx) => x.ativa && idx > i).map((x) => x.chave);
+}
+
+/** Todas as fases dos dois fluxos numa lista só (funil, filtros): junta as
+ * ordens preservando a sequência de cada fluxo. Fases desativadas só entram
+ * se houver emenda nelas (`usadas`). */
+export function etapasEmOrdem(cat: CatalogoEtapas, usadas?: Set<string>): InfoEtapa[] {
+  const ordem: string[] = [];
+  const colocar = (fluxo: ItemFluxo[]) => {
+    let ancora = -1;
+    for (const item of fluxo) {
+      const existente = ordem.indexOf(item.chave);
+      if (existente >= 0) {
+        ancora = existente;
+      } else {
+        ordem.splice(ancora + 1, 0, item.chave);
+        ancora += 1;
+      }
+    }
+  };
+  colocar(cat.fluxos.repasse);
+  colocar(cat.fluxos.direta);
+  const ativas = new Set([...cat.fluxos.repasse, ...cat.fluxos.direta].filter((i) => i.ativa).map((i) => i.chave));
+  return ordem
+    .filter((c) => ativas.has(c) || usadas?.has(c))
+    .map((c) => infoEtapa(c, cat));
+}
+
+export type ItemEdicaoFluxo = { chave: string | null; nome: string; ativa: boolean; remover?: boolean };
+
+/** Mesmas regras de `emendas.salvar_fluxo` (o banco é quem decide; aqui só
+ * antecipa o aviso na tela). Devolve a mensagem do primeiro problema. */
+export function validarFluxo(itensFluxo: ItemEdicaoFluxo[]): string | null {
+  const restantes = itensFluxo.filter((i) => !i.remover);
+  if (!restantes.length) return "Informe ao menos uma fase.";
+  if (restantes.some((i) => i.nome.trim().length < 2 || i.nome.trim().length > 60)) {
+    return "O nome de cada fase precisa ter de 2 a 60 caracteres.";
+  }
+  if (itensFluxo.some((i) => i.remover && i.chave && ETAPAS_FIXAS.includes(i.chave))) {
+    return "Fases fixas (Indicada, Empenhada, Liquidada, Paga e Concluída) não podem ser removidas.";
+  }
+  if (restantes.some((i) => i.chave && ETAPAS_FIXAS.includes(i.chave) && !i.ativa)) {
+    return "Fases fixas não podem ser desativadas.";
+  }
+  const nomes = restantes.filter((i) => i.ativa).map((i) => i.nome.trim().toLowerCase());
+  if (new Set(nomes).size !== nomes.length) return "Há duas fases ativas com o mesmo nome.";
+  const chaves = restantes.map((i) => i.chave);
+  let ultima = -1;
+  for (const f of ETAPAS_FIXAS) {
+    const pos = chaves.indexOf(f);
+    if (pos < 0) return "As fases fixas precisam continuar no fluxo.";
+    if (pos <= ultima) return "As fases fixas precisam seguir a ordem: Indicada, Empenhada, Liquidada, Paga, Concluída.";
+    ultima = pos;
+  }
+  if (chaves[0] !== "indicada") return "A primeira fase precisa ser “Indicada”.";
+  if (chaves[chaves.length - 1] !== "concluida") return "A última fase precisa ser “Concluída”.";
+  return null;
 }
 
 /** 3º grupo da natureza de despesa: 50 = transferência a entidade privada
@@ -87,7 +174,7 @@ export const DESCRICAO_PERFIL: Record<PerfilEfetivo, string> = {
   admin: "Acesso total, inclusive configurar o módulo e as permissões de todos.",
   gestor: "Vê e edita todas as secretarias, inclusive valor, vereador, dotação e remanejamentos.",
   admin_secretaria:
-    "Registra a execução da própria secretaria e ajusta a equipe dela. Ver as outras secretarias é opcional.",
+    "Registra a execução da própria secretaria. Ver as outras secretarias é opcional. As permissões são definidas pelo administrador ou pelo gestor.",
   operador: "Registra andamentos, empenhos, pagamentos e documentos nas secretarias liberadas.",
   consulta: "Só visualiza as secretarias liberadas: painel, lista, detalhes e relatórios.",
 };
@@ -148,7 +235,7 @@ export type Indicadores = {
   impedidas: number;
 };
 
-export function indicadores(rs: EmendaResumo[]): Indicadores {
+export function indicadores(rs: EmendaResumo[], cat: CatalogoEtapas = CATALOGO_PADRAO): Indicadores {
   const total = soma(rs);
   const pago = somaCampo(rs, "pago");
   return {
@@ -158,7 +245,7 @@ export function indicadores(rs: EmendaResumo[]): Indicadores {
     pago,
     aExecutar: total - pago,
     saude: soma(rs.filter((r) => r.saude)),
-    quantidadePagas: rs.filter((r) => infoEtapa(r.etapa).grupo === 3).length,
+    quantidadePagas: rs.filter((r) => infoEtapa(r.etapa, cat).grupo === 3).length,
     remanejadas: rs.filter((r) => r.remanejada).length,
     impedidas: rs.filter((r) => r.situacao === "impedida").length,
   };
@@ -167,9 +254,9 @@ export function indicadores(rs: EmendaResumo[]): Indicadores {
 export type PorGrupo = [number, number, number, number];
 
 /** Valor por grupo de execução (índice = `InfoEtapa.grupo`). */
-export function valorPorGrupo(rs: EmendaResumo[]): PorGrupo {
+export function valorPorGrupo(rs: EmendaResumo[], cat: CatalogoEtapas = CATALOGO_PADRAO): PorGrupo {
   const g: PorGrupo = [0, 0, 0, 0];
-  for (const r of rs) g[infoEtapa(r.etapa).grupo] += r.valor;
+  for (const r of rs) g[infoEtapa(r.etapa, cat).grupo] += r.valor;
   return g;
 }
 
@@ -184,7 +271,11 @@ export type LinhaVereador = {
   grupos: PorGrupo;
 };
 
-export function porVereador(rs: EmendaResumo[], vereadores: { id: string; numero: number; nome: string }[]): LinhaVereador[] {
+export function porVereador(
+  rs: EmendaResumo[],
+  vereadores: { id: string; numero: number; nome: string }[],
+  cat: CatalogoEtapas = CATALOGO_PADRAO
+): LinhaVereador[] {
   return vereadores
     .slice()
     .sort((a, b) => a.numero - b.numero)
@@ -198,7 +289,7 @@ export function porVereador(rs: EmendaResumo[], vereadores: { id: string; numero
         saude: soma(dele.filter((r) => r.saude)),
         pago: somaCampo(dele, "pago"),
         quantidade: dele.length,
-        grupos: valorPorGrupo(dele),
+        grupos: valorPorGrupo(dele, cat),
       };
     });
 }
@@ -223,8 +314,12 @@ export function porSecretaria(rs: EmendaResumo[]): LinhaSecretaria[] {
   return Array.from(mapa.values()).sort((a, b) => b.total - a.total);
 }
 
-export function porEtapa(rs: EmendaResumo[]): { etapa: InfoEtapa; quantidade: number; valor: number }[] {
-  return ETAPAS.map((etapa) => {
+export function porEtapa(
+  rs: EmendaResumo[],
+  cat: CatalogoEtapas = CATALOGO_PADRAO
+): { etapa: InfoEtapa; quantidade: number; valor: number }[] {
+  const usadas = new Set(rs.map((r) => r.etapa));
+  return etapasEmOrdem(cat, usadas).map((etapa) => {
     const daEtapa = rs.filter((r) => r.etapa === etapa.chave);
     return { etapa, quantidade: daEtapa.length, valor: soma(daEtapa) };
   });
@@ -281,8 +376,9 @@ export function diasAteFimDoAno(hoje: Date, ano: number): number {
 export function alertas(
   rs: EmendaResumo[],
   movimentos: { emenda_id: string; tipo: string; numero: string | null; data: string | null }[],
-  opcoes: { hoje: Date; ano: number; diasParado: number }
+  opcoes: { hoje: Date; ano: number; diasParado: number; catalogo?: CatalogoEtapas }
 ): Alerta[] {
+  const cat = opcoes.catalogo ?? CATALOGO_PADRAO;
   const lista = (ns: number[]) => ns.slice(0, 6).map((n) => `nº ${n}`).join(", ") + (ns.length > 6 ? "…" : "");
   const porId = new Map(rs.map((r) => [r.id, r]));
   const lista_ = (arr: EmendaResumo[]) => arr.map((r) => r.numero).sort((a, b) => a - b);
@@ -306,7 +402,7 @@ export function alertas(
     (r) =>
       r.situacao === "normal" &&
       r.etapa !== "indicada" &&
-      infoEtapa(r.etapa).grupo < 3 &&
+      infoEtapa(r.etapa, cat).grupo < 3 &&
       new Date(r.etapa_atualizada_em).getTime() < limite
   );
   out.push({
@@ -328,7 +424,7 @@ export function alertas(
     numeros: lista_(impedidas),
   });
 
-  const pagas = rs.filter((r) => infoEtapa(r.etapa).grupo === 3);
+  const pagas = rs.filter((r) => infoEtapa(r.etapa, cat).grupo === 3);
   const empenhosPorEmenda = new Map<string, { numero: string | null; data: string | null }[]>();
   const pagamentosPorEmenda = new Map<string, { data: string | null }[]>();
   for (const m of movimentos) {

@@ -3,16 +3,9 @@
  * Módulo Emendas Impositivas — roda dentro do Hub, mesmo projeto Supabase.
  */
 
-export type EtapaEmenda =
-  | "indicada"
-  | "analise"
-  | "plano_trabalho"
-  | "processo_compra"
-  | "empenhada"
-  | "liquidada"
-  | "paga"
-  | "prestacao_contas"
-  | "concluida";
+/** Chave de uma fase (`emendas.etapas.chave`). As fixas são `indicada`, `empenhada`,
+ * `liquidada`, `paga` e `concluida`; as demais são editáveis em Configurações → Fases. */
+export type EtapaEmenda = string;
 
 export type Modalidade = "repasse" | "direta";
 export type SituacaoEmenda = "normal" | "impedida" | "cancelada";
@@ -220,6 +213,11 @@ export type PermissaoSecretaria = {
   pode_editar: boolean;
 };
 
+/** `emendas.etapas`: a fase em si (nome/cor/grupo), global aos dois fluxos. */
+export type EtapaRegistro = { chave: string; nome: string; cor: string; grupo: 0 | 1 | 2 | 3; fixa: boolean };
+/** `emendas.fluxo_etapas`: quais fases cada modalidade usa, em que ordem. */
+export type FluxoEtapaRegistro = { modalidade: Modalidade; chave: string; ordem: number; ativa: boolean };
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -248,6 +246,8 @@ export type DatabaseEmendas = {
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;
       auditoria: Tabela<RegistroAuditoria, "tabela" | "acao", "id" | "em">;
+      etapas: Tabela<EtapaRegistro, "chave" | "nome" | "cor" | "grupo", never>;
+      fluxo_etapas: Tabela<FluxoEtapaRegistro, "modalidade" | "chave" | "ordem", never>;
     };
     Views: {
       v_emendas: { Row: EmendaResumo; Relationships: [] };
@@ -281,6 +281,10 @@ export type DatabaseEmendas = {
           p_permissoes: { secretaria_id: string; ver: boolean; editar: boolean }[];
           p_ativo?: boolean;
         };
+        Returns: undefined;
+      };
+      salvar_fluxo: {
+        Args: { p_modalidade: Modalidade; p_itens: { chave: string | null; nome: string; cor: string; ativa: boolean; remover?: boolean }[] };
         Returns: undefined;
       };
       importar: {

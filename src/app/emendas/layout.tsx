@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { NavModulo } from "@/components/emendas/nav-modulo";
-import { obterContextoEmendas } from "@/lib/emendas/dados";
+import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
+import { obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -43,19 +44,22 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   }
 
   const gestor = ehGestor(ctx.perfil);
+  const catalogo = await obterCatalogoEtapas();
   const itens = [
     { href: "/emendas", rotulo: "Painel", exato: true },
     { href: "/emendas/lista", rotulo: "Emendas" },
     { href: "/emendas/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/secretarias", rotulo: "Secretarias" },
-    ...(gestor || ctx.perfil === "admin_secretaria" ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),
+    ...(gestor ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),
   ];
 
   return (
     <div className="min-h-dvh bg-slate-50 print:bg-white">
       <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
       <NavModulo itens={itens} podeCriar={gestor} />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+        <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
+      </main>
     </div>
   );
 }

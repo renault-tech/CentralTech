@@ -6,7 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download, X } from "lucide-react";
 
 import { BarraEtapas, Chip, SeloEtapa } from "@/components/emendas/ui";
-import { ETAPAS, NOME_MODALIDADE, brl, dataBr, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
+import { useCatalogo } from "@/components/emendas/catalogo-etapas";
+import { NOME_MODALIDADE, brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo, Secretaria, Vereador } from "@/types/emendas";
 
@@ -34,6 +35,7 @@ export function TabelaEmendas({
   ano: number;
   anos: number[];
 }) {
+  const catalogo = useCatalogo();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -73,7 +75,8 @@ export function TabelaEmendas({
           ).includes(parte)
         ))
   );
-  const usadas = ETAPAS.filter((e) => base.some((r) => r.etapa === e.chave));
+  const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
+  const usadas = todasEtapas.filter((e) => base.some((r) => r.etapa === e.chave));
   const filtradas = base.filter((r) => !f.etapa || r.etapa === f.etapa);
 
   const ordenadas = filtradas.slice().sort((a, b) => {
@@ -83,7 +86,7 @@ export function TabelaEmendas({
       case "vereador":
         return a.vereador_numero - b.vereador_numero || a.numero_vereador - b.numero_vereador;
       case "etapa":
-        return ETAPAS.findIndex((e) => e.chave === b.etapa) - ETAPAS.findIndex((e) => e.chave === a.etapa) || a.numero - b.numero;
+        return todasEtapas.findIndex((e) => e.chave === b.etapa) - todasEtapas.findIndex((e) => e.chave === a.etapa) || a.numero - b.numero;
       case "parada":
         return a.etapa_atualizada_em.localeCompare(b.etapa_atualizada_em);
       default:
@@ -253,11 +256,11 @@ export function TabelaEmendas({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3 text-right font-medium tabular-nums">{brl(r.valor)}</td>
                 <td className="px-3.5 py-3">
-                  <BarraEtapas modalidade={r.modalidade} etapa={r.etapa} situacao={r.situacao} />
+                  <BarraEtapas modalidade={r.modalidade} etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
                   <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
-                    <SeloEtapa etapa={r.etapa} situacao={r.situacao} />
+                    <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
                     <span className="text-slate-500">
-                      {infoEtapa(r.etapa).grupo === 3 && r.ultimo_pagamento ? `pago ${dataBr(r.ultimo_pagamento)}` : ""}
+                      {infoEtapa(r.etapa, catalogo).grupo === 3 && r.ultimo_pagamento ? `pago ${dataBr(r.ultimo_pagamento)}` : ""}
                     </span>
                   </div>
                 </td>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { infoEtapa, trilha } from "@/lib/emendas/regras";
+import { CATALOGO_PADRAO, infoEtapa, posicaoNaTrilha, trilha, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type { EtapaEmenda, Modalidade, SituacaoEmenda } from "@/types/emendas";
 
 /** Peças visuais do módulo Emendas, sem estado (servem a Server e Client
@@ -69,10 +69,21 @@ export function Kpi({
 }
 
 /** Mini barra de andamento (um segmento por etapa da trilha). */
-export function BarraEtapas({ modalidade, etapa, situacao }: { modalidade: Modalidade; etapa: EtapaEmenda; situacao?: SituacaoEmenda }) {
-  const t = trilha(modalidade);
-  const pos = t.indexOf(etapa);
-  const cor = situacao === "impedida" ? "#D97706" : situacao === "cancelada" ? "#94A3B8" : infoEtapa(etapa).cor === "#CBD5E1" ? "#94A3B8" : infoEtapa(etapa).cor;
+export function BarraEtapas({
+  modalidade,
+  etapa,
+  situacao,
+  catalogo = CATALOGO_PADRAO,
+}: {
+  modalidade: Modalidade;
+  etapa: EtapaEmenda;
+  situacao?: SituacaoEmenda;
+  catalogo?: CatalogoEtapas;
+}) {
+  const t = trilha(modalidade, catalogo);
+  const pos = posicaoNaTrilha(modalidade, etapa, catalogo);
+  const corEtapa = infoEtapa(etapa, catalogo).cor;
+  const cor = situacao === "impedida" ? "#D97706" : situacao === "cancelada" ? "#94A3B8" : corEtapa === "#CBD5E1" ? "#94A3B8" : corEtapa;
   return (
     <div className="flex gap-[3px]" aria-hidden>
       {t.map((k, i) => (
@@ -82,14 +93,22 @@ export function BarraEtapas({ modalidade, etapa, situacao }: { modalidade: Modal
   );
 }
 
-export function SeloEtapa({ etapa, situacao }: { etapa: EtapaEmenda; situacao: SituacaoEmenda }) {
+export function SeloEtapa({
+  etapa,
+  situacao,
+  catalogo = CATALOGO_PADRAO,
+}: {
+  etapa: EtapaEmenda;
+  situacao: SituacaoEmenda;
+  catalogo?: CatalogoEtapas;
+}) {
   if (situacao === "impedida") {
     return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Impedida</span>;
   }
   if (situacao === "cancelada") {
     return <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Cancelada</span>;
   }
-  const info = infoEtapa(etapa);
+  const info = infoEtapa(etapa, catalogo);
   const escuro = info.grupo >= 2;
   return (
     <span
@@ -133,15 +152,17 @@ export function LinhaEtapas({
   etapa,
   situacao,
   rotulos,
+  catalogo = CATALOGO_PADRAO,
 }: {
   modalidade: Modalidade;
   etapa: EtapaEmenda;
   situacao: SituacaoEmenda;
   /** Texto de apoio por etapa (data, nº do empenho…). */
   rotulos: Partial<Record<EtapaEmenda, string>>;
+  catalogo?: CatalogoEtapas;
 }) {
-  const t = trilha(modalidade);
-  const pos = t.indexOf(etapa);
+  const t = trilha(modalidade, catalogo);
+  const pos = posicaoNaTrilha(modalidade, etapa, catalogo);
   const travada = situacao === "impedida";
   return (
     <ol aria-label="Etapas da emenda" className="grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] gap-y-3" data-tour="etapas-emenda">
@@ -171,7 +192,7 @@ export function LinhaEtapas({
               {i < t.length - 1 && <span className={cn("ml-1.5 h-[3px] flex-1 rounded", i < pos ? "bg-[#563A9E]" : "bg-slate-200")} />}
             </div>
             <span className={cn("text-[13px]", atual ? "font-semibold text-cataguases-marinho" : feito || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
-              {infoEtapa(k).nome}
+              {infoEtapa(k, catalogo).nome}
             </span>
             <span className="text-xs text-slate-500">
               {rotulos[k] ?? (i < pos ? "sem registro" : proxima ? (travada ? "bloqueada" : "próxima") : "")}
