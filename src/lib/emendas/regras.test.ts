@@ -13,6 +13,7 @@ import {
   porVereador,
   posicaoNaTrilha,
   proximasEtapas,
+  situacaoVigencia,
   trilha,
   validarFluxo,
   valorPorGrupo,
@@ -225,8 +226,11 @@ describe("fluxo de fases editável", () => {
   });
 
   it("o catálogo padrão reproduz as trilhas de origem", () => {
-    expect(trilha("repasse")).toEqual(["indicada", "analise", "plano_trabalho", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]);
-    expect(trilha("direta")).toEqual(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]);
+    expect(trilha("repasse")).toEqual([
+      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "envio_pagamento", "paga",
+      "prestacao_contas", "concluida",
+    ]);
+    expect(trilha("direta")).toEqual(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "envio_pagamento", "paga", "concluida"]);
   });
 });
 
@@ -257,5 +261,25 @@ describe("validarFluxo", () => {
     expect(
       validarFluxo([...ok.slice(0, 2), { chave: null, nome: "ANALISE", ativa: true }, ...ok.slice(2)])
     ).toMatch(/mesmo nome/);
+  });
+});
+
+describe("situacaoVigencia", () => {
+  it("sem fim de vigência não diz nada", () => {
+    expect(situacaoVigencia(null, "2026-10-21")).toBeNull();
+  });
+  it("encerrada pede acompanhar a prestação de contas", () => {
+    expect(situacaoVigencia("2026-09-30", "2026-10-21")).toEqual({
+      texto: "Vigência encerrada em 30/09/2026 — acompanhar a prestação de contas",
+      alerta: true,
+    });
+  });
+  it("avisa nos últimos 30 dias", () => {
+    expect(situacaoVigencia("2026-10-21", "2026-10-21")?.texto).toBe("Vigência termina hoje");
+    expect(situacaoVigencia("2026-10-22", "2026-10-21")?.texto).toBe("Vigência termina em 1 dia");
+    expect(situacaoVigencia("2026-11-20", "2026-10-21")).toEqual({ texto: "Vigência termina em 30 dias", alerta: true });
+  });
+  it("vigência longa não é alerta", () => {
+    expect(situacaoVigencia("2027-03-20", "2026-10-21")).toEqual({ texto: "Em vigência até 20/03/2027", alerta: false });
   });
 });

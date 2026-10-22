@@ -1447,3 +1447,30 @@ sistema de avisos da plataforma, entregue ao vivo pelo Supabase Realtime.
   anônimo e privilégios; `get_advisors` sem exposição nova. **Não testado ao
   vivo no navegador** (sandbox sem acesso a Supabase/Vercel): o primeiro uso
   confirma a entrega em tempo real.
+
+## Emendas: planilha de cumprimento 2026 + parceria/execução (24/10/2026)
+
+Pedido do dono: atualizar as emendas já importadas com a "planilha de
+cumprimento" (mais atual) e avaliar quais colunas viram fase. Registro
+completo, números e divergências pendentes em `docs/plano-cumprimento-emendas.md`.
+
+- **Regra**: só a aba das emendas impositivas (87); célula preenchida
+  prevalece, vazia não apaga; fase só avança. Subvenções e emendas de
+  deputados (outras abas) ficaram fora.
+- **Banco** (`20261024000000_emendas_execucao_parceria.sql`): fases
+  `termo_parceria` (repasse, ordem 35) e `envio_pagamento` (os dois, ordem 55);
+  tabela `emendas.execucao` 1:1 com a emenda — a chave chama `id` (= id da
+  emenda) de propósito, para a auditoria genérica (`registrar_auditoria` lê
+  `id`) gravar no mesmo `registro_id` da emenda. RLS: lê quem vê a emenda,
+  escreve quem edita a execução (`pode_editar_emenda`), apaga só gestor.
+- **App**: `PainelParceria` (`components/emendas/painel-parceria.tsx`) no
+  detalhe, com alertas de vigência (`situacaoVigencia`, em `regras.ts`,
+  testada) e de extrato sem publicação; `salvarExecucao` (actions); rótulos das
+  fases novas na linha de etapas vêm do termo/envio; histórico inclui a
+  tabela `execucao`; exportação Excel com 9 colunas novas.
+- **Carga**: feita por tabela de apoio `emendas._carga_cumprimento` +
+  comandos pequenos via MCP (com "importar" no texto, para os gatilhos de aviso
+  ficarem quietos). **Lição nova**: no MCP do Supabase, `DELETE`/`DROP` (e um
+  `DO` grande) estouram os 60 s — parecem aguardar confirmação de comando
+  destrutivo; `INSERT`/`UPDATE` passam. O que sobrou para o SQL Editor:
+  apagar o remanejamento da nº 102 e a tabela de apoio.

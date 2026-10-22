@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { listarEmendas, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendas, listarExecucoes, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { NOME_MODALIDADE, infoEtapa } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,8 @@ function normalizar(t: string) {
  * Planilha .xlsx das emendas, com os mesmos filtros da lista. Lida com a
  * sessão de quem pede (RLS): cada pessoa só exporta o que pode ver.
  * Colunas na mesma ordem da planilha de acompanhamento antiga, mais a
- * execução estruturada (empenho, pago, datas).
+ * execução estruturada (empenho, pago, datas) e os dados de parceria da
+ * planilha de cumprimento (termo, vigência, extrato, envio para pagamento).
  */
 export async function GET(request: NextRequest) {
   const ctx = await obterContextoEmendas();
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
       (numeros.length === 0 || numeros.includes(r.numero)) &&
       (!q || q.split(/\s+/).every((parte) => normalizar([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome].join(" ")).includes(parte)))
   );
-  const movimentos = await listarMovimentos(emendas.map((e) => e.id));
+  const [movimentos, execucoes] = await Promise.all([listarMovimentos(emendas.map((e) => e.id)), listarExecucoes(emendas.map((e) => e.id))]);
+  const execucao = new Map(execucoes.map((x) => [x.id, x]));
+  const data = (iso: string | null | undefined) => (iso ? new Date(`${iso}T12:00:00`) : null);
   const empenhos = new Map<string, string[]>();
   for (const m of movimentos) {
     if (m.tipo === "empenho" && m.numero) empenhos.set(m.emenda_id, [...(empenhos.get(m.emenda_id) ?? []), m.numero]);
@@ -68,8 +71,18 @@ export async function GET(request: NextRequest) {
     { header: "Pago", key: "pago", width: 15 },
     { header: "Data do pagamento", key: "dataPagamento", width: 13 },
     { header: "Remanejada", key: "remanejada", width: 11 },
+    { header: "Termo de parceria", key: "termo", width: 12 },
+    { header: "Processo licitatório", key: "processo", width: 24 },
+    { header: "Início da vigência", key: "vigenciaInicio", width: 13 },
+    { header: "Fim da vigência", key: "vigenciaFim", width: 13 },
+    { header: "Publicação do extrato", key: "extrato", width: 13 },
+    { header: "Envio para pagamento", key: "envio", width: 13 },
+    { header: "Conta bancária", key: "conta", width: 34 },
+    { header: "Gestor na entidade", key: "gestorOsc", width: 30 },
+    { header: "Gestor na Prefeitura", key: "gestorPmc", width: 30 },
   ];
   for (const e of emendas) {
+    const x = execucao.get(e.id);
     ws.addRow({
       numero: e.numero,
       id: e.numero_vereador,
@@ -90,8 +103,17 @@ export async function GET(request: NextRequest) {
       empenhos: (empenhos.get(e.id) ?? []).join(", "),
       empenhado: e.empenhado,
       pago: e.pago,
-      dataPagamento: e.ultimo_pagamento ? new Date(`${e.ultimo_pagamento}T12:00:00`) : null,
+      dataPagamento: data(e.ultimo_pagamento),
       remanejada: e.remanejada ? "Sim" : "",
+      termo: x?.numero_termo ?? "",
+      processo: x?.processo_licitatorio ?? "",
+      vigenciaInicio: data(x?.vigencia_inicio),
+      vigenciaFim: data(x?.vigencia_fim),
+      extrato: data(x?.data_publicacao_extrato),
+      envio: data(x?.data_envio_pagamento),
+      conta: x?.conta_bancaria ?? "",
+      gestorOsc: x?.gestor_osc ?? "",
+      gestorPmc: x?.gestor_pmc ?? "",
     });
   }
   const ultima = emendas.length + 1;
@@ -104,9 +126,9 @@ export async function GET(request: NextRequest) {
   cabecalho.alignment = { vertical: "middle" };
   cabecalho.height = 22;
   for (const k of ["valor", "empenhado", "pago"]) ws.getColumn(k).numFmt = '"R$" #,##0.00';
-  ws.getColumn("dataPagamento").numFmt = "dd/mm/yyyy";
+  for (const k of ["dataPagamento", "vigenciaInicio", "vigenciaFim", "extrato", "envio"]) ws.getColumn(k).numFmt = "dd/mm/yyyy";
   for (const k of ["descricao", "objeto"]) ws.getColumn(k).alignment = { wrapText: true, vertical: "top" };
-  ws.autoFilter = { from: "A1", to: "U1" };
+  ws.autoFilter = { from: "A1", to: "AD1" };
 
   const buffer = await wb.xlsx.writeBuffer();
   return new NextResponse(buffer as ArrayBuffer, {

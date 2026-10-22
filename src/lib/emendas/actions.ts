@@ -117,6 +117,61 @@ export async function registrarMovimento(dados: z.input<typeof esquemaMovimento>
   return { sucesso: true };
 }
 
+const dataOpcional = z
+  .string()
+  .optional()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data inválida");
+
+const esquemaExecucao = z
+  .object({
+    emendaId: z.uuid(),
+    numeroTermo: textoOpcional(40),
+    processoLicitatorio: textoOpcional(200),
+    dataEnvioPagamento: dataOpcional,
+    vigenciaInicio: dataOpcional,
+    vigenciaFim: dataOpcional,
+    dataPublicacaoExtrato: dataOpcional,
+    contaBancaria: textoOpcional(200),
+    gestorOsc: textoOpcional(200),
+    gestorPmc: textoOpcional(200),
+    observacao: textoOpcional(2000),
+  })
+  .refine((d) => !d.vigenciaInicio || !d.vigenciaFim || d.vigenciaFim >= d.vigenciaInicio, {
+    message: "O fim da vigência não pode ser antes do início.",
+  });
+
+/** Parceria e execução (termo, vigência, extrato, conta, gestores). Grava quem registra a execução da emenda. */
+export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Promise<Resultado> {
+  const a = esquemaExecucao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirAcesso();
+  if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
+
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas.from("execucao").upsert({
+    id: a.data.emendaId,
+    numero_termo: a.data.numeroTermo,
+    processo_licitatorio: a.data.processoLicitatorio,
+    data_envio_pagamento: a.data.dataEnvioPagamento,
+    vigencia_inicio: a.data.vigenciaInicio,
+    vigencia_fim: a.data.vigenciaFim,
+    data_publicacao_extrato: a.data.dataPublicacaoExtrato,
+    conta_bancaria: a.data.contaBancaria,
+    gestor_osc: a.data.gestorOsc,
+    gestor_pmc: a.data.gestorPmc,
+    observacao: a.data.observacao,
+    atualizado_em: new Date().toISOString(),
+    atualizado_por: ctx.usuario.id,
+  });
+  if (error) {
+    console.error("[salvarExecucao]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar(a.data.emendaId);
+  return { sucesso: true };
+}
+
 const esquemaCorrecaoMovimento = z.object({
   id: z.uuid(),
   emendaId: z.uuid(),

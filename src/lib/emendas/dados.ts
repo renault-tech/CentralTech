@@ -11,6 +11,7 @@ import type {
   Beneficiario,
   DocumentoEmenda,
   EmendaResumo,
+  ExecucaoEmenda,
   Exercicio,
   Impedimento,
   MovimentoFinanceiro,
@@ -126,6 +127,18 @@ export const listarMovimentos = cache(async (idsEmendas: string[]): Promise<Movi
   return saida;
 });
 
+/** Parceria/execução das emendas (exportação). Mesmo cuidado de lotes de `listarMovimentos`. */
+export async function listarExecucoes(idsEmendas: string[]): Promise<ExecucaoEmenda[]> {
+  const emendas = await criarClienteEmendas();
+  const saida: ExecucaoEmenda[] = [];
+  for (let i = 0; i < idsEmendas.length; i += 150) {
+    const { data, error } = await emendas.from("execucao").select("*").in("id", idsEmendas.slice(i, i + 150));
+    if (error) falhou("execucao", error);
+    saida.push(...(data ?? []));
+  }
+  return saida;
+}
+
 export const listarVereadores = cache(async (): Promise<Vereador[]> => {
   const emendas = await criarClienteEmendas();
   const { data, error } = await emendas.from("vereadores").select("*").order("numero");
@@ -161,6 +174,7 @@ export type DetalheEmenda = {
   impedimentos: Impedimento[];
   remanejamentos: Remanejamento[];
   documentos: DocumentoEmenda[];
+  execucao: ExecucaoEmenda | null;
 };
 
 export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | null> {
@@ -169,14 +183,15 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
   if (error) falhou("detalhe", error);
   if (!emenda) return null;
 
-  const [andamentos, movimentos, impedimentos, remanejamentos, documentos] = await Promise.all([
+  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao] = await Promise.all([
     emendas.from("andamentos").select("*").eq("emenda_id", id).order("data", { ascending: false }).order("criado_em", { ascending: false }),
     emendas.from("movimentos_financeiros").select("*").eq("emenda_id", id).order("criado_em"),
     emendas.from("impedimentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
     emendas.from("remanejamentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
     emendas.from("documentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
+    emendas.from("execucao").select("*").eq("id", id).maybeSingle(),
   ]);
-  for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos]) {
+  for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao]) {
     if (r.error) falhou("detalhe-filhos", r.error);
   }
 
@@ -194,6 +209,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     impedimentos: impedimentos.data ?? [],
     remanejamentos: remanejamentos.data ?? [],
     documentos: documentos.data ?? [],
+    execucao: execucao.data ?? null,
   };
 }
 

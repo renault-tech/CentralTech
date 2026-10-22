@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-24",
+    titulo: "Emendas: atualizadas pela planilha de cumprimento",
+    descricao:
+      "As 87 emendas da planilha de cumprimento de 2026 foram atualizadas na plataforma: empenhos e datas de pagamento corrigidos, pagamentos e empenhos que faltavam, e a fase de cada uma. Cada emenda ganhou o bloco “Parceria e execução” (termo de parceria, vigência, publicação do extrato, envio para pagamento, conta bancária e gestores), editável por quem registra a execução, com alerta quando a vigência está acabando ou o extrato ainda não foi publicado. Duas fases novas no fluxo: Termo de parceria (repasse) e Enviada para pagamento. A exportação para Excel traz as colunas novas.",
+  },
+  {
     data: "2026-10-23",
     titulo: "Avisos ao vivo em toda a plataforma",
     descricao:

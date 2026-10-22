@@ -39,8 +39,10 @@ export const ETAPAS: InfoEtapa[] = [
   { chave: "analise", nome: "Análise técnica", cor: "#DDD6F7", grupo: 1 },
   { chave: "plano_trabalho", nome: "Plano de trabalho", cor: "#BBAAEE", grupo: 1 },
   { chave: "processo_compra", nome: "Processo de compra", cor: "#BBAAEE", grupo: 1 },
+  { chave: "termo_parceria", nome: "Termo de parceria", cor: "#C9B8F0", grupo: 1 },
   { chave: "empenhada", nome: "Empenhada", cor: "#9479DD", grupo: 2, fixa: true },
   { chave: "liquidada", nome: "Liquidada", cor: "#7556C7", grupo: 2, fixa: true },
+  { chave: "envio_pagamento", nome: "Enviada para pagamento", cor: "#6849B5", grupo: 2 },
   { chave: "paga", nome: "Paga", cor: "#563A9E", grupo: 3, fixa: true },
   { chave: "prestacao_contas", nome: "Prestação de contas", cor: "#43307E", grupo: 3 },
   { chave: "concluida", nome: "Concluída", cor: "#2A1C55", grupo: 3, fixa: true },
@@ -51,8 +53,11 @@ const itens = (chaves: string[]): ItemFluxo[] => chaves.map((chave) => ({ chave,
 export const CATALOGO_PADRAO: CatalogoEtapas = {
   etapas: Object.fromEntries(ETAPAS.map((e) => [e.chave, e])),
   fluxos: {
-    repasse: itens(["indicada", "analise", "plano_trabalho", "empenhada", "liquidada", "paga", "prestacao_contas", "concluida"]),
-    direta: itens(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]),
+    repasse: itens([
+      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "envio_pagamento", "paga",
+      "prestacao_contas", "concluida",
+    ]),
+    direta: itens(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "envio_pagamento", "paga", "concluida"]),
   },
 };
 
@@ -207,6 +212,19 @@ export function pct(x: number, casas = 1): string {
 }
 
 /** "2026-03-26" → "26/03/2026" (sem fuso: data pura). */
+/** Situação da vigência do termo/cronograma em relação a `hoje` (AAAA-MM-DD). */
+export function situacaoVigencia(
+  fim: string | null | undefined,
+  hoje: string
+): { texto: string; alerta: boolean } | null {
+  if (!fim) return null;
+  const dias = Math.round((Date.parse(fim.slice(0, 10)) - Date.parse(hoje)) / 86_400_000);
+  if (dias < 0) return { texto: `Vigência encerrada em ${dataBr(fim)} — acompanhar a prestação de contas`, alerta: true };
+  if (dias === 0) return { texto: "Vigência termina hoje", alerta: true };
+  if (dias <= 30) return { texto: `Vigência termina em ${dias} dia${dias === 1 ? "" : "s"}`, alerta: true };
+  return { texto: `Em vigência até ${dataBr(fim)}`, alerta: false };
+}
+
 export function dataBr(iso: string | null | undefined): string {
   if (!iso) return "—";
   const [a, m, d] = iso.slice(0, 10).split("-");
