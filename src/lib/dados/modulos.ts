@@ -1,3 +1,4 @@
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import type { UsuarioHub } from "@/types/database";
@@ -13,7 +14,7 @@ export type ModuloComAcesso = InfoModulo & { temAcesso: boolean; pedidoPendente:
  * Só roda no servidor e só com o e-mail da própria sessão. */
 async function modulosComPedidoPendente(email: string): Promise<Set<string>> {
   try {
-    const emailLike = email.replace(/[\\%_]/g, "\\$&");
+    const emailLike = escaparLike(email);
     const { data } = await criarClienteAdminBruto()
       .schema("hub")
       .from("solicitacoes_acesso")

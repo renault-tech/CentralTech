@@ -1,3 +1,6 @@
+import { exigirAdminHub } from "@/lib/auth/exigir-admin";
+import { cache } from "react";
+
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -18,9 +21,10 @@ export {
 } from "@/lib/catalogos-solicitacao";
 
 /** Só a contagem (sem trazer as linhas) — alimenta o selo do cabeçalho e a
- * faixa da Início, que rodam em toda navegação do admin. Qualquer falha
+ * faixa da Início, que rodam em toda navegação do admin. `cache()`: o
+ * cabeçalho e a página pedem a mesma contagem na mesma requisição. Qualquer falha
  * devolve 0: o aviso nunca pode derrubar a página que o mostra. */
-export async function contarSolicitacoesPendentes(): Promise<number> {
+export const contarSolicitacoesPendentes = cache(async (): Promise<number> => {
   try {
     const supabase = await criarClienteServidor();
     const { count, error } = await supabase
@@ -36,7 +40,7 @@ export async function contarSolicitacoesPendentes(): Promise<number> {
     console.error("[contarSolicitacoesPendentes] erro inesperado:", e);
     return 0;
   }
-}
+});
 
 export async function listarSolicitacoesPendentes(): Promise<SolicitacaoAcesso[]> {
   const supabase = await criarClienteServidor();
@@ -76,6 +80,7 @@ export async function listarSolicitacoesDecididas(): Promise<SolicitacaoAcesso[]
 }
 
 export async function listarSetoresCompras(): Promise<CatalogoItem[]> {
+  await exigirAdminHub();
   const admin = criarClienteAdminBruto();
   const { data, error } = await admin.schema("public").from("setores").select("id,nome").order("ordem");
   if (error) {
@@ -86,6 +91,7 @@ export async function listarSetoresCompras(): Promise<CatalogoItem[]> {
 }
 
 export async function listarSecretariasRequerimentos(): Promise<CatalogoItem[]> {
+  await exigirAdminHub();
   const admin = criarClienteAdminBruto();
   const { data, error } = await admin
     .schema("requerimentos")
@@ -103,6 +109,7 @@ export async function listarSecretariasRequerimentos(): Promise<CatalogoItem[]> 
 // PR4: lê com a service_role do Numera (não mais a anon key) — a RLS de
 // lá deixa de liberar geral a partir do PR5.
 export async function listarDocumentosNumera(): Promise<DocumentoNumera[]> {
+  await exigirAdminHub();
   const { data, error } = await criarClienteNumeraAdmin()
     .from("documents")
     .select("id,name")
@@ -117,6 +124,7 @@ export async function listarDocumentosNumera(): Promise<DocumentoNumera[]> {
 
 /** Secretarias do módulo Emendas (unidade de permissão de lá). */
 export async function listarSecretariasEmendas(): Promise<CatalogoItem[]> {
+  await exigirAdminHub();
   const admin = criarClienteAdminBruto();
   const { data, error } = await admin
     .schema("emendas")

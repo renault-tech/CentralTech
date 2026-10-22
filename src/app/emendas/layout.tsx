@@ -18,6 +18,8 @@ export const metadata = { title: "Emendas Impositivas · Central Cataguases" };
  * `emendas` (permissão por secretaria).
  */
 export default async function LayoutEmendas({ children }: { children: React.ReactNode }) {
+  // O catálogo de fases não depende do contexto: as duas buscas andam juntas.
+  const promessaCatalogo = obterCatalogoEtapas();
   const ctx = await obterContextoEmendas();
   if (ctx.situacao === "sem_login") redirect("/login?proximo=%2Femendas");
   if (ctx.situacao === "inativo") redirect("/login?motivo=desativado");
@@ -26,6 +28,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   const modulo = { nome: "Emendas Impositivas", cor: COR_MODULO, app: "emendas" as const };
 
   if (ctx.situacao === "sem_perfil") {
+    promessaCatalogo.catch(() => {});
     return (
       <div className="min-h-dvh bg-slate-50">
         <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
@@ -44,7 +47,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   }
 
   const gestor = ehGestor(ctx.perfil);
-  const catalogo = await obterCatalogoEtapas();
+  const catalogo = await promessaCatalogo;
   const itens = [
     { href: "/emendas", rotulo: "Painel", exato: true },
     { href: "/emendas/lista", rotulo: "Emendas" },

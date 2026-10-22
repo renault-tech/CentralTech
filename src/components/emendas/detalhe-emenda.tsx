@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2 } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -110,7 +109,6 @@ export function DetalheEmendaCliente({
   nomesUsuarios: Record<string, string>;
 }) {
   const catalogo = useCatalogo();
-  const router = useRouter();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
   const [aba, setAba] = React.useState<Aba>("andamentos");
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
@@ -135,8 +133,8 @@ export function DetalheEmendaCliente({
   async function executar(acao: () => Promise<Resultado>) {
     setErroGeral(null);
     const r = await acao();
+    // Em caso de sucesso a própria action revalida a página (sem router.refresh).
     if (!r.sucesso) setErroGeral(r.erro);
-    else router.refresh();
     return r;
   }
 

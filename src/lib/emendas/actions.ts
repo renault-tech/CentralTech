@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
 
 /**
@@ -35,9 +36,14 @@ async function exigirAcesso() {
   return ctx;
 }
 
+/**
+ * Atualiza só a tela da emenda mexida: a resposta da própria action já traz a
+ * página renderizada de novo (por isso os componentes não chamam `router.refresh()`
+ * depois). Painel e listas são dinâmicos e buscam dados novos a cada visita, então
+ * não precisam ser invalidados aqui.
+ */
 function revalidar(emendaId?: string) {
-  revalidatePath("/emendas", "layout");
-  if (emendaId) revalidatePath(`/emendas/${emendaId}`);
+  revalidatePath(emendaId ? `/emendas/${emendaId}` : "/emendas", emendaId ? "page" : "layout");
 }
 
 const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
@@ -285,7 +291,7 @@ async function resolverBeneficiario(
   novo: string | null
 ): Promise<{ id: string | null; erro?: string }> {
   if (!novo) return { id };
-  const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", novo).maybeSingle();
+  const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", escaparLike(novo)).maybeSingle();
   if (existente) return { id: existente.id };
   const { data, error } = await emendas
     .from("beneficiarios")

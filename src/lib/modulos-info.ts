@@ -24,10 +24,11 @@ export type InfoModulo = {
 /**
  * Catálogo estático dos módulos da plataforma. Cada um é um app
  * independente (repo/deploy/banco próprios ou compartilhados — Compras e
- * Requerimentos já dividem o mesmo Supabase, Numera é isolado), sem SSO
- * real entre eles: o card só leva pra URL de produção, o login de lá é o
- * de sempre. Exceção: Emendas (`interno: true`) mora dentro do próprio Hub
- * (`/emendas`), então já entra com a sessão da Central.
+ * Requerimentos já dividem o mesmo Supabase, Numera é isolado). O card leva
+ * à URL de produção já autenticado: link mágico no clique (`abrirModulo`) e SSO
+ * silencioso quando a pessoa chega direto no app (`/sso/silencioso`). Emendas
+ * (`interno: true`) mora dentro do próprio Hub (`/emendas`) e usa a sessão da
+ * Central, sem link mágico.
  *
  * Módulo sem dependência de servidor (sem next/headers), para poder ser
  * importado por Client Components. `src/lib/dados/modulos.ts` reexporta.

@@ -18,13 +18,12 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
   const ctx = await obterContextoEmendas();
   if (ctx.situacao !== "ok") redirect("/emendas");
 
-  const [detalhe, catalogo] = await Promise.all([obterDetalheEmenda(id), obterCatalogoEtapas()]);
-  if (!detalhe) notFound();
-  const { emenda, andamentos, movimentos, execucao } = detalhe;
+  // Tudo o que não depende do resultado do detalhe anda na mesma rodada
+  // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
-
-  const [beneficiarios, unidades, auditoria] = await Promise.all([
+  const [detalhe, catalogo, beneficiarios, unidades, auditoria] = await Promise.all([
+    obterDetalheEmenda(id),
+    obterCatalogoEtapas(),
     listarBeneficiarios(),
     listarUnidades(),
     gestor
@@ -33,6 +32,9 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
         )
       : Promise.resolve({ data: [] }),
   ]);
+  if (!detalhe) notFound();
+  const { emenda, andamentos, movimentos, execucao } = detalhe;
+  const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const registros = auditoria.data ?? [];
   const idsUsuarios = Array.from(new Set(registros.map((a) => a.usuario_id).filter((x): x is string => !!x)));
   const nomesUsuarios: Record<string, string> = {};

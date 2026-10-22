@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Inbox, ShieldAlert, Users } from "lucide-react";
 
-import { listarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
+import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ type CardConfig = {
  * um "pendente" natural para destacar).
  */
 export default async function PaginaConfiguracoes() {
-  const pendentes = await listarSolicitacoesPendentes();
+  const pendentes = await contarSolicitacoesPendentes();
 
   const cards: CardConfig[] = [
     {
@@ -32,7 +32,7 @@ export default async function PaginaConfiguracoes() {
       descricao: "Pedidos feitos em /solicitar-acesso — aprovar por app ou recusar.",
       Icone: Inbox,
       cor: "#2563A8",
-      contagem: pendentes.length,
+      contagem: pendentes,
     },
     {
       href: "/configuracoes/usuarios",

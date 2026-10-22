@@ -1,5 +1,6 @@
 "use server";
 
+import { exigirAdminHub } from "@/lib/auth/exigir-admin";
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -32,6 +33,12 @@ export async function alternarBloqueioLoginDireto(
   modulo: Modulo,
   bloqueado: boolean
 ): Promise<ResultadoLoginDireto> {
+  // A RPC já exige admin; aqui a checagem vem antes do espelhamento com chave de serviço.
+  try {
+    await exigirAdminHub();
+  } catch {
+    return { sucesso: false, erro: "Acesso restrito a administradores do Hub." };
+  }
   const hub = await criarClienteServidor();
   const { error } = await hub.rpc("definir_bloqueio_login_direto", {
     p_modulo: modulo,

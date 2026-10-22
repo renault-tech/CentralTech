@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AlertTriangle, Pencil } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -155,7 +154,6 @@ function DialogoParceria({
   repasse: boolean;
   inicial: Campos;
 }) {
-  const router = useRouter();
   // Montado só enquanto aberto: reabre sempre com o que está salvo.
   const [c, setC] = React.useState(inicial);
   const [enviando, setEnviando] = React.useState(false);
@@ -174,7 +172,6 @@ function DialogoParceria({
     setEnviando(false);
     if (!r.sucesso) return setErro(r.erro);
     aoFechar();
-    router.refresh();
   }
 
   const rotulo = "flex flex-col gap-1.5 text-[13px] font-medium text-cataguases-marinho";

@@ -1,3 +1,4 @@
+import { exigirAdminHub } from "@/lib/auth/exigir-admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -53,6 +54,7 @@ async function contarComOrigemHub(
  * switch de bloqueio não é oferecido para ele na UI (ver `PainelLoginDireto`).
  */
 export async function listarAdocaoHub(): Promise<AdocaoModulo[]> {
+  await exigirAdminHub();
   const hub = await criarClienteServidor();
   const admin = criarClienteAdminBruto();
 

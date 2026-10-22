@@ -7,8 +7,9 @@ import type { Database } from "@/types/database";
 
 /**
  * Cliente com a chave service_role: ignora RLS e acessa a Admin API do
- * Auth. Uso exclusivo em Server Actions já protegidas por checagem de
- * perfil, nunca no cliente.
+ * Auth. Só no servidor (Server Actions, route handlers e `lib/dados/*`) e
+ * sempre depois de uma checagem de perfil — ver `exigirAdminHub()` —, nunca
+ * no cliente.
  */
 export function criarClienteAdmin() {
   const env = envServidor();

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const numeros = (p.get("numeros") ?? "").split(",").filter(Boolean).map(Number);
   const q = normalizar(p.get("q") ?? "");
-  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano), obterCatalogoEtapas()]);
+  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano, true), obterCatalogoEtapas()]);
   const emendas = todas.filter(
     (r) =>
       (!p.get("v") || r.vereador_id === p.get("v")) &&

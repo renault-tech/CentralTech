@@ -51,23 +51,23 @@ export const obterContextoEmendas = cache(async (): Promise<ContextoEmendas> => 
   const usuario = await obterUsuarioAtual();
   if (!usuario) return { situacao: "sem_login" };
   if (!usuario.ativo) return { situacao: "inativo" };
-  if (!(await temAcessoAoModulo(usuario.id, usuario.admin_hub, "emendas"))) {
-    return { situacao: "sem_acesso", usuario };
-  }
-
   const emendas = await criarClienteEmendas();
-  const { data: perfil, error } = await emendas.rpc("meu_perfil");
+  // Acesso ao módulo, perfil e permissões não dependem um do outro: andam juntos
+  // (eram 3 idas ao banco em sequência a cada carga e a cada ação do módulo).
+  // Perfil e permissões só valem se o acesso existir — o resultado é descartado
+  // caso contrário, e ambos são protegidos por RLS.
+  const [temAcesso, { data: perfil, error }, { data: permissoes, error: erroPerm }] = await Promise.all([
+    temAcessoAoModulo(usuario.id, usuario.admin_hub, "emendas"),
+    emendas.rpc("meu_perfil"),
+    emendas.from("permissoes").select("secretaria_id").eq("usuario_id", usuario.id).eq("pode_editar", true),
+  ]);
+  if (!temAcesso) return { situacao: "sem_acesso", usuario };
   if (error) falhou("meu_perfil", error);
   if (!perfil) return { situacao: "sem_perfil", usuario };
 
   if (perfil === "admin" || perfil === "gestor") {
     return { situacao: "ok", usuario, perfil, editaveis: "todas" };
   }
-  const { data: permissoes, error: erroPerm } = await emendas
-    .from("permissoes")
-    .select("secretaria_id")
-    .eq("usuario_id", usuario.id)
-    .eq("pode_editar", true);
   if (erroPerm) falhou("permissoes", erroPerm);
   const editaveis = perfil === "consulta" ? [] : (permissoes ?? []).map((p) => p.secretaria_id);
   return { situacao: "ok", usuario, perfil, editaveis };
@@ -93,12 +93,30 @@ export async function resolverExercicio(anoParam?: string | null): Promise<{ exe
   return { exercicio, exercicios };
 }
 
-export const listarEmendas = cache(async (ano: number): Promise<EmendaResumo[]> => {
+/**
+ * Colunas de `v_emendas` que as telas de lista/painel usam. `descricao` (texto
+ * longo, de todas as emendas) fica de fora: só o detalhe e a exportação a leem,
+ * e ela inflava o payload do painel e da lista.
+ */
+const COLUNAS_RESUMO =
+  "id,ano,numero,numero_vereador,objeto,valor,saude,modalidade,etapa,situacao,etapa_atualizada_em,criado_em,atualizado_em," +
+  "funcional_programatica,natureza_despesa,dotacao_texto,ficha,vereador_id,vereador_numero,vereador_nome," +
+  "beneficiario_id,beneficiario_nome,beneficiario_cnpj,unidade_id,unidade_codigo,unidade_nome,secretaria_id,secretaria_nome," +
+  "empenhado,liquidado,pago,ultimo_pagamento,remanejada,impedimentos_abertos";
+
+/** `comDescricao` só para a exportação; nas telas `descricao` vem vazia. */
+export const listarEmendas = cache(async (ano: number, comDescricao = false): Promise<EmendaResumo[]> => {
   const emendas = await criarClienteEmendas();
-  const { data, error } = await emendas.from("v_emendas").select("*").eq("ano", ano).order("numero");
+  const { data, error } = await emendas
+    .from("v_emendas")
+    .select(comDescricao ? "*" : COLUNAS_RESUMO)
+    .eq("ano", ano)
+    .order("numero")
+    .overrideTypes<Partial<EmendaResumo>[], { merge: false }>();
   if (error) falhou("v_emendas", error);
   return (data ?? []).map((r) => ({
-    ...r,
+    ...(r as EmendaResumo),
+    descricao: r.descricao ?? "",
     valor: Number(r.valor),
     empenhado: Number(r.empenhado),
     liquidado: Number(r.liquidado),
@@ -110,33 +128,42 @@ export const listarEmendas = cache(async (ano: number): Promise<EmendaResumo[]> 
 export type MovimentoResumo = Pick<MovimentoFinanceiro, "emenda_id" | "tipo" | "numero" | "data" | "valor">;
 
 /** Movimentos financeiros das emendas visíveis (RLS) — alimentam a curva de
- * pagamentos e os alertas (empenho repetido, pago sem data…). */
-export const listarMovimentos = cache(async (idsEmendas: string[]): Promise<MovimentoResumo[]> => {
+ * pagamentos e os alertas (empenho repetido, pago sem data…). Lotes de 150 ids
+ * (limite de tamanho da URL do PostgREST) rodam em paralelo. */
+export async function listarMovimentos(idsEmendas: string[]): Promise<MovimentoResumo[]> {
   if (idsEmendas.length === 0) return [];
   const emendas = await criarClienteEmendas();
-  const saida: MovimentoResumo[] = [];
-  // Lotes de 150 ids: evita estourar o tamanho da URL do PostgREST.
-  for (let i = 0; i < idsEmendas.length; i += 150) {
-    const { data, error } = await emendas
-      .from("movimentos_financeiros")
-      .select("emenda_id,tipo,numero,data,valor")
-      .in("emenda_id", idsEmendas.slice(i, i + 150));
-    if (error) falhou("movimentos", error);
-    saida.push(...(data ?? []).map((m) => ({ ...m, valor: Number(m.valor) })));
-  }
-  return saida;
-});
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const { data, error } = await emendas
+        .from("movimentos_financeiros")
+        .select("emenda_id,tipo,numero,data,valor")
+        .in("emenda_id", lote);
+      if (error) falhou("movimentos", error);
+      return (data ?? []).map((m) => ({ ...m, valor: Number(m.valor) }));
+    })
+  );
+  return lotes.flat();
+}
 
-/** Parceria/execução das emendas (exportação). Mesmo cuidado de lotes de `listarMovimentos`. */
-export async function listarExecucoes(idsEmendas: string[]): Promise<ExecucaoEmenda[]> {
-  const emendas = await criarClienteEmendas();
-  const saida: ExecucaoEmenda[] = [];
-  for (let i = 0; i < idsEmendas.length; i += 150) {
-    const { data, error } = await emendas.from("execucao").select("*").in("id", idsEmendas.slice(i, i + 150));
-    if (error) falhou("execucao", error);
-    saida.push(...(data ?? []));
-  }
+function lotesDe<T>(itens: T[], tamanho: number): T[][] {
+  const saida: T[][] = [];
+  for (let i = 0; i < itens.length; i += tamanho) saida.push(itens.slice(i, i + tamanho));
   return saida;
+}
+
+/** Parceria/execução das emendas (exportação). */
+export async function listarExecucoes(idsEmendas: string[]): Promise<ExecucaoEmenda[]> {
+  if (idsEmendas.length === 0) return [];
+  const emendas = await criarClienteEmendas();
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const { data, error } = await emendas.from("execucao").select("*").in("id", lote);
+      if (error) falhou("execucao", error);
+      return data ?? [];
+    })
+  );
+  return lotes.flat();
 }
 
 export const listarVereadores = cache(async (): Promise<Vereador[]> => {

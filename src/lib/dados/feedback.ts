@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import type { AppFeedback, FeedbackCentral, StatusFeedback, TipoFeedback } from "@/types/database";
@@ -53,11 +55,11 @@ export async function listarMeusFeedbacks(usuarioId: string): Promise<FeedbackCo
   return comUrls(data ?? []);
 }
 
-export async function podeGerirFeedback(): Promise<boolean> {
+export const podeGerirFeedback = cache(async (): Promise<boolean> => {
   const supabase = await criarClienteServidor();
   const { data } = await supabase.rpc("pode_gerir_feedback");
   return data === true;
-}
+});
 
 export async function contarFeedbackNovos(): Promise<number> {
   const supabase = await criarClienteServidor();
