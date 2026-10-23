@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -100,6 +101,15 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
             {(app || tipo || filtroStatus !== "pendentes") && (
               <Link href="/feedback" className="text-sm text-slate-500 hover:underline">Limpar</Link>
             )}
+            <a
+              href={`/api/feedback/exportar?${new URLSearchParams({ ...(app ? { app } : {}), ...(tipo ? { tipo } : {}), status: filtroStatus })}`}
+              download
+              title="Baixa um .zip com os pedidos filtrados e as imagens, para anexar numa conversa com o Claude"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-cataguases-marinho hover:bg-slate-50"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              Exportar (.zip)
+            </a>
           </form>
         )}
 

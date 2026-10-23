@@ -1529,3 +1529,10 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   `eslint`, `vitest` (48) e `next build` limpos; conferir no deploy o filtro do
   painel (a URL deve mudar sem recarregar) e uma gravação na emenda (a tela
   deve atualizar sozinha).
+- **Exportação de feedback para o Claude (23/10/2026)**: em `/feedback` (gestão), o botão
+  "Exportar (.zip)" baixa `feedback-AAAA-MM-DD.zip` com os pedidos que estão nos filtros da tela
+  (`GET /api/feedback/exportar?app&tipo&status`, só quem `pode_gerir_feedback`). Conteúdo:
+  `feedback.md` (índice + uma seção por pedido: app, tipo, status, autor, tela, mensagem, imagens
+  referenciadas) e `anexos/NNN-app-i.ext`. Ordem do mais antigo ao mais novo. Para aplicar os
+  pedidos: anexar o .zip numa conversa com o Claude. Lógica pura em `src/lib/feedback/exportar.ts`
+  (testada); ZIP sem recompressão via `fflate`.
