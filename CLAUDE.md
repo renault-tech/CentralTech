@@ -1540,3 +1540,15 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   `feedback-AAAA-MM-DD.pdf` com cada pedido seguido dos próprios screenshots
   (`src/lib/feedback/exportar-pdf.ts`, jsPDF; PNG/JPEG embutidos, webp/gif ficam listados como
   não embutidos). Preferido ao .md com base64, que a IA leria como texto e não como imagem.
+
+- **Aviso de mudança de status do feedback (23/10/2026)**: quem manda feedback é
+  avisado quando a gestão muda o status (em análise / resolvido / não possível).
+  Gatilho `trg_feedback_notifica_status` em `hub.feedback` → `hub.notificar_feedback_status()`
+  (migration `20261023020000` do Hub; função e gatilho aplicados em produção em
+  duas etapas por causa do tempo limite do MCP em DDL de `hub.feedback`). Compras grava em
+  `public.notificacoes` (sino do Compras e da Central leem dali); Requerimentos/Emendas/Central
+  usam `hub.notificar`; **Numera** (outro projeto) consulta "Meus envios" ao abrir e ao voltar
+  para a aba e avisa por toast (`avisarMudancasFeedback`, último status visto em localStorage).
+  Clicar no aviso nos apps dispara o evento `abrir-feedback-meus`, que o `BotaoFeedback` ouve
+  para abrir em "Meus envios". Não avisa quem mudou o status nem repete o mesmo status.
+
