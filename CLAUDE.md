@@ -1512,19 +1512,31 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   índices em `emendas.emendas(vereador_id)`, `(beneficiario_id)` e
   `permissoes(secretaria_id)`; `anon` sem EXECUTE nas 12 funções do Compras
   (chat, parecer, suspender/retomar, devolver) — todas já checavam `auth.uid()`.
-- **Ficou para depois** (decisão de produto/infra, ou arriscado sem teste ao
-  vivo): limite de tentativas por IP em `/api/numera/resolver-login`,
-  `solicitarRecuperacao`, `/solicitar-acesso` e no `entrar()` (o limitador atual
-  é em memória, não vale em serverless — precisa do Firewall da Vercel ou KV);
-  `/api/numera/resolver-login` devolve o e-mail de qualquer username (idealmente
-  o login do username passa a ser resolvido no servidor); links de e-mail
-  consumidos por GET podem ser "queimados" por antivírus (página intermediária
-  com botão); `listUsers({perPage: 1000})` na tela de usuários; unificar a
-  orquestração duplicada de `aprovarSolicitacao`/`definirAcesso`; marcar como
-  `STABLE` as funções de permissão que consultam `hub.usuarios` (199 mil
-  varreduras sequenciais — `create or replace` trava o MCP, rodar no SQL
-  Editor); consolidar as 60 policies permissivas duplicadas; ligar a proteção
-  contra senhas vazadas no painel do Supabase (Auth → senhas).
+- **Resolvido depois**: links de e-mail de uso único (`/auth/confirm?token_hash=`
+  do Hub e `/api/numera/abrir-link`) não consomem mais o token no GET — o GET
+  mostra a página de `lib/seguranca/pagina-confirmar.ts` com o botão
+  "Continuar" e só o POST faz o `verifyOtp` (antivírus e prévia de e-mail
+  abrem o link por GET e gastavam o token → "link inválido"). O fluxo `code`
+  (PKCE) segue no GET. As funções de permissão já eram `STABLE` (a hipótese da
+  auditoria estava errada; as 199 mil varreduras em `hub.usuarios` são o
+  planner preferindo ler 54 linhas a usar índice). As políticas `FOR ALL`
+  das 5 tabelas de catálogo do Emendas viraram INSERT/UPDATE/DELETE de gestor
+  + SELECT (SQL rodado pelo dono no SQL Editor; nas tabelas de `hub` e
+  `requerimentos` NÃO mexer: tabelas minúsculas, ganho nulo e risco de
+  trancar o login). Branches mescladas: o git proxy do ambiente recusa
+  `push --delete`, apagar pelo GitHub.
+- **Ainda em aberto** (depende do dono ou de infra): (1) **Firewall da Vercel**
+  não tem nenhuma regra (a API do MCP responde 404 "config not found" e não
+  cria): configurar limite por IP no painel — `/api/numera/resolver-login` 30/min,
+  `/api/numera/recuperar-senha` 5/5min (POST), `/recuperar-senha` 5/5min (POST),
+  `/solicitar-acesso` 10/5min (POST), `/login` 30/min (POST); o limitador em
+  memória do código não vale em serverless. (2) `/api/numera/resolver-login`
+  devolve o e-mail de qualquer username: o conserto de verdade é o login do
+  Numera mandar usuário+senha para o servidor (muda `auth-service.js` do repo
+  do Numera) — só o Firewall mitiga por ora. (3) Ligar "Leaked password
+  protection" no Supabase (Auth → senhas): só pelo painel. (4)
+  `listUsers({perPage: 1000})` em `lib/dados/usuarios.ts` e a orquestração
+  duplicada de `aprovarSolicitacao`/`definirAcesso`.
 - **Não testado ao vivo**: sandbox sem acesso a Supabase/Vercel. `tsc`,
   `eslint`, `vitest` (48) e `next build` limpos; conferir no deploy o filtro do
   painel (a URL deve mudar sem recarregar) e uma gravação na emenda (a tela

@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-25",
+    titulo: "Links de e-mail com um clique de confirmação",
+    descricao:
+      "Os links de redefinir senha e de primeiro acesso agora abrem uma página com o botão “Continuar”. Antivírus e prévias de e-mail abriam o link antes da pessoa e gastavam o código de uso único, o que causava o aviso de “link inválido”. Para entrar, basta tocar no botão.",
+  },
+  {
     data: "2026-10-24",
     titulo: "Mais rapidez e mais segurança",
     descricao:
