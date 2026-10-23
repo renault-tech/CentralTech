@@ -19,13 +19,14 @@
  * concessão direta precisa de uma semântica diferente (ver comentário lá).
  */
 
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteCompras } from "@/lib/supabase/compras-cliente";
 import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { origemDaRequisicao } from "@/lib/actions/auth";
+import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
 import type { Modulo } from "@/types/database";
@@ -83,7 +84,7 @@ export type ClienteComAuthAdmin = {
 /** Paginação manual (a mesma técnica do importador do Numera) — nenhum dos
  * dois projetos deste ecossistema tem contas suficientes para justificar
  * uma busca por e-mail mais sofisticada. */
-export async function encontrarAuthIdPorEmail(admin: ClienteComAuthAdmin, email: string): Promise<string | null> {
+async function encontrarAuthIdPorEmail(admin: ClienteComAuthAdmin, email: string): Promise<string | null> {
   const alvo = email.toLowerCase();
   for (let page = 1; page <= 10; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
@@ -179,13 +180,6 @@ export async function enviarLinkNoEmailEAnotar(
   }
 }
 
-/** Primeiro acesso da conta compartilhada: o `/auth/confirm` do Hub valida o
- * token, grava a sessão em cookie e leva a `/redefinir-senha`. */
-export function linkPrimeiroAcessoHub(origemHub: string) {
-  return (tokenHash: string) =>
-    `${origemHub}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fredefinir-senha`;
-}
-
 /** Primeiro acesso no Numera: passa pelo Hub (`/api/numera/abrir-link`). */
 export function linkPrimeiroAcessoNumera(origemHub: string) {
   return (tokenHash: string) =>
@@ -277,7 +271,7 @@ export async function aprovarNumera(
   const { data: existente } = await numeraAdmin
     .from("users")
     .select("id")
-    .ilike("email", pessoa.email)
+    .ilike("email", escaparLike(pessoa.email))
     .maybeSingle();
 
   let userId = existente?.id as string | undefined;
@@ -298,7 +292,7 @@ export async function aprovarNumera(
     const { data: porNome } = await numeraAdmin
       .from("users")
       .select("id, email, username")
-      .ilike("name", pessoa.nome.trim());
+      .ilike("name", escaparLike(pessoa.nome.trim()));
     if (porNome && porNome.length > 0) {
       const emails = porNome.map((u) => u.email || u.username).join(", ");
       return {

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2 } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,11 +24,11 @@ import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
 import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
 
-const CAMPO =
+export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
-const BOTAO_PRIMARIO =
+export const BOTAO_PRIMARIO =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
-const BOTAO_SECUNDARIO =
+export const BOTAO_SECUNDARIO =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const TIPOS_DOC: { valor: TipoDocumento; rotulo: string; modalidade?: "repasse" | "direta" }[] = [
@@ -64,6 +63,16 @@ const ROTULO_CAMPO: Record<string, string> = {
   vereador_id: "Vereador",
   numero: "Número",
   numero_vereador: "ID do vereador",
+  numero_termo: "Termo de parceria",
+  processo_licitatorio: "Processo licitatório",
+  data_envio_pagamento: "Envio para pagamento",
+  vigencia_inicio: "Início da vigência",
+  vigencia_fim: "Fim da vigência",
+  data_publicacao_extrato: "Publicação do extrato",
+  conta_bancaria: "Conta bancária",
+  gestor_osc: "Gestor na entidade",
+  gestor_pmc: "Gestor na Prefeitura",
+  observacao: "Observação",
 };
 
 const NOME_TIPO_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação de empenho" } as const;
@@ -96,11 +105,10 @@ export function DetalheEmendaCliente({
   gestor: boolean;
   beneficiarios: Beneficiario[];
   unidades: UnidadeOrcamentaria[];
-  auditoria: { id: number; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
+  auditoria: { id: number; tabela: string; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
   nomesUsuarios: Record<string, string>;
 }) {
   const catalogo = useCatalogo();
-  const router = useRouter();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
   const [aba, setAba] = React.useState<Aba>("andamentos");
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
@@ -125,8 +133,8 @@ export function DetalheEmendaCliente({
   async function executar(acao: () => Promise<Resultado>) {
     setErroGeral(null);
     const r = await acao();
+    // Em caso de sucesso a própria action revalida a página (sem router.refresh).
     if (!r.sucesso) setErroGeral(r.erro);
-    else router.refresh();
     return r;
   }
 
@@ -316,7 +324,7 @@ export function DetalheEmendaCliente({
                     {auditoria.map((a) => {
                       const mudou = a.acao === "UPDATE" && a.antes && a.depois
                         ? Object.keys(a.depois).filter(
-                            (k) => !["atualizado_em", "etapa_atualizada_em"].includes(k) && JSON.stringify(a.antes?.[k]) !== JSON.stringify(a.depois?.[k])
+                            (k) => !["atualizado_em", "atualizado_por", "etapa_atualizada_em"].includes(k) && JSON.stringify(a.antes?.[k]) !== JSON.stringify(a.depois?.[k])
                           )
                         : [];
                       if (a.acao === "UPDATE" && mudou.length === 0) return null;
@@ -328,9 +336,9 @@ export function DetalheEmendaCliente({
                           </span>
                           <div>
                             {a.acao === "INSERT"
-                              ? "Emenda cadastrada"
+                              ? a.tabela === "execucao" ? "Dados de parceria/execução registrados" : "Emenda cadastrada"
                               : a.acao === "DELETE"
-                                ? "Emenda apagada"
+                                ? a.tabela === "execucao" ? "Dados de parceria/execução apagados" : "Emenda apagada"
                                 : mudou.map((k) => (
                                     <span key={k} className="mr-3 inline-block">
                                       {ROTULO_CAMPO[k] ?? k}: <span className="text-slate-500 line-through">{exibir(k, a.antes?.[k])}</span> →{" "}

@@ -175,6 +175,23 @@ export type Remanejamento = {
   criado_em: string;
 };
 
+/** Dados de parceria/execução (1:1 com a emenda; `id` = id da emenda). */
+export type ExecucaoEmenda = {
+  id: string;
+  numero_termo: string | null;
+  processo_licitatorio: string | null;
+  data_envio_pagamento: string | null;
+  vigencia_inicio: string | null;
+  vigencia_fim: string | null;
+  data_publicacao_extrato: string | null;
+  conta_bancaria: string | null;
+  gestor_osc: string | null;
+  gestor_pmc: string | null;
+  observacao: string | null;
+  atualizado_em: string;
+  atualizado_por: string | null;
+};
+
 export type DocumentoEmenda = {
   id: string;
   emenda_id: string;
@@ -242,6 +259,7 @@ export type DatabaseEmendas = {
       movimentos_financeiros: Tabela<MovimentoFinanceiro, "emenda_id" | "tipo" | "valor", "id" | "criado_em">;
       impedimentos: Tabela<Impedimento, "emenda_id" | "tipo" | "justificativa", "id" | "criado_em">;
       remanejamentos: Tabela<Remanejamento, "emenda_id" | "antes" | "depois", "id" | "criado_em">;
+      execucao: Tabela<ExecucaoEmenda, "id", never>;
       documentos: Tabela<DocumentoEmenda, "emenda_id" | "tipo" | "nome_arquivo" | "caminho", "id" | "criado_em">;
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;

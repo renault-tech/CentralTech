@@ -1,3 +1,4 @@
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import "server-only";
 
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
@@ -27,7 +28,7 @@ export async function alinharSenhaComNumera(email: string, senha: string): Promi
       .schema("hub")
       .from("usuarios")
       .select("id, ativo")
-      .ilike("email", email)
+      .ilike("email", escaparLike(email))
       .maybeSingle();
     if (!hubUsuario?.ativo) return false;
 

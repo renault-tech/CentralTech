@@ -29,6 +29,7 @@ let estado: EstadoNotificacoes = VAZIO;
 const ouvintes = new Set<() => void>();
 let iniciadoPara: string | null = null;
 let releitura: ReturnType<typeof setTimeout> | null = null;
+let canal: ReturnType<ReturnType<typeof criarClienteNavegador>["channel"]> | null = null;
 
 function publicar(parcial: Partial<EstadoNotificacoes>) {
   estado = { ...estado, ...parcial };
@@ -36,11 +37,13 @@ function publicar(parcial: Partial<EstadoNotificacoes>) {
 }
 
 async function recarregar() {
+  const para = iniciadoPara;
   const supabase = criarClienteNavegador();
   const [{ data: lista }, { data: resumo }] = await Promise.all([
     supabase.from("notificacoes").select("*").order("criado_em", { ascending: false }).limit(30),
     supabase.rpc("resumo_notificacoes"),
   ]);
+  if (para !== iniciadoPara) return; // resposta de quem já saiu
   const porApp: EstadoNotificacoes["porApp"] = {};
   for (const r of resumo ?? []) porApp[r.app] = r.nao_lidas;
   publicar({ carregado: true, lista: lista ?? [], porApp });
@@ -53,6 +56,16 @@ function agendarReleitura() {
 
 async function iniciar(usuarioId: string) {
   if (iniciadoPara === usuarioId) return;
+  // Outra pessoa entrou no mesmo navegador (computador compartilhado): fecha o
+  // canal da anterior e zera o estado antes de carregar — senão a lista e o
+  // contador dela apareceriam por instantes para a nova.
+  if (iniciadoPara !== null) {
+    if (canal) void criarClienteNavegador().removeChannel(canal);
+    canal = null;
+    if (releitura) clearTimeout(releitura);
+    estado = VAZIO;
+    for (const o of ouvintes) o();
+  }
   iniciadoPara = usuarioId;
   await recarregar();
 
@@ -60,7 +73,7 @@ async function iniciar(usuarioId: string) {
   const { data } = await supabase.auth.getSession();
   if (data.session) supabase.realtime.setAuth(data.session.access_token);
 
-  supabase
+  canal = supabase
     .channel(`avisos-${usuarioId}`)
     .on(
       "postgres_changes",

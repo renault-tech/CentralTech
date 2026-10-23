@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download, X } from "lucide-react";
 
 import { BarraEtapas, Chip, SeloEtapa } from "@/components/emendas/ui";
+import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { NOME_MODALIDADE, brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -52,13 +53,8 @@ export function TabelaEmendas({
   };
 
   function definir(m: Record<string, string>) {
-    const p = new URLSearchParams(params.toString());
-    for (const [k, v] of Object.entries(m)) {
-      if (v) p.set(k, v);
-      else p.delete(k);
-    }
     setLimite(POR_PAGINA);
-    router.replace(`${pathname}?${p}`, { scroll: false });
+    atualizarFiltrosNaUrl(params, m, pathname, (url) => router.replace(url, { scroll: false }));
   }
 
   const q = normalizar(busca.trim());

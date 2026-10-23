@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
+import { origemDaRequisicao } from "@/lib/origem";
 import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
 import { marcarConviteUsado, sincronizarSenhaNumera, temConvitePendente } from "@/lib/auth/convite";
 import { completarNoTempoMinimo } from "@/lib/anti-enumeracao";
@@ -84,16 +84,6 @@ export type EstadoMudarSenhaLogado = {
   erro?: string;
   sucesso?: boolean;
 };
-
-/** Origem (protocolo + host) da requisição atual, para montar links de retorno.
- * Exportada porque `gerarLinkPrimeiroAcesso` (provisionamento-modulos.ts)
- * precisa do mesmo cálculo para montar o `redirectTo` do link de convite. */
-export async function origemDaRequisicao(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
 
 export async function entrar(
   _estadoAnterior: EstadoLogin,

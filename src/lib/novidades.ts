@@ -13,6 +13,18 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-24",
+    titulo: "Mais rapidez e mais segurança",
+    descricao:
+      "Filtrar o painel e a lista de Emendas agora é instantâneo: os cliques não vão mais ao servidor, só trocar o exercício busca dados novos. A verificação de acesso do módulo ficou mais rápida, as telas mostram um esqueleto enquanto carregam (e uma mensagem amigável se algo falhar) e salvar uma ação na emenda não recarrega a página duas vezes. Por trás: atualização do Next.js com correções de segurança, proteção contra a plataforma ser aberta dentro de outro site, avisos que não aparecem para quem entra depois no mesmo computador e buscas por nome/e-mail mais estritas.",
+  },
+  {
+    data: "2026-10-24",
+    titulo: "Emendas: atualizadas pela planilha de cumprimento",
+    descricao:
+      "As 87 emendas da planilha de cumprimento de 2026 foram atualizadas na plataforma: empenhos e datas de pagamento corrigidos, pagamentos e empenhos que faltavam, e a fase de cada uma. Cada emenda ganhou o bloco “Parceria e execução” (termo de parceria, vigência, publicação do extrato, envio para pagamento, conta bancária e gestores), editável por quem registra a execução, com alerta quando a vigência está acabando ou o extrato ainda não foi publicado. Duas fases novas no fluxo: Termo de parceria (repasse) e Enviada para pagamento. A exportação para Excel traz as colunas novas.",
+  },
+  {
     data: "2026-10-23",
     titulo: "Avisos ao vivo em toda a plataforma",
     descricao:

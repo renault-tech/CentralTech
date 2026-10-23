@@ -31,11 +31,14 @@ export async function CabecalhoHub({
   // Pedido do usuário: "preciso ser avisado no hub que há pedido pendente".
   // O selo fica no próprio link de Configurações (visível em toda tela) e
   // o link leva direto à lista de pedidos quando há algum.
-  const [pendentes, gerenciaFeedback] = await Promise.all([
+  // Quem não é admin do Hub pode gerir feedback (admin/diretor do Compras), então
+  // a contagem de feedback roda junto e é descartada para quem não gerencia.
+  const [pendentes, gerenciaFeedback, feedbackContado] = await Promise.all([
     usuario.admin_hub ? contarSolicitacoesPendentes() : Promise.resolve(0),
     podeGerirFeedback(),
+    contarFeedbackNovos(),
   ]);
-  const feedbackNovos = gerenciaFeedback ? await contarFeedbackNovos() : 0;
+  const feedbackNovos = gerenciaFeedback ? feedbackContado : 0;
 
   return (
     <header

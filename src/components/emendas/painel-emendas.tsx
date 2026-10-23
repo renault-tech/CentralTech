@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Cartao, Kpi } from "@/components/emendas/ui";
+import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import {
   etapasEmOrdem,
   GRUPOS_EXECUCAO,
@@ -35,7 +36,9 @@ const ESTILO_SELECT =
 /**
  * Painel do gestor: tudo calculado no cliente sobre as emendas do
  * exercício que a pessoa pode ver (RLS) — poucas centenas de linhas por
- * ano, então filtrar/cruzar aqui é instantâneo e não volta ao servidor.
+ * ano, então filtrar/cruzar aqui é instantâneo e não volta ao servidor
+ * (a URL é atualizada com `history.replaceState`, ver `url-filtros.ts`; só
+ * trocar o exercício busca dados novos).
  * Os filtros vivem na URL (`?v=…&s=…`): qualquer recorte pode ser
  * compartilhado por link. Clicar numa barra filtra o painel inteiro
  * (filtro cruzado); cada gráfico ignora o próprio filtro, para continuar
@@ -63,57 +66,61 @@ export function PainelEmendas({
   const pathname = usePathname();
   const params = useSearchParams();
 
-  const f: Filtros = { v: params.get("v") ?? "", s: params.get("s") ?? "", saude: params.get("saude") ?? "", mod: params.get("mod") ?? "", etapa: params.get("etapa") ?? "" };
+  const f: Filtros = React.useMemo(
+    () => ({ v: params.get("v") ?? "", s: params.get("s") ?? "", saude: params.get("saude") ?? "", mod: params.get("mod") ?? "", etapa: params.get("etapa") ?? "" }),
+    [params]
+  );
 
   function definir(mudancas: Partial<Filtros> & { ano?: string }) {
-    const p = new URLSearchParams(params.toString());
-    for (const [k, v] of Object.entries(mudancas)) {
-      if (v) p.set(k, v);
-      else p.delete(k);
-    }
-    router.replace(`${pathname}${p.toString() ? `?${p}` : ""}`, { scroll: false });
+    atualizarFiltrosNaUrl(params, mudancas, pathname, (url) => router.replace(url, { scroll: false }));
   }
   const alternar = (k: keyof Filtros, valor: string) => definir({ [k]: f[k] === valor ? "" : valor });
 
-  const passa = (r: EmendaResumo, ignorar?: keyof Filtros) =>
-    (ignorar === "v" || !f.v || r.vereador_id === f.v) &&
-    (ignorar === "s" || !f.s || r.secretaria_id === f.s) &&
-    (ignorar === "saude" || !f.saude || String(Number(r.saude)) === f.saude) &&
-    (ignorar === "mod" || !f.mod || r.modalidade === f.mod) &&
-    (ignorar === "etapa" || !f.etapa || r.etapa === f.etapa);
-
-  const filtradas = emendas.filter((r) => passa(r));
   const catalogo = useCatalogo();
-  const ind = indicadores(filtradas, catalogo);
   const temFiltro = CHAVES.some((k) => f[k]);
   const recorteSoVereadorOuNada = !f.s && !f.saude && !f.mod && !f.etapa;
 
-  // ----- por vereador
-  const linhasV = porVereador(emendas.filter((r) => passa(r, "v")), vereadores, catalogo);
-  const maxV = Math.max(1, ...linhasV.map((l) => l.total));
+  // Todos os cruzamentos são recalculados só quando os dados ou o recorte mudam
+  // (antes refaziam tudo a cada render, inclusive ao abrir um select).
+  const { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, mesHoje, listaAlertas } = React.useMemo(() => {
+    const passa = (r: EmendaResumo, ignorar?: keyof Filtros) =>
+      (ignorar === "v" || !f.v || r.vereador_id === f.v) &&
+      (ignorar === "s" || !f.s || r.secretaria_id === f.s) &&
+      (ignorar === "saude" || !f.saude || String(Number(r.saude)) === f.saude) &&
+      (ignorar === "mod" || !f.mod || r.modalidade === f.mod) &&
+      (ignorar === "etapa" || !f.etapa || r.etapa === f.etapa);
 
-  // ----- funil
-  const funil = porEtapa(emendas.filter((r) => passa(r, "etapa")), catalogo);
-  const totalFunil = Math.max(1, funil.reduce((t, x) => t + x.valor, 0));
+    const filtradas = emendas.filter((r) => passa(r));
+    const ind = indicadores(filtradas, catalogo);
 
-  // ----- secretarias
-  const linhasS = porSecretaria(emendas.filter((r) => passa(r, "s")));
-  const maxS = Math.max(1, ...linhasS.map((l) => l.total));
+    // ----- por vereador
+    const linhasV = porVereador(emendas.filter((r) => passa(r, "v")), vereadores, catalogo);
+    const maxV = Math.max(1, ...linhasV.map((l) => l.total));
 
-  // ----- curva (pagamentos das emendas filtradas)
-  const ids = new Set(filtradas.map((r) => r.id));
-  const pagamentos = movimentos.filter((m) => m.tipo === "pagamento" && ids.has(m.emenda_id));
-  const { acumulado, semData } = curvaPagamentos(pagamentos, exercicio.ano);
-  const dataHoje = new Date(`${hoje}T12:00:00`);
-  const mesHoje = dataHoje.getFullYear() === exercicio.ano ? dataHoje.getMonth() + dataHoje.getDate() / 31 : dataHoje.getFullYear() > exercicio.ano ? 12 : 0;
+    // ----- funil
+    const funil = porEtapa(emendas.filter((r) => passa(r, "etapa")), catalogo);
+    const totalFunil = Math.max(1, funil.reduce((t, x) => t + x.valor, 0));
 
-  // ----- alertas
-  const listaAlertas = calcularAlertas(filtradas, movimentos.filter((m) => ids.has(m.emenda_id)), {
-    hoje: dataHoje,
-    ano: exercicio.ano,
-    diasParado: 30,
-    catalogo,
-  });
+    // ----- secretarias
+    const linhasS = porSecretaria(emendas.filter((r) => passa(r, "s")));
+    const maxS = Math.max(1, ...linhasS.map((l) => l.total));
+
+    // ----- curva (pagamentos das emendas filtradas)
+    const ids = new Set(filtradas.map((r) => r.id));
+    const pagamentos = movimentos.filter((m) => m.tipo === "pagamento" && ids.has(m.emenda_id));
+    const { acumulado, semData } = curvaPagamentos(pagamentos, exercicio.ano);
+    const dataHoje = new Date(`${hoje}T12:00:00`);
+    const mesHoje = dataHoje.getFullYear() === exercicio.ano ? dataHoje.getMonth() + dataHoje.getDate() / 31 : dataHoje.getFullYear() > exercicio.ano ? 12 : 0;
+
+    // ----- alertas
+    const listaAlertas = calcularAlertas(filtradas, movimentos.filter((m) => ids.has(m.emenda_id)), {
+      hoje: dataHoje,
+      ano: exercicio.ano,
+      diasParado: 30,
+      catalogo,
+    });
+    return { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, mesHoje, listaAlertas };
+  }, [emendas, movimentos, vereadores, exercicio.ano, hoje, catalogo, f]);
 
   const resumo = [
     f.v && vereadores.find((v) => v.id === f.v)?.nome,

@@ -60,7 +60,11 @@ export async function atualizarSessao(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const rotaPublica = ROTAS_PUBLICAS.some((prefixo) => pathname.startsWith(prefixo));
+  // Rota exata ou subcaminho dela ("/login" não libera "/login-qualquer-coisa").
+  const rotaPublica = ROTAS_PUBLICAS.some((rota) => {
+    const base = rota.endsWith("/") ? rota.slice(0, -1) : rota;
+    return pathname === base || pathname.startsWith(`${base}/`);
+  });
 
   if (!user && !rotaPublica) {
     const url = request.nextUrl.clone();

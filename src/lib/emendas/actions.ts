@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
 
 /**
@@ -35,9 +36,14 @@ async function exigirAcesso() {
   return ctx;
 }
 
+/**
+ * Atualiza só a tela da emenda mexida: a resposta da própria action já traz a
+ * página renderizada de novo (por isso os componentes não chamam `router.refresh()`
+ * depois). Painel e listas são dinâmicos e buscam dados novos a cada visita, então
+ * não precisam ser invalidados aqui.
+ */
 function revalidar(emendaId?: string) {
-  revalidatePath("/emendas", "layout");
-  if (emendaId) revalidatePath(`/emendas/${emendaId}`);
+  revalidatePath(emendaId ? `/emendas/${emendaId}` : "/emendas", emendaId ? "page" : "layout");
 }
 
 const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
@@ -111,6 +117,61 @@ export async function registrarMovimento(dados: z.input<typeof esquemaMovimento>
   });
   if (error) {
     console.error("[registrarMovimento]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar(a.data.emendaId);
+  return { sucesso: true };
+}
+
+const dataOpcional = z
+  .string()
+  .optional()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data inválida");
+
+const esquemaExecucao = z
+  .object({
+    emendaId: z.uuid(),
+    numeroTermo: textoOpcional(40),
+    processoLicitatorio: textoOpcional(200),
+    dataEnvioPagamento: dataOpcional,
+    vigenciaInicio: dataOpcional,
+    vigenciaFim: dataOpcional,
+    dataPublicacaoExtrato: dataOpcional,
+    contaBancaria: textoOpcional(200),
+    gestorOsc: textoOpcional(200),
+    gestorPmc: textoOpcional(200),
+    observacao: textoOpcional(2000),
+  })
+  .refine((d) => !d.vigenciaInicio || !d.vigenciaFim || d.vigenciaFim >= d.vigenciaInicio, {
+    message: "O fim da vigência não pode ser antes do início.",
+  });
+
+/** Parceria e execução (termo, vigência, extrato, conta, gestores). Grava quem registra a execução da emenda. */
+export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Promise<Resultado> {
+  const a = esquemaExecucao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirAcesso();
+  if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
+
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas.from("execucao").upsert({
+    id: a.data.emendaId,
+    numero_termo: a.data.numeroTermo,
+    processo_licitatorio: a.data.processoLicitatorio,
+    data_envio_pagamento: a.data.dataEnvioPagamento,
+    vigencia_inicio: a.data.vigenciaInicio,
+    vigencia_fim: a.data.vigenciaFim,
+    data_publicacao_extrato: a.data.dataPublicacaoExtrato,
+    conta_bancaria: a.data.contaBancaria,
+    gestor_osc: a.data.gestorOsc,
+    gestor_pmc: a.data.gestorPmc,
+    observacao: a.data.observacao,
+    atualizado_em: new Date().toISOString(),
+    atualizado_por: ctx.usuario.id,
+  });
+  if (error) {
+    console.error("[salvarExecucao]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
   revalidar(a.data.emendaId);
@@ -230,7 +291,7 @@ async function resolverBeneficiario(
   novo: string | null
 ): Promise<{ id: string | null; erro?: string }> {
   if (!novo) return { id };
-  const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", novo).maybeSingle();
+  const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", escaparLike(novo)).maybeSingle();
   if (existente) return { id: existente.id };
   const { data, error } = await emendas
     .from("beneficiarios")

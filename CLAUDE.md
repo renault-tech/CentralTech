@@ -1447,3 +1447,85 @@ sistema de avisos da plataforma, entregue ao vivo pelo Supabase Realtime.
   anônimo e privilégios; `get_advisors` sem exposição nova. **Não testado ao
   vivo no navegador** (sandbox sem acesso a Supabase/Vercel): o primeiro uso
   confirma a entrega em tempo real.
+
+## Emendas: planilha de cumprimento 2026 + parceria/execução (24/10/2026)
+
+Pedido do dono: atualizar as emendas já importadas com a "planilha de
+cumprimento" (mais atual) e avaliar quais colunas viram fase. Registro
+completo, números e divergências pendentes em `docs/plano-cumprimento-emendas.md`.
+
+- **Regra**: só a aba das emendas impositivas (87); célula preenchida
+  prevalece, vazia não apaga; fase só avança. Subvenções e emendas de
+  deputados (outras abas) ficaram fora.
+- **Banco** (`20261024000000_emendas_execucao_parceria.sql`): fases
+  `termo_parceria` (repasse, ordem 35) e `envio_pagamento` (os dois, ordem 55);
+  tabela `emendas.execucao` 1:1 com a emenda — a chave chama `id` (= id da
+  emenda) de propósito, para a auditoria genérica (`registrar_auditoria` lê
+  `id`) gravar no mesmo `registro_id` da emenda. RLS: lê quem vê a emenda,
+  escreve quem edita a execução (`pode_editar_emenda`), apaga só gestor.
+- **App**: `PainelParceria` (`components/emendas/painel-parceria.tsx`) no
+  detalhe, com alertas de vigência (`situacaoVigencia`, em `regras.ts`,
+  testada) e de extrato sem publicação; `salvarExecucao` (actions); rótulos das
+  fases novas na linha de etapas vêm do termo/envio; histórico inclui a
+  tabela `execucao`; exportação Excel com 9 colunas novas.
+- **Carga**: feita por tabela de apoio `emendas._carga_cumprimento` +
+  comandos pequenos via MCP (com "importar" no texto, para os gatilhos de aviso
+  ficarem quietos). **Lição nova**: no MCP do Supabase, `DELETE`/`DROP` (e um
+  `DO` grande) estouram os 60 s — parecem aguardar confirmação de comando
+  destrutivo; `INSERT`/`UPDATE` passam. O que sobrou para o SQL Editor:
+  apagar o remanejamento da nº 102 e a tabela de apoio.
+
+## Auditoria de desempenho e segurança (24/10/2026)
+
+Pedido do dono: varredura de erros, lentidão, código morto e segurança. Dois
+relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
+
+- **Aplicado — velocidade**: filtros do painel/lista de Emendas trocam a URL
+  com `history.replaceState` (`src/lib/emendas/url-filtros.ts`) em vez de
+  `router.replace` (que refazia 5-6 consultas no servidor a cada clique; só o
+  `ano` ainda vai ao servidor); `obterContextoEmendas` roda acesso, perfil e
+  permissões em `Promise.all`; layout de Emendas busca o catálogo de fases em
+  paralelo; detalhe da emenda numa rodada só; `listarEmendas` não traz mais
+  `descricao` (só com `comDescricao=true`, usado na exportação);
+  `listarMovimentos`/`listarExecucoes` em lotes paralelos (o `cache()` antigo
+  nunca acertava: array novo a cada chamada); cálculos do painel em
+  `useMemo`; `revalidar()` só da emenda mexida e os componentes não chamam
+  mais `router.refresh()` (a resposta da action já traz a página nova);
+  contagens do cabeçalho em `cache()`; `loading.tsx` (Emendas, Configurações)
+  e `error.tsx` raiz.
+- **Aplicado — segurança**: Next 16.4.2 (o 16.3.5 tinha falhas críticas/altas
+  no `npm audit`; sobraram 2 moderadas no `uuid` dentro do `exceljs`, sem uso
+  explorável); cabeçalhos em `next.config.mjs` (CSP enxuta com
+  `frame-ancestors 'none'`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`,
+  `Permissions-Policy` — `script-src` fica de fora de propósito, o Next injeta
+  scripts inline sem nonce); `exigirAdminHub()` (`lib/auth/exigir-admin.ts`) no
+  topo de toda leitura em `lib/dados/*` que usa a chave de serviço e em
+  `alternarBloqueioLoginDireto`; `escaparLike()` nos `ilike` com texto digitado;
+  `ROTAS_PUBLICAS` compara rota exata ou subcaminho (não mais `startsWith`
+  cru); store de avisos zera estado e fecha o canal Realtime quando outra
+  pessoa entra no mesmo navegador; `origemDaRequisicao` saiu do arquivo
+  `"use server"` (virava endpoint) para `lib/origem.ts`.
+- **Aplicado — limpeza**: removidos `ui/alert.tsx`, `hooks/usar-breakpoint.ts`,
+  `preferencia-local.ts`, `linkPrimeiroAcessoHub`; comentários desatualizados
+  (SSO, filtro "não volta ao servidor") corrigidos.
+- **Aplicado — banco** (`20261025000000_auditoria_indices_e_revogacoes.sql`):
+  índices em `emendas.emendas(vereador_id)`, `(beneficiario_id)` e
+  `permissoes(secretaria_id)`; `anon` sem EXECUTE nas 12 funções do Compras
+  (chat, parecer, suspender/retomar, devolver) — todas já checavam `auth.uid()`.
+- **Ficou para depois** (decisão de produto/infra, ou arriscado sem teste ao
+  vivo): limite de tentativas por IP em `/api/numera/resolver-login`,
+  `solicitarRecuperacao`, `/solicitar-acesso` e no `entrar()` (o limitador atual
+  é em memória, não vale em serverless — precisa do Firewall da Vercel ou KV);
+  `/api/numera/resolver-login` devolve o e-mail de qualquer username (idealmente
+  o login do username passa a ser resolvido no servidor); links de e-mail
+  consumidos por GET podem ser "queimados" por antivírus (página intermediária
+  com botão); `listUsers({perPage: 1000})` na tela de usuários; unificar a
+  orquestração duplicada de `aprovarSolicitacao`/`definirAcesso`; marcar como
+  `STABLE` as funções de permissão que consultam `hub.usuarios` (199 mil
+  varreduras sequenciais — `create or replace` trava o MCP, rodar no SQL
+  Editor); consolidar as 60 policies permissivas duplicadas; ligar a proteção
+  contra senhas vazadas no painel do Supabase (Auth → senhas).
+- **Não testado ao vivo**: sandbox sem acesso a Supabase/Vercel. `tsc`,
+  `eslint`, `vitest` (48) e `next build` limpos; conferir no deploy o filtro do
+  painel (a URL deve mudar sem recarregar) e uma gravação na emenda (a tela
+  deve atualizar sozinha).

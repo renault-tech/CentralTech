@@ -1,4 +1,5 @@
-import { origemDaRequisicao } from "@/lib/actions/auth";
+import { exigirAdminHub } from "@/lib/auth/exigir-admin";
+import { origemDaRequisicao } from "@/lib/origem";
 import { linkDoConvite } from "@/lib/auth/convite";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -45,6 +46,7 @@ async function situacaoDePrimeiroAcesso(): Promise<{
 }
 
 export async function listarUsuariosComAcessos(): Promise<UsuarioComAcessos[]> {
+  await exigirAdminHub();
   const supabase = await criarClienteServidor();
   const [{ data: usuarios, error: erroUsuarios }, { data: acessos, error: erroAcessos }, primeiroAcesso] =
     await Promise.all([

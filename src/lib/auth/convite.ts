@@ -1,3 +1,4 @@
+import { escaparLike } from "@/lib/seguranca/escapar-like";
 import "server-only";
 
 import { randomBytes } from "node:crypto";
@@ -85,7 +86,7 @@ export async function marcarConviteUsado(usuarioId: string): Promise<void> {
 export async function sincronizarSenhaNumera(email: string, senha: string): Promise<void> {
   try {
     const numera = criarClienteNumeraAdmin();
-    const { data: perfil } = await numera.from("users").select("id").ilike("email", email).maybeSingle();
+    const { data: perfil } = await numera.from("users").select("id").ilike("email", escaparLike(email)).maybeSingle();
     if (!perfil?.id) return;
     const { error } = await numera.auth.admin.updateUserById(perfil.id as string, { password: senha });
     if (error) console.error("[sincronizarSenhaNumera] updateUserById:", error.message);
