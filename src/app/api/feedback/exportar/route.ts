@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { listarFeedbackGestao, podeGerirFeedback, STATUS_PENDENTES } from "@/lib/dados/feedback";
 import { APPS_FEEDBACK, ORDEM_APPS, ROTULO_STATUS, ROTULO_TIPO } from "@/lib/feedback/apps";
+import { montarPdf } from "@/lib/feedback/exportar-pdf";
 import { montarMarkdown, nomeAnexo, type ItemExportado } from "@/lib/feedback/exportar";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import type { AppFeedback, StatusFeedback, TipoFeedback } from "@/types/database";
@@ -53,11 +54,22 @@ export async function GET(req: Request) {
     `tipo: ${tipo ? ROTULO_TIPO[tipo] : "todos"}`,
     `status: ${s === "pendentes" ? "pendentes (novo + em análise)" : s}`,
   ].join(", ");
+  const dia = new Date().toISOString().slice(0, 10);
+  if (p.get("formato") === "pdf") {
+    const bytes = new Map(Object.entries(arquivos).map(([k, v]) => [k.replace(/^anexos\//, ""), v]));
+    const pdf = montarPdf(itens, filtrosTexto, bytes);
+    return new NextResponse(Buffer.from(pdf), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="feedback-${dia}.pdf"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
   arquivos["feedback.md"] = strToU8(montarMarkdown(itens, filtrosTexto));
 
   // Imagens já são comprimidas: ZIP sem recompressão (nível 0) é mais rápido.
   const zip = zipSync(arquivos, { level: 0 });
-  const dia = new Date().toISOString().slice(0, 10);
   return new NextResponse(Buffer.from(zip), {
     headers: {
       "Content-Type": "application/zip",

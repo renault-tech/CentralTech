@@ -1536,3 +1536,7 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   referenciadas) e `anexos/NNN-app-i.ext`. Ordem do mais antigo ao mais novo. Para aplicar os
   pedidos: anexar o .zip numa conversa com o Claude. Lógica pura em `src/lib/feedback/exportar.ts`
   (testada); ZIP sem recompressão via `fflate`.
+  **PDF único (23/10/2026)**: `?formato=pdf` (botão "Exportar PDF", o principal) gera
+  `feedback-AAAA-MM-DD.pdf` com cada pedido seguido dos próprios screenshots
+  (`src/lib/feedback/exportar-pdf.ts`, jsPDF; PNG/JPEG embutidos, webp/gif ficam listados como
+  não embutidos). Preferido ao .md com base64, que a IA leria como texto e não como imagem.
