@@ -1610,3 +1610,18 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   tem `public.usuarios`), só depois de a tela confirmar que a pessoa vê a emenda; mostra status, modalidade, setor,
   datas e contrato. Link: `/sso/silencioso?app=compras&proximo=/processos?processo=<id>` (a lista do Compras abre o
   processo pelo filtro `processo=` — confirmado no repo App-Compras). O status do Compras só é exibido: não muda fase.
+
+## Emendas — Etapa 3: portal público e relatórios (28/10/2026)
+
+- **Portal sem login** em `/transparencia/emendas` (prefixo em `ROTAS_PUBLICAS`, `middleware.ts`) + dados abertos em
+  `/transparencia/emendas/dados?ano=&formato=csv|json`. Leitura só no servidor (`lib/emendas/portal.ts`, `server-only`),
+  com a chave de serviço e LISTA FECHADA de colunas (nunca `select *`): sem descrição completa, observações, gestores,
+  CPF nem dirigentes; CNPJ só de beneficiário (PJ); conta da parceria mascarada (`mascararConta`, 4 últimos dígitos);
+  emendas canceladas fora. Cache `unstable_cache` de 5 min com a tag `portal-emendas` (`portal-tag.ts`); as actions
+  (`actions.ts`, `actions-config.ts`, `actions-propostas.ts`) chamam `revalidateTag(TAG_PORTAL, "max")`. Tela: `components/transparencia/portal-emendas.tsx`
+  (filtra no navegador). Base citada no rodapé: LAI (Lei 12.527), LRF art. 48-A, IN TCE-MG 05/2025.
+  **Nada novo no banco**: sem view nova nem grant a `anon` — o portal não depende de RLS aberta.
+- **Relatórios internos** `/emendas/relatorios` (+ `/csv?r=`): por vereador, por secretaria, por beneficiário,
+  parcerias/prestação de contas e impedimentos abertos (`relatorios.ts` puro e testado; `relatorios-dados.ts` sob a RLS
+  de quem pede). Impressão pelo CSS de impressão existente; CSV com BOM, `;` e vírgula decimal. São dados de APOIO: o envio
+  oficial ao TCE-MG segue o sistema deles (layout de importação do TCE não foi mapeado).

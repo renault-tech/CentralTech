@@ -1,7 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
+
+import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { listarFasesCatalogo, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
@@ -46,6 +48,7 @@ async function exigirAcesso() {
  * não precisam ser invalidados aqui.
  */
 function revalidar(emendaId?: string) {
+  revalidateTag(TAG_PORTAL, "max");
   revalidatePath(emendaId ? `/emendas/${emendaId}` : "/emendas", emendaId ? "page" : "layout");
 }
 

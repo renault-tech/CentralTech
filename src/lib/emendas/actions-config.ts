@@ -1,7 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
+
+import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
@@ -30,6 +32,7 @@ async function exigirGestor() {
 }
 
 function revalidar() {
+  revalidateTag(TAG_PORTAL, "max");
   revalidatePath("/emendas", "layout");
 }
 

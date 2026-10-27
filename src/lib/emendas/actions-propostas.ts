@@ -2,8 +2,10 @@
 
 import { createHash } from "node:crypto";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
+
+import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { listarFasesCatalogo, listarItensChecklist, obterContextoEmendas } from "@/lib/emendas/dados";
 import { gerarPropostas, lerJsonV1, type PropostaNova } from "@/lib/emendas/importacao/json-v1";
@@ -120,6 +122,7 @@ export async function decidirPropostas(dados: z.input<typeof esquemaDecisao>): P
     else if (status === "aprovada") aprovadas += 1;
     else if (status === "conflito") conflitos += 1;
   }
+  revalidateTag(TAG_PORTAL, "max");
   revalidatePath("/emendas", "layout");
   return { sucesso: true, aprovadas, conflitos, falhas };
 }

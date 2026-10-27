@@ -53,6 +53,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/lista", rotulo: "Emendas" },
     { href: "/emendas/pendencias", rotulo: "Pendências" },
     { href: "/emendas/aprovacoes", rotulo: gestor ? "Aprovações" : "Minhas propostas", selo: propostasPendentes },
+    { href: "/emendas/relatorios", rotulo: "Relatórios" },
     { href: "/emendas/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/secretarias", rotulo: "Secretarias" },
     ...(gestor ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),
