@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-27",
+    titulo: "Emendas: aprovações, importação do controle e ligação com o Compras",
+    descricao:
+      "Alterações em dado já preenchido (feitas por uma secretaria ou vindas de uma importação) agora esperam a aprovação do gestor na nova tela Aprovações, com o valor de hoje e o proposto lado a lado; a secretaria acompanha em “Minhas propostas”. Campo vazio continua sendo preenchido na hora. Em Configurações › Importar, o arquivo JSON exportado do HTML de controle gera as propostas (termo, vigência, extrato, conta, gestores, fases e documentos) sem apagar nada do que já existe. No detalhe da emenda, informar o número do processo (2026/0062) ou da licitação (136/2026) traz os dados do Compras e abre o processo lá com um clique.",
+  },
+  {
+    data: "2026-10-27",
     titulo: "Emendas: tipos de execução, fases, documentação e pendências",
     descricao:
       "Cada emenda agora tem um tipo (execução direta, repasse a OSC ou entes e conveniadas), marcado por uma faixa de cor na lista, com abas Consolidado/Direta/OSC/Ente e um cartão por tipo no Painel. No detalhe da emenda há as abas Fases (cada fase com situação, data e documento; empenho, pagamento, termo, extrato, LOA e parecer vêm sozinhos dos outros cadastros, sem digitar de novo), Documentação (checklist por tipo, com a base legal) e Pendências (o que merece atenção do gestor, com opção de justificar). A nova tela Pendências lista tudo por gravidade, tipo e secretaria. Em Configurações › Exercício ficam a data de aprovação da LOA e o prazo de exequibilidade, uma vez só para o ano todo; em Configurações › Exequibilidade, o parecer de cada secretaria.",

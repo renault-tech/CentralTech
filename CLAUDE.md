@@ -1586,3 +1586,27 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   editor de fases/checklist por tipo na tela (catálogo editável só por SQL por enquanto);
   impedimento em lote a partir do parecer; `NOT NULL` em `tipo_execucao` (a RPC `importar` ainda não
   informa o tipo — o app deduz pela modalidade enquanto for nulo).
+
+## Emendas — Etapa 2: aprovações, importação JSON v1 e vínculo com o Compras (27/10/2026)
+
+- **Banco** (`20261028000000_emendas_propostas_importacoes_compras.sql`, tabelas aplicadas por MCP): `propostas`
+  (alvo `execucao`/`emenda_fases`/`emenda_checklist`; `valor_atual` e `valor_proposto` em jsonb; status
+  pendente/aprovada/rejeitada/conflito; RLS: gestor vê/decide tudo, autor vê as próprias), `importacoes`
+  (`sha256` único: o mesmo arquivo não entra duas vezes), `execucao.processo_id/numero_contrato`.
+- **Regra** (em `actions.ts`, não no banco): gestor/admin gravam direto; secretaria grava campo VAZIO na hora e,
+  se muda um valor já preenchido, vira proposta (`proporAlteracoes`) — vale para `salvarExecucao`, `salvarFase`,
+  `salvarItemChecklist` e `vincularProcesso`; o `Resultado` ganhou `aviso`. **Lacuna conhecida**: não há gatilho
+  no banco; uma chamada direta à API ainda grava (tudo fica na auditoria). O gatilho BEFORE UPDATE está descrito
+  na migration e precisa ser rodado no SQL Editor se o dono quiser a garantia.
+- **Aprovação** (`actions-propostas.ts`, `decidirPropostas`, só gestor): antes de aplicar relê o valor atual; se
+  mudou desde a proposta, marca `conflito` e não grava. Tela `/emendas/aprovacoes` (item no menu com selo de
+  pendentes; para a secretaria vira "Minhas propostas").
+- **Importação JSON** (`importacao/json-v1.ts`, pura e testada; `importarJsonV1`): lê `centraltech.emendas.execucao/v1`
+  e só gera propostas — instrumento → `execucao`, `andamentos[]` → fases MANUAIS (as derivadas são ignoradas),
+  `checklist[]` → `emenda_checklist`. Vazio no arquivo nunca apaga; fase concluída não regride; `pendente` do
+  checklist não derruba o conferido. Movimentos financeiros do arquivo não são importados (já estão no sistema).
+- **Compras** (`compras.ts`, `numero-processo.ts`, `vinculo-compras.tsx`): `2026/0062` = `processos.numero`,
+  `136/2026` = `numero_licitacao`. Leitura de UM processo com a chave de serviço (a RLS do Compras barra quem não
+  tem `public.usuarios`), só depois de a tela confirmar que a pessoa vê a emenda; mostra status, modalidade, setor,
+  datas e contrato. Link: `/sso/silencioso?app=compras&proximo=/processos?processo=<id>` (a lista do Compras abre o
+  processo pelo filtro `processo=` — confirmado no repo App-Compras). O status do Compras só é exibido: não muda fase.

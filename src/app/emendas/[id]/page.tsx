@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
+import { VinculoCompras } from "@/components/emendas/vinculo-compras";
+import { buscarProcessoPorId } from "@/lib/emendas/compras";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { calcularEmendas } from "@/lib/emendas/resumo";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
@@ -52,6 +54,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos, execucao } = detalhe;
   const tipo = tipoDaEmenda(emenda);
+  const processoCompras = execucao?.processo_id ? await buscarProcessoPorId(execucao.processo_id).catch(() => null) : null;
   const { exercicio } = await resolverExercicio(String(emenda.ano));
   const pareceres = await listarPareceres(emenda.ano);
   const calculo = calcularEmendas({
@@ -158,6 +161,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           <div id="bloco-parceria">
             <PainelParceria emendaId={emenda.id} modalidade={emenda.modalidade} execucao={execucao} podeEditar={podeEditar} />
           </div>
+          <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>
             <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-700">{emenda.descricao}</p>

@@ -5,6 +5,8 @@ import { z } from "zod";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { listarFasesCatalogo, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
+import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
+import { buscarProcessoPorNumero } from "@/lib/emendas/compras";
 import { etapaAoConcluir, tipoDaEmenda } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
@@ -15,7 +17,7 @@ import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
  * Nenhuma ação usa service_role.
  */
 
-export type Resultado = { sucesso: true; id?: string } | { sucesso: false; erro: string };
+export type Resultado = { sucesso: true; id?: string; aviso?: string } | { sucesso: false; erro: string };
 
 function traduzir(erro: { message?: string; code?: string } | null | undefined): string {
   const m = erro?.message ?? "";
@@ -122,6 +124,23 @@ export async function salvarFase(dados: z.input<typeof esquemaFase>): Promise<Re
   const fase = (await listarFasesCatalogo()).find((f) => f.tipo === tipoDaEmenda(emenda) && f.chave === a.data.chave);
   if (!fase || fase.derivacao) return { sucesso: false, erro: "Esta fase vem de outro dado e não é editada aqui." };
 
+  if (!ehGestor(ctx.perfil)) {
+    const { data: atual } = await emendas.from("emenda_fases").select("*").eq("emenda_id", a.data.emendaId).eq("chave", a.data.chave).maybeSingle();
+    if (atual && atual.situacao !== "pendente") {
+      const falha = await proporAlteracoes(a.data.emendaId, [
+        {
+          alvo: "emenda_fases",
+          chave: a.data.chave,
+          campo: null,
+          valorAtual: { situacao: atual.situacao, data: atual.data, documento: atual.documento, observacao: atual.observacao },
+          valorProposto: { situacao: a.data.situacao, data: a.data.data, documento: a.data.documento, observacao: a.data.observacao },
+        },
+      ]);
+      if (falha) return { sucesso: false, erro: falha };
+      revalidar(a.data.emendaId);
+      return { sucesso: true, aviso: "Alteração enviada para aprovação do gestor." };
+    }
+  }
   const { error } = await emendas.from("emenda_fases").upsert({
     emenda_id: a.data.emendaId,
     chave: a.data.chave,
@@ -174,6 +193,17 @@ export async function salvarItemChecklist(dados: z.input<typeof esquemaItemCheck
 
   const emendas = await criarClienteEmendas();
   const conferido = a.data.estado === "conferido";
+  if (!ehGestor(ctx.perfil)) {
+    const { data: atual } = await emendas.from("emenda_checklist").select("estado").eq("emenda_id", a.data.emendaId).eq("item_chave", a.data.itemChave).maybeSingle();
+    if (atual && atual.estado !== "pendente" && atual.estado !== a.data.estado) {
+      const falha = await proporAlteracoes(a.data.emendaId, [
+        { alvo: "emenda_checklist", chave: a.data.itemChave, campo: null, valorAtual: { estado: atual.estado }, valorProposto: { estado: a.data.estado } },
+      ]);
+      if (falha) return { sucesso: false, erro: falha };
+      revalidar(a.data.emendaId);
+      return { sucesso: true, aviso: "Alteração enviada para aprovação do gestor." };
+    }
+  }
   const { error } = await emendas.from("emenda_checklist").upsert({
     emenda_id: a.data.emendaId,
     item_chave: a.data.itemChave,
@@ -295,8 +325,7 @@ export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Pr
   if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
 
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas.from("execucao").upsert({
-    id: a.data.emendaId,
+  const campos: Record<string, string | null> = {
     numero_termo: a.data.numeroTermo,
     processo_licitatorio: a.data.processoLicitatorio,
     data_envio_pagamento: a.data.dataEnvioPagamento,
@@ -307,6 +336,27 @@ export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Pr
     gestor_osc: a.data.gestorOsc,
     gestor_pmc: a.data.gestorPmc,
     observacao: a.data.observacao,
+  };
+  // Gestor/admin gravam direto. Secretaria: campo vazio grava; campo já preenchido
+  // que muda vira proposta para o gestor aprovar.
+  let aviso: string | undefined;
+  if (!ehGestor(ctx.perfil)) {
+    const { data: atual } = await emendas.from("execucao").select("*").eq("id", a.data.emendaId).maybeSingle();
+    const propostas = [];
+    for (const [campo, novo] of Object.entries(campos)) {
+      const antigo = (atual as Record<string, unknown> | null)?.[campo] ?? null;
+      if (antigo !== null && antigo !== "" && antigo !== novo) {
+        propostas.push({ alvo: "execucao" as const, chave: null, campo, valorAtual: antigo, valorProposto: novo });
+        delete campos[campo];
+      }
+    }
+    const falha = await proporAlteracoes(a.data.emendaId, propostas);
+    if (falha) return { sucesso: false, erro: falha };
+    if (propostas.length) aviso = `${propostas.length} alteração(ões) em dado já preenchido enviada(s) para aprovação do gestor.`;
+  }
+  const { error } = await emendas.from("execucao").upsert({
+    id: a.data.emendaId,
+    ...campos,
     atualizado_em: new Date().toISOString(),
     atualizado_por: ctx.usuario.id,
   });
@@ -315,6 +365,44 @@ export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Pr
     return { sucesso: false, erro: traduzir(error) };
   }
   revalidar(a.data.emendaId);
+  return { sucesso: true, aviso };
+}
+
+/** Liga a emenda a um processo do Compras pelo número (AAAA/NNNN ou NNN/AAAA). Vazio desfaz o vínculo. */
+export async function vincularProcesso(emendaId: string, numero: string): Promise<Resultado> {
+  if (!z.uuid().safeParse(emendaId).success) return { sucesso: false, erro: "Dados inválidos" };
+  const ctx = await exigirAcesso();
+  if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
+  const emendas = await criarClienteEmendas();
+
+  // A RLS decide se a pessoa edita esta emenda: sem permissão, a leitura volta vazia.
+  const { data: visivel } = await emendas.from("v_emendas").select("id").eq("id", emendaId).maybeSingle();
+  if (!visivel) return { sucesso: false, erro: "Emenda não encontrada." };
+
+  const texto = numero.trim();
+  const processo = texto ? await buscarProcessoPorNumero(texto) : null;
+  if (texto && !processo) return { sucesso: false, erro: "Processo não encontrado no Compras. Use 2026/0062 (processo) ou 136/2026 (licitação)." };
+
+  const { data: atual } = await emendas.from("execucao").select("processo_id").eq("id", emendaId).maybeSingle();
+  if (!ehGestor(ctx.perfil) && atual?.processo_id && atual.processo_id !== (processo?.id ?? null)) {
+    const falha = await proporAlteracoes(emendaId, [
+      { alvo: "execucao", chave: null, campo: "processo_id", valorAtual: atual.processo_id, valorProposto: processo?.id ?? null },
+    ]);
+    if (falha) return { sucesso: false, erro: falha };
+    return { sucesso: true, aviso: "Troca de processo enviada para aprovação do gestor." };
+  }
+  const { error } = await emendas.from("execucao").upsert({
+    id: emendaId,
+    processo_id: processo?.id ?? null,
+    processo_licitatorio: processo ? (processo.numero_licitacao ?? processo.numero) : null,
+    atualizado_em: new Date().toISOString(),
+    atualizado_por: ctx.usuario.id,
+  });
+  if (error) {
+    console.error("[vincularProcesso]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar(emendaId);
   return { sucesso: true };
 }
 

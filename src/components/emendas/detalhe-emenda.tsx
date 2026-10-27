@@ -127,6 +127,7 @@ export function DetalheEmendaCliente({
   const [aba, setAba] = React.useState<Aba>(ABAS_VALIDAS.includes(abaInicial as Aba) ? (abaInicial as Aba) : "fases");
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
   const [erroGeral, setErroGeral] = React.useState<string | null>(null);
+  const [avisoGeral, setAvisoGeral] = React.useState<string | null>(null);
 
   const abertos = impedimentos.filter((i) => !i.resolvido_em);
   const nomeBenef = (id: unknown) => beneficiarios.find((b) => b.id === id)?.nome ?? String(id ?? "—");
@@ -146,9 +147,11 @@ export function DetalheEmendaCliente({
 
   async function executar(acao: () => Promise<Resultado>) {
     setErroGeral(null);
+    setAvisoGeral(null);
     const r = await acao();
     // Em caso de sucesso a própria action revalida a página (sem router.refresh).
     if (!r.sucesso) setErroGeral(r.erro);
+    else if (r.aviso) setAvisoGeral(r.aviso);
     return r;
   }
 
@@ -180,6 +183,8 @@ export function DetalheEmendaCliente({
       )}
 
       {erroGeral && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{erroGeral}</p>}
+
+      {avisoGeral && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">{avisoGeral}</p>}
 
       {abertos.length > 0 && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">

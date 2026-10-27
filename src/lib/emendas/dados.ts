@@ -16,6 +16,7 @@ import type {
   ItemChecklist,
   ParecerExequibilidade,
   PendenciaJustificada,
+  Proposta,
   EmendaResumo,
   ExecucaoEmenda,
   Exercicio,
@@ -338,3 +339,37 @@ export async function usoDasEtapas(): Promise<Record<"repasse" | "direta", Recor
   }
   return uso;
 }
+
+export type PropostaListada = Proposta & { emenda_numero: number; emenda_objeto: string; autor_nome: string | null };
+
+/** Propostas visíveis a quem pede (RLS: gestor vê todas; os demais, só as próprias). */
+export async function listarPropostas(status: "pendente" | "decididas"): Promise<PropostaListada[]> {
+  const emendas = await criarClienteEmendas();
+  const consulta = emendas.from("propostas").select("*").order("criado_em", { ascending: false }).limit(500);
+  const { data, error } = await (status === "pendente" ? consulta.in("status", ["pendente", "conflito"]) : consulta.in("status", ["aprovada", "rejeitada"]).limit(100));
+  if (error) falhou("propostas", error);
+  const propostas = data ?? [];
+  if (propostas.length === 0) return [];
+  const ids = Array.from(new Set(propostas.map((p) => p.emenda_id)));
+  const { data: ems } = await emendas.from("v_emendas").select("id,numero,objeto").in("id", ids.slice(0, 150));
+  const porId = new Map((ems ?? []).map((e) => [e.id, e]));
+  const autores = Array.from(new Set(propostas.map((p) => p.autor).filter((x): x is string => !!x)));
+  const nomes = new Map<string, string>();
+  if (autores.length) {
+    const hub = await (await import("@/lib/supabase/server")).criarClienteServidor();
+    const { data: us } = await hub.from("usuarios").select("id,nome").in("id", autores);
+    for (const u of us ?? []) nomes.set(u.id, u.nome);
+  }
+  return propostas.map((p) => ({
+    ...p,
+    emenda_numero: porId.get(p.emenda_id)?.numero ?? 0,
+    emenda_objeto: porId.get(p.emenda_id)?.objeto ?? "",
+    autor_nome: p.autor ? (nomes.get(p.autor) ?? null) : null,
+  }));
+}
+
+export const contarPropostasPendentes = cache(async (): Promise<number> => {
+  const emendas = await criarClienteEmendas();
+  const { count } = await emendas.from("propostas").select("id", { count: "exact", head: true }).eq("status", "pendente");
+  return count ?? 0;
+});

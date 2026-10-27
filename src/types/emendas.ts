@@ -190,6 +190,8 @@ export type ExecucaoEmenda = {
   id: string;
   numero_termo: string | null;
   processo_licitatorio: string | null;
+  processo_id: string | null;
+  numero_contrato: string | null;
   data_envio_pagamento: string | null;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
@@ -304,6 +306,33 @@ export type PendenciaJustificada = {
   em: string;
 };
 
+export type Importacao = {
+  id: string;
+  formato: string;
+  arquivo_nome: string | null;
+  sha256: string;
+  criado_por: string | null;
+  criado_em: string;
+  resumo: Record<string, unknown> | null;
+};
+export type Proposta = {
+  id: string;
+  importacao_id: string | null;
+  emenda_id: string;
+  alvo: "execucao" | "emenda_fases" | "emenda_checklist" | "movimentos";
+  chave: string | null;
+  campo: string | null;
+  valor_atual: unknown;
+  valor_proposto: unknown;
+  origem: "secretaria" | "importacao";
+  status: "pendente" | "aprovada" | "rejeitada" | "conflito";
+  autor: string | null;
+  criado_em: string;
+  decidido_por: string | null;
+  decidido_em: string | null;
+  motivo: string | null;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -340,6 +369,8 @@ export type DatabaseEmendas = {
       checklist_itens: Tabela<ItemChecklist, "tipo" | "chave" | "nome" | "ordem", never>;
       emenda_checklist: Tabela<ChecklistEmenda, "emenda_id" | "item_chave", never>;
       pareceres_exequibilidade: Tabela<ParecerExequibilidade, "ano" | "secretaria_id" | "data", never>;
+      importacoes: Tabela<Importacao, "formato" | "sha256", "id" | "criado_em">;
+      propostas: Tabela<Proposta, "emenda_id" | "alvo" | "valor_proposto", "id" | "criado_em">;
       pendencias_justificadas: Tabela<PendenciaJustificada, "emenda_id" | "regra" | "assinatura" | "justificativa", never>;
     };
     Views: {
