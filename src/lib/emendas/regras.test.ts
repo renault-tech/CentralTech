@@ -32,6 +32,7 @@ function emenda(p: Partial<EmendaResumo>): EmendaResumo {
     valor: 1000,
     saude: false,
     modalidade: "direta",
+    tipo_execucao: null,
     etapa: "indicada",
     situacao: "normal",
     etapa_atualizada_em: "2026-10-01T00:00:00Z",

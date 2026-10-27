@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-27",
+    titulo: "Emendas: tipos de execução, fases, documentação e pendências",
+    descricao:
+      "Cada emenda agora tem um tipo (execução direta, repasse a OSC ou entes e conveniadas), marcado por uma faixa de cor na lista, com abas Consolidado/Direta/OSC/Ente e um cartão por tipo no Painel. No detalhe da emenda há as abas Fases (cada fase com situação, data e documento; empenho, pagamento, termo, extrato, LOA e parecer vêm sozinhos dos outros cadastros, sem digitar de novo), Documentação (checklist por tipo, com a base legal) e Pendências (o que merece atenção do gestor, com opção de justificar). A nova tela Pendências lista tudo por gravidade, tipo e secretaria. Em Configurações › Exercício ficam a data de aprovação da LOA e o prazo de exequibilidade, uma vez só para o ano todo; em Configurações › Exequibilidade, o parecer de cada secretaria.",
+  },
+  {
     data: "2026-10-25",
     titulo: "Links de e-mail com um clique de confirmação",
     descricao:

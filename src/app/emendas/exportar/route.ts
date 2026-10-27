@@ -1,3 +1,4 @@
+import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { listarEmendas, listarExecucoes, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     (r) =>
       (!p.get("v") || r.vereador_id === p.get("v")) &&
       (!p.get("s") || r.secretaria_id === p.get("s")) &&
+      (!p.get("t") || tipoDaEmenda(r) === p.get("t")) &&
       (!p.get("etapa") || r.etapa === p.get("etapa")) &&
       (!p.get("situacao") || r.situacao === p.get("situacao")) &&
       (numeros.length === 0 || numeros.includes(r.numero)) &&
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
     { header: "Secretaria", key: "secretaria", width: 24 },
     { header: "Saúde", key: "saude", width: 7 },
     { header: "Modalidade", key: "modalidade", width: 19 },
+    { header: "Tipo de execução", key: "tipo", width: 20 },
     { header: "Etapa", key: "etapa", width: 20 },
     { header: "Situação", key: "situacao", width: 11 },
     { header: "Empenho(s)", key: "empenhos", width: 14 },
@@ -98,6 +101,7 @@ export async function GET(request: NextRequest) {
       secretaria: e.secretaria_nome,
       saude: e.saude ? "Sim" : "Não",
       modalidade: NOME_MODALIDADE[e.modalidade],
+      tipo: TIPOS_EXECUCAO[tipoDaEmenda(e)].nome,
       etapa: infoEtapa(e.etapa, catalogo).nome,
       situacao: e.situacao === "normal" ? "" : e.situacao === "impedida" ? "Impedida" : "Cancelada",
       empenhos: (empenhos.get(e.id) ?? []).join(", "),

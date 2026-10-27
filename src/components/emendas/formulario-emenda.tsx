@@ -4,9 +4,10 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { salvarEmenda } from "@/lib/emendas/actions";
+import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_MODALIDADE, brl, cumpreSaude, modalidadePorNatureza, numeroVereador, pct } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
-import type { Beneficiario, EmendaResumo, Exercicio, Modalidade, Secretaria, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
+import type { Beneficiario, EmendaResumo, Exercicio, Modalidade, Secretaria, TipoExecucao, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
 
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -55,6 +56,7 @@ export function FormularioEmenda({
   const [funcional, setFuncional] = React.useState(emenda?.funcional_programatica ?? "");
   const [natureza, setNatureza] = React.useState(emenda?.natureza_despesa ?? "");
   const [modalidadeManual, setModalidadeManual] = React.useState<Modalidade>(emenda?.modalidade ?? "direta");
+  const [tipoManual, setTipoManual] = React.useState<TipoExecucao | "">(emenda?.tipo_execucao ?? "");
   const [dotacao, setDotacao] = React.useState(emenda?.dotacao_texto ?? "");
   const [ficha, setFicha] = React.useState(emenda?.ficha ?? "");
   const [enviando, setEnviando] = React.useState(false);
@@ -62,6 +64,7 @@ export function FormularioEmenda({
 
   const modalidadeAuto = modalidadePorNatureza(natureza);
   const modalidade = modalidadeAuto ?? modalidadeManual;
+  const tipoExecucao: TipoExecucao = tipoManual || (modalidade === "direta" ? "direta" : "osc");
   const v = paraNumero(valor) ?? 0;
   const doVereador = emendasDoAno.filter((e) => e.vereador_id === vereadorId && e.id !== emenda?.id && e.situacao !== "cancelada");
   const usado = doVereador.reduce((t, e) => t + e.valor, 0);
@@ -99,6 +102,7 @@ export function FormularioEmenda({
       dotacaoTexto: dotacao,
       ficha,
       modalidade,
+      tipoExecucao,
     });
     setEnviando(false);
     if (!r.sucesso) return setErro(r.erro);
@@ -191,6 +195,15 @@ export function FormularioEmenda({
               </select>
             </Campo>
           )}
+          <Campo rotulo="Tipo de execução" dica="Define as fases e o checklist de documentos da emenda.">
+            <select className={CAMPO} value={tipoExecucao} onChange={(e) => setTipoManual(e.target.value as TipoExecucao)}>
+              {ORDEM_TIPOS.map((t) => (
+                <option key={t} value={t}>
+                  {TIPOS_EXECUCAO[t].nome}
+                </option>
+              ))}
+            </select>
+          </Campo>
           <Campo rotulo="Nova dotação (ficha)">
             <input maxLength={300} className={CAMPO} value={ficha} onChange={(e) => setFicha(e.target.value)} placeholder="2.087.0201 - EP02 - …" />
           </Campo>

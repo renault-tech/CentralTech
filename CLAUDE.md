@@ -1541,3 +1541,48 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   `eslint`, `vitest` (48) e `next build` limpos; conferir no deploy o filtro do
   painel (a URL deve mudar sem recarregar) e uma gravação na emenda (a tela
   deve atualizar sozinha).
+
+
+## Emendas: tipos de execução, fases por tipo, checklist e pendências (27/10/2026) — Etapa 1
+
+Pedido do dono: trazer para dentro do módulo o checklist do HTML autocontido "Emendas Impositivas
+2026" (que servia só para depois redigitar tudo). Plano completo em 3 etapas — esta é a **Etapa 1
+(gestão)**; Etapa 2 = importação com aprovação (JSON v1 do HTML, planilhas) + vínculo com Compras;
+Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso municipal: **IN TCE-MG
+05/2025**, não o TCU, que só vale para verba federal; LGPD: sem CPF, conta mascarada).
+
+- **Banco** (`20261027000000_emendas_tipo_fases_checklist.sql`, aplicada por MCP; só acrescenta):
+  `emendas.tipo_execucao` (`direta`/`osc`/`ente`; `v_emendas` ganhou a coluna no fim),
+  `exercicios.data_aprovacao_loa/numero_lei_loa/prazo_exequibilidade`, `fluxo_fases` (catálogo de fases por
+  tipo, com `etapa` = a fase do cache `emendas.etapa` e `derivacao` = de onde o dado vem),
+  `emenda_fases` (só fases MANUAIS), `checklist_itens` (13 direta · 24 OSC · 19 ente, com base legal;
+  `condicao` saude/consorcio) + `emenda_checklist`, `pareceres_exequibilidade` (um por secretaria/ano),
+  `pendencias_justificadas`. RLS = a de `execucao` (`pode_ver/editar_emenda`); catálogos só gestor.
+  Backups `_bkp_20261027_*` (emendas, andamentos, execucao) e `_carga_tipo` ficam no schema `emendas`
+  (apagar no SQL Editor quando o dono confirmar). Carga: os 215 receberam o tipo do HTML (85/109/21,
+  totais batem); as 7 `processo_compra` das diretas viraram `emenda_fases.demanda` (origem `importacao`).
+- **Cada dado tem uma fonte só** (`lib/emendas/fases.ts`, pura e testada): fase com `derivacao` nunca é
+  digitada — LOA ← exercício; análise ← parecer da secretaria (ou impedimento aberto = em andamento);
+  empenho/liquidação/pagamento ← `movimentos_financeiros`; termo/extrato ← `execucao`. Sem dado próprio,
+  fase anterior à etapa atual da emenda aparece "presumida" (por isso as 64 de repasse em "paga" sem
+  movimentos NÃO regridem). `emendas.etapa` continua cache do último andamento: concluir uma fase manual
+  que adianta a emenda chama `registrar_andamento` (mantém avisos/histórico); se a etapa não vale para o
+  fluxo da emenda, só não avança o cache.
+- **Pendências** (`lib/emendas/pendencias.ts`, pura e testada; o banco só guarda a justificativa e a
+  *assinatura* — mudou o dado, a justificativa deixa de valer): impedimento aberto, empenho > valor, pago >
+  empenhado, tipo incoerente com a natureza (ex.: nº 102 é "direta" com natureza 50), termo sem extrato
+  (Lei 13.019, art. 38), parceria sem conta específica (art. 51; IN 05/2025 art. 6), vigência (e prestação
+  de contas em 90 dias, art. 69), emenda sem andamento (gravidade pelos dias que faltam), prazo de
+  exequibilidade vencido sem parecer, datas de fase fora de ordem. `resumo.ts` junta tudo por emenda;
+  `calculos.ts` carrega os dados sob a RLS de quem pede.
+- **Telas**: faixa de 4px na cor do tipo em cada linha da lista (`TIPOS_EXECUCAO`: direta #1D6A8A,
+  osc #9A5A0E, ente #962A52), abas Consolidado/Direta/OSC/Ente e filtro "só com pendência" (URL via
+  `replaceState`); Painel com régua do exercício + 1 cartão por tipo (`faixa-tipos.tsx`); detalhe com abas
+  Fases · Documentação · Pendências · Financeiro · Andamentos · Anexos · Histórico (`abas-gestao.tsx`);
+  `/emendas/pendencias`; Configurações › Exercício (LOA/lei/prazo) e › Exequibilidade (parecer por
+  secretaria). Formulário da emenda pede o tipo; exportação Excel traz "Tipo de execução" e filtra por `t`.
+- **Ainda não feito (decidido, nas próximas etapas)**: edição de dado já preenchido por perfil de
+  secretaria virar *proposta* a aprovar (Etapa 2 — hoje a secretaria grava direto, tudo auditado);
+  editor de fases/checklist por tipo na tela (catálogo editável só por SQL por enquanto);
+  impedimento em lote a partir do parecer; `NOT NULL` em `tipo_execucao` (a RPC `importar` ainda não
+  informa o tipo — o app deduz pela modalidade enquanto for nulo).

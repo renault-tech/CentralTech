@@ -1,0 +1,195 @@
+/**
+ * Pendências por emenda — o que merece atenção do gestor. Regras puras (testadas em
+ * `pendencias.test.ts`); o banco guarda só as justificativas (`pendencias_justificadas`).
+ * A `assinatura` de cada pendência muda quando os dados que a dispararam mudam: uma
+ * justificativa só vale enquanto a assinatura é a mesma.
+ */
+
+import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
+import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
+import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
+
+export type Gravidade = "alta" | "media" | "baixa";
+
+export type Pendencia = {
+  regra: string;
+  gravidade: Gravidade;
+  titulo: string;
+  detalhe: string;
+  /** Muda quando os dados mudam; justificativa só vale para a mesma assinatura. */
+  assinatura: string;
+  /** Aba do detalhe onde se resolve. */
+  aba: "fases" | "documentacao" | "financeiro" | "execucao";
+  justificativa?: string;
+};
+
+export const ORDEM_GRAVIDADE: Record<Gravidade, number> = { alta: 0, media: 1, baixa: 2 };
+export const NOME_GRAVIDADE: Record<Gravidade, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
+
+export type EntradaPendencias = {
+  emenda: EmendaResumo;
+  fases: FaseCalculada[];
+  execucao: Pick<
+    ExecucaoEmenda,
+    "numero_termo" | "vigencia_fim" | "data_publicacao_extrato" | "conta_bancaria"
+  > | null;
+  exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
+  temParecer: boolean;
+  justificadas?: PendenciaJustificada[];
+  /** AAAA-MM-DD */
+  hoje: string;
+};
+
+const DIA = 86_400_000;
+const diasEntre = (a: string, b: string) => Math.round((Date.parse(b.slice(0, 10)) - Date.parse(a.slice(0, 10))) / DIA);
+
+export function pendencias(e: EntradaPendencias): Pendencia[] {
+  const { emenda, execucao } = e;
+  const tipo = tipoDaEmenda(emenda);
+  const out: Pendencia[] = [];
+  const add = (p: Omit<Pendencia, "assinatura"> & { assinatura?: string }) =>
+    out.push({ ...p, assinatura: p.assinatura ?? p.detalhe });
+
+  if (emenda.situacao === "cancelada") return [];
+
+  if (emenda.situacao === "impedida" || emenda.impedimentos_abertos > 0) {
+    add({
+      regra: "impedimento",
+      gravidade: "alta",
+      titulo: "Impedimento em aberto",
+      detalhe: "Há impedimento sem resolução: decidir o remanejamento ou registrar a solução.",
+      aba: "fases",
+    });
+  }
+
+  if (emenda.empenhado > emenda.valor + 0.005) {
+    add({
+      regra: "empenho_maior",
+      gravidade: "alta",
+      titulo: "Empenhado acima do valor da emenda",
+      detalhe: `Empenhado ${emenda.empenhado.toFixed(2)} para valor ${emenda.valor.toFixed(2)}.`,
+      aba: "financeiro",
+    });
+  }
+  if (emenda.pago > emenda.empenhado + 0.005) {
+    add({
+      regra: "pago_maior",
+      gravidade: "alta",
+      titulo: "Pago acima do empenhado",
+      detalhe: `Pago ${emenda.pago.toFixed(2)} para empenhado ${emenda.empenhado.toFixed(2)}.`,
+      aba: "financeiro",
+    });
+  }
+
+  const incoerente =
+    (tipo === "direta" && emenda.modalidade === "repasse") || (tipo === "osc" && emenda.modalidade === "direta");
+  if (incoerente) {
+    add({
+      regra: "tipo_incoerente",
+      gravidade: "media",
+      titulo: "Tipo de execução incoerente com a natureza da despesa",
+      detalhe:
+        tipo === "direta"
+          ? "Marcada como execução direta, mas a natureza é de transferência (grupo 50): confirmar o tipo ou a dotação."
+          : "Marcada como repasse a OSC, mas a natureza é de aplicação direta (grupo 90): confirmar o tipo ou a dotação.",
+      aba: "fases",
+    });
+  }
+
+  const concluiuTudo = emenda.etapa === "concluida";
+  const jaIniciou = emenda.etapa !== "indicada";
+
+  if (tipo !== "direta" && execucao?.numero_termo && !execucao.data_publicacao_extrato) {
+    add({
+      regra: "termo_sem_extrato",
+      gravidade: "media",
+      titulo: "Termo assinado sem extrato publicado",
+      detalhe: `Termo ${execucao.numero_termo} sem data de publicação do extrato (Lei 13.019, art. 38).`,
+      aba: "execucao",
+    });
+  }
+
+  if (tipo !== "direta" && execucao?.numero_termo && !execucao.conta_bancaria) {
+    add({
+      regra: "sem_conta",
+      gravidade: "media",
+      titulo: "Parceria sem conta bancária específica",
+      detalhe: "Informar a conta específica da parceria (Lei 13.019, art. 51; IN TCE-MG 05/2025, art. 6º).",
+      aba: "execucao",
+    });
+  }
+
+  const vig = situacaoVigencia(execucao?.vigencia_fim, e.hoje);
+  if (vig?.alerta && !concluiuTudo) {
+    const venceu = (execucao?.vigencia_fim ?? "") < e.hoje;
+    const depoisDeVencer = venceu && execucao?.vigencia_fim ? diasEntre(execucao.vigencia_fim, e.hoje) : 0;
+    const prestacao = tipo !== "direta" && venceu && emenda.etapa !== "prestacao_contas";
+    add({
+      regra: "vigencia",
+      gravidade: venceu ? (prestacao && depoisDeVencer > 90 ? "alta" : "media") : "baixa",
+      titulo: venceu ? "Vigência encerrada" : "Vigência terminando",
+      detalhe: prestacao
+        ? `${vig.texto}. Prestação de contas em até 90 dias do término (Lei 13.019, art. 69): ${depoisDeVencer} dia(s) decorridos.`
+        : vig.texto,
+      aba: "execucao",
+    });
+  }
+
+  if (!jaIniciou && !concluiuTudo) {
+    const dias = diasAteFimDoAno(new Date(`${e.hoje}T00:00:00`), emenda.ano);
+    add({
+      regra: "nao_iniciada",
+      gravidade: dias <= 60 ? "alta" : dias <= 120 ? "media" : "baixa",
+      titulo: "Sem andamento",
+      detalhe: `Nenhuma fase iniciada. Faltam ${dias} dia(s) para o fim do exercício.`,
+      assinatura: "nao_iniciada",
+      aba: "fases",
+    });
+  }
+
+  if (
+    e.exercicio?.prazo_exequibilidade &&
+    e.exercicio.prazo_exequibilidade < e.hoje &&
+    !e.temParecer &&
+    !jaIniciou &&
+    emenda.impedimentos_abertos === 0
+  ) {
+    add({
+      regra: "exequibilidade_vencida",
+      gravidade: "alta",
+      titulo: "Prazo de exequibilidade vencido sem parecer",
+      detalhe: `A secretaria ${emenda.secretaria_nome} não enviou o parecer até ${dataBr(e.exercicio.prazo_exequibilidade)}.`,
+      assinatura: `exequibilidade|${emenda.secretaria_id}`,
+      aba: "fases",
+    });
+  }
+
+  for (const [antes, depois] of datasForaDeOrdem(e.fases)) {
+    add({
+      regra: `data_fora_de_ordem:${depois.fase.chave}`,
+      gravidade: "media",
+      titulo: "Datas fora de ordem",
+      detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).`,
+      aba: "fases",
+    });
+  }
+
+  const justificadas = new Map((e.justificadas ?? []).filter((j) => j.emenda_id === emenda.id).map((j) => [j.regra, j]));
+  return out
+    .map((p) => {
+      const j = justificadas.get(p.regra);
+      return j && j.assinatura === p.assinatura ? { ...p, justificativa: j.justificativa } : p;
+    })
+    .sort((a, b) => ORDEM_GRAVIDADE[a.gravidade] - ORDEM_GRAVIDADE[b.gravidade]);
+}
+
+/** Pendências que ainda pedem ação (as justificadas ficam registradas, mas não contam). */
+export function abertas(ps: Pendencia[]): Pendencia[] {
+  return ps.filter((p) => !p.justificativa);
+}
+
+export function maiorGravidade(ps: Pendencia[]): Gravidade | null {
+  const a = abertas(ps);
+  if (!a.length) return null;
+  return a.reduce((m, p) => (ORDEM_GRAVIDADE[p.gravidade] < ORDEM_GRAVIDADE[m] ? p.gravidade : m), a[0].gravidade);
+}

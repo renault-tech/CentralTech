@@ -17,12 +17,15 @@ import {
   resolverImpedimento,
   type Resultado,
 } from "@/lib/emendas/actions";
+import { AbaDocumentacao, AbaFases, AbaPendencias } from "@/components/emendas/abas-gestao";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
+import type { FaseCalculada } from "@/lib/emendas/fases";
+import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
-import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
+import type { Beneficiario, EtapaEmenda, ItemChecklist, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -89,7 +92,8 @@ function paraNumero(t: string): number | null {
   return limpo && Number.isFinite(n) ? n : null;
 }
 
-type Aba = "andamentos" | "financeiro" | "documentos" | "historico";
+type Aba = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
+const ABAS_VALIDAS: Aba[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
 
 export function DetalheEmendaCliente({
   detalhe,
@@ -99,7 +103,17 @@ export function DetalheEmendaCliente({
   unidades,
   auditoria,
   nomesUsuarios,
+  fases,
+  pendencias,
+  itensChecklist,
+  corTipo,
+  abaInicial,
 }: {
+  fases: FaseCalculada[];
+  pendencias: Pendencia[];
+  itensChecklist: ItemChecklist[];
+  corTipo: string;
+  abaInicial?: string;
   detalhe: DetalheEmenda;
   podeEditar: boolean;
   gestor: boolean;
@@ -110,7 +124,7 @@ export function DetalheEmendaCliente({
 }) {
   const catalogo = useCatalogo();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
-  const [aba, setAba] = React.useState<Aba>("andamentos");
+  const [aba, setAba] = React.useState<Aba>(ABAS_VALIDAS.includes(abaInicial as Aba) ? (abaInicial as Aba) : "fases");
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
   const [erroGeral, setErroGeral] = React.useState<string | null>(null);
 
@@ -183,9 +197,12 @@ export function DetalheEmendaCliente({
         <div role="tablist" aria-label="Seções da emenda" className="flex flex-wrap gap-1 border-b border-slate-200 px-3 print:hidden">
           {(
             [
-              ["andamentos", `Andamentos (${andamentos.length})`],
+              ["fases", `Fases (${fases.filter((f) => f.situacao === "concluida").length}/${fases.filter((f) => f.situacao !== "nao_se_aplica").length})`],
+              ["documentacao", "Documentação"],
+              ["pendencias", `Pendências${abertas(pendencias).length ? ` (${abertas(pendencias).length})` : ""}`],
               ["financeiro", "Financeiro"],
-              ["documentos", `Documentos (${documentos.length})`],
+              ["andamentos", `Andamentos (${andamentos.length})`],
+              ["documentos", `Anexos (${documentos.length})`],
               ["historico", `Histórico${remanejamentos.length ? ` (${remanejamentos.length})` : ""}`],
             ] as [Aba, string][]
           ).map(([chave, rotulo]) => (
@@ -206,6 +223,25 @@ export function DetalheEmendaCliente({
         </div>
 
         <div className="p-5">
+          {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} cor={corTipo} executar={executar} />}
+
+          {aba === "documentacao" && (
+            <AbaDocumentacao emendaId={emenda.id} itens={itensChecklist} registros={detalhe.checklist} podeEditar={podeEditar} executar={executar} />
+          )}
+
+          {aba === "pendencias" && (
+            <AbaPendencias
+              emendaId={emenda.id}
+              pendencias={pendencias}
+              podeEditar={podeEditar}
+              executar={executar}
+              irParaAba={(destino) => {
+                if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
+                else setAba(destino);
+              }}
+            />
+          )}
+
           {aba === "andamentos" && (
             <ol className="flex flex-col">
               {andamentos.length === 0 && <li className="text-sm text-slate-500">Nenhum andamento registrado ainda — a emenda está como indicada na LOA.</li>}

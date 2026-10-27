@@ -4,7 +4,21 @@ import { notFound, redirect } from "next/navigation";
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
-import { listarBeneficiarios, listarUnidades, obterCatalogoEtapas, obterContextoEmendas, obterDetalheEmenda, podeEditarSecretaria } from "@/lib/emendas/dados";
+import { TipoSelo } from "@/components/emendas/tipo-selo";
+import { calcularEmendas } from "@/lib/emendas/resumo";
+import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
+import {
+  listarBeneficiarios,
+  listarFasesCatalogo,
+  listarItensChecklist,
+  listarPareceres,
+  listarUnidades,
+  obterCatalogoEtapas,
+  obterContextoEmendas,
+  obterDetalheEmenda,
+  podeEditarSecretaria,
+  resolverExercicio,
+} from "@/lib/emendas/dados";
 import { NOME_MODALIDADE, brl, dataBr, ehGestor, numeroVereador } from "@/lib/emendas/regras";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -12,8 +26,9 @@ import type { EtapaEmenda } from "@/types/emendas";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaEmenda({ params }: { params: Promise<{ id: string }> }) {
+export default async function PaginaEmenda({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string }> }) {
   const { id } = await params;
+  const { aba } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const ctx = await obterContextoEmendas();
   if (ctx.situacao !== "ok") redirect("/emendas");
@@ -21,11 +36,13 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
   // Tudo o que não depende do resultado do detalhe anda na mesma rodada
   // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const [detalhe, catalogo, beneficiarios, unidades, auditoria] = await Promise.all([
+  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria] = await Promise.all([
     obterDetalheEmenda(id),
     obterCatalogoEtapas(),
     listarBeneficiarios(),
     listarUnidades(),
+    listarFasesCatalogo(),
+    listarItensChecklist(),
     gestor
       ? criarClienteEmendas().then((c) =>
           c.from("auditoria").select("*").in("tabela", ["emendas", "execucao"]).eq("registro_id", id).order("em", { ascending: false }).limit(50)
@@ -34,6 +51,25 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
   ]);
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos, execucao } = detalhe;
+  const tipo = tipoDaEmenda(emenda);
+  const { exercicio } = await resolverExercicio(String(emenda.ano));
+  const pareceres = await listarPareceres(emenda.ano);
+  const calculo = calcularEmendas({
+    emendas: [emenda],
+    fasesCatalogo,
+    manuais: detalhe.fasesManuais,
+    movimentos,
+    execucoes: execucao ? [execucao] : [],
+    exercicio,
+    pareceres,
+    justificadas: detalhe.justificadas,
+    catalogo,
+    hoje: new Date().toISOString().slice(0, 10),
+  }).get(emenda.id)!;
+  // Itens condicionais: Saúde (CNES, CMS…) só quando a emenda é de Saúde; consórcio só na natureza 93.
+  const itensDoTipo = itensChecklist.filter(
+    (i) => i.tipo === tipo && i.ativo && (i.condicao !== "saude" || emenda.saude) && (i.condicao !== "consorcio" || /\.93\./.test(emenda.natureza_despesa ?? ""))
+  );
   const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const registros = auditoria.data ?? [];
   const idsUsuarios = Array.from(new Set(registros.map((a) => a.usuario_id).filter((x): x is string => !!x)));
@@ -62,6 +98,7 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
           <div className="flex max-w-3xl flex-col gap-2">
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               <span className="rounded-md bg-violet-50 px-2 py-0.5 font-mono font-medium text-violet-900">Emenda nº {emenda.numero}</span>
+              <TipoSelo tipo={tipo} />
               <Chip tom="azul">{NOME_MODALIDADE[emenda.modalidade]}</Chip>
               {emenda.saude && <Chip tom="saude">Saúde</Chip>}
               {emenda.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
@@ -92,6 +129,11 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
             unidades={unidades}
             auditoria={registros}
             nomesUsuarios={nomesUsuarios}
+            fases={calculo.fases}
+            pendencias={calculo.pendencias}
+            itensChecklist={itensDoTipo}
+            corTipo={TIPOS_EXECUCAO[tipo].cor}
+            abaInicial={aba}
           />
         </div>
         <aside className="flex flex-[1_1_300px] flex-col gap-4">
@@ -113,7 +155,9 @@ export default async function PaginaEmenda({ params }: { params: Promise<{ id: s
               ))}
             </dl>
           </section>
-          <PainelParceria emendaId={emenda.id} modalidade={emenda.modalidade} execucao={execucao} podeEditar={podeEditar} />
+          <div id="bloco-parceria">
+            <PainelParceria emendaId={emenda.id} modalidade={emenda.modalidade} execucao={execucao} podeEditar={podeEditar} />
+          </div>
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>
             <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-700">{emenda.descricao}</p>

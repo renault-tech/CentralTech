@@ -9,7 +9,13 @@ import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emen
 import type {
   Andamento,
   Beneficiario,
+  ChecklistEmenda,
   DocumentoEmenda,
+  FaseEmenda,
+  FaseFluxo,
+  ItemChecklist,
+  ParecerExequibilidade,
+  PendenciaJustificada,
   EmendaResumo,
   ExecucaoEmenda,
   Exercicio,
@@ -99,7 +105,7 @@ export async function resolverExercicio(anoParam?: string | null): Promise<{ exe
  * e ela inflava o payload do painel e da lista.
  */
 const COLUNAS_RESUMO =
-  "id,ano,numero,numero_vereador,objeto,valor,saude,modalidade,etapa,situacao,etapa_atualizada_em,criado_em,atualizado_em," +
+  "id,ano,numero,numero_vereador,objeto,valor,saude,modalidade,tipo_execucao,etapa,situacao,etapa_atualizada_em,criado_em,atualizado_em," +
   "funcional_programatica,natureza_despesa,dotacao_texto,ficha,vereador_id,vereador_numero,vereador_nome," +
   "beneficiario_id,beneficiario_nome,beneficiario_cnpj,unidade_id,unidade_codigo,unidade_nome,secretaria_id,secretaria_nome," +
   "empenhado,liquidado,pago,ultimo_pagamento,remanejada,impedimentos_abertos";
@@ -194,6 +200,46 @@ export const listarBeneficiarios = cache(async (): Promise<Beneficiario[]> => {
   return data ?? [];
 });
 
+/** Catálogo de fases por tipo de execução (Configurações → Fases). */
+export const listarFasesCatalogo = cache(async (): Promise<FaseFluxo[]> => {
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("fluxo_fases").select("*").order("ordem");
+  if (error) falhou("fluxo_fases", error);
+  return data ?? [];
+});
+
+export const listarItensChecklist = cache(async (): Promise<ItemChecklist[]> => {
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("checklist_itens").select("*").order("ordem");
+  if (error) falhou("checklist_itens", error);
+  return data ?? [];
+});
+
+export const listarPareceres = cache(async (ano: number): Promise<ParecerExequibilidade[]> => {
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("pareceres_exequibilidade").select("*").eq("ano", ano);
+  if (error) falhou("pareceres", error);
+  return data ?? [];
+});
+
+/** Fases manuais e justificativas das emendas visíveis, em lotes paralelos. */
+export async function listarFasesEJustificativas(idsEmendas: string[]): Promise<{ fases: FaseEmenda[]; justificadas: PendenciaJustificada[] }> {
+  if (idsEmendas.length === 0) return { fases: [], justificadas: [] };
+  const emendas = await criarClienteEmendas();
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const [f, j] = await Promise.all([
+        emendas.from("emenda_fases").select("*").in("emenda_id", lote),
+        emendas.from("pendencias_justificadas").select("*").in("emenda_id", lote),
+      ]);
+      if (f.error) falhou("emenda_fases", f.error);
+      if (j.error) falhou("pendencias_justificadas", j.error);
+      return { fases: f.data ?? [], justificadas: j.data ?? [] };
+    })
+  );
+  return { fases: lotes.flatMap((l) => l.fases), justificadas: lotes.flatMap((l) => l.justificadas) };
+}
+
 export type DetalheEmenda = {
   emenda: EmendaResumo;
   andamentos: Andamento[];
@@ -202,6 +248,9 @@ export type DetalheEmenda = {
   remanejamentos: Remanejamento[];
   documentos: DocumentoEmenda[];
   execucao: ExecucaoEmenda | null;
+  fasesManuais: FaseEmenda[];
+  checklist: ChecklistEmenda[];
+  justificadas: PendenciaJustificada[];
 };
 
 export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | null> {
@@ -210,15 +259,18 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
   if (error) falhou("detalhe", error);
   if (!emenda) return null;
 
-  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao] = await Promise.all([
+  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas] = await Promise.all([
     emendas.from("andamentos").select("*").eq("emenda_id", id).order("data", { ascending: false }).order("criado_em", { ascending: false }),
     emendas.from("movimentos_financeiros").select("*").eq("emenda_id", id).order("criado_em"),
     emendas.from("impedimentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
     emendas.from("remanejamentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
     emendas.from("documentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
     emendas.from("execucao").select("*").eq("id", id).maybeSingle(),
+    emendas.from("emenda_fases").select("*").eq("emenda_id", id),
+    emendas.from("emenda_checklist").select("*").eq("emenda_id", id),
+    emendas.from("pendencias_justificadas").select("*").eq("emenda_id", id),
   ]);
-  for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao]) {
+  for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas]) {
     if (r.error) falhou("detalhe-filhos", r.error);
   }
 
@@ -237,6 +289,9 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     remanejamentos: remanejamentos.data ?? [],
     documentos: documentos.data ?? [],
     execucao: execucao.data ?? null,
+    fasesManuais: fasesManuais.data ?? [],
+    checklist: checklist.data ?? [],
+    justificadas: justificadas.data ?? [],
   };
 }
 

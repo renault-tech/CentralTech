@@ -5,10 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download, X } from "lucide-react";
 
-import { BarraEtapas, Chip, SeloEtapa } from "@/components/emendas/ui";
+import { Chip, SeloEtapa } from "@/components/emendas/ui";
+import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import { NOME_MODALIDADE, brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
+import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
+import type { ResumoLinha } from "@/lib/emendas/resumo";
+import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo, Secretaria, Vereador } from "@/types/emendas";
 
@@ -16,6 +19,22 @@ const ESTILO_CAMPO =
   "h-[38px] rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 
 const POR_PAGINA = 25;
+
+/** Progresso das fases do tipo: barra na cor do tipo + fase atual. */
+function RegraFases({ resumo, cor }: { resumo?: ResumoLinha; cor: string }) {
+  if (!resumo || resumo.total === 0) return <span className="text-xs text-slate-400">—</span>;
+  const pct = Math.round((resumo.concluidas / resumo.total) * 100);
+  return (
+    <div title={resumo.faseAtual ? `Próxima fase: ${resumo.faseAtual}` : "Todas as fases concluídas"}>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={`${resumo.concluidas} de ${resumo.total} fases`}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cor }} />
+      </div>
+      <div className="mt-1 truncate text-xs text-slate-600">
+        <span className="font-medium tabular-nums">{resumo.concluidas}/{resumo.total}</span> · {resumo.faseAtual ?? "Concluída"}
+      </div>
+    </div>
+  );
+}
 
 function normalizar(t: string) {
   return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -27,10 +46,12 @@ export function TabelaEmendas({
   emendas,
   vereadores,
   secretarias,
+  resumos,
   ano,
   anos,
 }: {
   emendas: EmendaResumo[];
+  resumos: Record<string, ResumoLinha>;
   vereadores: Vereador[];
   secretarias: Secretaria[];
   ano: number;
@@ -47,6 +68,8 @@ export function TabelaEmendas({
     v: params.get("v") ?? "",
     s: params.get("s") ?? "",
     etapa: params.get("etapa") ?? "",
+    t: params.get("t") ?? "",
+    p: params.get("p") ?? "",
     situacao: params.get("situacao") ?? "",
     ordem: params.get("ordem") ?? "numero",
     numeros: (params.get("numeros") ?? "").split(",").filter(Boolean).map(Number),
@@ -58,8 +81,9 @@ export function TabelaEmendas({
   }
 
   const q = normalizar(busca.trim());
-  const base = emendas.filter(
+  const semTipo = emendas.filter(
     (r) =>
+      (!f.p || (resumos[r.id]?.abertas ?? 0) > 0) &&
       (!f.v || r.vereador_id === f.v) &&
       (!f.s || r.secretaria_id === f.s) &&
       (!f.situacao || r.situacao === f.situacao) &&
@@ -71,6 +95,8 @@ export function TabelaEmendas({
           ).includes(parte)
         ))
   );
+  const porTipo = (t: string) => semTipo.filter((r) => tipoDaEmenda(r) === t);
+  const base = f.t ? porTipo(f.t) : semTipo;
   const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
   const usadas = todasEtapas.filter((e) => base.some((r) => r.etapa === e.chave));
   const filtradas = base.filter((r) => !f.etapa || r.etapa === f.etapa);
@@ -93,7 +119,7 @@ export function TabelaEmendas({
   const pago = filtradas.reduce((t, r) => t + r.pago, 0);
 
   const exportar = new URLSearchParams({ ano: String(ano) });
-  for (const k of ["v", "s", "etapa", "situacao", "numeros"] as const) {
+  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t"] as const) {
     const v = params.get(k);
     if (v) exportar.set(k, v);
   }
@@ -115,6 +141,27 @@ export function TabelaEmendas({
           <Download className="h-4 w-4" aria-hidden />
           Exportar Excel
         </a>
+      </div>
+
+      <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-200">
+        {[{ chave: "", nome: "Consolidado", cor: "#0C1D33", qtd: semTipo.length }, ...ORDEM_TIPOS.map((t) => ({ chave: t as string, nome: TIPOS_EXECUCAO[t].nome, cor: TIPOS_EXECUCAO[t].cor, qtd: porTipo(t).length }))].map((t) => (
+          <button
+            key={t.chave || "todos"}
+            type="button"
+            role="tab"
+            aria-selected={f.t === t.chave}
+            onClick={() => definir({ t: t.chave })}
+            className={cn(
+              "-mb-px inline-flex h-10 items-center gap-2 border-b-2 px-3.5 text-sm transition-colors",
+              f.t === t.chave ? "font-semibold text-cataguases-marinho" : "border-transparent text-slate-600 hover:text-cataguases-marinho"
+            )}
+            style={f.t === t.chave ? { borderBottomColor: t.cor } : undefined}
+          >
+            {t.chave && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />}
+            {t.nome}
+            <span className="tabular-nums text-slate-500">{t.qtd}</span>
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5">
@@ -168,6 +215,13 @@ export function TabelaEmendas({
             <option value="normal">Normal</option>
             <option value="impedida">Impedidas</option>
             <option value="cancelada">Canceladas</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Pendências
+          <select className={ESTILO_CAMPO} value={f.p} onChange={(e) => definir({ p: e.target.value })}>
+            <option value="">Todas</option>
+            <option value="1">Só com pendência</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
@@ -229,7 +283,9 @@ export function TabelaEmendas({
           <tbody>
             {ordenadas.slice(0, limite).map((r) => (
               <tr key={r.id} className="border-t border-slate-100 align-top hover:bg-violet-50/40">
-                <td className="px-3.5 py-3 font-mono text-slate-500">{r.numero}</td>
+                <td className="py-3 pl-3 pr-3.5 font-mono text-slate-500" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
+                  {r.numero}
+                </td>
                 <td className="whitespace-nowrap px-3.5 py-3">
                   {numeroVereador(r.vereador_numero)} · {r.vereador_nome.split(" ")[0]} {r.vereador_nome.split(" ").slice(-1)[0]}
                 </td>
@@ -240,8 +296,11 @@ export function TabelaEmendas({
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
                     {r.beneficiario_nome && <span>{r.beneficiario_nome}</span>}
                     {r.saude && <Chip tom="saude">Saúde</Chip>}
-                    <Chip tom="azul">{NOME_MODALIDADE[r.modalidade]}</Chip>
+                    <TipoSelo tipo={tipoDaEmenda(r)} />
                     {r.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
+                    <Link href={`/emendas/${r.id}?aba=pendencias`} aria-label="Ver pendências">
+                      <SeloPendencias quantidade={resumos[r.id]?.abertas ?? 0} gravidade={resumos[r.id]?.gravidade ?? null} />
+                    </Link>
                   </div>
                 </td>
                 <td className="px-3.5 py-3 text-slate-700">
@@ -252,7 +311,7 @@ export function TabelaEmendas({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3 text-right font-medium tabular-nums">{brl(r.valor)}</td>
                 <td className="px-3.5 py-3">
-                  <BarraEtapas modalidade={r.modalidade} etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
+                  <RegraFases resumo={resumos[r.id]} cor={TIPOS_EXECUCAO[tipoDaEmenda(r)].cor} />
                   <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
                     <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
                     <span className="text-slate-500">
