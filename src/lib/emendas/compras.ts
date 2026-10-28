@@ -1,6 +1,6 @@
 import "server-only";
 
-import { interpretarNumeroProcesso } from "@/lib/emendas/numero-processo";
+import { classificarBusca, interpretarNumeroProcesso, palavrasChave } from "@/lib/emendas/numero-processo";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 
 /**
@@ -57,4 +57,40 @@ export async function buscarProcessoPorId(id: string): Promise<ProcessoCompras |
   const admin = criarClienteAdminBruto().schema("public");
   const { data } = await admin.from("processos").select(COLUNAS).eq("id", id).maybeSingle();
   return data ? enriquecer(data) : null;
+}
+
+export type SugestaoProcesso = { id: string; numero: string; numero_licitacao: string | null; objeto: string; status: string };
+
+/**
+ * Sugestões para o campo de vínculo: pelo que a pessoa digita (parte do número ou palavras do
+ * objeto) ou, com o campo vazio, pelas palavras do objeto da emenda. Poucas colunas, no máximo 6
+ * linhas, só depois de a ação confirmar que a pessoa edita a emenda.
+ */
+export async function sugerirProcessos(texto: string, objetoEmenda: string): Promise<SugestaoProcesso[]> {
+  const consulta = classificarBusca(texto);
+  const admin = criarClienteAdminBruto().schema("public");
+  let q = admin.from("processos").select("id,numero,numero_licitacao,objeto,status").order("criado_em", { ascending: false }).limit(consulta.tipo === "vazia" ? 40 : 8);
+  let pistas: string[] = [];
+
+  if (consulta.tipo === "numero") {
+    q = q.or(`numero.ilike.%${consulta.trecho}%,numero_licitacao.ilike.%${consulta.trecho}%`);
+  } else if (consulta.tipo === "texto") {
+    for (const p of consulta.palavras) q = q.ilike("objeto", `%${p}%`);
+  } else {
+    pistas = palavrasChave(objetoEmenda);
+    if (!pistas.length) return [];
+    q = q.or(pistas.map((p) => `objeto.ilike.%${p}%`).join(","));
+  }
+
+  const { data } = await q;
+  const linhas = (data ?? []).map((p) => ({
+    id: p.id as string,
+    numero: p.numero as string,
+    numero_licitacao: (p.numero_licitacao as string | null) ?? null,
+    objeto: ((p.objeto as string) ?? "").slice(0, 200),
+    status: String(p.status ?? ""),
+  }));
+  if (!pistas.length) return linhas.slice(0, 6);
+  const pontos = (o: string) => pistas.filter((w) => o.toLowerCase().includes(w)).length;
+  return linhas.sort((a, b) => pontos(b.objeto) - pontos(a.objeto)).slice(0, 6);
 }

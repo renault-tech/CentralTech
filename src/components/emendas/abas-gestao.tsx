@@ -6,6 +6,7 @@ import { Check, ChevronDown, CircleDashed, CircleDot, Minus } from "lucide-react
 import { justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
 import type { FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
+import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { ChecklistEmenda, EstadoChecklist, ItemChecklist, SituacaoFase } from "@/types/emendas";
@@ -55,17 +56,45 @@ function hojeLocal() {
 
 // ------------------------------------------------------------------ fases
 
+/** Números do processo do Compras ligado à emenda, oferecidos como atalho no campo "Documento". */
+export type AtalhosCompras = { processo: string | null; licitacao: string | null; contrato: string | null };
+
+const DICAS_FASE: Record<string, { texto: string; sugere: ("processo" | "licitacao" | "contrato")[] }> = {
+  demanda: {
+    texto:
+      "DFD, ETP e Termo de Referência são documentos DENTRO do processo do Compras: não têm numeração própria no sistema. Informe o nº do processo (ex.: 2026/0062); o vínculo é feito em “Processo no Compras”, ao lado.",
+    sugere: ["processo"],
+  },
+  precos: {
+    texto:
+      "A pesquisa de preços também fica no mesmo processo. Informe o nº do processo (ex.: 2026/0062) ou, se a pesquisa tiver protocolo ou mapa próprio, esse número.",
+    sugere: ["processo"],
+  },
+  contratacao: {
+    texto:
+      "É o processo de licitação, dispensa ou inexigibilidade. É o MESMO processo do Compras: ao seguir para o setor de Licitação ele ganha o 2º número (ex.: 136/2026). Informe o nº da licitação.",
+    sugere: ["licitacao", "processo"],
+  },
+  instrumento: {
+    texto:
+      "Contrato, ata de registro de preços ou autorização de fornecimento. Informe o nº do instrumento (ex.: contrato 045/2026); o Compras guarda o contrato vinculado ao processo.",
+    sugere: ["contrato", "licitacao"],
+  },
+};
+
 export function AbaFases({
   emendaId,
   fases,
   podeEditar,
   cor,
+  atalhos,
   executar,
 }: {
   emendaId: string;
   fases: FaseCalculada[];
   podeEditar: boolean;
   cor: string;
+  atalhos?: AtalhosCompras;
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
 }) {
   const [aberta, setAberta] = React.useState<string | null>(null);
@@ -83,6 +112,7 @@ export function AbaFases({
             <div className="pb-4">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                 <strong className={cn("text-sm", f.situacao === "nao_se_aplica" ? "text-slate-500 line-through" : "text-cataguases-marinho")}>{f.fase.nome}</strong>
+                {DICAS_FASE[f.fase.chave] && <DicaAjuda rotulo={`Como preencher: ${f.fase.nome}`} texto={DICAS_FASE[f.fase.chave].texto} />}
                 <span className="text-xs text-slate-600">{NOME_SITUACAO[f.situacao]}</span>
                 {f.data && <span className="text-xs tabular-nums text-slate-600">{dataBr(f.data)}</span>}
                 {f.documento && <span className="font-mono text-xs text-slate-600">{f.documento}</span>}
@@ -106,7 +136,7 @@ export function AbaFases({
                 </p>
               )}
               {manual && aberta === f.fase.chave && (
-                <EditorFase emendaId={emendaId} fase={f} executar={executar} aoFechar={() => setAberta(null)} />
+                <EditorFase emendaId={emendaId} fase={f} atalhos={atalhos} executar={executar} aoFechar={() => setAberta(null)} />
               )}
             </div>
           </li>
@@ -117,14 +147,18 @@ export function AbaFases({
   );
 }
 
+const NOME_ATALHO = { processo: "Processo", licitacao: "Licitação", contrato: "Contrato" } as const;
+
 function EditorFase({
   emendaId,
   fase,
+  atalhos,
   executar,
   aoFechar,
 }: {
   emendaId: string;
   fase: FaseCalculada;
+  atalhos?: AtalhosCompras;
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
   aoFechar: () => void;
 }) {
@@ -135,6 +169,8 @@ function EditorFase({
   const [pendente, iniciar] = React.useTransition();
   const [erro, setErro] = React.useState<string | null>(null);
   const informaData = situacao === "concluida" || situacao === "em_andamento";
+  const dica = DICAS_FASE[fase.fase.chave];
+  const opcoes = dica && atalhos ? dica.sugere.flatMap((k) => (atalhos[k] ? [[k, atalhos[k] as string] as const] : [])) : [];
 
   function salvar() {
     setErro(null);
@@ -166,8 +202,21 @@ function EditorFase({
         </label>
       )}
       <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-        Documento (nº, protocolo)
+        <span className="flex items-center gap-1.5">
+          {dica ? "Nº do processo ou documento" : "Documento (nº, protocolo)"}
+          {dica && <DicaAjuda rotulo="Como preencher" texto={dica.texto} />}
+        </span>
         <input className={CAMPO} value={documento} maxLength={120} onChange={(e) => setDocumento(e.target.value)} />
+        {opcoes.length > 0 && (
+          <span className="flex flex-wrap items-center gap-1.5 font-normal">
+            <span className="text-slate-500">Do Compras:</span>
+            {opcoes.map(([k, v]) => (
+              <button key={k} type="button" onClick={() => setDocumento(v)} className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs text-cataguases-marinho hover:border-[#6B4FBB] hover:text-[#5B3FA8]">
+                {NOME_ATALHO[k]} {v}
+              </button>
+            ))}
+          </span>
+        )}
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 sm:col-span-2">
         Observação

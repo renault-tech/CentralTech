@@ -8,7 +8,8 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { listarFasesCatalogo, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
-import { buscarProcessoPorNumero } from "@/lib/emendas/compras";
+import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from "@/lib/emendas/compras";
+import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { etapaAoConcluir, tipoDaEmenda } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
@@ -369,6 +370,19 @@ export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Pr
   }
   revalidar(a.data.emendaId);
   return { sucesso: true, aviso };
+}
+
+/** Sugestões de processos do Compras para o campo de vínculo (só quem edita a emenda; leitura estreita). */
+export async function sugerirProcessosCompras(emendaId: string, texto: string): Promise<SugestaoProcesso[]> {
+  if (!z.uuid().safeParse(emendaId).success) return [];
+  const ctx = await exigirAcesso();
+  if (!ctx) return [];
+  if (await excedeuLimite("emendas-sugerir-processo", await ipDoCliente(), 120, 60)) return [];
+  const emendas = await criarClienteEmendas();
+  // A RLS decide: sem acesso à emenda a leitura volta vazia.
+  const { data: visivel } = await emendas.from("v_emendas").select("id,objeto").eq("id", emendaId).maybeSingle();
+  if (!visivel) return [];
+  return sugerirProcessos(texto.slice(0, 80), String(visivel.objeto ?? "")).catch(() => []);
 }
 
 /** Liga a emenda a um processo do Compras pelo número (AAAA/NNNN ou NNN/AAAA). Vazio desfaz o vínculo. */

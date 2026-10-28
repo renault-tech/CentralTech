@@ -6,6 +6,8 @@ import { ExternalLink } from "lucide-react";
 import { vincularProcesso } from "@/lib/emendas/actions";
 import type { ProcessoCompras } from "@/lib/emendas/compras";
 import { dataBr } from "@/lib/emendas/regras";
+import { CampoProcesso } from "@/components/emendas/campo-processo";
+import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 
 const NOME_STATUS: Record<string, string> = { em_andamento: "Em andamento", concluido: "Concluído", suspenso: "Suspenso", cancelado: "Cancelado" };
 
@@ -40,7 +42,20 @@ export function VinculoCompras({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
-      <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Processo no Compras</h2>
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-cataguases-marinho">
+        Processo no Compras
+        <DicaAjuda
+          rotulo="Como funciona o vínculo com o Compras"
+          texto={
+            <>
+              Cada compra tem <strong>um processo só</strong> no Compras, com dois números: o do <strong>processo</strong> (ex.: 2026/0062, nasce no setor de
+              Compras) e o da <strong>licitação</strong> (ex.: 136/2026, dado quando segue para o setor de Licitação). É o mesmo processo: ligue uma vez aqui e as
+              fases DFD/ETP/TR, pesquisa de preços, contratação e contrato usam este vínculo. Digite o número (ou parte dele) ou uma palavra do objeto.
+              {" "}Troca de processo feita por quem não é gestor vai para aprovação.
+            </>
+          }
+        />
+      </h2>
       {processo ? (
         <dl className="flex flex-col gap-1.5 text-[13px]">
           <div>
@@ -80,12 +95,14 @@ export function VinculoCompras({
       )}
       {podeEditar && (
         <div className="mt-3 flex gap-2">
-          <input
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            placeholder="2026/0062 ou 136/2026"
-            aria-label="Número do processo ou da licitação"
-            className="h-9 min-w-0 flex-1 rounded-lg border border-slate-300 px-2.5 text-sm outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]"
+          <CampoProcesso
+            emendaId={emendaId}
+            valor={numero}
+            aoMudar={setNumero}
+            aoEscolher={(s) => {
+              setNumero(s.numero);
+            }}
+            desabilitado={pendente}
           />
           <button type="button" disabled={pendente || !numero.trim()} onClick={() => salvar(numero)} className="h-9 rounded-lg bg-[#6B4FBB] px-3 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50">
             {processo ? "Trocar" : "Vincular"}
