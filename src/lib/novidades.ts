@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-29",
+    titulo: "Emendas: editor de fases e documentos e impedimento em lote",
+    descricao:
+      "Em Configurações › “Fases e documentos por tipo”, o gestor agora cria, renomeia, reordena, ativa e remove as fases e os itens do checklist de cada tipo (direta, OSC e ente), sem depender de SQL; fase já usada em emendas só pode ser desativada. Em Configurações › Exequibilidade, depois de registrar o parecer da secretaria, dá para marcar de uma vez as emendas não exequíveis e registrar o impedimento técnico em todas, com a justificativa do parecer.",
+  },
+  {
     data: "2026-10-28",
     titulo: "Cards da Central do mesmo tamanho e cores mais visíveis nas Emendas",
     descricao:

@@ -134,6 +134,198 @@ export async function removerParecer(ano: number, secretariaId: string): Promise
   return { sucesso: true };
 }
 
+// ------------------------------------------------- fases e documentos por tipo
+
+const tipoExec = z.enum(["direta", "osc", "ente"]);
+const slug = (t: string) =>
+  t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
+
+const esquemaFaseCatalogo = z.object({
+  tipo: tipoExec,
+  chave: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/).nullable(),
+  nome: z.string().trim().min(2, "Informe o nome").max(120),
+  etapa: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/),
+  referencia: opcional,
+  ativa: z.boolean(),
+});
+
+/** Cria ou altera uma fase do fluxo de um tipo. Fase derivada (LOA, parecer, empenho…) só muda nome, referência e ativa. */
+export async function salvarFaseCatalogo(dados: z.input<typeof esquemaFaseCatalogo>): Promise<Resultado> {
+  const a = esquemaFaseCatalogo.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+
+  if (a.data.chave) {
+    const { data: atual } = await emendas.from("fluxo_fases").select("*").eq("tipo", a.data.tipo).eq("chave", a.data.chave).maybeSingle();
+    if (!atual) return { sucesso: false, erro: "Fase não encontrada." };
+    if (atual.derivacao === "loa" && !a.data.ativa) return { sucesso: false, erro: "A fase da LOA não pode ser desativada." };
+    const { error } = await emendas
+      .from("fluxo_fases")
+      .update({ nome: a.data.nome, referencia: a.data.referencia, ativa: a.data.ativa, ...(atual.derivacao ? {} : { etapa: a.data.etapa }) })
+      .eq("tipo", a.data.tipo)
+      .eq("chave", a.data.chave);
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  } else {
+    const chave = slug(a.data.nome);
+    if (chave.length < 2) return { sucesso: false, erro: "Nome inválido." };
+    const { data: ultimas } = await emendas.from("fluxo_fases").select("ordem").eq("tipo", a.data.tipo).order("ordem", { ascending: false }).limit(1);
+    // Entra antes da última fase (Encerramento), para não ficar depois dela.
+    const { data: todas } = await emendas.from("fluxo_fases").select("chave,ordem").eq("tipo", a.data.tipo).order("ordem");
+    const fim = (todas ?? []).find((f) => f.chave === "conclusao");
+    const ordem = fim ? fim.ordem - 5 : ((ultimas?.[0]?.ordem ?? 0) + 10);
+    const { error } = await emendas.from("fluxo_fases").insert({
+      tipo: a.data.tipo, chave, nome: a.data.nome, etapa: a.data.etapa, referencia: a.data.referencia, ativa: a.data.ativa, ordem,
+    });
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
+  return { sucesso: true };
+}
+
+const esquemaOrdem = z.object({ tipo: tipoExec, chaves: z.array(z.string().regex(/^[a-z][a-z0-9_]{1,40}$/)).min(1).max(100) });
+
+/** Grava a ordem das fases (a ordem do array vira 10, 20, 30…). */
+export async function salvarOrdemFases(dados: z.input<typeof esquemaOrdem>): Promise<Resultado> {
+  const a = esquemaOrdem.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  for (let i = 0; i < a.data.chaves.length; i++) {
+    const { error } = await emendas.from("fluxo_fases").update({ ordem: (i + 1) * 10 }).eq("tipo", a.data.tipo).eq("chave", a.data.chaves[i]);
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
+  return { sucesso: true };
+}
+
+/** Remove uma fase manual que nunca foi usada; senão, só desativa (o histórico fica). */
+export async function removerFaseCatalogo(tipo: string, chave: string): Promise<Resultado> {
+  const t = tipoExec.safeParse(tipo);
+  if (!t.success || !/^[a-z][a-z0-9_]{1,40}$/.test(chave)) return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { data: fase } = await emendas.from("fluxo_fases").select("derivacao").eq("tipo", t.data).eq("chave", chave).maybeSingle();
+  if (!fase) return { sucesso: false, erro: "Fase não encontrada." };
+  if (fase.derivacao) return { sucesso: false, erro: "Fase ligada a outro dado não pode ser removida; desative-a." };
+  const { count } = await emendas.from("emenda_fases").select("emenda_id", { count: "exact", head: true }).eq("chave", chave);
+  if (count) return { sucesso: false, erro: `Fase já usada em ${count} emenda(s): desative em vez de remover.` };
+  const { error } = await emendas.from("fluxo_fases").delete().eq("tipo", t.data).eq("chave", chave);
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
+const esquemaItemCatalogo = z.object({
+  tipo: tipoExec,
+  chave: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/).nullable(),
+  nome: z.string().trim().min(2, "Informe o nome").max(160),
+  referencia: opcional,
+  condicao: z.enum(["saude", "consorcio"]).nullable(),
+  ativo: z.boolean(),
+});
+
+export async function salvarItemChecklistCatalogo(dados: z.input<typeof esquemaItemCatalogo>): Promise<Resultado> {
+  const a = esquemaItemCatalogo.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  if (a.data.chave) {
+    const { error } = await emendas
+      .from("checklist_itens")
+      .update({ nome: a.data.nome, referencia_legal: a.data.referencia, condicao: a.data.condicao, ativo: a.data.ativo })
+      .eq("tipo", a.data.tipo)
+      .eq("chave", a.data.chave);
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  } else {
+    const chave = slug(a.data.nome);
+    if (chave.length < 2) return { sucesso: false, erro: "Nome inválido." };
+    const { data: ultimo } = await emendas.from("checklist_itens").select("ordem").eq("tipo", a.data.tipo).order("ordem", { ascending: false }).limit(1);
+    const { error } = await emendas.from("checklist_itens").insert({
+      tipo: a.data.tipo, chave, nome: a.data.nome, referencia_legal: a.data.referencia, condicao: a.data.condicao, ativo: a.data.ativo,
+      ordem: (ultimo?.[0]?.ordem ?? 0) + 10,
+    });
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
+  return { sucesso: true };
+}
+
+export async function salvarOrdemChecklist(dados: z.input<typeof esquemaOrdem>): Promise<Resultado> {
+  const a = esquemaOrdem.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  for (let i = 0; i < a.data.chaves.length; i++) {
+    const { error } = await emendas.from("checklist_itens").update({ ordem: (i + 1) * 10 }).eq("tipo", a.data.tipo).eq("chave", a.data.chaves[i]);
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
+  return { sucesso: true };
+}
+
+/** Remove um item que nenhuma emenda marcou; senão, só desativa. */
+export async function removerItemChecklistCatalogo(tipo: string, chave: string): Promise<Resultado> {
+  const t = tipoExec.safeParse(tipo);
+  if (!t.success || !/^[a-z][a-z0-9_]{1,40}$/.test(chave)) return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { count } = await emendas.from("emenda_checklist").select("emenda_id", { count: "exact", head: true }).eq("item_chave", chave);
+  if (count) return { sucesso: false, erro: `Item já marcado em ${count} emenda(s): desative em vez de remover.` };
+  const { error } = await emendas.from("checklist_itens").delete().eq("tipo", t.data).eq("chave", chave);
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
+// ------------------------------------------- impedimento em lote (parecer)
+
+const esquemaLote = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  secretariaId: z.uuid(),
+  emendaIds: z.array(z.uuid()).min(1, "Marque ao menos uma emenda").max(300),
+  justificativa: z.string().trim().min(5, "Explique o motivo (mínimo 5 caracteres)").max(2000),
+});
+
+/** Registra impedimento técnico nas emendas marcadas, ligado ao parecer da secretaria. Pula as que já têm impedimento aberto. */
+export async function registrarImpedimentosEmLote(
+  dados: z.input<typeof esquemaLote>
+): Promise<Resultado & { criados?: number; jaImpedidas?: number }> {
+  const a = esquemaLote.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirGestor();
+  if (!ctx) return { sucesso: false, erro: "Só gestores registram impedimentos em lote." };
+  const emendas = await criarClienteEmendas();
+
+  const { data: parecer } = await emendas.from("pareceres_exequibilidade").select("data").eq("ano", a.data.ano).eq("secretaria_id", a.data.secretariaId).maybeSingle();
+  if (!parecer) return { sucesso: false, erro: "Registre primeiro o parecer desta secretaria." };
+
+  const { data: alvo } = await emendas.from("v_emendas").select("id,impedimentos_abertos,secretaria_id,ano").in("id", a.data.emendaIds);
+  const validas = (alvo ?? []).filter((e) => e.secretaria_id === a.data.secretariaId && e.ano === a.data.ano);
+  if (validas.length !== a.data.emendaIds.length) return { sucesso: false, erro: "Há emendas que não são desta secretaria e exercício." };
+  const novas = validas.filter((e) => Number(e.impedimentos_abertos) === 0);
+
+  if (novas.length) {
+    const { error } = await emendas.from("impedimentos").insert(
+      novas.map((e) => ({
+        emenda_id: e.id,
+        tipo: "tecnico" as const,
+        justificativa: a.data.justificativa,
+        data: parecer.data,
+        usuario_id: ctx.usuario.id,
+        parecer_ano: a.data.ano,
+        parecer_secretaria_id: a.data.secretariaId,
+      }))
+    );
+    if (error) {
+      console.error("[registrarImpedimentosEmLote]", error);
+      return { sucesso: false, erro: traduzir(error) };
+    }
+  }
+  revalidar();
+  return { sucesso: true, criados: novas.length, jaImpedidas: validas.length - novas.length };
+}
+
 // ---------------------------------------------------------------- vereadores
 
 const esquemaVereador = z.object({
