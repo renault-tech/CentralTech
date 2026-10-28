@@ -1680,3 +1680,20 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
 - **Um processo só por compra**: no Compras o processo tem dois números (`numero` AAAA/NNNN, nasce em Compras; `numero_licitacao` NNN/AAAA, dado ao ir para Licitação) — é a MESMA linha. DFD/ETP/TR, pesquisa de preços, contratação e contrato usam o vínculo único da emenda (`execucao.processo_id`); o campo "documento" da fase só guarda o número de referência (processo, licitação ou contrato).
 - `sugerirProcessosCompras` (actions.ts) → `sugerirProcessos` (compras.ts, service role, ≤6 linhas, colunas `id,numero,numero_licitacao,objeto,status`): vazio = palavras do objeto da emenda (`palavrasChave`); só dígitos e `/` = trecho de número; resto = palavras do objeto (AND). Exige acesso à emenda (RLS em `v_emendas`) e limite 120/min por IP. `classificarBusca`/`palavrasChave` em `numero-processo.ts` (testadas).
 - UI: `CampoProcesso` (combobox com teclado), `DicaAjuda` ("?" com hover/foco/toque), `DICAS_FASE` em `abas-gestao.tsx` + atalhos "Do Compras:" no editor da fase (`AtalhosCompras`, vindo do processo vinculado). Escolher a sugestão só preenche o campo; vincular continua exigindo o clique (e, para quem não é gestor, aprovação).
+## Auditoria de segurança pós-Emendas (29/10/2026)
+
+- **Achado (médio) — Compras lido com chave de serviço**: `vincularProcesso` deixava qualquer editor de emenda ligar
+  (e então ver os dados de) QUALQUER processo do Compras digitando o número, ultrapassando a RLS de lá. Agora só
+  gestor/admin liga direto; os demais geram proposta (`processo_id` + `processo_licitatorio`) e os dados só aparecem depois
+  da aprovação. Sobra um "oráculo de existência" (a busca do número informa se o processo existe) — aceito: números são
+  sequenciais e nada do conteúdo vaza.
+- **Achado (médio) — `propostas` aceita INSERT de qualquer editor** (RLS `insere_propostas`): `decidirPropostas`
+  passou a validar cada proposta antes de aplicar (`validarProposta`: campos de `execucao` em lista fechada, `processo_id`
+  como uuid, situações/estados nos enums, chaves no formato) — uma proposta forjada não grava campo arbitrário.
+- **Achado (baixo)**: `salvarItemChecklist` aceitava qualquer `item_chave`; agora exige item ativo do catálogo do tipo da emenda.
+- **Dependências**: `zod` 4.6.5 → 4.6.7 (alta: esgotamento de memória em coleções grandes). Sobram 2 moderadas no `uuid`
+  dentro do `exceljs` (sem uso explorável; a correção força downgrade do exceljs).
+- **Conferido sem achado**: todas as tabelas de `emendas`/`hub` têm RLS; `anon` só alcança `apps_feedback`,
+  `config_modulo` e `solicitacoes_acesso` (as 3 esperadas); tabelas de backup sem acesso de `anon`/`authenticated`;
+  políticas do bucket `emendas-documentos` por permissão da emenda; portal público com colunas fechadas e sem
+  `dangerouslySetInnerHTML`/`eval` no código; CSV com neutralização de fórmulas.

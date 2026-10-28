@@ -20,6 +20,12 @@ export const NOVIDADES: Novidade[] = [
   },
   {
     data: "2026-10-29",
+    titulo: "Emendas: vínculo com o Compras passa por aprovação e mais proteções",
+    descricao:
+      "Quem não é gestor agora envia o vínculo de um processo do Compras para aprovação do gestor (antes ligava direto), para que o cadastro de Emendas não sirva de atalho para ver processos de outros setores. Por trás: as propostas só aplicam campos e valores conhecidos, o checklist só aceita itens do tipo da emenda e uma biblioteca de validação foi atualizada por uma falha de segurança.",
+  },
+  {
+    data: "2026-10-29",
     titulo: "Emendas: editor de fases e documentos e impedimento em lote",
     descricao:
       "Em Configurações › “Fases e documentos por tipo”, o gestor agora cria, renomeia, reordena, ativa e remove as fases e os itens do checklist de cada tipo (direta, OSC e ente), sem depender de SQL; fase já usada em emendas só pode ser desativada. Em Configurações › Exequibilidade, depois de registrar o parecer da secretaria, dá para marcar de uma vez as emendas não exequíveis e registrar o impedimento técnico em todas, com a justificativa do parecer.",

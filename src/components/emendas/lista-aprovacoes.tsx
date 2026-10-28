@@ -22,6 +22,7 @@ const ROTULO_CAMPO: Record<string, string> = {
   gestor_osc: "Gestor na entidade",
   gestor_pmc: "Gestor na Prefeitura",
   observacao: "Observação",
+  processo_id: "Processo do Compras (vínculo)",
 };
 const SITUACAO: Record<string, string> = { pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", nao_se_aplica: "Não se aplica" };
 const ESTADO: Record<string, string> = { conferido: "Conferido", presumido: "Presumido", pendente: "Pendente", nao_se_aplica: "Não se aplica" };
@@ -35,6 +36,7 @@ function rotulo(p: PropostaListada): string {
 
 function mostrar(p: PropostaListada, v: unknown): string {
   if (v === null || v === undefined || v === "") return "—";
+  if (p.campo === "processo_id" && v === p.valor_proposto && p.processo_proposto) return p.processo_proposto;
   if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}$/.test(v) ? dataBr(v) : v;
   const o = v as Record<string, string | null>;
   if (p.alvo === "emenda_fases")

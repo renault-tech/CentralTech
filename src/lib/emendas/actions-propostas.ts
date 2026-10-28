@@ -55,7 +55,40 @@ async function valorAtualDe(emendas: Cliente, p: Linha): Promise<unknown> {
   return null;
 }
 
+// `propostas` aceita INSERT de qualquer editor (RLS), então o conteúdo é tratado como não confiável:
+// só campos conhecidos e valores no formato esperado chegam a ser aplicados pelo gestor.
+const CAMPOS_EXECUCAO = new Set([
+  "numero_termo", "processo_licitatorio", "processo_id", "data_envio_pagamento", "vigencia_inicio", "vigencia_fim",
+  "data_publicacao_extrato", "conta_bancaria", "gestor_osc", "gestor_pmc", "observacao", "numero_contrato",
+]);
+const SITUACOES_FASE = new Set(["pendente", "em_andamento", "concluida", "nao_se_aplica"]);
+const ESTADOS_CHECK = new Set(["conferido", "presumido", "pendente", "nao_se_aplica"]);
+const CHAVE_OK = /^[a-z][a-z0-9_]{1,40}$/;
+const UUID_OK = /^[0-9a-f-]{36}$/i;
+
+function validarProposta(p: Linha): string | null {
+  if (p.alvo === "execucao") {
+    if (!p.campo || !CAMPOS_EXECUCAO.has(p.campo)) return "Campo não permitido.";
+    const v = p.valor_proposto;
+    if (v !== null && typeof v !== "string") return "Valor inválido.";
+    if (p.campo === "processo_id" && v !== null && !UUID_OK.test(v as string)) return "Valor inválido.";
+    if (typeof v === "string" && v.length > 2000) return "Valor longo demais.";
+    return null;
+  }
+  if (p.alvo === "emenda_fases") {
+    const v = p.valor_proposto as { situacao?: string } | null;
+    return p.chave && CHAVE_OK.test(p.chave) && v && SITUACOES_FASE.has(String(v.situacao)) ? null : "Fase inválida.";
+  }
+  if (p.alvo === "emenda_checklist") {
+    const v = p.valor_proposto as { estado?: string } | null;
+    return p.chave && CHAVE_OK.test(p.chave) && v && ESTADOS_CHECK.has(String(v.estado)) ? null : "Item inválido.";
+  }
+  return "Tipo de proposta não suportado.";
+}
+
 async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<string | null> {
+  const invalida = validarProposta(p);
+  if (invalida) return invalida;
   const agora = new Date().toISOString();
   if (p.alvo === "execucao" && p.campo) {
     const { error } = await emendas.from("execucao").upsert({ id: p.emenda_id, [p.campo]: p.valor_proposto, atualizado_em: agora, atualizado_por: usuarioId } as Partial<ExecucaoEmenda> & { id: string });
