@@ -17,7 +17,7 @@ import {
   resolverImpedimento,
   type Resultado,
 } from "@/lib/emendas/actions";
-import { AbaDocumentacao, AbaFases, AbaPendencias } from "@/components/emendas/abas-gestao";
+import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import type { FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
@@ -107,12 +107,14 @@ export function DetalheEmendaCliente({
   pendencias,
   itensChecklist,
   corTipo,
+  atalhos,
   abaInicial,
 }: {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
   itensChecklist: ItemChecklist[];
   corTipo: string;
+  atalhos?: AtalhosCompras;
   abaInicial?: string;
   detalhe: DetalheEmenda;
   podeEditar: boolean;
@@ -228,7 +230,7 @@ export function DetalheEmendaCliente({
         </div>
 
         <div className="p-5">
-          {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} cor={corTipo} executar={executar} />}
+          {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
           {aba === "documentacao" && (
             <AbaDocumentacao emendaId={emenda.id} itens={itensChecklist} registros={detalhe.checklist} podeEditar={podeEditar} executar={executar} />

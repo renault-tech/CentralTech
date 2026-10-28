@@ -136,6 +136,11 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             pendencias={calculo.pendencias}
             itensChecklist={itensDoTipo}
             corTipo={TIPOS_EXECUCAO[tipo].cor}
+            atalhos={
+              processoCompras
+                ? { processo: processoCompras.numero, licitacao: processoCompras.numero_licitacao, contrato: processoCompras.contrato_vinculado }
+                : undefined
+            }
             abaInicial={aba}
           />
         </div>

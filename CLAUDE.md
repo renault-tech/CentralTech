@@ -1675,6 +1675,11 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
   exercício. O gatilho existente passa a emenda para "impedida" e avisa os gestores (um aviso por emenda).
 - Testado: insert do lote em transação desfeita no banco; `tsc`/`eslint`/`next build`. Não testado no navegador.
 
+## Emendas — busca de processos do Compras e dicas nas fases (28/10/2026)
+
+- **Um processo só por compra**: no Compras o processo tem dois números (`numero` AAAA/NNNN, nasce em Compras; `numero_licitacao` NNN/AAAA, dado ao ir para Licitação) — é a MESMA linha. DFD/ETP/TR, pesquisa de preços, contratação e contrato usam o vínculo único da emenda (`execucao.processo_id`); o campo "documento" da fase só guarda o número de referência (processo, licitação ou contrato).
+- `sugerirProcessosCompras` (actions.ts) → `sugerirProcessos` (compras.ts, service role, ≤6 linhas, colunas `id,numero,numero_licitacao,objeto,status`): vazio = palavras do objeto da emenda (`palavrasChave`); só dígitos e `/` = trecho de número; resto = palavras do objeto (AND). Exige acesso à emenda (RLS em `v_emendas`) e limite 120/min por IP. `classificarBusca`/`palavrasChave` em `numero-processo.ts` (testadas).
+- UI: `CampoProcesso` (combobox com teclado), `DicaAjuda` ("?" com hover/foco/toque), `DICAS_FASE` em `abas-gestao.tsx` + atalhos "Do Compras:" no editor da fase (`AtalhosCompras`, vindo do processo vinculado). Escolher a sugestão só preenche o campo; vincular continua exigindo o clique (e, para quem não é gestor, aprovação).
 ## Auditoria de segurança pós-Emendas (29/10/2026)
 
 - **Achado (médio) — Compras lido com chave de serviço**: `vincularProcesso` deixava qualquer editor de emenda ligar

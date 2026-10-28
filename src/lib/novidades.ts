@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-28",
+    titulo: "Emendas: busca de processos do Compras com sugestões",
+    descricao:
+      "No vínculo com o Compras, o campo agora sugere processos pelo objeto da emenda e filtra enquanto você digita (parte do número ou palavras do objeto). Um “?” explica que processo e licitação são o mesmo processo com dois números. Nas fases DFD/ETP/TR, pesquisa de preços, contratação e contrato, o campo de documento traz atalhos com os números do processo vinculado.",
+  },
+  {
     data: "2026-10-29",
     titulo: "Emendas: vínculo com o Compras passa por aprovação e mais proteções",
     descricao:
