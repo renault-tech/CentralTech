@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
-import { listarFasesCatalogo, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
+import { listarFasesCatalogo, listarItensChecklist, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
 import { buscarProcessoPorNumero } from "@/lib/emendas/compras";
 import { etapaAoConcluir, tipoDaEmenda } from "@/lib/emendas/fases";
@@ -195,6 +195,10 @@ export async function salvarItemChecklist(dados: z.input<typeof esquemaItemCheck
   if (a.data.estado === "presumido") return { sucesso: false, erro: "Estado inválido." };
 
   const emendas = await criarClienteEmendas();
+  const { data: emendaAlvo } = await emendas.from("v_emendas").select("tipo_execucao,modalidade").eq("id", a.data.emendaId).maybeSingle();
+  if (!emendaAlvo) return { sucesso: false, erro: "Emenda não encontrada." };
+  const itemValido = (await listarItensChecklist()).some((i) => i.tipo === tipoDaEmenda(emendaAlvo) && i.chave === a.data.itemChave && i.ativo);
+  if (!itemValido) return { sucesso: false, erro: "Item de documentação inválido para este tipo de emenda." };
   const conferido = a.data.estado === "conferido";
   if (!ehGestor(ctx.perfil)) {
     const { data: atual } = await emendas.from("emenda_checklist").select("estado").eq("emenda_id", a.data.emendaId).eq("item_chave", a.data.itemChave).maybeSingle();
@@ -388,15 +392,16 @@ export async function vincularProcesso(emendaId: string, numero: string): Promis
 
   const { data: atual } = await emendas.from("execucao").select("processo_id,processo_licitatorio").eq("id", emendaId).maybeSingle();
   const novoTexto = processo ? (processo.numero_licitacao ?? processo.numero) : null;
-  const temAtual = !!(atual?.processo_id || atual?.processo_licitatorio);
   const mudou = (atual?.processo_id ?? null) !== (processo?.id ?? null) || (atual?.processo_licitatorio ?? null) !== novoTexto;
-  if (!ehGestor(ctx.perfil) && temAtual && mudou) {
+  // Quem não é gestor NUNCA liga direto: o vínculo mostra dados do Compras (lidos com chave de serviço), então
+  // passa pela aprovação — assim ninguém sonda processos alheios só digitando números.
+  if (!ehGestor(ctx.perfil) && mudou) {
     const falha = await proporAlteracoes(emendaId, [
       { alvo: "execucao", chave: null, campo: "processo_id", valorAtual: atual?.processo_id ?? null, valorProposto: processo?.id ?? null },
       { alvo: "execucao", chave: null, campo: "processo_licitatorio", valorAtual: atual?.processo_licitatorio ?? null, valorProposto: novoTexto },
     ]);
     if (falha) return { sucesso: false, erro: falha };
-    return { sucesso: true, aviso: "Troca de processo enviada para aprovação do gestor." };
+    return { sucesso: true, aviso: "Vínculo com o processo enviado para aprovação do gestor." };
   }
   const { error } = await emendas.from("execucao").upsert({
     id: emendaId,

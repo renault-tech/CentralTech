@@ -340,7 +340,13 @@ export async function usoDasEtapas(): Promise<Record<"repasse" | "direta", Recor
   return uso;
 }
 
-export type PropostaListada = Proposta & { emenda_numero: number; emenda_objeto: string; autor_nome: string | null };
+export type PropostaListada = Proposta & {
+  emenda_numero: number;
+  emenda_objeto: string;
+  autor_nome: string | null;
+  /** Só para o gestor: o processo do Compras proposto, por extenso, para conferir se é o certo. */
+  processo_proposto?: string;
+};
 
 /** Propostas visíveis a quem pede (RLS: gestor vê todas; os demais, só as próprias). */
 export async function listarPropostas(status: "pendente" | "decididas"): Promise<PropostaListada[]> {
@@ -360,8 +366,24 @@ export async function listarPropostas(status: "pendente" | "decididas"): Promise
     const { data: us } = await hub.from("usuarios").select("id,nome").in("id", autores);
     for (const u of us ?? []) nomes.set(u.id, u.nome);
   }
+  // O gestor decide se o processo proposto é o correto: mostra número, objeto e situação em vez do uuid.
+  const ctx = await obterContextoEmendas();
+  const processos = new Map<string, string>();
+  if (ctx.situacao === "ok" && (ctx.perfil === "gestor" || ctx.perfil === "admin")) {
+    const { buscarProcessoPorId } = await import("@/lib/emendas/compras");
+    const idsProcesso = Array.from(
+      new Set(propostas.filter((p) => p.campo === "processo_id" && typeof p.valor_proposto === "string" && /^[0-9a-f-]{36}$/i.test(p.valor_proposto)).map((p) => p.valor_proposto as string))
+    );
+    await Promise.all(
+      idsProcesso.map(async (id) => {
+        const pr = await buscarProcessoPorId(id).catch(() => null);
+        if (pr) processos.set(id, `${pr.numero}${pr.numero_licitacao ? ` · ${pr.numero_licitacao}` : ""} — ${pr.objeto}${pr.setor ? ` (setor ${pr.setor})` : ""}`);
+      })
+    );
+  }
   return propostas.map((p) => ({
     ...p,
+    processo_proposto: typeof p.valor_proposto === "string" ? processos.get(p.valor_proposto) : undefined,
     emenda_numero: porId.get(p.emenda_id)?.numero ?? 0,
     emenda_objeto: porId.get(p.emenda_id)?.objeto ?? "",
     autor_nome: p.autor ? (nomes.get(p.autor) ?? null) : null,
