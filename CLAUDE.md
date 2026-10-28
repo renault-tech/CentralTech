@@ -1658,3 +1658,19 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
   Clicar no aviso nos apps dispara o evento `abrir-feedback-meus`, que o `BotaoFeedback` ouve
   para abrir em "Meus envios". Não avisa quem mudou o status nem repete o mesmo status.
 
+
+## Emendas — editor de fases/documentos por tipo e impedimento em lote (29/10/2026)
+
+- **Fases e documentos por tipo** (Configurações › "Fases e documentos por tipo", `/emendas/configuracoes/catalogo`,
+  `components/emendas/config/editor-catalogo-tipo.tsx`): edita `fluxo_fases` e `checklist_itens` sem SQL. Ações em
+  `actions-config.ts` (`salvarFaseCatalogo`, `salvarOrdemFases`, `removerFaseCatalogo`, `salvarItemChecklistCatalogo`,
+  `salvarOrdemChecklist`, `removerItemChecklistCatalogo`), todas só gestor. Regras: fase com `derivacao` (LOA, parecer,
+  empenho, liquidação, pagamento, termo, extrato) só renomeia/desativa e NUNCA remove nem troca a etapa (a LOA não
+  desativa); fase/item já usado em alguma emenda só desativa (remover é bloqueado); nova fase entra antes de
+  "Encerramento"; a chave vem do nome (slug). Reordenar regrava a `ordem` (10, 20, 30…). Não confundir com a aba
+  "Fases do fluxo", que edita as ETAPAS por modalidade (`emendas.etapas`/`fluxo_etapas`).
+- **Impedimento em lote** (Configurações › Exequibilidade, `registrarImpedimentosEmLote`): só gestor, exige o parecer da
+  secretaria já registrado; insere impedimento `tecnico` (data = data do parecer, `parecer_ano`/`parecer_secretaria_id`
+  preenchidos) nas emendas marcadas e PULA as que já têm impedimento aberto; confere que todas são da secretaria e do
+  exercício. O gatilho existente passa a emenda para "impedida" e avisa os gestores (um aviso por emenda).
+- Testado: insert do lote em transação desfeita no banco; `tsc`/`eslint`/`next build`. Não testado no navegador.

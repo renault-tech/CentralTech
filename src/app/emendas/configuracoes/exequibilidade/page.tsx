@@ -11,6 +11,10 @@ export default async function PaginaExequibilidade({ searchParams }: { searchPar
   const [secretarias, pareceres, emendas] = await Promise.all([listarSecretarias(), listarPareceres(exercicio.ano), listarEmendas(exercicio.ano)]);
   const emendasPorSecretaria: Record<string, number> = {};
   for (const e of emendas) emendasPorSecretaria[e.secretaria_id] = (emendasPorSecretaria[e.secretaria_id] ?? 0) + 1;
+  const emendasDaSecretaria: Record<string, { id: string; numero: number; objeto: string; valor: number; impedida: boolean }[]> = {};
+  for (const e of emendas) {
+    (emendasDaSecretaria[e.secretaria_id] ??= []).push({ id: e.id, numero: e.numero, objeto: e.objeto, valor: e.valor, impedida: e.impedimentos_abertos > 0 });
+  }
   return (
     <EditorPareceres
       ano={exercicio.ano}
@@ -19,6 +23,7 @@ export default async function PaginaExequibilidade({ searchParams }: { searchPar
       secretarias={secretarias.filter((s) => s.ativo && emendasPorSecretaria[s.id])}
       pareceres={pareceres}
       emendasPorSecretaria={emendasPorSecretaria}
+      emendasDaSecretaria={emendasDaSecretaria}
     />
   );
 }

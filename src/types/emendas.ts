@@ -171,6 +171,8 @@ export type Impedimento = {
   resolucao: string | null;
   usuario_id: string | null;
   criado_em: string;
+  parecer_ano: number | null;
+  parecer_secretaria_id: string | null;
 };
 
 export type Remanejamento = {

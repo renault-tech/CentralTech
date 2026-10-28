@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Check, Trash2 } from "lucide-react";
 
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
-import { removerParecer, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
-import { dataBr } from "@/lib/emendas/regras";
+import { registrarImpedimentosEmLote, removerParecer, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
+import { brl, dataBr } from "@/lib/emendas/regras";
 import type { Exercicio, ParecerExequibilidade, Secretaria } from "@/types/emendas";
 
 /** Datas do ano, preenchidas uma vez: valem para todas as emendas. */
@@ -72,6 +72,7 @@ export function EditorPareceres({
   secretarias,
   pareceres,
   emendasPorSecretaria,
+  emendasDaSecretaria,
 }: {
   ano: number;
   anos: number[];
@@ -79,6 +80,7 @@ export function EditorPareceres({
   secretarias: Secretaria[];
   pareceres: ParecerExequibilidade[];
   emendasPorSecretaria: Record<string, number>;
+  emendasDaSecretaria: Record<string, EmendaDaSecretaria[]>;
 }) {
   const router = useRouter();
   const porSecretaria = new Map(pareceres.map((p) => [p.secretaria_id, p]));
@@ -104,7 +106,7 @@ export function EditorPareceres({
       )}
       <ul className="divide-y divide-slate-100">
         {secretarias.map((s) => (
-          <LinhaParecer key={s.id} ano={ano} secretaria={s} parecer={porSecretaria.get(s.id)} emendas={emendasPorSecretaria[s.id] ?? 0} vencido={!!prazo && prazo < hoje} />
+          <LinhaParecer key={s.id} ano={ano} secretaria={s} parecer={porSecretaria.get(s.id)} emendas={emendasPorSecretaria[s.id] ?? 0} lista={emendasDaSecretaria[s.id] ?? []} vencido={!!prazo && prazo < hoje} />
         ))}
       </ul>
     </Secao>
@@ -116,12 +118,14 @@ function LinhaParecer({
   secretaria,
   parecer,
   emendas,
+  lista,
   vencido,
 }: {
   ano: number;
   secretaria: Secretaria;
   parecer?: ParecerExequibilidade;
   emendas: number;
+  lista: EmendaDaSecretaria[];
   vencido: boolean;
 }) {
   const [data, setData] = React.useState(parecer?.data ?? "");
@@ -161,6 +165,88 @@ function LinhaParecer({
         )}
       </div>
       <Erro texto={erro} />
+      {parecer && lista.length > 0 && <ImpedimentosEmLote ano={ano} secretariaId={secretaria.id} protocolo={parecer.protocolo} lista={lista} />}
     </li>
+  );
+}
+
+export type EmendaDaSecretaria = { id: string; numero: number; objeto: string; valor: number; impedida: boolean };
+
+/** Marca as emendas que o parecer diz não serem exequíveis e registra o impedimento técnico de uma vez. */
+function ImpedimentosEmLote({ ano, secretariaId, protocolo, lista }: { ano: number; secretariaId: string; protocolo: string | null; lista: EmendaDaSecretaria[] }) {
+  const [aberto, setAberto] = React.useState(false);
+  const [marcadas, setMarcadas] = React.useState<Set<string>>(new Set());
+  const [justificativa, setJustificativa] = React.useState(protocolo ? `Inexequível conforme parecer da secretaria (protocolo ${protocolo}).` : "Inexequível conforme parecer da secretaria.");
+  const [msg, setMsg] = React.useState<string | null>(null);
+  const { erro, salvando, salvar } = useSalvar();
+  const livres = lista.filter((e) => !e.impedida);
+
+  function alternar(id: string) {
+    setMarcadas((m) => {
+      const n = new Set(m);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  return (
+    <div className="mt-2">
+      <button type="button" className="text-xs font-medium text-[#5B3FA8] hover:underline" onClick={() => setAberto(!aberto)} aria-expanded={aberto}>
+        {aberto ? "Fechar" : "Marcar emendas não exequíveis"}
+      </button>
+      {aberto && (
+        <div className="mt-2 flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto text-[13px]">
+            {lista.map((e) => (
+              <li key={e.id} className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-[#6B4FBB]"
+                  checked={marcadas.has(e.id)}
+                  disabled={e.impedida || salvando}
+                  onChange={() => alternar(e.id)}
+                  aria-label={`Emenda ${e.numero} não exequível`}
+                />
+                <span className={e.impedida ? "text-slate-400" : "text-slate-800"}>
+                  <span className="font-mono text-xs">nº {e.numero}</span> · {e.objeto} · {brl(e.valor)}
+                  {e.impedida && " (já impedida)"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            Justificativa do impedimento
+            <textarea className={CAMPO} rows={2} maxLength={2000} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className={BOTAO} disabled={salvando || marcadas.size === 0} onClick={() => setMarcadas(new Set())}>
+              Limpar
+            </button>
+            <button
+              type="button"
+              className={BOTAO}
+              disabled={salvando || marcadas.size === 0}
+              onClick={() => {
+                setMsg(null);
+                void salvar(async () => {
+                  const r = await registrarImpedimentosEmLote({ ano, secretariaId, emendaIds: Array.from(marcadas), justificativa });
+                  if (r.sucesso) {
+                    setMsg(`${r.criados ?? 0} impedimento(s) registrado(s)${r.jaImpedidas ? `; ${r.jaImpedidas} já tinha(m) impedimento` : ""}.`);
+                    setMarcadas(new Set());
+                  }
+                  return r;
+                });
+              }}
+            >
+              Registrar impedimento em {marcadas.size} emenda(s)
+            </button>
+            {livres.length === 0 && <span className="text-xs text-slate-500">Todas as emendas já estão impedidas.</span>}
+          </div>
+          {msg && <p className="text-sm text-green-700" role="status">{msg}</p>}
+          <Erro texto={erro} />
+        </div>
+      )}
+    </div>
   );
 }
