@@ -140,6 +140,27 @@ const tipoExec = z.enum(["direta", "osc", "ente"]);
 const slug = (t: string) =>
   t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
 
+/** Quantas emendas DESTE tipo usam a chave (a mesma chave pode existir em outro tipo sem ligação). */
+async function usosNoTipo(
+  emendas: Awaited<ReturnType<typeof criarClienteEmendas>>,
+  tipo: "direta" | "osc" | "ente",
+  tabela: "emenda_fases" | "emenda_checklist",
+  chave: string
+): Promise<number> {
+  const { data: ids } = await emendas.from("emendas").select("id").eq("tipo_execucao", tipo);
+  const todos = (ids ?? []).map((e) => e.id);
+  let total = 0;
+  for (let i = 0; i < todos.length; i += 100) {
+    const lote = todos.slice(i, i + 100);
+    const { count } =
+      tabela === "emenda_fases"
+        ? await emendas.from("emenda_fases").select("emenda_id", { count: "exact", head: true }).eq("chave", chave).in("emenda_id", lote)
+        : await emendas.from("emenda_checklist").select("emenda_id", { count: "exact", head: true }).eq("item_chave", chave).in("emenda_id", lote);
+    total += count ?? 0;
+  }
+  return total;
+}
+
 const esquemaFaseCatalogo = z.object({
   tipo: tipoExec,
   chave: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/).nullable(),
@@ -208,8 +229,8 @@ export async function removerFaseCatalogo(tipo: string, chave: string): Promise<
   const { data: fase } = await emendas.from("fluxo_fases").select("derivacao").eq("tipo", t.data).eq("chave", chave).maybeSingle();
   if (!fase) return { sucesso: false, erro: "Fase não encontrada." };
   if (fase.derivacao) return { sucesso: false, erro: "Fase ligada a outro dado não pode ser removida; desative-a." };
-  const { count } = await emendas.from("emenda_fases").select("emenda_id", { count: "exact", head: true }).eq("chave", chave);
-  if (count) return { sucesso: false, erro: `Fase já usada em ${count} emenda(s): desative em vez de remover.` };
+  const usos = await usosNoTipo(emendas, t.data, "emenda_fases", chave);
+  if (usos) return { sucesso: false, erro: `Fase já usada em ${usos} emenda(s) deste tipo: desative em vez de remover.` };
   const { error } = await emendas.from("fluxo_fases").delete().eq("tipo", t.data).eq("chave", chave);
   if (error) return { sucesso: false, erro: traduzir(error) };
   revalidar();
@@ -270,8 +291,8 @@ export async function removerItemChecklistCatalogo(tipo: string, chave: string):
   if (!t.success || !/^[a-z][a-z0-9_]{1,40}$/.test(chave)) return { sucesso: false, erro: "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
-  const { count } = await emendas.from("emenda_checklist").select("emenda_id", { count: "exact", head: true }).eq("item_chave", chave);
-  if (count) return { sucesso: false, erro: `Item já marcado em ${count} emenda(s): desative em vez de remover.` };
+  const usos = await usosNoTipo(emendas, t.data, "emenda_checklist", chave);
+  if (usos) return { sucesso: false, erro: `Item já marcado em ${usos} emenda(s) deste tipo: desative em vez de remover.` };
   const { error } = await emendas.from("checklist_itens").delete().eq("tipo", t.data).eq("chave", chave);
   if (error) return { sucesso: false, erro: traduzir(error) };
   revalidar();
@@ -284,7 +305,7 @@ const esquemaLote = z.object({
   ano: z.number().int().min(2020).max(2100),
   secretariaId: z.uuid(),
   emendaIds: z.array(z.uuid()).min(1, "Marque ao menos uma emenda").max(300),
-  justificativa: z.string().trim().min(5, "Explique o motivo (mínimo 5 caracteres)").max(2000),
+  justificativa: z.string().trim().min(10, "Explique o motivo (mínimo 10 caracteres)").max(2000),
 });
 
 /** Registra impedimento técnico nas emendas marcadas, ligado ao parecer da secretaria. Pula as que já têm impedimento aberto. */
