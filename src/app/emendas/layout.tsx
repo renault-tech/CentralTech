@@ -57,6 +57,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/secretarias", rotulo: "Secretarias" },
     ...(gestor ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),
+    { href: "/transparencia/emendas", rotulo: "Portal público", externo: true },
   ];
 
   return (
