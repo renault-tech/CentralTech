@@ -72,9 +72,14 @@ export function relatorioImpedimentos(rs: EmendaResumo[], imps: Impedimento[]): 
   };
 }
 
+/** Neutraliza células que a planilha trataria como fórmula (=, +, -, @, tab, CR); números formatados passam. */
+export function neutralizarFormula(t: string): string {
+  return /^[=+\-@\t\r]/.test(t) && !/^-?\d+(,\d+)?$/.test(t) ? `'${t}` : t;
+}
+
 export function tabelaParaCsv(t: Tabela): string {
   const cel = (v: string | number, i: number) => {
-    const s = typeof v === "number" && t.monetarias.includes(i) ? v.toFixed(2).replace(".", ",") : String(v);
+    const s = typeof v === "number" && t.monetarias.includes(i) ? v.toFixed(2).replace(".", ",") : neutralizarFormula(String(v));
     return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return "﻿" + [t.colunas.join(";"), ...t.linhas.map((l) => l.map(cel).join(";"))].join("\r\n");

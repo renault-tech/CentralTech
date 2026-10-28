@@ -20,3 +20,13 @@ describe("relatorios", () => {
     expect(csv).toContain("1;1,50");
   });
 });
+
+describe("neutralizarFormula", () => {
+  it("prefixa texto que viraria fórmula e deixa números e texto comum", async () => {
+    const { neutralizarFormula } = await import("@/lib/emendas/relatorios");
+    expect(neutralizarFormula("=1+1")).toBe("'=1+1");
+    expect(neutralizarFormula("@cmd")).toBe("'@cmd");
+    expect(neutralizarFormula("-5,00")).toBe("-5,00");
+    expect(neutralizarFormula("Reforma")).toBe("Reforma");
+  });
+});

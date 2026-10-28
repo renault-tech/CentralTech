@@ -25,14 +25,18 @@ export async function ipDoCliente(): Promise<string> {
 export async function excedeuLimite(rota: string, ip: string, limite: number, janelaSeg: number): Promise<boolean> {
   try {
     const db = criarClienteAdminBruto().schema("hub");
-    const janela = Math.floor(Date.now() / 1000 / janelaSeg);
+    // `janela` = início da janela em segundos desde 1970 (comparável entre rotas de durações diferentes).
+    const agora = Math.floor(Date.now() / 1000);
+    const janela = Math.floor(agora / janelaSeg) * janelaSeg;
     const chave = `${rota}|${ip}`.slice(0, 200);
-    const { data } = await db.from("limites_requisicao").select("contagem").eq("chave", chave).eq("janela", janela).maybeSingle();
+    const { data, error } = await db.from("limites_requisicao").select("contagem").eq("chave", chave).eq("janela", janela).maybeSingle();
+    if (error) throw error;
     const contagem = (data?.contagem ?? 0) + 1;
-    await db.from("limites_requisicao").upsert({ chave, janela, contagem });
+    const { error: erroGravacao } = await db.from("limites_requisicao").upsert({ chave, janela, contagem });
+    if (erroGravacao) throw erroGravacao;
     // Limpeza oportunista das janelas antigas (1 em cada 50 chamadas).
     if (Math.random() < 0.02) {
-      await db.from("limites_requisicao").delete().lt("janela", janela - Math.ceil(3600 / janelaSeg));
+      await db.from("limites_requisicao").delete().lt("janela", agora - 3600);
     }
     return contagem > limite;
   } catch (e) {

@@ -121,7 +121,9 @@ export async function GET(request: NextRequest) {
     });
   }
   const ultima = emendas.length + 1;
-  const total = ws.addRow({ vereador: "Total", valor: { formula: `SUM(F2:F${ultima})` }, empenhado: { formula: `SUM(R2:R${ultima})` }, pago: { formula: `SUM(S2:S${ultima})` } });
+  // Letras das colunas vêm das chaves: inserir uma coluna não desalinha mais os totais.
+  const col = (k: string) => ws.getColumn(k).letter;
+  const total = ws.addRow({ vereador: "Total", valor: { formula: `SUM(${col("valor")}2:${col("valor")}${ultima})` }, empenhado: { formula: `SUM(${col("empenhado")}2:${col("empenhado")}${ultima})` }, pago: { formula: `SUM(${col("pago")}2:${col("pago")}${ultima})` } });
   total.font = { bold: true };
 
   const cabecalho = ws.getRow(1);

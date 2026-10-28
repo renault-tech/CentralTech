@@ -123,7 +123,7 @@ export function paraCsv(linhas: LinhaPortal[], nomeEtapa: (chave: string) => str
   const cab = ["Ano","Emenda","Vereador","Objeto","Valor","Saúde","Tipo de execução","Secretaria","Unidade orçamentária","Funcional programática","Natureza da despesa","Beneficiário","CNPJ","Fase","Situação","Empenhado","Liquidado","Pago","Último pagamento","Termo","Vigência início","Vigência fim","Extrato publicado em","Conta (mascarada)","Impedimento"];
   const num = (v: number) => v.toFixed(2).replace(".", ",");
   const cel = (v: string | number | null) => {
-    const t = v === null ? "" : String(v);
+    const t = v === null ? "" : /^[=+\-@\t\r]/.test(String(v)) && !/^-?\d+(,\d+)?$/.test(String(v)) ? `'${v}` : String(v);
     return /[;"\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
   const nomeTipo = { direta: "Execução direta", osc: "Repasse a OSC", ente: "Entes e conveniadas" } as const;

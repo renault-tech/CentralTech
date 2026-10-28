@@ -386,10 +386,14 @@ export async function vincularProcesso(emendaId: string, numero: string): Promis
   const processo = texto ? await buscarProcessoPorNumero(texto) : null;
   if (texto && !processo) return { sucesso: false, erro: "Processo não encontrado no Compras. Use 2026/0062 (processo) ou 136/2026 (licitação)." };
 
-  const { data: atual } = await emendas.from("execucao").select("processo_id").eq("id", emendaId).maybeSingle();
-  if (!ehGestor(ctx.perfil) && atual?.processo_id && atual.processo_id !== (processo?.id ?? null)) {
+  const { data: atual } = await emendas.from("execucao").select("processo_id,processo_licitatorio").eq("id", emendaId).maybeSingle();
+  const novoTexto = processo ? (processo.numero_licitacao ?? processo.numero) : null;
+  const temAtual = !!(atual?.processo_id || atual?.processo_licitatorio);
+  const mudou = (atual?.processo_id ?? null) !== (processo?.id ?? null) || (atual?.processo_licitatorio ?? null) !== novoTexto;
+  if (!ehGestor(ctx.perfil) && temAtual && mudou) {
     const falha = await proporAlteracoes(emendaId, [
-      { alvo: "execucao", chave: null, campo: "processo_id", valorAtual: atual.processo_id, valorProposto: processo?.id ?? null },
+      { alvo: "execucao", chave: null, campo: "processo_id", valorAtual: atual?.processo_id ?? null, valorProposto: processo?.id ?? null },
+      { alvo: "execucao", chave: null, campo: "processo_licitatorio", valorAtual: atual?.processo_licitatorio ?? null, valorProposto: novoTexto },
     ]);
     if (falha) return { sucesso: false, erro: falha };
     return { sucesso: true, aviso: "Troca de processo enviada para aprovação do gestor." };
