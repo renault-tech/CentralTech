@@ -50,7 +50,7 @@ export function FaixaTipos({
               key={tipo}
               href={`/emendas/lista?t=${tipo}&ano=${exercicio.ano}`}
               className="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50"
-              style={{ borderLeft: `4px solid ${t.cor}` }}
+              style={{ borderLeft: `8px solid ${t.cor}`, backgroundColor: `${t.cor}0D` }}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-sm font-semibold text-cataguases-marinho">{t.nome}</h3>

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-28",
+    titulo: "Cards da Central do mesmo tamanho e cores mais visíveis nas Emendas",
+    descricao:
+      "Os cards de módulos na tela inicial agora têm sempre a mesma altura, com o botão alinhado embaixo. Nas Emendas, cada linha da lista ganhou uma faixa de cor mais larga e um leve fundo na cor do tipo (direta, OSC ou ente), e o selo do tipo virou uma etiqueta colorida; o mesmo vale no painel e no portal público.",
+  },
+  {
+    data: "2026-10-28",
     titulo: "Emendas: atalho para o portal público",
     descricao:
       "Ao lado de Configurações, o menu do módulo Emendas ganhou o botão “Portal público”, que abre em outra aba a página de transparência que o cidadão vê, sem senha.",
