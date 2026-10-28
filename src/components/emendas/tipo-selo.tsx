@@ -30,7 +30,7 @@ export function SeloPendencias({ quantidade, gravidade }: { quantidade: number; 
       title={`${quantidade} pendência${quantidade === 1 ? "" : "s"} · maior gravidade: ${NOME_GRAVIDADE[gravidade]}`}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: COR_GRAVIDADE[gravidade] }} aria-hidden />
-      {quantidade}
+      {quantidade} pendência{quantidade === 1 ? "" : "s"}
     </span>
   );
 }

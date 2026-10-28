@@ -298,7 +298,7 @@ export function TabelaEmendas({
                     {r.saude && <Chip tom="saude">Saúde</Chip>}
                     <TipoSelo tipo={tipoDaEmenda(r)} />
                     {r.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
-                    <Link href={`/emendas/${r.id}?aba=pendencias`} aria-label="Ver pendências">
+                    <Link href={`/emendas/${r.id}?aba=pendencias`} aria-label={`Ver ${resumos[r.id]?.abertas ?? 0} pendência(s) desta emenda`}>
                       <SeloPendencias quantidade={resumos[r.id]?.abertas ?? 0} gravidade={resumos[r.id]?.gravidade ?? null} />
                     </Link>
                   </div>
