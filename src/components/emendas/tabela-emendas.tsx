@@ -141,6 +141,13 @@ export function TabelaEmendas({
           <Download className="h-4 w-4" aria-hidden />
           Exportar Excel
         </a>
+        <a
+          href={`/emendas/exportar?${exportar}&formato=pdf`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho hover:bg-slate-50"
+        >
+          <Download className="h-4 w-4" aria-hidden />
+          Exportar PDF
+        </a>
       </div>
 
       <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-200">
