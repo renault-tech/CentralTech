@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-28",
+    titulo: "Emendas: atalho para o portal público",
+    descricao:
+      "Ao lado de Configurações, o menu do módulo Emendas ganhou o botão “Portal público”, que abre em outra aba a página de transparência que o cidadão vê, sem senha.",
+  },
+  {
+    data: "2026-10-28",
     titulo: "Emendas: portal público de transparência e relatórios",
     descricao:
       "Qualquer pessoa, sem senha, pode consultar as emendas impositivas em /transparencia/emendas: quem indicou, objeto, valor, beneficiário, fase, empenhado e pago, com busca e filtros por vereador, tipo e secretaria, e dados abertos em CSV e JSON. A conta bancária aparece mascarada e não há dado pessoal. Dentro do módulo, a nova tela Relatórios traz execução por vereador e por secretaria, recursos por beneficiário, parcerias com prestação de contas e impedimentos em aberto, para imprimir ou baixar em CSV (apoio à IN TCE-MG 05/2025).",
