@@ -1674,3 +1674,21 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
   preenchidos) nas emendas marcadas e PULA as que já têm impedimento aberto; confere que todas são da secretaria e do
   exercício. O gatilho existente passa a emenda para "impedida" e avisa os gestores (um aviso por emenda).
 - Testado: insert do lote em transação desfeita no banco; `tsc`/`eslint`/`next build`. Não testado no navegador.
+
+## Auditoria de segurança pós-Emendas (29/10/2026)
+
+- **Achado (médio) — Compras lido com chave de serviço**: `vincularProcesso` deixava qualquer editor de emenda ligar
+  (e então ver os dados de) QUALQUER processo do Compras digitando o número, ultrapassando a RLS de lá. Agora só
+  gestor/admin liga direto; os demais geram proposta (`processo_id` + `processo_licitatorio`) e os dados só aparecem depois
+  da aprovação. Sobra um "oráculo de existência" (a busca do número informa se o processo existe) — aceito: números são
+  sequenciais e nada do conteúdo vaza.
+- **Achado (médio) — `propostas` aceita INSERT de qualquer editor** (RLS `insere_propostas`): `decidirPropostas`
+  passou a validar cada proposta antes de aplicar (`validarProposta`: campos de `execucao` em lista fechada, `processo_id`
+  como uuid, situações/estados nos enums, chaves no formato) — uma proposta forjada não grava campo arbitrário.
+- **Achado (baixo)**: `salvarItemChecklist` aceitava qualquer `item_chave`; agora exige item ativo do catálogo do tipo da emenda.
+- **Dependências**: `zod` 4.6.5 → 4.6.7 (alta: esgotamento de memória em coleções grandes). Sobram 2 moderadas no `uuid`
+  dentro do `exceljs` (sem uso explorável; a correção força downgrade do exceljs).
+- **Conferido sem achado**: todas as tabelas de `emendas`/`hub` têm RLS; `anon` só alcança `apps_feedback`,
+  `config_modulo` e `solicitacoes_acesso` (as 3 esperadas); tabelas de backup sem acesso de `anon`/`authenticated`;
+  políticas do bucket `emendas-documentos` por permissão da emenda; portal público com colunas fechadas e sem
+  `dangerouslySetInnerHTML`/`eval` no código; CSV com neutralização de fórmulas.
