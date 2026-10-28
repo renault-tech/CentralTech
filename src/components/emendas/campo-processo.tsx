@@ -84,7 +84,7 @@ export function CampoProcesso({
         className="h-9 w-full rounded-lg border border-slate-300 px-2.5 text-sm outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]"
       />
       {aberto && (
-        <ul id={rotuloId} role="listbox" className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+        <ul id={rotuloId} role="listbox" className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[30rem] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
           <li className="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-400" aria-hidden>
             {valor.trim() ? "Resultados" : "Sugeridos pelo objeto da emenda"}
           </li>
@@ -95,14 +95,14 @@ export function CampoProcesso({
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => escolher(s)}
-                className={`block w-full px-3 py-1.5 text-left hover:bg-slate-50 ${i === ativo ? "bg-slate-100" : ""}`}
+                className={`flex w-full flex-col px-3 py-2 text-left hover:bg-slate-50 ${i === ativo ? "bg-slate-100" : ""}`}
               >
                 <span className="text-[13px] font-medium text-cataguases-marinho">
                   {s.numero}
                   {s.numero_licitacao ? ` · licitação ${s.numero_licitacao}` : ""}
                 </span>
                 <span className="ml-2 text-[11px] text-slate-500">{NOME_STATUS[s.status] ?? s.status}</span>
-                <span className="block truncate text-xs text-slate-600">{s.objeto}</span>
+                <span className="mt-0.5 line-clamp-3 text-xs leading-snug text-slate-600">{s.objeto}</span>
               </button>
             </li>
           ))}

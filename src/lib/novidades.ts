@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-28",
+    titulo: "Emendas: os três números do processo ficam separados e explicados",
+    descricao:
+      "O quadro “Processo no Compras” agora mostra, em linhas separadas, o número do processo (Compras), da licitação e do contrato (setor de Contratos), cada um com a fase da emenda em que vale. A busca também acha pelo número do contrato, e a lista de sugestões ficou mais larga, com o objeto em até 3 linhas.",
+  },
+  {
+    data: "2026-10-28",
     titulo: "Emendas: busca de processos do Compras com sugestões",
     descricao:
       "No vínculo com o Compras, o campo agora sugere processos pelo objeto da emenda e filtra enquanto você digita (parte do número ou palavras do objeto). Um “?” explica que processo e licitação são o mesmo processo com dois números. Nas fases DFD/ETP/TR, pesquisa de preços, contratação e contrato, o campo de documento traz atalhos com os números do processo vinculado.",
