@@ -8,7 +8,7 @@ import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
-import { brl } from "@/lib/emendas/regras";
+import { brl, dataBr } from "@/lib/emendas/regras";
 import type { TipoExecucao } from "@/types/emendas";
 
 export type LinhaPendencia = {
@@ -24,6 +24,9 @@ export type LinhaPendencia = {
   titulo: string;
   detalhe: string;
   base?: string;
+  /** Pendência já justificada (fica fora da contagem, a menos que o filtro peça). */
+  justificativa?: string;
+  justificadaEm?: string;
 };
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
@@ -35,15 +38,16 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
   const params = useSearchParams();
   const pathname = usePathname();
   const [limite, setLimite] = React.useState(POR_PAGINA);
-  const f = { t: params.get("t") ?? "", g: params.get("g") ?? "", s: params.get("s") ?? "", r: params.get("r") ?? "" };
+  const f = { t: params.get("t") ?? "", g: params.get("g") ?? "", s: params.get("s") ?? "", r: params.get("r") ?? "", j: params.get("j") ?? "" };
   const definir = (m: Record<string, string>) => {
     setLimite(POR_PAGINA);
     atualizarFiltrosNaUrl(params, m, pathname, () => {});
   };
 
   const regras = Array.from(new Map(linhas.map((l) => [l.regra.split(":")[0], l.titulo])).entries());
+  const totalJustificadas = linhas.filter((l) => l.justificativa).length;
   const filtradas = linhas.filter(
-    (l) => (!f.t || l.tipo === f.t) && (!f.g || l.gravidade === f.g) && (!f.s || l.secretariaId === f.s) && (!f.r || l.regra.split(":")[0] === f.r)
+    (l) => (f.j === "1" || !l.justificativa) && (!f.t || l.tipo === f.t) && (!f.g || l.gravidade === f.g) && (!f.s || l.secretariaId === f.s) && (!f.r || l.regra.split(":")[0] === f.r)
   );
   const porGravidade = (g: Gravidade) => filtradas.filter((l) => l.gravidade === g).length;
 
@@ -94,6 +98,12 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
             ))}
           </select>
         </label>
+        {totalJustificadas > 0 && (
+          <label className="flex h-[38px] items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="h-4 w-4 accent-[#6B4FBB]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
+            Mostrar justificadas ({totalJustificadas})
+          </label>
+        )}
         <p className="ml-auto text-sm text-slate-600">
           <strong className="tabular-nums text-cataguases-marinho">{filtradas.length}</strong> pendências ·{" "}
           <span style={{ color: COR.alta }}>{porGravidade("alta")} altas</span> · <span style={{ color: COR.media }}>{porGravidade("media")} médias</span> ·{" "}
@@ -117,12 +127,18 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
                 <span className="ml-auto text-xs tabular-nums text-slate-600">{brl(l.valor)}</span>
               </div>
               <p className="mt-0.5 text-[13px] text-slate-700">{l.detalhe}</p>
+              {l.justificativa && (
+                <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">
+                  <strong>Justificada{l.justificadaEm ? ` em ${dataBr(l.justificadaEm.slice(0, 10))}` : ""}:</strong> {l.justificativa}
+                </p>
+              )}
               {l.base && <p className="text-xs text-slate-500">Base legal: {l.base}</p>}
               <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                 <span className="font-mono">nº {l.numero}</span>
                 <TipoSelo tipo={l.tipo} />
                 <span>{l.secretaria}</span>
                 <span className="truncate">{l.objeto}</span>
+                <span className="ml-auto font-medium text-[#5B3FA8]">Abrir emenda {l.numero} →</span>
               </p>
             </Link>
           </li>

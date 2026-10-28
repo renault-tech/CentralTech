@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { ListaPendencias, type LinhaPendencia } from "@/components/emendas/lista-pendencias";
 import { Vazio } from "@/components/emendas/ui";
+import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { listarEmendas, resolverExercicio } from "@/lib/emendas/dados";
@@ -11,15 +12,14 @@ export const dynamic = "force-dynamic";
 
 export default async function PaginaPendencias({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
   const { ano } = await searchParams;
-  const { exercicio } = await resolverExercicio(ano);
+  const { exercicio } = await medir("pendencias:exercicio", () => resolverExercicio(ano));
   if (!exercicio) return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
-  const emendas = await listarEmendas(exercicio.ano);
-  const calculos = await calcularEmendasDoExercicio(emendas, exercicio);
+  const emendas = await medir("pendencias:emendas", () => listarEmendas(exercicio.ano));
+  const calculos = await medir("pendencias:calculos", () => calcularEmendasDoExercicio(emendas, exercicio));
 
   const linhas: LinhaPendencia[] = [];
   for (const e of emendas) {
     for (const p of calculos.get(e.id)?.pendencias ?? []) {
-      if (p.justificativa) continue;
       linhas.push({
         emendaId: e.id,
         numero: e.numero,
@@ -33,6 +33,8 @@ export default async function PaginaPendencias({ searchParams }: { searchParams:
         titulo: p.titulo,
         detalhe: p.detalhe,
         base: p.base,
+        justificativa: p.justificativa,
+        justificadaEm: p.justificadaEm,
       });
     }
   }

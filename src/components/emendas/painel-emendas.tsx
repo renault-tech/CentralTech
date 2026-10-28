@@ -83,7 +83,7 @@ export function PainelEmendas({
 
   // Todos os cruzamentos são recalculados só quando os dados ou o recorte mudam
   // (antes refaziam tudo a cada render, inclusive ao abrir um select).
-  const { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, mesHoje, listaAlertas } = React.useMemo(() => {
+  const { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, qtdSemData, mesHoje, listaAlertas } = React.useMemo(() => {
     const passa = (r: EmendaResumo, ignorar?: keyof Filtros) =>
       (ignorar === "v" || !f.v || r.vereador_id === f.v) &&
       (ignorar === "s" || !f.s || r.secretaria_id === f.s) &&
@@ -109,7 +109,7 @@ export function PainelEmendas({
     // ----- curva (pagamentos das emendas filtradas)
     const ids = new Set(filtradas.map((r) => r.id));
     const pagamentos = movimentos.filter((m) => m.tipo === "pagamento" && ids.has(m.emenda_id));
-    const { acumulado, semData } = curvaPagamentos(pagamentos, exercicio.ano);
+    const { acumulado, semData, qtdSemData } = curvaPagamentos(pagamentos, exercicio.ano);
     const dataHoje = new Date(`${hoje}T12:00:00`);
     const mesHoje = dataHoje.getFullYear() === exercicio.ano ? dataHoje.getMonth() + dataHoje.getDate() / 31 : dataHoje.getFullYear() > exercicio.ano ? 12 : 0;
 
@@ -120,7 +120,7 @@ export function PainelEmendas({
       diasParado: 30,
       catalogo,
     });
-    return { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, mesHoje, listaAlertas };
+    return { filtradas, ind, linhasV, maxV, funil, totalFunil, linhasS, maxS, acumulado, semData, qtdSemData, mesHoje, listaAlertas };
   }, [emendas, movimentos, vereadores, exercicio.ano, hoje, catalogo, f]);
 
   const resumo = [
@@ -361,8 +361,14 @@ export function PainelEmendas({
           <p className="mt-1.5 text-xs text-slate-500">
             Pago até hoje: {brl(acumulado[Math.max(0, Math.min(11, Math.floor(mesHoje)))] ?? 0)}
             {mesHoje > 0 && mesHoje < 12 && <> · no ritmo linear, o esperado para hoje seria {brl((ind.total * mesHoje) / 12)}</>}
-            .{semData > 0 && <> {brlCurto(semData)} pagos sem data ficam fora da curva.</>}
+            .
           </p>
+          {semData > 0 && (
+            <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900" role="note">
+              <strong>{brl(semData)}</strong> em {qtdSemData} pagamento{qtdSemData === 1 ? "" : "s"} sem data não entram na curva — por isso ela fica abaixo do total pago ({brl(ind.pago)}).
+              Informe a data do pagamento na aba Financeiro da emenda (veja o alerta “pagas sem data” abaixo).
+            </p>
+          )}
         </Cartao>
 
         <Cartao

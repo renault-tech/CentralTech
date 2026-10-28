@@ -284,3 +284,12 @@ describe("situacaoVigencia", () => {
     expect(situacaoVigencia("2027-03-20", "2026-10-21")).toEqual({ texto: "Em vigência até 20/03/2027", alerta: false });
   });
 });
+
+describe("curvaPagamentos: pagamentos sem data", () => {
+  it("conta a quantidade e o valor que ficam fora da curva", () => {
+    const r = curvaPagamentos([{ data: "2026-02-10", valor: 100 }, { data: null, valor: 50 }, { data: null, valor: 25 }], 2026);
+    expect(r.semData).toBe(75);
+    expect(r.qtdSemData).toBe(2);
+    expect(r.acumulado[11]).toBe(100);
+  });
+});

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { FaixaTipos } from "@/components/emendas/faixa-tipos";
 import { PainelEmendas } from "@/components/emendas/painel-emendas";
+import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
 import { resumoDaLinha, type ResumoLinha } from "@/lib/emendas/resumo";
 import { Vazio } from "@/components/emendas/ui";
@@ -24,7 +25,7 @@ export default async function PaginaPainelEmendas({
   searchParams: Promise<{ ano?: string }>;
 }) {
   const { ano } = await searchParams;
-  const { exercicio, exercicios } = await resolverExercicio(ano);
+  const { exercicio, exercicios } = await medir("painel:exercicio", () => resolverExercicio(ano));
 
   if (!exercicio) {
     return (
@@ -41,17 +42,11 @@ export default async function PaginaPainelEmendas({
     );
   }
 
-  const [emendas, vereadores, secretarias] = await Promise.all([
-    listarEmendas(exercicio.ano),
-    listarVereadores(),
-    listarSecretarias(),
-  ]);
-  const movimentos = await listarMovimentos(emendas.map((e) => e.id));
-  const calculos = await calcularEmendasDoExercicio(
-    emendas,
-    exercicio,
-    movimentos,
+  const [emendas, vereadores, secretarias] = await medir("painel:emendas+cadastros", () =>
+    Promise.all([listarEmendas(exercicio.ano), listarVereadores(), listarSecretarias()])
   );
+  const movimentos = await medir("painel:movimentos", () => listarMovimentos(emendas.map((e) => e.id)));
+  const calculos = await medir("painel:calculos", () => calcularEmendasDoExercicio(emendas, exercicio, movimentos));
   const resumos: Record<string, ResumoLinha> = {};
   for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);
   const hoje = dataNoFuso(new Date());

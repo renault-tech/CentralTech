@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { NavModulo } from "@/components/emendas/nav-modulo";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
+import { medir } from "@/lib/emendas/tempo";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
 
@@ -19,8 +20,8 @@ export const metadata = { title: "Emendas Impositivas · Central Cataguases" };
  */
 export default async function LayoutEmendas({ children }: { children: React.ReactNode }) {
   // O catálogo de fases não depende do contexto: as duas buscas andam juntas.
-  const promessaCatalogo = obterCatalogoEtapas();
-  const ctx = await obterContextoEmendas();
+  const promessaCatalogo = medir("layout:catalogo", () => obterCatalogoEtapas());
+  const ctx = await medir("layout:contexto", () => obterContextoEmendas());
   if (ctx.situacao === "sem_login") redirect("/login?proximo=%2Femendas");
   if (ctx.situacao === "inativo") redirect("/login?motivo=desativado");
   if (ctx.situacao === "sem_acesso") redirect("/solicitar-acesso?modulo=emendas");

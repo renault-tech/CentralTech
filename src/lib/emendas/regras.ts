@@ -347,12 +347,14 @@ export function porEtapa(
 export function curvaPagamentos(
   pagamentos: { data: string | null; valor: number }[],
   ano: number
-): { acumulado: number[]; semData: number } {
+): { acumulado: number[]; semData: number; qtdSemData: number } {
   const porMes = new Array(13).fill(0) as number[];
   let semData = 0;
+  let qtdSemData = 0;
   for (const p of pagamentos) {
     if (!p.data) {
       semData += p.valor;
+      qtdSemData++;
       continue;
     }
     const [a, m] = p.data.split("-").map(Number);
@@ -365,7 +367,7 @@ export function curvaPagamentos(
     ac += porMes[m];
     acumulado.push(ac);
   }
-  return { acumulado, semData };
+  return { acumulado, semData, qtdSemData };
 }
 
 /** Parcela na Saúde de um vereador, sobre a COTA (regra constitucional:

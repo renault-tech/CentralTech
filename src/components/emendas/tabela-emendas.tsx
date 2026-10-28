@@ -286,8 +286,8 @@ export function TabelaEmendas({
                 <td className="py-3 pl-3 pr-3.5 font-mono text-slate-500" style={{ borderLeft: `8px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
                   {r.numero}
                 </td>
-                <td className="whitespace-nowrap px-3.5 py-3">
-                  {numeroVereador(r.vereador_numero)} · {r.vereador_nome.split(" ")[0]} {r.vereador_nome.split(" ").slice(-1)[0]}
+                <td className="px-3.5 py-3">
+                  {numeroVereador(r.vereador_numero)} · {r.vereador_nome}
                 </td>
                 <td className="max-w-[420px] px-3.5 py-3">
                   <Link href={`/emendas/${r.id}`} className="font-medium text-cataguases-marinho hover:text-[#4C3494] hover:underline">

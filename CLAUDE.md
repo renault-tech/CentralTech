@@ -1703,3 +1703,8 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
 ## Base legal nas telas (29/10/2026)
 
 `src/lib/emendas/base-legal.ts` guarda as citações em um lugar só (`BASES`, `BASE_DA_PENDENCIA`); `BaseLegalLinha`/`BaseLegalDica` (`components/emendas/base-legal.tsx`) as mostram; `Pendencia.base` vem de `baseDaPendencia(regra)`. Fases e checklist mostram `referencia`/`referencia_legal` do catálogo com o prefixo "Base legal:". **Vereadores: a CF art. 166 vale por simetria; percentual e prazos reais estão na Lei Orgânica do Município — as citações foram redigidas de memória e precisam de revisão do jurídico/controle interno antes de serem tratadas como definitivas.** Novas regras de pendência: acrescentar a chave em `BASE_DA_PENDENCIA`.
+
+## Ajustes pós-teste de uso (29/10/2026)
+
+- **Lentidão**: medido no banco como gestor (EXPLAIN ANALYZE com `request.jwt.claims`): `v_emendas` 2026 ≈ 350 ms, movimentos ≈ 110 ms, execução ≈ 70 ms — somado < 1 s, então os 10-30 s relatados NÃO estão no banco. `vercel.json` já fixa `gru1` (mesma região do Supabase, sa-east-1). Para achar a etapa lenta: `lib/emendas/tempo.ts` (`medir`) registra `[tempo] rótulo Nms` nos logs da Vercel quando uma etapa passa de 300 ms (layout, painel, lista, pendências, cálculos); a retenção de logs na Hobby é de 1 h — abrir a tela e ler logo em seguida. Se aparecer etapa >1 s, aí sim vale cache/paginação.
+- Pendências: cartão com "Abrir emenda nº", "Mostrar justificadas" (`?j=1`, com data), regra `objeto_generico` (baixa). Objeto da emenda exige ≥ 15 caracteres. Curva de pagamentos explica os pagamentos sem data. Nome do vereador completo em lista e filtros. Esqueleto de carregamento em lista e pendências.
