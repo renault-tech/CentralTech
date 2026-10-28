@@ -111,8 +111,8 @@ export function BotaoFeedback({ appInicial = "hub" }: { appInicial?: AppFeedback
         <Megaphone className="h-5 w-5" aria-hidden strokeWidth={1.8} />
       </button>
 
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent flutuante className="max-w-md">
+        <DialogHeader data-arrastar className="cursor-move select-none" title="Arraste para mover">
           <DialogTitle>Enviar feedback</DialogTitle>
         </DialogHeader>
 

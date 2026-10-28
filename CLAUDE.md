@@ -1634,3 +1634,27 @@ tabela `hub.limites_requisicao`, só service_role; janela fixa, contagem aproxim
 Aplicado em `entrar` (30/min), `solicitarRecuperacao` (5/5 min), `solicitarAcesso` (10/5 min),
 `/api/numera/recuperar-senha` (5/5 min, responde a mesma mensagem genérica) e `/api/numera/resolver-login` (30/min, responde `email: null`).
 O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; regras do Firewall da Vercel continuam bem-vindas se um dia funcionarem.
+
+- **Exportação de feedback para o Claude (23/10/2026)**: em `/feedback` (gestão), o botão
+  "Exportar (.zip)" baixa `feedback-AAAA-MM-DD.zip` com os pedidos que estão nos filtros da tela
+  (`GET /api/feedback/exportar?app&tipo&status`, só quem `pode_gerir_feedback`). Conteúdo:
+  `feedback.md` (índice + uma seção por pedido: app, tipo, status, autor, tela, mensagem, imagens
+  referenciadas) e `anexos/NNN-app-i.ext`. Ordem do mais antigo ao mais novo. Para aplicar os
+  pedidos: anexar o .zip numa conversa com o Claude. Lógica pura em `src/lib/feedback/exportar.ts`
+  (testada); ZIP sem recompressão via `fflate`.
+  **PDF único (23/10/2026)**: `?formato=pdf` (botão "Exportar PDF", o principal) gera
+  `feedback-AAAA-MM-DD.pdf` com cada pedido seguido dos próprios screenshots
+  (`src/lib/feedback/exportar-pdf.ts`, jsPDF; PNG/JPEG embutidos, webp/gif ficam listados como
+  não embutidos). Preferido ao .md com base64, que a IA leria como texto e não como imagem.
+
+- **Aviso de mudança de status do feedback (23/10/2026)**: quem manda feedback é
+  avisado quando a gestão muda o status (em análise / resolvido / não possível).
+  Gatilho `trg_feedback_notifica_status` em `hub.feedback` → `hub.notificar_feedback_status()`
+  (migration `20261023020000` do Hub; função e gatilho aplicados em produção em
+  duas etapas por causa do tempo limite do MCP em DDL de `hub.feedback`). Compras grava em
+  `public.notificacoes` (sino do Compras e da Central leem dali); Requerimentos/Emendas/Central
+  usam `hub.notificar`; **Numera** (outro projeto) consulta "Meus envios" ao abrir e ao voltar
+  para a aba e avisa por toast (`avisarMudancasFeedback`, último status visto em localStorage).
+  Clicar no aviso nos apps dispara o evento `abrir-feedback-meus`, que o `BotaoFeedback` ouve
+  para abrir em "Meus envios". Não avisa quem mudou o status nem repete o mesmo status.
+

@@ -58,13 +58,45 @@ DialogTrigger.displayName = "DialogTrigger"
 const SELETOR_FOCAVEL =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-const DialogContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, forwardedRef) => {
+type DialogContentProps = React.HTMLAttributes<HTMLDivElement> & {
+  /**
+   * Janela flutuante: sem fundo escurecido, a página atrás continua
+   * visível e utilizável, e a caixa pode ser arrastada pelo elemento com
+   * `data-arrastar` (normalmente o título) — para quem precisa consultar a
+   * tela enquanto escreve (ex.: feedback). Não prende o foco.
+   */
+  flutuante?: boolean
+}
+
+const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
+  ({ className, children, flutuante = false, ...props }, forwardedRef) => {
   const { open, setOpen, titleId } = useDialogContext()
   const internalRef = React.useRef<HTMLDivElement>(null)
   React.useImperativeHandle(forwardedRef, () => internalRef.current as HTMLDivElement)
+  const [posicao, setPosicao] = React.useState<{ x: number; y: number } | null>(null)
+
+  function iniciarArraste(evento: React.PointerEvent<HTMLDivElement>) {
+    if (!flutuante) return
+    const alvo = evento.target as HTMLElement
+    if (!alvo.closest("[data-arrastar]") || alvo.closest("button, input, textarea, select, a")) return
+    const caixa = internalRef.current
+    if (!caixa) return
+    const ret = caixa.getBoundingClientRect()
+    const dx = evento.clientX - ret.left
+    const dy = evento.clientY - ret.top
+    evento.preventDefault()
+    function mover(e: PointerEvent) {
+      const x = Math.min(Math.max(0, e.clientX - dx), window.innerWidth - 80)
+      const y = Math.min(Math.max(0, e.clientY - dy), window.innerHeight - 48)
+      setPosicao({ x, y })
+    }
+    function soltar() {
+      window.removeEventListener("pointermove", mover)
+      window.removeEventListener("pointerup", soltar)
+    }
+    window.addEventListener("pointermove", mover)
+    window.addEventListener("pointerup", soltar)
+  }
 
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -81,7 +113,7 @@ const DialogContent = React.forwardRef<
   // e faz um focus trap simples (Tab/Shift+Tab não escapam para trás do
   // overlay) enquanto estiver aberto.
   React.useEffect(() => {
-    if (!open) return
+    if (!open || flutuante) return
     const container = internalRef.current
     if (!container) return
     const primeiroFocavel = container.querySelector<HTMLElement>(SELETOR_FOCAVEL)
@@ -103,7 +135,7 @@ const DialogContent = React.forwardRef<
     }
     document.addEventListener("keydown", aoTeclar)
     return () => document.removeEventListener("keydown", aoTeclar)
-  }, [open])
+  }, [open, flutuante])
 
   if (!open) return null
 
@@ -119,18 +151,31 @@ const DialogContent = React.forwardRef<
 
   return createPortal(
     <>
-      <div
-        className="fixed inset-0 z-40 bg-black/80"
-        onClick={() => setOpen(false)}
-      />
+      {!flutuante && (
+        <div
+          className="fixed inset-0 z-40 bg-black/80"
+          onClick={() => setOpen(false)}
+        />
+      )}
       <div
         ref={internalRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal={flutuante ? undefined : "true"}
         aria-labelledby={titleId}
         tabIndex={-1}
+        onPointerDown={iniciarArraste}
+        style={
+          flutuante
+            ? posicao
+              ? { left: posicao.x, top: posicao.y }
+              : { right: 24, top: 80 }
+            : undefined
+        }
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-lg outline-none",
+          "fixed z-50 max-h-[85vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-lg outline-none",
+          flutuante
+            ? "sm:shadow-2xl"
+            : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
           className
         )}
         {...props}
