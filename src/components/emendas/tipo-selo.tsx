@@ -7,7 +7,11 @@ import type { TipoExecucao } from "@/types/emendas";
 export function TipoSelo({ tipo }: { tipo: TipoExecucao }) {
   const t = TIPOS_EXECUCAO[tipo];
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-slate-600" title={t.nome}>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold"
+      style={{ backgroundColor: `${t.cor}1F`, color: t.cor }}
+      title={t.nome}
+    >
       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />
       {t.curto}
     </span>

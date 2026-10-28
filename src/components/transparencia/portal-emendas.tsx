@@ -101,7 +101,7 @@ export function PortalEmendas({ linhas, etapas, ano, anos }: { linhas: LinhaPort
 
         <ul className="flex flex-col gap-2">
           {filtradas.slice(0, limite).map((l) => (
-            <li key={l.numero} className="rounded-xl border border-slate-200 bg-white" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[l.tipo].cor}` }}>
+            <li key={l.numero} className="rounded-xl border border-slate-200 bg-white" style={{ borderLeft: `8px solid ${TIPOS_EXECUCAO[l.tipo].cor}`, backgroundColor: `${TIPOS_EXECUCAO[l.tipo].cor}0D` }}>
               <details className="group">
                 <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 gap-y-1 p-3.5">
                   <span className="font-mono text-xs text-slate-500">nº {l.numero}</span>

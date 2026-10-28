@@ -282,8 +282,8 @@ export function TabelaEmendas({
           </thead>
           <tbody>
             {ordenadas.slice(0, limite).map((r) => (
-              <tr key={r.id} className="border-t border-slate-100 align-top hover:bg-violet-50/40">
-                <td className="py-3 pl-3 pr-3.5 font-mono text-slate-500" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
+              <tr key={r.id} className="border-t border-slate-100 align-top hover:brightness-95" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}12` }}>
+                <td className="py-3 pl-3 pr-3.5 font-mono text-slate-500" style={{ borderLeft: `8px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
                   {r.numero}
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3">
