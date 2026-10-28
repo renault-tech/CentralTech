@@ -140,7 +140,7 @@ export function FormularioEmenda({
           </Campo>
         </div>
         <Campo rotulo="Objeto (resumo que aparece nas listas)">
-          <input required maxLength={300} className={CAMPO} value={objeto} onChange={(e) => setObjeto(e.target.value)} placeholder="Ex.: Repasse ao Hospital de Cataguases para custeio" />
+          <input required minLength={15} maxLength={300} className={CAMPO} value={objeto} onChange={(e) => setObjeto(e.target.value)} placeholder="Ex.: Repasse ao Hospital de Cataguases para custeio" />
         </Campo>
         <Campo rotulo="Descrição completa (texto da emenda)">
           <textarea required rows={5} maxLength={4000} className={CAMPO} value={descricao} onChange={(e) => setDescricao(e.target.value)} />

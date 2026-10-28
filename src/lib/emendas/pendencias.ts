@@ -24,6 +24,8 @@ export type Pendencia = {
   /** Fundamento legal da regra, quando houver. */
   base?: string;
   justificativa?: string;
+  /** Data (ISO) em que a justificativa foi registrada. */
+  justificadaEm?: string;
 };
 
 export const ORDEM_GRAVIDADE: Record<Gravidade, number> = { alta: 0, media: 1, baixa: 2 };
@@ -177,12 +179,25 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     });
   }
 
+  const objeto = emenda.objeto.trim();
+  const soNomeDoOrgao = /^(a|o)\s+(secretaria|fundo|departamento|prefeitura|casa|associa[cç][aã]o)\b/i.test(objeto) && objeto.split(/\s+/).length <= 8;
+  if (objeto.length < 25 || soNomeDoOrgao) {
+    add({
+      regra: "objeto_generico",
+      gravidade: "baixa",
+      titulo: "Objeto pouco descritivo",
+      detalhe: `O objeto “${objeto}” só nomeia o órgão ou a entidade. Descreva o que será feito (ex.: “Repasse ao Hospital para custeio de…”): é o texto que aparece no portal público.`,
+      assinatura: `objeto|${objeto}`,
+      aba: "fases",
+    });
+  }
+
   const justificadas = new Map((e.justificadas ?? []).filter((j) => j.emenda_id === emenda.id).map((j) => [j.regra, j]));
   return out
     .map((p) => {
       const j = justificadas.get(p.regra);
       const comBase = { ...p, base: baseDaPendencia(p.regra) };
-      return j && j.assinatura === p.assinatura ? { ...comBase, justificativa: j.justificativa } : comBase;
+      return j && j.assinatura === p.assinatura ? { ...comBase, justificativa: j.justificativa, justificadaEm: j.em } : comBase;
     })
     .sort((a, b) => ORDEM_GRAVIDADE[a.gravidade] - ORDEM_GRAVIDADE[b.gravidade]);
 }

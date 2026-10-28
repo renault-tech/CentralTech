@@ -72,3 +72,10 @@ describe("pendencias", () => {
     expect(maiorGravidade([])).toBeNull();
   });
 });
+
+describe("objeto pouco descritivo", () => {
+  it("marca objeto que só nomeia o órgão e deixa passar o descritivo", () => {
+    expect(regras({ emenda: { ...emenda, objeto: "A Secretaria Municipal de Cultura e Turismo" } })).toContain("objeto_generico");
+    expect(regras({ emenda: { ...emenda, objeto: "Repasse ao Hospital de Cataguases para custeio de leitos" } })).not.toContain("objeto_generico");
+  });
+});

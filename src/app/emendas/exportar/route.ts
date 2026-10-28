@@ -2,6 +2,7 @@ import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { listarEmendas, listarExecucoes, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { montarPdfTabelas } from "@/lib/emendas/pdf";
 import { NOME_MODALIDADE, infoEtapa } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,40 @@ export async function GET(request: NextRequest) {
       (numeros.length === 0 || numeros.includes(r.numero)) &&
       (!q || q.split(/\s+/).every((parte) => normalizar([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome].join(" ")).includes(parte)))
   );
+  if (p.get("formato") === "pdf") {
+    const soma = (f: (e: (typeof emendas)[number]) => number) => emendas.reduce((t, e) => t + f(e), 0);
+    const filtros = [p.get("t") && `tipo: ${TIPOS_EXECUCAO[p.get("t") as keyof typeof TIPOS_EXECUCAO]?.nome ?? p.get("t")}`, p.get("q") && `busca: ${p.get("q")}`, p.get("situacao") && `situação: ${p.get("situacao")}`].filter(Boolean);
+    const pdf = montarPdfTabelas({
+      titulo: `Emendas impositivas - ${exercicio.ano}`,
+      subtitulo: `${emendas.length} emendas${filtros.length ? ` (${filtros.join("; ")})` : ""}. Gerado com as permissões de quem exportou.`,
+      tabelas: [
+        {
+          titulo: "Emendas",
+          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Pago"],
+          monetarias: [7, 8],
+          linhas: emendas.map((e) => [
+            e.numero,
+            `${String(e.vereador_numero).padStart(2, "0")} - ${e.vereador_nome}`,
+            e.objeto,
+            e.beneficiario_nome ?? "",
+            e.secretaria_nome,
+            TIPOS_EXECUCAO[tipoDaEmenda(e)].curto,
+            infoEtapa(e.etapa, catalogo).nome,
+            e.valor,
+            e.pago,
+          ]),
+          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.pago)],
+        },
+      ],
+    });
+    return new NextResponse(pdf as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="emendas-${exercicio.ano}.pdf"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
   const [movimentos, execucoes] = await Promise.all([listarMovimentos(emendas.map((e) => e.id)), listarExecucoes(emendas.map((e) => e.id))]);
   const execucao = new Map(execucoes.map((x) => [x.id, x]));
   const data = (iso: string | null | undefined) => (iso ? new Date(`${iso}T12:00:00`) : null);

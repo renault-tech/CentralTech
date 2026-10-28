@@ -519,7 +519,7 @@ const esquemaEmenda = z.object({
   numero: z.number().int().positive("Informe o número da emenda"),
   numeroVereador: z.number().int().positive("Informe o ID da emenda do vereador"),
   vereadorId: z.uuid("Escolha o vereador"),
-  objeto: z.string().trim().min(3, "Informe o objeto (resumo)").max(300),
+  objeto: z.string().trim().min(15, "Descreva o objeto com pelo menos 15 caracteres (o quê, para quem). Ex.: Repasse ao Hospital de Cataguases para custeio").max(300),
   descricao: z.string().trim().min(3, "Informe a descrição").max(4000),
   valor: z.number().positive("Informe um valor maior que zero"),
   beneficiarioId: z.uuid().nullable(),
@@ -602,7 +602,7 @@ const esquemaRemanejamento = z.object({
   ato: textoOpcional(200),
   motivo: z.string().trim().min(5, "Informe o motivo do remanejamento").max(2000),
   novo: z.object({
-    objeto: z.string().trim().min(3).max(300).optional(),
+    objeto: z.string().trim().min(15, "Descreva o objeto com pelo menos 15 caracteres").max(300).optional(),
     descricao: z.string().trim().min(3).max(4000).optional(),
     valor: z.number().positive().optional(),
     beneficiario_id: z.uuid().nullable().optional(),

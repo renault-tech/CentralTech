@@ -9,6 +9,7 @@ import {
   obterCatalogoEtapas,
   type MovimentoResumo,
 } from "@/lib/emendas/dados";
+import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendas, type CalculoEmenda } from "@/lib/emendas/resumo";
 import type { EmendaResumo, Exercicio } from "@/types/emendas";
 
@@ -22,12 +23,12 @@ export async function calcularEmendasDoExercicio(
 ): Promise<Map<string, CalculoEmenda>> {
   const ids = emendas.map((e) => e.id);
   const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo] = await Promise.all([
-    listarFasesCatalogo(),
-    movimentosJaCarregados ?? listarMovimentos(ids),
-    listarExecucoes(ids),
-    listarFasesEJustificativas(ids),
-    listarPareceres(exercicio.ano),
-    obterCatalogoEtapas(),
+    medir("calculos:fases-catalogo", () => listarFasesCatalogo()),
+    movimentosJaCarregados ?? medir("calculos:movimentos", () => listarMovimentos(ids)),
+    medir("calculos:execucoes", () => listarExecucoes(ids)),
+    medir("calculos:fases-justificativas", () => listarFasesEJustificativas(ids)),
+    medir("calculos:pareceres", () => listarPareceres(exercicio.ano)),
+    medir("calculos:catalogo-etapas", () => obterCatalogoEtapas()),
   ]);
   return calcularEmendas({
     emendas,

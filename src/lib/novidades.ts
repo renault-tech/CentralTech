@@ -14,6 +14,18 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-29",
+    titulo: "Emendas: exportação em PDF",
+    descricao:
+      "A lista de Emendas ganhou “Exportar PDF” (respeita os filtros e as permissões de quem exporta) e a tela de Relatórios ganhou “Baixar PDF” em cada relatório e “Baixar todos em PDF”. Os PDFs saem em paisagem, com total e rodapé de página.",
+  },
+  {
+    data: "2026-10-29",
+    titulo: "Emendas: ajustes após o teste de uso",
+    descricao:
+      "Pendências: cada cartão mostra “Abrir emenda nº …”, e as pendências justificadas podem ser vistas (com a data da justificativa) marcando “Mostrar justificadas”. Nova pendência “Objeto pouco descritivo” e o cadastro passa a exigir ao menos 15 caracteres no objeto. Painel: aviso claro de que pagamentos sem data ficam fora da curva (e por isso ela difere do total pago). Nome do vereador igual na lista e nos filtros. Telas de Emendas e Pendências ganham esqueleto de carregamento.",
+  },
+  {
+    data: "2026-10-29",
     titulo: "Emendas: base legal à vista",
     descricao:
       "Pendências, fases, documentos, impedimento, lançamentos financeiros, parceria (extrato, conta, vigência), Saúde (“?” no indicador), exequibilidade, relatórios e portal público agora citam a lei que fundamenta cada exigência (CF art. 166 por simetria, Leis 4.320, 13.019, 14.133, LAI, LRF e IN TCE-MG 05/2025). Os percentuais e prazos próprios do município seguem a Lei Orgânica: confira com o jurídico.",
