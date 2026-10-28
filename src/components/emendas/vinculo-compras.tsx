@@ -9,6 +9,18 @@ import { dataBr } from "@/lib/emendas/regras";
 import { CampoProcesso } from "@/components/emendas/campo-processo";
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 
+function Numero({ rotulo, valor, vazio, uso, extra }: { rotulo: string; valor: string | null; vazio?: string; uso: string; extra?: (string | null | false | undefined)[] }) {
+  const detalhes = (extra ?? []).filter(Boolean).join(" · ");
+  return (
+    <div className="px-3 py-2">
+      <dt className="text-xs text-slate-500">{rotulo}</dt>
+      <dd className={valor ? "font-medium text-cataguases-marinho" : "text-xs italic text-slate-500"}>{valor ?? vazio ?? "—"}</dd>
+      {detalhes && <dd className="text-xs text-slate-600">{detalhes}</dd>}
+      <dd className="text-[11px] text-slate-400">Vale para: {uso}</dd>
+    </div>
+  );
+}
+
 const NOME_STATUS: Record<string, string> = { em_andamento: "Em andamento", concluido: "Concluído", suspenso: "Suspenso", cancelado: "Cancelado" };
 
 /** Processo do Compras ligado à emenda: digita o número uma vez, o resto vem de lá. */
@@ -48,37 +60,49 @@ export function VinculoCompras({
           rotulo="Como funciona o vínculo com o Compras"
           texto={
             <>
-              Cada compra tem <strong>um processo só</strong> no Compras, com dois números: o do <strong>processo</strong> (ex.: 2026/0062, nasce no setor de
-              Compras) e o da <strong>licitação</strong> (ex.: 136/2026, dado quando segue para o setor de Licitação). É o mesmo processo: ligue uma vez aqui e as
-              fases DFD/ETP/TR, pesquisa de preços, contratação e contrato usam este vínculo. Digite o número (ou parte dele) ou uma palavra do objeto.
+              Cada compra é <strong>um processo só</strong> no Compras, mas ganha um número em cada setor: o <strong>processo</strong> (ex.: 2026/0062,
+              setor de Compras), a <strong>licitação</strong> (ex.: 136/2026, ao ir para Licitação) e o <strong>contrato</strong> (setor de Contratos). Ligue uma vez
+              aqui: cada número abaixo diz em qual fase da emenda ele é usado. Digite o número (ou parte dele) ou uma palavra do objeto.
               {" "}Troca de processo feita por quem não é gestor vai para aprovação.
             </>
           }
         />
       </h2>
       {processo ? (
-        <dl className="flex flex-col gap-1.5 text-[13px]">
-          <div>
-            <dt className="text-xs text-slate-500">Processo{processo.numero_licitacao ? " · Licitação" : ""}</dt>
-            <dd className="font-medium text-cataguases-marinho">
-              {processo.numero}
-              {processo.numero_licitacao ? ` · ${processo.numero_licitacao}` : ""}
-            </dd>
-          </div>
+        <dl className="flex flex-col gap-2 text-[13px]">
           <p className="text-slate-700">{processo.objeto}</p>
           <p className="text-xs text-slate-600">
             {NOME_STATUS[processo.status] ?? processo.status}
             {processo.modalidade ? ` · ${processo.modalidade}` : ""}
             {processo.setor ? ` · no setor ${processo.setor}` : ""}
           </p>
-          {(processo.data_publicacao || processo.data_sessao) && (
-            <p className="text-xs text-slate-600">
-              {processo.data_publicacao ? `Publicado em ${dataBr(processo.data_publicacao)}` : ""}
-              {processo.data_publicacao && processo.data_sessao ? " · " : ""}
-              {processo.data_sessao ? `Sessão em ${dataBr(processo.data_sessao)}` : ""}
-            </p>
-          )}
-          {processo.contrato_vinculado && <p className="text-xs text-slate-600">Contrato: {processo.contrato_vinculado}</p>}
+          <div className="rounded-lg border border-slate-200 divide-y divide-slate-100">
+            <Numero
+              rotulo="Processo (Compras)"
+              valor={processo.numero}
+              uso="Fases DFD, ETP e TR e pesquisa de preços"
+            />
+            <Numero
+              rotulo="Licitação"
+              valor={processo.numero_licitacao}
+              vazio="ainda não chegou ao setor de Licitação"
+              uso="Fase processo de contratação"
+              extra={[processo.data_publicacao && `publicado ${dataBr(processo.data_publicacao)}`, processo.data_sessao && `sessão ${dataBr(processo.data_sessao)}`]}
+            />
+            {processo.contratos.length > 0 ? (
+              processo.contratos.map((c) => (
+                <Numero
+                  key={c.numero}
+                  rotulo="Contrato"
+                  valor={c.numero}
+                  uso="Fase contrato, ata ou autorização de fornecimento"
+                  extra={[c.tipo, c.credor, c.data_vencimento && `vence ${dataBr(c.data_vencimento)}`]}
+                />
+              ))
+            ) : (
+              <Numero rotulo="Contrato" valor={processo.contrato_vinculado} vazio="ainda sem contrato cadastrado no setor de Contratos" uso="Fase contrato, ata ou autorização de fornecimento" />
+            )}
+          </div>
           <a
             href={`/sso/silencioso?app=compras&proximo=${encodeURIComponent(`/processos?processo=${processo.id}`)}`}
             target="_blank"

@@ -72,12 +72,12 @@ const DICAS_FASE: Record<string, { texto: string; sugere: ("processo" | "licitac
   },
   contratacao: {
     texto:
-      "É o processo de licitação, dispensa ou inexigibilidade. É o MESMO processo do Compras: ao seguir para o setor de Licitação ele ganha o 2º número (ex.: 136/2026). Informe o nº da licitação.",
+      "É o processo de licitação, dispensa ou inexigibilidade. É o MESMO processo do Compras: ao seguir para o setor de Licitação ele ganha o 2º número (ex.: 136/2026). Informe o nº da licitação (o do setor de Compras, 2026/0062, fica nas fases anteriores).",
     sugere: ["licitacao", "processo"],
   },
   instrumento: {
     texto:
-      "Contrato, ata de registro de preços ou autorização de fornecimento. Informe o nº do instrumento (ex.: contrato 045/2026); o Compras guarda o contrato vinculado ao processo.",
+      "Contrato, ata de registro de preços ou autorização de fornecimento. É o 3º número do mesmo processo, dado pelo setor de Contratos. Informe o nº do contrato/ata (sugerido do módulo Contratos do Compras).",
     sugere: ["contrato", "licitacao"],
   },
 };
