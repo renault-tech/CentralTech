@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-29",
+    titulo: "Emendas: botão único “Exportar”",
+    descricao:
+      "Na lista de Emendas e em cada relatório, os botões de download viraram um só “Exportar”, que abre as opções (Excel, PDF, CSV). Em Relatórios, o menu do topo também baixa todos os relatórios em PDF ou imprime a página.",
+  },
+  {
+    data: "2026-10-29",
     titulo: "Emendas: exportação em PDF",
     descricao:
       "A lista de Emendas ganhou “Exportar PDF” (respeita os filtros e as permissões de quem exporta) e a tela de Relatórios ganhou “Baixar PDF” em cada relatório e “Baixar todos em PDF”. Os PDFs saem em paisagem, com total e rodapé de página.",

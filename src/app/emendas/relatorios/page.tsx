@@ -1,4 +1,4 @@
-import { BotaoImprimir } from "@/components/emendas/botao-imprimir";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { Vazio } from "@/components/emendas/ui";
 import { resolverExercicio } from "@/lib/emendas/dados";
 import { brl } from "@/lib/emendas/regras";
@@ -21,25 +21,24 @@ export default async function PaginaRelatorios({ searchParams }: { searchParams:
             Dados de apoio à prestação de contas (IN TCE-MG 05/2025; LRF, art. 48-A; Lei 13.019/2014, arts. 38, 51 e 69; Lei 4.320/1964, arts. 58 a 65). O envio oficial segue o sistema do TCE-MG; aqui ficam os números prontos para conferir, imprimir ou baixar em CSV.
           </p>
         </div>
-        <div className="flex gap-2 print:hidden">
-          <a href={`/emendas/relatorios/pdf?ano=${exercicio.ano}`} className="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho hover:bg-slate-50">
-            Baixar todos em PDF
-          </a>
-          <BotaoImprimir />
-        </div>
+        <MenuExportar
+          opcoes={[
+            { rotulo: "Todos os relatórios (PDF)", detalhe: "Um arquivo com todas as tabelas", href: `/emendas/relatorios/pdf?ano=${exercicio.ano}` },
+            { rotulo: "Imprimir / salvar esta página", detalhe: "Usa a impressão do navegador", imprimir: true },
+          ]}
+        />
       </div>
       {tabelas.map((t, i) => (
         <section key={t.titulo} className="rounded-xl border border-slate-200 bg-white p-4 print:break-inside-avoid print:border-0">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 className="text-[15px] font-semibold text-cataguases-marinho">{t.titulo}</h2>
-            <span className="flex gap-3">
-            <a href={`/emendas/relatorios/csv?r=${RELATORIOS[i]}&ano=${exercicio.ano}`} className="text-xs font-medium text-[#5B3FA8] hover:underline print:hidden">
-              Baixar CSV
-            </a>
-            <a href={`/emendas/relatorios/pdf?r=${RELATORIOS[i]}&ano=${exercicio.ano}`} className="text-xs font-medium text-[#5B3FA8] hover:underline print:hidden">
-              Baixar PDF
-            </a>
-            </span>
+            <MenuExportar
+              compacto
+              opcoes={[
+                { rotulo: "PDF", href: `/emendas/relatorios/pdf?r=${RELATORIOS[i]}&ano=${exercicio.ano}` },
+                { rotulo: "CSV (planilha)", href: `/emendas/relatorios/csv?r=${RELATORIOS[i]}&ano=${exercicio.ano}` },
+              ]}
+            />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] border-collapse text-[13px]">
