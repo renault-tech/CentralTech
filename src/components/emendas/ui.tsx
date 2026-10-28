@@ -42,7 +42,10 @@ export function Kpi({
   barra,
   corBarra,
   corValor = "#0C1D33",
+  ajuda,
 }: {
+  /** "?" com a explicação e a base legal do indicador. */
+  ajuda?: ReactNode;
   rotulo: string;
   valor: string;
   apoio: string;
@@ -53,7 +56,10 @@ export function Kpi({
 }) {
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-4">
-      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{rotulo}</span>
+      <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+        {rotulo}
+        {ajuda}
+      </span>
       <span className="text-2xl font-semibold tabular-nums" style={{ color: corValor }}>
         {valor}
       </span>

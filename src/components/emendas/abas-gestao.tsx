@@ -128,7 +128,7 @@ export function AbaFases({
                   </button>
                 )}
               </div>
-              {f.fase.referencia && <p className="text-xs text-slate-500">{f.fase.referencia}</p>}
+              {f.fase.referencia && <p className="text-xs text-slate-500">Base legal: {f.fase.referencia}</p>}
               {f.observacao && <p className="mt-0.5 text-[13px] text-slate-600">{f.observacao}</p>}
               {!manual && f.fase.derivacao && (
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -296,7 +296,7 @@ export function AbaDocumentacao({
               />
               <div className="min-w-0 flex-1">
                 <p className={cn("text-sm", estado === "nao_se_aplica" ? "text-slate-500 line-through" : "text-cataguases-marinho")}>{i.nome}</p>
-                {i.referencia_legal && <p className="text-xs text-slate-500">{i.referencia_legal}</p>}
+                {i.referencia_legal && <p className="text-xs text-slate-500">Base legal: {i.referencia_legal}</p>}
               </div>
               {podeEditar ? (
                 <select
@@ -371,6 +371,7 @@ export function AbaPendencias({
             </button>
           </div>
           <p className="mt-1 text-[13px] text-slate-700">{p.detalhe}</p>
+          {p.base && <p className="mt-0.5 text-xs text-slate-500">Base legal: {p.base}</p>}
           {p.justificativa ? (
             <p className="mt-2 text-xs text-slate-600">
               <strong>Justificada:</strong> {p.justificativa}

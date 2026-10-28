@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Check, Trash2 } from "lucide-react";
 
+import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
 import { registrarImpedimentosEmLote, removerParecer, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
 import { brl, dataBr } from "@/lib/emendas/regras";
@@ -39,6 +40,7 @@ export function EditorDatasExercicio({ exercicio }: { exercicio: Exercicio }) {
       <p className="mt-2 text-xs text-slate-500">
         O prazo de exequibilidade é a data limite para cada secretaria informar se as emendas dela podem ser cumpridas.
       </p>
+      <BaseLegalLinha chave="exequibilidade" className="mt-1" />
       <div className="mt-3 flex items-center gap-3">
         <button
           type="button"

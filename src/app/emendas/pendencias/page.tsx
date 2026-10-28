@@ -32,6 +32,7 @@ export default async function PaginaPendencias({ searchParams }: { searchParams:
         gravidade: p.gravidade,
         titulo: p.titulo,
         detalhe: p.detalhe,
+        base: p.base,
       });
     }
   }

@@ -6,6 +6,7 @@ import { AlertTriangle, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO } from "@/components/emendas/detalhe-emenda";
 import { salvarExecucao } from "@/lib/emendas/actions";
+import { BaseLegalDica } from "@/components/emendas/base-legal";
 import { dataBr, situacaoVigencia } from "@/lib/emendas/regras";
 import type { ExecucaoEmenda, Modalidade } from "@/types/emendas";
 
@@ -86,7 +87,10 @@ export function PainelParceria({
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-cataguases-marinho">{repasse ? "Parceria e execução" : "Execução"}</h2>
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-cataguases-marinho">
+          {repasse ? "Parceria e execução" : "Execução"}
+          {repasse && <BaseLegalDica chave="termo_extrato" />}
+        </h2>
         {podeEditar && (
           <button
             type="button"
@@ -200,7 +204,7 @@ function DialogoParceria({
                   <input className={CAMPO} maxLength={40} placeholder="027/2026" {...campo("numeroTermo")} />
                 </label>
                 <label className={rotulo}>
-                  Publicação do extrato
+                  <span className="flex items-center gap-1.5">Publicação do extrato <BaseLegalDica chave="termo_extrato" /></span>
                   <input type="date" className={CAMPO} {...campo("dataPublicacaoExtrato")} />
                 </label>
                 <label className={rotulo}>
@@ -208,7 +212,7 @@ function DialogoParceria({
                   <input type="date" className={CAMPO} {...campo("vigenciaInicio")} />
                 </label>
                 <label className={rotulo}>
-                  Fim da vigência
+                  <span className="flex items-center gap-1.5">Fim da vigência <BaseLegalDica chave="prestacao_contas" /></span>
                   <input type="date" className={CAMPO} {...campo("vigenciaFim")} />
                 </label>
               </>
@@ -233,7 +237,7 @@ function DialogoParceria({
                   <input className={CAMPO} maxLength={200} {...campo("gestorOsc")} />
                 </label>
                 <label className={rotulo}>
-                  Conta bancária da entidade
+                  <span className="flex items-center gap-1.5">Conta bancária da entidade <BaseLegalDica chave="conta_parceria" /></span>
                   <input className={CAMPO} maxLength={200} {...campo("contaBancaria")} />
                 </label>
               </>
