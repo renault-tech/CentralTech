@@ -10,9 +10,9 @@ import { brl, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { Beneficiario, Exercicio, Secretaria, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
 
-const CAMPO =
+export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
-const BOTAO = "inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+export const BOTAO = "inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 
 function paraNumero(t: string): number | null {
   const limpo = t.replace(/[R$\s.]/g, "").replace(",", ".");
@@ -20,7 +20,7 @@ function paraNumero(t: string): number | null {
   return limpo && Number.isFinite(n) ? n : null;
 }
 
-function useSalvar() {
+export function useSalvar() {
   const router = useRouter();
   const [erro, setErro] = React.useState<string | null>(null);
   const [salvando, setSalvando] = React.useState(false);
@@ -36,7 +36,7 @@ function useSalvar() {
   return { erro, salvando, salvar };
 }
 
-function Secao({ titulo, apoio, children }: { titulo: string; apoio?: string; children: React.ReactNode }) {
+export function Secao({ titulo, apoio, children }: { titulo: string; apoio?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5">
       <h2 className="text-[15px] font-semibold text-cataguases-marinho">{titulo}</h2>
@@ -46,7 +46,7 @@ function Secao({ titulo, apoio, children }: { titulo: string; apoio?: string; ch
   );
 }
 
-function Erro({ texto }: { texto: string | null }) {
+export function Erro({ texto }: { texto: string | null }) {
   return texto ? (
     <p className="mt-2 text-sm text-red-700" role="alert">
       {texto}

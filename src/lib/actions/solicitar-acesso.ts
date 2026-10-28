@@ -1,5 +1,6 @@
 "use server";
 
+import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { z } from "zod";
 
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -39,6 +40,10 @@ export async function solicitarAcesso(
 
   if (!analise.success) {
     return { erro: analise.error.issues[0]?.message ?? "Dados inválidos" };
+  }
+
+  if (await excedeuLimite("solicitar-acesso", await ipDoCliente(), 10, 300)) {
+    return { erro: "Muitos pedidos em pouco tempo. Aguarde alguns minutos e tente de novo." };
   }
 
   const supabase = await criarClienteServidor();

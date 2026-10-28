@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { MODULOS } from "@/lib/modulos-info";
+import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { origemDaRequisicao } from "@/lib/origem";
 import { alinharSenhaComNumera } from "@/lib/auth/senha-numera";
 import { marcarConviteUsado, sincronizarSenhaNumera, temConvitePendente } from "@/lib/auth/convite";
@@ -98,6 +99,10 @@ export async function entrar(
     return { erro: analise.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
+  if (await excedeuLimite("login", await ipDoCliente(), 30, 60)) {
+    return { erro: "Muitas tentativas. Aguarde um minuto e tente de novo." };
+  }
+
   const supabase = await criarClienteServidor();
 
   let { data, error } = await supabase.auth.signInWithPassword({
@@ -182,6 +187,10 @@ export async function solicitarRecuperacao(
 
   if (!analise.success) {
     return { erro: analise.error.issues[0]?.message ?? "Dados inválidos" };
+  }
+
+  if (await excedeuLimite("recuperar-senha", await ipDoCliente(), 5, 300)) {
+    return { erro: "Muitas tentativas. Aguarde alguns minutos e tente de novo." };
   }
 
   // 30/09/2026: `resetPasswordForEmail` passa pelo `/verify` do GoTrue, que

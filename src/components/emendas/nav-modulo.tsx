@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type Item = { href: string; rotulo: string; exato?: boolean };
+type Item = { href: string; rotulo: string; exato?: boolean; selo?: number };
 
 /** Faixa de navegação do módulo (abaixo do cabeçalho da Central). Igual à
  * `AbasNavegacao`, mas casando por prefixo (o detalhe de uma emenda acende
@@ -33,6 +33,7 @@ export function NavModulo({ itens, podeCriar }: { itens: Item[]; podeCriar: bool
                 )}
               >
                 {item.rotulo}
+                {!!item.selo && <span className="ml-1.5 rounded-full bg-[#6B4FBB] px-1.5 py-px text-[11px] font-medium tabular-nums text-white">{item.selo}</span>}
               </Link>
             );
           })}

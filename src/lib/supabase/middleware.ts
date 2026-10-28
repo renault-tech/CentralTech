@@ -25,6 +25,8 @@ const ROTAS_PUBLICAS = [
   "/api/numera/",
   // Chamado pelo Numera (outro projeto) com o token de lá, sem sessão do Hub.
   "/api/feedback",
+  // Portal de transparência das emendas (Lei 12.527/LAI, LRF art. 48-A): sem login.
+  "/transparencia/emendas",
 ];
 
 /**

@@ -8,6 +8,11 @@
 export type EtapaEmenda = string;
 
 export type Modalidade = "repasse" | "direta";
+/** Tipo de execução da emenda (controle do HTML de 2026): define fluxo de fases e checklist. */
+export type TipoExecucao = "direta" | "osc" | "ente";
+export type SituacaoFase = "pendente" | "em_andamento" | "concluida" | "nao_se_aplica";
+export type EstadoChecklist = "conferido" | "presumido" | "pendente" | "nao_se_aplica";
+export type DerivacaoFase = "loa" | "parecer" | "empenho" | "liquidacao" | "pagamento" | "termo" | "extrato";
 export type SituacaoEmenda = "normal" | "impedida" | "cancelada";
 export type PerfilEmendas = "gestor" | "admin_secretaria" | "operador" | "consulta";
 /** `admin` = admin do Hub (não existe em `emendas.usuarios`). */
@@ -34,6 +39,9 @@ export type Exercicio = {
   percentual_rcl: number | null;
   situacao: "aberto" | "encerrado";
   criado_em: string;
+  data_aprovacao_loa: string | null;
+  numero_lei_loa: string | null;
+  prazo_exequibilidade: string | null;
 };
 
 export type Vereador = {
@@ -80,6 +88,7 @@ export type Emenda = {
   dotacao_texto: string | null;
   ficha: string | null;
   modalidade: Modalidade;
+  tipo_execucao: TipoExecucao | null;
   etapa: EtapaEmenda;
   situacao: SituacaoEmenda;
   etapa_atualizada_em: string;
@@ -99,6 +108,7 @@ export type EmendaResumo = {
   valor: number;
   saude: boolean;
   modalidade: Modalidade;
+  tipo_execucao: TipoExecucao | null;
   etapa: EtapaEmenda;
   situacao: SituacaoEmenda;
   etapa_atualizada_em: string;
@@ -180,6 +190,8 @@ export type ExecucaoEmenda = {
   id: string;
   numero_termo: string | null;
   processo_licitatorio: string | null;
+  processo_id: string | null;
+  numero_contrato: string | null;
   data_envio_pagamento: string | null;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
@@ -235,6 +247,92 @@ export type EtapaRegistro = { chave: string; nome: string; cor: string; grupo: 0
 /** `emendas.fluxo_etapas`: quais fases cada modalidade usa, em que ordem. */
 export type FluxoEtapaRegistro = { modalidade: Modalidade; chave: string; ordem: number; ativa: boolean };
 
+/** `emendas.fluxo_fases`: fases de cada tipo de execução (catálogo). */
+export type FaseFluxo = {
+  tipo: TipoExecucao;
+  chave: string;
+  nome: string;
+  etapa: EtapaEmenda;
+  referencia: string | null;
+  derivacao: DerivacaoFase | null;
+  ordem: number;
+  ativa: boolean;
+};
+/** Situação de uma fase MANUAL de uma emenda (as derivadas não têm linha). */
+export type FaseEmenda = {
+  emenda_id: string;
+  chave: string;
+  situacao: SituacaoFase;
+  data: string | null;
+  documento: string | null;
+  observacao: string | null;
+  origem: string | null;
+  atualizado_por: string | null;
+  atualizado_em: string;
+};
+export type ItemChecklist = {
+  tipo: TipoExecucao;
+  chave: string;
+  nome: string;
+  referencia_legal: string | null;
+  condicao: "saude" | "consorcio" | null;
+  ordem: number;
+  ativo: boolean;
+};
+export type ChecklistEmenda = {
+  emenda_id: string;
+  item_chave: string;
+  estado: EstadoChecklist;
+  documento_id: string | null;
+  observacao: string | null;
+  conferido_por: string | null;
+  conferido_em: string | null;
+};
+export type ParecerExequibilidade = {
+  ano: number;
+  secretaria_id: string;
+  data: string;
+  protocolo: string | null;
+  observacao: string | null;
+  atualizado_por: string | null;
+  atualizado_em: string;
+};
+export type PendenciaJustificada = {
+  emenda_id: string;
+  regra: string;
+  assinatura: string;
+  justificativa: string;
+  por: string | null;
+  em: string;
+};
+
+export type Importacao = {
+  id: string;
+  formato: string;
+  arquivo_nome: string | null;
+  sha256: string;
+  criado_por: string | null;
+  criado_em: string;
+  resumo: Record<string, unknown> | null;
+};
+export type Proposta = {
+  id: string;
+  importacao_id: string | null;
+  emenda_id: string;
+  alvo: "execucao" | "emenda_fases" | "emenda_checklist" | "movimentos";
+  chave: string | null;
+  campo: string | null;
+  valor_atual: unknown;
+  valor_proposto: unknown;
+  origem: "secretaria" | "importacao";
+  status: "pendente" | "aprovada" | "rejeitada" | "conflito";
+  autor: string | null;
+  criado_em: string;
+  decidido_por: string | null;
+  decidido_em: string | null;
+  motivo: string | null;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -266,6 +364,14 @@ export type DatabaseEmendas = {
       auditoria: Tabela<RegistroAuditoria, "tabela" | "acao", "id" | "em">;
       etapas: Tabela<EtapaRegistro, "chave" | "nome" | "cor" | "grupo", never>;
       fluxo_etapas: Tabela<FluxoEtapaRegistro, "modalidade" | "chave" | "ordem", never>;
+      fluxo_fases: Tabela<FaseFluxo, "tipo" | "chave" | "nome" | "etapa" | "ordem", never>;
+      emenda_fases: Tabela<FaseEmenda, "emenda_id" | "chave", never>;
+      checklist_itens: Tabela<ItemChecklist, "tipo" | "chave" | "nome" | "ordem", never>;
+      emenda_checklist: Tabela<ChecklistEmenda, "emenda_id" | "item_chave", never>;
+      pareceres_exequibilidade: Tabela<ParecerExequibilidade, "ano" | "secretaria_id" | "data", never>;
+      importacoes: Tabela<Importacao, "formato" | "sha256", "id" | "criado_em">;
+      propostas: Tabela<Proposta, "emenda_id" | "alvo" | "valor_proposto", "id" | "criado_em">;
+      pendencias_justificadas: Tabela<PendenciaJustificada, "emenda_id" | "regra" | "assinatura" | "justificativa", never>;
     };
     Views: {
       v_emendas: { Row: EmendaResumo; Relationships: [] };

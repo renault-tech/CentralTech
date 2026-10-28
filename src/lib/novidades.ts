@@ -13,6 +13,30 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-28",
+    titulo: "Emendas: portal público de transparência e relatórios",
+    descricao:
+      "Qualquer pessoa, sem senha, pode consultar as emendas impositivas em /transparencia/emendas: quem indicou, objeto, valor, beneficiário, fase, empenhado e pago, com busca e filtros por vereador, tipo e secretaria, e dados abertos em CSV e JSON. A conta bancária aparece mascarada e não há dado pessoal. Dentro do módulo, a nova tela Relatórios traz execução por vereador e por secretaria, recursos por beneficiário, parcerias com prestação de contas e impedimentos em aberto, para imprimir ou baixar em CSV (apoio à IN TCE-MG 05/2025).",
+  },
+  {
+    data: "2026-10-27",
+    titulo: "Emendas: aprovações, importação do controle e ligação com o Compras",
+    descricao:
+      "Alterações em dado já preenchido (feitas por uma secretaria ou vindas de uma importação) agora esperam a aprovação do gestor na nova tela Aprovações, com o valor de hoje e o proposto lado a lado; a secretaria acompanha em “Minhas propostas”. Campo vazio continua sendo preenchido na hora. Em Configurações › Importar, o arquivo JSON exportado do HTML de controle gera as propostas (termo, vigência, extrato, conta, gestores, fases e documentos) sem apagar nada do que já existe. No detalhe da emenda, informar o número do processo (2026/0062) ou da licitação (136/2026) traz os dados do Compras e abre o processo lá com um clique.",
+  },
+  {
+    data: "2026-10-27",
+    titulo: "Emendas: tipos de execução, fases, documentação e pendências",
+    descricao:
+      "Cada emenda agora tem um tipo (execução direta, repasse a OSC ou entes e conveniadas), marcado por uma faixa de cor na lista, com abas Consolidado/Direta/OSC/Ente e um cartão por tipo no Painel. No detalhe da emenda há as abas Fases (cada fase com situação, data e documento; empenho, pagamento, termo, extrato, LOA e parecer vêm sozinhos dos outros cadastros, sem digitar de novo), Documentação (checklist por tipo, com a base legal) e Pendências (o que merece atenção do gestor, com opção de justificar). A nova tela Pendências lista tudo por gravidade, tipo e secretaria. Em Configurações › Exercício ficam a data de aprovação da LOA e o prazo de exequibilidade, uma vez só para o ano todo; em Configurações › Exequibilidade, o parecer de cada secretaria.",
+  },
+  {
+    data: "2026-10-25",
+    titulo: "Links de e-mail com um clique de confirmação",
+    descricao:
+      "Os links de redefinir senha e de primeiro acesso agora abrem uma página com o botão “Continuar”. Antivírus e prévias de e-mail abriam o link antes da pessoa e gastavam o código de uso único, o que causava o aviso de “link inválido”. Para entrar, basta tocar no botão.",
+  },
+  {
     data: "2026-10-24",
     titulo: "Mais rapidez e mais segurança",
     descricao:

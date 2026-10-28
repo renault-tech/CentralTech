@@ -1512,23 +1512,129 @@ relatórios (banco e código); abaixo, o que foi aplicado e o que ficou.
   índices em `emendas.emendas(vereador_id)`, `(beneficiario_id)` e
   `permissoes(secretaria_id)`; `anon` sem EXECUTE nas 12 funções do Compras
   (chat, parecer, suspender/retomar, devolver) — todas já checavam `auth.uid()`.
-- **Ficou para depois** (decisão de produto/infra, ou arriscado sem teste ao
-  vivo): limite de tentativas por IP em `/api/numera/resolver-login`,
-  `solicitarRecuperacao`, `/solicitar-acesso` e no `entrar()` (o limitador atual
-  é em memória, não vale em serverless — precisa do Firewall da Vercel ou KV);
-  `/api/numera/resolver-login` devolve o e-mail de qualquer username (idealmente
-  o login do username passa a ser resolvido no servidor); links de e-mail
-  consumidos por GET podem ser "queimados" por antivírus (página intermediária
-  com botão); `listUsers({perPage: 1000})` na tela de usuários; unificar a
-  orquestração duplicada de `aprovarSolicitacao`/`definirAcesso`; marcar como
-  `STABLE` as funções de permissão que consultam `hub.usuarios` (199 mil
-  varreduras sequenciais — `create or replace` trava o MCP, rodar no SQL
-  Editor); consolidar as 60 policies permissivas duplicadas; ligar a proteção
-  contra senhas vazadas no painel do Supabase (Auth → senhas).
+- **Resolvido depois**: links de e-mail de uso único (`/auth/confirm?token_hash=`
+  do Hub e `/api/numera/abrir-link`) não consomem mais o token no GET — o GET
+  mostra a página de `lib/seguranca/pagina-confirmar.ts` com o botão
+  "Continuar" e só o POST faz o `verifyOtp` (antivírus e prévia de e-mail
+  abrem o link por GET e gastavam o token → "link inválido"). O fluxo `code`
+  (PKCE) segue no GET. As funções de permissão já eram `STABLE` (a hipótese da
+  auditoria estava errada; as 199 mil varreduras em `hub.usuarios` são o
+  planner preferindo ler 54 linhas a usar índice). As políticas `FOR ALL`
+  das 5 tabelas de catálogo do Emendas viraram INSERT/UPDATE/DELETE de gestor
+  + SELECT (SQL rodado pelo dono no SQL Editor; nas tabelas de `hub` e
+  `requerimentos` NÃO mexer: tabelas minúsculas, ganho nulo e risco de
+  trancar o login). Branches mescladas: o git proxy do ambiente recusa
+  `push --delete`, apagar pelo GitHub.
+- **Ainda em aberto** (depende do dono ou de infra): (1) **Firewall da Vercel**
+  não tem nenhuma regra (a API do MCP responde 404 "config not found" e não
+  cria): configurar limite por IP no painel — `/api/numera/resolver-login` 30/min,
+  `/api/numera/recuperar-senha` 5/5min (POST), `/recuperar-senha` 5/5min (POST),
+  `/solicitar-acesso` 10/5min (POST), `/login` 30/min (POST); o limitador em
+  memória do código não vale em serverless. (2) `/api/numera/resolver-login`
+  devolve o e-mail de qualquer username: o conserto de verdade é o login do
+  Numera mandar usuário+senha para o servidor (muda `auth-service.js` do repo
+  do Numera) — só o Firewall mitiga por ora. (3) Ligar "Leaked password
+  protection" no Supabase (Auth → senhas): só pelo painel. (4)
+  `listUsers({perPage: 1000})` em `lib/dados/usuarios.ts` e a orquestração
+  duplicada de `aprovarSolicitacao`/`definirAcesso`.
 - **Não testado ao vivo**: sandbox sem acesso a Supabase/Vercel. `tsc`,
   `eslint`, `vitest` (48) e `next build` limpos; conferir no deploy o filtro do
   painel (a URL deve mudar sem recarregar) e uma gravação na emenda (a tela
   deve atualizar sozinha).
+
+
+## Emendas: tipos de execução, fases por tipo, checklist e pendências (27/10/2026) — Etapa 1
+
+Pedido do dono: trazer para dentro do módulo o checklist do HTML autocontido "Emendas Impositivas
+2026" (que servia só para depois redigitar tudo). Plano completo em 3 etapas — esta é a **Etapa 1
+(gestão)**; Etapa 2 = importação com aprovação (JSON v1 do HTML, planilhas) + vínculo com Compras;
+Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso municipal: **IN TCE-MG
+05/2025**, não o TCU, que só vale para verba federal; LGPD: sem CPF, conta mascarada).
+
+- **Banco** (`20261027000000_emendas_tipo_fases_checklist.sql`, aplicada por MCP; só acrescenta):
+  `emendas.tipo_execucao` (`direta`/`osc`/`ente`; `v_emendas` ganhou a coluna no fim),
+  `exercicios.data_aprovacao_loa/numero_lei_loa/prazo_exequibilidade`, `fluxo_fases` (catálogo de fases por
+  tipo, com `etapa` = a fase do cache `emendas.etapa` e `derivacao` = de onde o dado vem),
+  `emenda_fases` (só fases MANUAIS), `checklist_itens` (13 direta · 24 OSC · 19 ente, com base legal;
+  `condicao` saude/consorcio) + `emenda_checklist`, `pareceres_exequibilidade` (um por secretaria/ano),
+  `pendencias_justificadas`. RLS = a de `execucao` (`pode_ver/editar_emenda`); catálogos só gestor.
+  Backups `_bkp_20261027_*` (emendas, andamentos, execucao) e `_carga_tipo` ficam no schema `emendas`
+  (apagar no SQL Editor quando o dono confirmar). Carga: os 215 receberam o tipo do HTML (85/109/21,
+  totais batem); as 7 `processo_compra` das diretas viraram `emenda_fases.demanda` (origem `importacao`).
+- **Cada dado tem uma fonte só** (`lib/emendas/fases.ts`, pura e testada): fase com `derivacao` nunca é
+  digitada — LOA ← exercício; análise ← parecer da secretaria (ou impedimento aberto = em andamento);
+  empenho/liquidação/pagamento ← `movimentos_financeiros`; termo/extrato ← `execucao`. Sem dado próprio,
+  fase anterior à etapa atual da emenda aparece "presumida" (por isso as 64 de repasse em "paga" sem
+  movimentos NÃO regridem). `emendas.etapa` continua cache do último andamento: concluir uma fase manual
+  que adianta a emenda chama `registrar_andamento` (mantém avisos/histórico); se a etapa não vale para o
+  fluxo da emenda, só não avança o cache.
+- **Pendências** (`lib/emendas/pendencias.ts`, pura e testada; o banco só guarda a justificativa e a
+  *assinatura* — mudou o dado, a justificativa deixa de valer): impedimento aberto, empenho > valor, pago >
+  empenhado, tipo incoerente com a natureza (ex.: nº 102 é "direta" com natureza 50), termo sem extrato
+  (Lei 13.019, art. 38), parceria sem conta específica (art. 51; IN 05/2025 art. 6), vigência (e prestação
+  de contas em 90 dias, art. 69), emenda sem andamento (gravidade pelos dias que faltam), prazo de
+  exequibilidade vencido sem parecer, datas de fase fora de ordem. `resumo.ts` junta tudo por emenda;
+  `calculos.ts` carrega os dados sob a RLS de quem pede.
+- **Telas**: faixa de 4px na cor do tipo em cada linha da lista (`TIPOS_EXECUCAO`: direta #1D6A8A,
+  osc #9A5A0E, ente #962A52), abas Consolidado/Direta/OSC/Ente e filtro "só com pendência" (URL via
+  `replaceState`); Painel com régua do exercício + 1 cartão por tipo (`faixa-tipos.tsx`); detalhe com abas
+  Fases · Documentação · Pendências · Financeiro · Andamentos · Anexos · Histórico (`abas-gestao.tsx`);
+  `/emendas/pendencias`; Configurações › Exercício (LOA/lei/prazo) e › Exequibilidade (parecer por
+  secretaria). Formulário da emenda pede o tipo; exportação Excel traz "Tipo de execução" e filtra por `t`.
+- **Ainda não feito (decidido, nas próximas etapas)**: edição de dado já preenchido por perfil de
+  secretaria virar *proposta* a aprovar (Etapa 2 — hoje a secretaria grava direto, tudo auditado);
+  editor de fases/checklist por tipo na tela (catálogo editável só por SQL por enquanto);
+  impedimento em lote a partir do parecer; `NOT NULL` em `tipo_execucao` (a RPC `importar` ainda não
+  informa o tipo — o app deduz pela modalidade enquanto for nulo).
+
+## Emendas — Etapa 2: aprovações, importação JSON v1 e vínculo com o Compras (27/10/2026)
+
+- **Banco** (`20261028000000_emendas_propostas_importacoes_compras.sql`, tabelas aplicadas por MCP): `propostas`
+  (alvo `execucao`/`emenda_fases`/`emenda_checklist`; `valor_atual` e `valor_proposto` em jsonb; status
+  pendente/aprovada/rejeitada/conflito; RLS: gestor vê/decide tudo, autor vê as próprias), `importacoes`
+  (`sha256` único: o mesmo arquivo não entra duas vezes), `execucao.processo_id/numero_contrato`.
+- **Regra** (em `actions.ts`, não no banco): gestor/admin gravam direto; secretaria grava campo VAZIO na hora e,
+  se muda um valor já preenchido, vira proposta (`proporAlteracoes`) — vale para `salvarExecucao`, `salvarFase`,
+  `salvarItemChecklist` e `vincularProcesso`; o `Resultado` ganhou `aviso`. **Lacuna conhecida**: não há gatilho
+  no banco; uma chamada direta à API ainda grava (tudo fica na auditoria). O gatilho BEFORE UPDATE está descrito
+  na migration e precisa ser rodado no SQL Editor se o dono quiser a garantia.
+- **Aprovação** (`actions-propostas.ts`, `decidirPropostas`, só gestor): antes de aplicar relê o valor atual; se
+  mudou desde a proposta, marca `conflito` e não grava. Tela `/emendas/aprovacoes` (item no menu com selo de
+  pendentes; para a secretaria vira "Minhas propostas").
+- **Importação JSON** (`importacao/json-v1.ts`, pura e testada; `importarJsonV1`): lê `centraltech.emendas.execucao/v1`
+  e só gera propostas — instrumento → `execucao`, `andamentos[]` → fases MANUAIS (as derivadas são ignoradas),
+  `checklist[]` → `emenda_checklist`. Vazio no arquivo nunca apaga; fase concluída não regride; `pendente` do
+  checklist não derruba o conferido. Movimentos financeiros do arquivo não são importados (já estão no sistema).
+- **Compras** (`compras.ts`, `numero-processo.ts`, `vinculo-compras.tsx`): `2026/0062` = `processos.numero`,
+  `136/2026` = `numero_licitacao`. Leitura de UM processo com a chave de serviço (a RLS do Compras barra quem não
+  tem `public.usuarios`), só depois de a tela confirmar que a pessoa vê a emenda; mostra status, modalidade, setor,
+  datas e contrato. Link: `/sso/silencioso?app=compras&proximo=/processos?processo=<id>` (a lista do Compras abre o
+  processo pelo filtro `processo=` — confirmado no repo App-Compras). O status do Compras só é exibido: não muda fase.
+
+## Emendas — Etapa 3: portal público e relatórios (28/10/2026)
+
+- **Portal sem login** em `/transparencia/emendas` (prefixo em `ROTAS_PUBLICAS`, `middleware.ts`) + dados abertos em
+  `/transparencia/emendas/dados?ano=&formato=csv|json`. Leitura só no servidor (`lib/emendas/portal.ts`, `server-only`),
+  com a chave de serviço e LISTA FECHADA de colunas (nunca `select *`): sem descrição completa, observações, gestores,
+  CPF nem dirigentes; CNPJ só de beneficiário (PJ); conta da parceria mascarada (`mascararConta`, 4 últimos dígitos);
+  emendas canceladas fora. Cache `unstable_cache` de 5 min com a tag `portal-emendas` (`portal-tag.ts`); as actions
+  (`actions.ts`, `actions-config.ts`, `actions-propostas.ts`) chamam `revalidateTag(TAG_PORTAL, "max")`. Tela: `components/transparencia/portal-emendas.tsx`
+  (filtra no navegador). Base citada no rodapé: LAI (Lei 12.527), LRF art. 48-A, IN TCE-MG 05/2025.
+  **Nada novo no banco**: sem view nova nem grant a `anon` — o portal não depende de RLS aberta.
+- **Relatórios internos** `/emendas/relatorios` (+ `/csv?r=`): por vereador, por secretaria, por beneficiário,
+  parcerias/prestação de contas e impedimentos abertos (`relatorios.ts` puro e testado; `relatorios-dados.ts` sob a RLS
+  de quem pede). Impressão pelo CSS de impressão existente; CSV com BOM, `;` e vírgula decimal. São dados de APOIO: o envio
+  oficial ao TCE-MG segue o sistema deles (layout de importação do TCE não foi mapeado).
+
+## Limite de tentativas por IP no código (28/10/2026)
+
+O Firewall da Vercel não pôde ser configurado (a API do MCP responde "config não encontrada" e o editor do painel
+não aplicou o Rate Limit), então o limite virou código: `lib/seguranca/limite-requisicoes.ts` (`excedeuLimite(rota, ip, limite, janelaSeg)`,
+tabela `hub.limites_requisicao`, só service_role; janela fixa, contagem aproximada, **falha aberta** se o banco cair).
+Aplicado em `entrar` (30/min), `solicitarRecuperacao` (5/5 min), `solicitarAcesso` (10/5 min),
+`/api/numera/recuperar-senha` (5/5 min, responde a mesma mensagem genérica) e `/api/numera/resolver-login` (30/min, responde `email: null`).
+O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; regras do Firewall da Vercel continuam bem-vindas se um dia funcionarem.
+
 - **Exportação de feedback para o Claude (23/10/2026)**: em `/feedback` (gestão), o botão
   "Exportar (.zip)" baixa `feedback-AAAA-MM-DD.zip` com os pedidos que estão nos filtros da tela
   (`GET /api/feedback/exportar?app&tipo&status`, só quem `pode_gerir_feedback`). Conteúdo:

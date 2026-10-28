@@ -59,6 +59,7 @@ export function PainelParceria({
   podeEditar: boolean;
 }) {
   const [editando, setEditando] = React.useState(false);
+  const [aviso, setAviso] = React.useState<string | null>(null);
   const repasse = modalidade === "repasse";
   const vigencia = situacaoVigencia(execucao?.vigencia_fim, hojeLocal());
   const semExtrato = repasse && !!execucao?.numero_termo && !execucao.data_publicacao_extrato;
@@ -128,10 +129,13 @@ export function PainelParceria({
         )}
       </dl>
 
+      {aviso && <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">{aviso}</p>}
+
       {podeEditar && editando && (
         <DialogoParceria
           aberto
           aoFechar={() => setEditando(false)}
+          aoAvisar={setAviso}
           emendaId={emendaId}
           repasse={repasse}
           inicial={paraCampos(execucao)}
@@ -144,12 +148,14 @@ export function PainelParceria({
 function DialogoParceria({
   aberto,
   aoFechar,
+  aoAvisar,
   emendaId,
   repasse,
   inicial,
 }: {
   aberto: boolean;
   aoFechar: () => void;
+  aoAvisar: (aviso: string | null) => void;
   emendaId: string;
   repasse: boolean;
   inicial: Campos;
@@ -171,6 +177,7 @@ function DialogoParceria({
     const r = await salvarExecucao({ emendaId, ...c });
     setEnviando(false);
     if (!r.sucesso) return setErro(r.erro);
+    aoAvisar(r.aviso ?? null);
     aoFechar();
   }
 

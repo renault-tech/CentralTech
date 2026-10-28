@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { MODULOS } from "@/lib/modulos-info";
+import { excedeuLimite, ipDe } from "@/lib/seguranca/limite-requisicoes";
 import { completarNoTempoMinimo, criarLimitadorPorChave } from "@/lib/anti-enumeracao";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
     inicio,
     (async () => {
       if (!podeTentar(username)) return null;
+      if (await excedeuLimite("numera-resolver", ipDe(request.headers), 30, 60)) return null;
       try {
         const numeraAdmin = criarClienteNumeraAdmin();
         const { data, error } = await numeraAdmin

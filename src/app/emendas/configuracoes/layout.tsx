@@ -16,6 +16,7 @@ export default async function LayoutConfiguracoesEmendas({ children }: { childre
 
   const abas = [
     { href: "/emendas/configuracoes/exercicio", rotulo: "Exercício" },
+    { href: "/emendas/configuracoes/exequibilidade", rotulo: "Exequibilidade" },
     { href: "/emendas/configuracoes/fases", rotulo: "Fases do fluxo" },
     { href: "/emendas/configuracoes/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/configuracoes/secretarias", rotulo: "Secretarias e unidades" },

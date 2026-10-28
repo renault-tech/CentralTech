@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { NavModulo } from "@/components/emendas/nav-modulo";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
-import { obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
+import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -47,10 +47,13 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   }
 
   const gestor = ehGestor(ctx.perfil);
-  const catalogo = await promessaCatalogo;
+  const [catalogo, propostasPendentes] = await Promise.all([promessaCatalogo, contarPropostasPendentes().catch(() => 0)]);
   const itens = [
     { href: "/emendas", rotulo: "Painel", exato: true },
     { href: "/emendas/lista", rotulo: "Emendas" },
+    { href: "/emendas/pendencias", rotulo: "Pendências" },
+    { href: "/emendas/aprovacoes", rotulo: gestor ? "Aprovações" : "Minhas propostas", selo: propostasPendentes },
+    { href: "/emendas/relatorios", rotulo: "Relatórios" },
     { href: "/emendas/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/secretarias", rotulo: "Secretarias" },
     ...(gestor ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),

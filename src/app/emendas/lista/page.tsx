@@ -2,6 +2,8 @@ import { Suspense } from "react";
 
 import { TabelaEmendas } from "@/components/emendas/tabela-emendas";
 import { Vazio } from "@/components/emendas/ui";
+import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
+import { resumoDaLinha, type ResumoLinha } from "@/lib/emendas/resumo";
 import { listarEmendas, listarSecretarias, listarVereadores, resolverExercicio } from "@/lib/emendas/dados";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +15,15 @@ export default async function PaginaListaEmendas({ searchParams }: { searchParam
 
   const [emendas, vereadores, secretarias] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores(), listarSecretarias()]);
 
+  const calculos = await calcularEmendasDoExercicio(emendas, exercicio);
+  const resumos: Record<string, ResumoLinha> = {};
+  for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);
+
   return (
     <Suspense>
       <TabelaEmendas
         emendas={emendas}
+        resumos={resumos}
         vereadores={vereadores.filter((v) => emendas.some((e) => e.vereador_id === v.id))}
         secretarias={secretarias.filter((s) => emendas.some((e) => e.secretaria_id === s.id))}
         ano={exercicio.ano}

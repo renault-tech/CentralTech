@@ -1,7 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
+
+import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
@@ -30,6 +32,7 @@ async function exigirGestor() {
 }
 
 function revalidar() {
+  revalidateTag(TAG_PORTAL, "max");
   revalidatePath("/emendas", "layout");
 }
 
@@ -63,6 +66,69 @@ export async function salvarExercicio(dados: z.input<typeof esquemaExercicio>): 
     percentual_rcl: a.data.percentualRcl,
     situacao: a.data.situacao,
   });
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
+const dataIso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida").nullable();
+
+const esquemaDatasExercicio = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  dataLoa: dataIso,
+  numeroLei: opcional,
+  prazoExequibilidade: dataIso,
+});
+
+/** Datas que valem para TODAS as emendas do ano: ninguém digita a LOA emenda por emenda. */
+export async function salvarDatasExercicio(dados: z.input<typeof esquemaDatasExercicio>): Promise<Resultado> {
+  const a = esquemaDatasExercicio.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas
+    .from("exercicios")
+    .update({ data_aprovacao_loa: a.data.dataLoa, numero_lei_loa: a.data.numeroLei, prazo_exequibilidade: a.data.prazoExequibilidade })
+    .eq("ano", a.data.ano);
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
+const esquemaParecer = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  secretariaId: z.uuid(),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data do parecer"),
+  protocolo: opcional,
+  observacao: opcional,
+});
+
+/** Um parecer por secretaria e ano cobre todas as emendas dela; exceções viram impedimento na emenda. */
+export async function salvarParecer(dados: z.input<typeof esquemaParecer>): Promise<Resultado> {
+  const a = esquemaParecer.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirGestor();
+  if (!ctx) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas.from("pareceres_exequibilidade").upsert({
+    ano: a.data.ano,
+    secretaria_id: a.data.secretariaId,
+    data: a.data.data,
+    protocolo: a.data.protocolo,
+    observacao: a.data.observacao,
+    atualizado_por: ctx.usuario.id,
+    atualizado_em: new Date().toISOString(),
+  });
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
+export async function removerParecer(ano: number, secretariaId: string): Promise<Resultado> {
+  if (!Number.isInteger(ano) || !z.uuid().safeParse(secretariaId).success) return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas.from("pareceres_exequibilidade").delete().eq("ano", ano).eq("secretaria_id", secretariaId);
   if (error) return { sucesso: false, erro: traduzir(error) };
   revalidar();
   return { sucesso: true };
