@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-28",
+    titulo: "Emendas: ajustes após o primeiro teste",
+    descricao:
+      "O selo de pendências na lista agora diz “1 pendência” em vez de só o número. A parcela da cota na Saúde por vereador mostra uma casa decimal (49,6% deixa de aparecer como 50%). O painel explica por que a divisão por natureza da despesa pode diferir dos cartões por tipo de execução.",
+  },
+  {
+    data: "2026-10-28",
     titulo: "Emendas: os três números do processo ficam separados e explicados",
     descricao:
       "O quadro “Processo no Compras” agora mostra, em linhas separadas, o número do processo (Compras), da licitação e do contrato (setor de Contratos), cada um com a fase da emenda em que vale. A busca também acha pelo número do contrato, e a lista de sugestões ficou mais larga, com o objeto em até 3 linhas.",

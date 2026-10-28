@@ -267,7 +267,7 @@ export function PainelEmendas({
                       !recorteSoVereadorOuNada || !l.total ? "bg-slate-100 text-slate-500" : ok ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900"
                     )}
                   >
-                    {recorteSoVereadorOuNada && l.total ? `Saúde ${Math.round((l.saude / exercicio.cota_por_vereador) * 100)}%` : "—"}
+                    {recorteSoVereadorOuNada && l.total ? `Saúde ${pct(l.saude / exercicio.cota_por_vereador)}` : "—"}
                   </span>
                 </button>
               );
@@ -333,6 +333,10 @@ export function PainelEmendas({
                 />
               );
             })()}
+            <p className="text-xs leading-snug text-slate-500">
+              Aqui a divisão segue a <strong className="font-medium">natureza da despesa</strong> (grupo 50 = repasse). Os cartões por tipo usam o{" "}
+              <strong className="font-medium">tipo de execução</strong> definido pela gestão. Se os números diferem, a emenda aparece em “Pendências” como tipo incoerente.
+            </p>
           </Cartao>
         </div>
 
