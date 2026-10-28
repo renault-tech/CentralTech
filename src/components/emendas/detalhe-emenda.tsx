@@ -18,6 +18,7 @@ import {
   type Resultado,
 } from "@/lib/emendas/actions";
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
+import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import type { FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
@@ -582,6 +583,7 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
         <DialogHeader>
           <DialogTitle>Registrar impedimento</DialogTitle>
           <DialogDescription>A emenda fica marcada como impedida até ser resolvida ou remanejada.</DialogDescription>
+          <BaseLegalLinha chave="impedimento" className="mt-1" />
         </DialogHeader>
         <form
           className="mt-4 flex flex-col gap-3.5"
@@ -639,6 +641,9 @@ function DialogoMovimento({
         <DialogHeader>
           <DialogTitle>Lançar movimento financeiro</DialogTitle>
           <DialogDescription>Para pagamentos parciais, anulações ou complementos. O sistema não deixa o pago passar do empenhado.</DialogDescription>
+          <BaseLegalLinha chave="empenho" className="mt-1" />
+          <BaseLegalLinha chave="liquidacao" />
+          <BaseLegalLinha chave="pagamento" />
         </DialogHeader>
         <form
           className="mt-4 flex flex-col gap-3.5"

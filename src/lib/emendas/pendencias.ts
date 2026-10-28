@@ -5,6 +5,7 @@
  * justificativa só vale enquanto a assinatura é a mesma.
  */
 
+import { baseDaPendencia } from "@/lib/emendas/base-legal";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
 import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
@@ -20,6 +21,8 @@ export type Pendencia = {
   assinatura: string;
   /** Aba do detalhe onde se resolve. */
   aba: "fases" | "documentacao" | "financeiro" | "execucao";
+  /** Fundamento legal da regra, quando houver. */
+  base?: string;
   justificativa?: string;
 };
 
@@ -178,7 +181,8 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
   return out
     .map((p) => {
       const j = justificadas.get(p.regra);
-      return j && j.assinatura === p.assinatura ? { ...p, justificativa: j.justificativa } : p;
+      const comBase = { ...p, base: baseDaPendencia(p.regra) };
+      return j && j.assinatura === p.assinatura ? { ...comBase, justificativa: j.justificativa } : comBase;
     })
     .sort((a, b) => ORDEM_GRAVIDADE[a.gravidade] - ORDEM_GRAVIDADE[b.gravidade]);
 }

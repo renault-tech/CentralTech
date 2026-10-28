@@ -23,6 +23,7 @@ export type LinhaPendencia = {
   gravidade: Gravidade;
   titulo: string;
   detalhe: string;
+  base?: string;
 };
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
@@ -116,6 +117,7 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
                 <span className="ml-auto text-xs tabular-nums text-slate-600">{brl(l.valor)}</span>
               </div>
               <p className="mt-0.5 text-[13px] text-slate-700">{l.detalhe}</p>
+              {l.base && <p className="text-xs text-slate-500">Base legal: {l.base}</p>}
               <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                 <span className="font-mono">nº {l.numero}</span>
                 <TipoSelo tipo={l.tipo} />

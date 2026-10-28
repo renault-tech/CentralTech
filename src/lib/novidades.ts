@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-10-29",
+    titulo: "Emendas: base legal à vista",
+    descricao:
+      "Pendências, fases, documentos, impedimento, lançamentos financeiros, parceria (extrato, conta, vigência), Saúde (“?” no indicador), exequibilidade, relatórios e portal público agora citam a lei que fundamenta cada exigência (CF art. 166 por simetria, Leis 4.320, 13.019, 14.133, LAI, LRF e IN TCE-MG 05/2025). Os percentuais e prazos próprios do município seguem a Lei Orgânica: confira com o jurídico.",
+  },
+  {
     data: "2026-10-28",
     titulo: "Emendas: ajustes após o primeiro teste",
     descricao:

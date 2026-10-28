@@ -1699,3 +1699,7 @@ O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; r
   `dangerouslySetInnerHTML`/`eval` no código; CSV com neutralização de fórmulas.
 
 - **Três números por processo (28/10/2026)**: processo (`processos.numero`, Compras), licitação (`numero_licitacao`, ao ir para Licitação) e contrato (`contratos_vigentes.numero` por `processo_id`, setor de Contratos; `processos.contrato_vinculado` é só reserva). `buscarProcessoPor*` traz `contratos` (≤5); `VinculoCompras` lista os três com "Vale para: fase X"; a busca por número também casa o contrato. Atalho da fase de contrato = 1º contrato.
+
+## Base legal nas telas (29/10/2026)
+
+`src/lib/emendas/base-legal.ts` guarda as citações em um lugar só (`BASES`, `BASE_DA_PENDENCIA`); `BaseLegalLinha`/`BaseLegalDica` (`components/emendas/base-legal.tsx`) as mostram; `Pendencia.base` vem de `baseDaPendencia(regra)`. Fases e checklist mostram `referencia`/`referencia_legal` do catálogo com o prefixo "Base legal:". **Vereadores: a CF art. 166 vale por simetria; percentual e prazos reais estão na Lei Orgânica do Município — as citações foram redigidas de memória e precisam de revisão do jurídico/controle interno antes de serem tratadas como definitivas.** Novas regras de pendência: acrescentar a chave em `BASE_DA_PENDENCIA`.

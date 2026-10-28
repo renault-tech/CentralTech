@@ -155,7 +155,11 @@ export function PortalEmendas({ linhas, etapas, ano, anos }: { linhas: LinhaPort
           </p>
           <p>
             Publicação em cumprimento à Lei de Acesso à Informação (Lei 12.527/2011), à Lei de Responsabilidade Fiscal (art. 48-A) e à IN TCE-MG nº 05/2025.
-            Dados atualizados a cada poucos minutos a partir do sistema de gestão. Contas bancárias aparecem mascaradas e não são publicados dados pessoais.
+            Dados atualizados a cada poucos minutos a partir do sistema de gestão. Contas bancárias aparecem mascaradas e não são publicados dados pessoais (Lei 13.709/2018, LGPD).
+          </p>
+          <p>
+            Limite de emendas individuais e destinação mínima à saúde: Constituição Federal, art. 166, §§ 9º a 11, aplicados por simetria, e Lei Orgânica do Município.
+            Repasses a entidades: Lei 13.019/2014. Despesa pública: Lei 4.320/1964. Contratações: Lei 14.133/2021.
           </p>
         </footer>
       </main>

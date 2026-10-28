@@ -23,6 +23,7 @@ import {
   porSecretaria,
   porVereador,
 } from "@/lib/emendas/regras";
+import { BaseLegalDica } from "@/components/emendas/base-legal";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo, Exercicio, Secretaria, Vereador } from "@/types/emendas";
 import type { MovimentoResumo } from "@/lib/emendas/dados";
@@ -212,6 +213,7 @@ export function PainelEmendas({
           return (
             <Kpi
               rotulo="Na Saúde"
+              ajuda={<BaseLegalDica chave="saude" />}
               valor={pct(p)}
               apoio={`${brlCurto(ind.saude)} · ${ok ? `mínimo de ${exercicio.percentual_saude_min}% atendido` : `abaixo de ${exercicio.percentual_saude_min}%`}`}
               barra={p}
