@@ -1625,3 +1625,12 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   parcerias/prestação de contas e impedimentos abertos (`relatorios.ts` puro e testado; `relatorios-dados.ts` sob a RLS
   de quem pede). Impressão pelo CSS de impressão existente; CSV com BOM, `;` e vírgula decimal. São dados de APOIO: o envio
   oficial ao TCE-MG segue o sistema deles (layout de importação do TCE não foi mapeado).
+
+## Limite de tentativas por IP no código (28/10/2026)
+
+O Firewall da Vercel não pôde ser configurado (a API do MCP responde "config não encontrada" e o editor do painel
+não aplicou o Rate Limit), então o limite virou código: `lib/seguranca/limite-requisicoes.ts` (`excedeuLimite(rota, ip, limite, janelaSeg)`,
+tabela `hub.limites_requisicao`, só service_role; janela fixa, contagem aproximada, **falha aberta** se o banco cair).
+Aplicado em `entrar` (30/min), `solicitarRecuperacao` (5/5 min), `solicitarAcesso` (10/5 min),
+`/api/numera/recuperar-senha` (5/5 min, responde a mesma mensagem genérica) e `/api/numera/resolver-login` (30/min, responde `email: null`).
+O IP vem de `x-forwarded-for`. Não substitui um WAF para ataque volumétrico; regras do Firewall da Vercel continuam bem-vindas se um dia funcionarem.
