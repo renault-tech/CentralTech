@@ -18,8 +18,8 @@ export const BASES: Record<string, BaseLegal> = {
     resumo: "Emendas individuais têm execução orçamentária e financeira obrigatória no exercício, dentro do limite definido na Lei Orgânica.",
   },
   saude: {
-    citacao: "CF, art. 166, § 9º (por simetria); Lei Orgânica do Município",
-    resumo: "Metade do valor das emendas individuais deve ser destinada a ações e serviços públicos de saúde. O percentual exato do município está na Lei Orgânica.",
+    citacao: "CF, art. 166, §§ 9º e 9º-A (reprodução obrigatória: ADIs 6670 e 7493, STF; IN TCE-MG 05/2025, art. 8º, X); Lei Orgânica do Município",
+    resumo: "Os entes municipais devem observar os percentuais da CF para emendas individuais e a parcela destinada a ações e serviços públicos de saúde.",
   },
   exequibilidade: {
     citacao: "CF, art. 166, §§ 13 e 14 (por simetria)",
@@ -48,6 +48,26 @@ export const BASES: Record<string, BaseLegal> = {
   termo_extrato: {
     citacao: "Lei 13.019/2014, art. 38",
     resumo: "O extrato do termo de fomento ou de colaboração deve ser publicado em meio oficial como condição de eficácia.",
+  },
+  publicidade: {
+    citacao: "IN TCE-MG 05/2025, art. 7º e § 2º; Recomendação MPC-MG 01/2025",
+    resumo: "Os 17 elementos do art. 7º devem ser divulgados em meio digital de acesso público ANTES da execução orçamentária e financeira da emenda.",
+  },
+  plano_publico: {
+    citacao: "IN TCE-MG 05/2025, art. 7º, IX; ADPF 854 (STF)",
+    resumo: "O Plano de Trabalho (objeto, finalidade, metas, estimativa de recursos, classificação corrente/capital, prazo e cronograma) deve ser divulgado antes do recebimento dos recursos.",
+  },
+  relatorio_gestao: {
+    citacao: "IN TCE-MG 05/2025, art. 7º, X e § 1º",
+    resumo: "O relatório de gestão dos recursos é divulgado até 30 de junho do ano seguinte ao recebimento e atualizado a cada 30 de junho, até o relatório final.",
+  },
+  anuencia_sus: {
+    citacao: "IN TCE-MG 05/2025, art. 7º, XVII; Recomendação MPC-MG 01/2025, art. 2º, § 3º",
+    resumo: "Emendas de saúde devem informar se houve anuência prévia do gestor do SUS e ser aprovadas pelas instâncias de governança do SUS.",
+  },
+  contabil: {
+    citacao: "IN TCE-MG 05/2025, arts. 4º e 5º; Portaria STN/MF 1.307/2024",
+    resumo: "Cada despesa deve poder ser ligada à emenda que a originou, por fonte de recurso, código ou identificador único no plano de contas.",
   },
   conta_parceria: {
     citacao: "Lei 13.019/2014, art. 51; IN TCE-MG 05/2025, art. 6º",
@@ -81,6 +101,10 @@ export const BASE_DA_PENDENCIA: Record<string, keyof typeof BASES> = {
   sem_conta: "conta_parceria",
   vigencia: "prestacao_contas",
   nao_iniciada: "execucao_obrigatoria",
+  publicidade_incompleta: "publicidade",
+  conta_repetida: "conta_parceria",
+  conta_banco_nao_oficial: "conta_parceria",
+  relatorio_gestao: "relatorio_gestao",
   exequibilidade_vencida: "exequibilidade",
 };
 

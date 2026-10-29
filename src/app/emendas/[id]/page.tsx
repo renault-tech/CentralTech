@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
+import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
 import { buscarProcessoPorId } from "@/lib/emendas/compras";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
@@ -15,6 +16,7 @@ import {
   listarItensChecklist,
   listarPareceres,
   listarUnidades,
+  listarVereadores,
   obterCatalogoEtapas,
   obterContextoEmendas,
   obterDetalheEmenda,
@@ -38,7 +40,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   // Tudo o que não depende do resultado do detalhe anda na mesma rodada
   // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria] = await Promise.all([
+  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria, vereadores] = await Promise.all([
     obterDetalheEmenda(id),
     obterCatalogoEtapas(),
     listarBeneficiarios(),
@@ -50,6 +52,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           c.from("auditoria").select("*").in("tabela", ["emendas", "execucao"]).eq("registro_id", id).order("em", { ascending: false }).limit(50)
         )
       : Promise.resolve({ data: [] }),
+    listarVereadores(),
   ]);
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos, execucao } = detalhe;
@@ -67,6 +70,8 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     pareceres,
     justificadas: detalhe.justificadas,
     catalogo,
+    documentos: detalhe.documentos.map((d) => ({ emenda_id: d.emenda_id, tipo: d.tipo, competencia: d.competencia ?? null })),
+    partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
     hoje: new Date().toISOString().slice(0, 10),
   }).get(emenda.id)!;
   // Itens condicionais: Saúde (CNES, CMS…) só quando a emenda é de Saúde; consórcio só na natureza 93.
@@ -166,6 +171,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           <div id="bloco-parceria">
             <PainelParceria emendaId={emenda.id} modalidade={emenda.modalidade} execucao={execucao} podeEditar={podeEditar} />
           </div>
+          <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} />
           <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>

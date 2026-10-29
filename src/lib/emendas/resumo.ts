@@ -4,6 +4,7 @@
  */
 
 import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
+import { avaliarArt7, contasRepetidas, relatoriosDeGestao, type DocumentoResumo, type ItemConformidade } from "@/lib/emendas/conformidade";
 import { maiorGravidade, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
 import { CATALOGO_PADRAO, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type {
@@ -19,6 +20,8 @@ import type {
 export type CalculoEmenda = {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
+  /** Itens da IN TCE-MG 05/2025 (art. 7º e art. 5º) avaliados para a emenda. */
+  conformidade: ItemConformidade[];
 };
 
 /** O que a lista precisa por linha (vai para o navegador, então enxuto). */
@@ -36,7 +39,10 @@ export type EntradaResumos = {
   manuais: FaseEmenda[];
   movimentos: { emenda_id: string; tipo: string; data: string | null }[];
   execucoes: ExecucaoEmenda[];
-  exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade"> | null;
+  exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade" | "numero_lei_loa" | "municipio_nome" | "municipio_cnpj" | "unidade_parlamentar"> | null;
+  /** Partido por vereador (id → partido). */
+  partidos?: Map<string, string | null>;
+  documentos?: (DocumentoResumo & { emenda_id: string })[];
   pareceres: ParecerExequibilidade[];
   justificadas: PendenciaJustificada[];
   catalogo?: CatalogoEtapas;
@@ -63,6 +69,8 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
   const execucoes = new Map(e.execucoes.map((x) => [x.id, x]));
   const pareceres = new Map(e.pareceres.map((p) => [p.secretaria_id, p]));
   const justificadas = agrupar(e.justificadas, (j) => j.emenda_id);
+  const docs = agrupar(e.documentos ?? [], (d) => d.emenda_id);
+  const repetidas = contasRepetidas(e.execucoes);
 
   const saida = new Map<string, CalculoEmenda>();
   for (const emenda of e.emendas) {
@@ -78,8 +86,17 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
       parecer,
       catalogo,
     });
+    const itens = avaliarArt7({
+      emenda,
+      execucao,
+      partido: e.partidos?.get(emenda.vereador_id) ?? null,
+      exercicio: e.exercicio,
+      documentos: docs.get(emenda.id) ?? [],
+      movimentos: movs.get(emenda.id) ?? [],
+    });
     saida.set(emenda.id, {
       fases,
+      conformidade: itens,
       pendencias: pendencias({
         emenda,
         fases,
@@ -87,6 +104,11 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
         exercicio: e.exercicio,
         temParecer: !!parecer,
         justificadas: justificadas.get(emenda.id),
+        conformidade: {
+          itens,
+          relatorios: relatoriosDeGestao(movs.get(emenda.id) ?? [], docs.get(emenda.id) ?? [], e.hoje),
+          contaRepetida: repetidas.has(emenda.id),
+        },
         hoje: e.hoje,
       }),
     });

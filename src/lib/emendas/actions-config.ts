@@ -95,6 +95,32 @@ export async function salvarDatasExercicio(dados: z.input<typeof esquemaDatasExe
   return { sucesso: true };
 }
 
+const esquemaDadosPublicacao = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  municipioNome: opcional,
+  municipioCnpj: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : v))
+    .refine((v) => v === null || /^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/.test(v), "CNPJ inválido (use 00.000.000/0000-00)"),
+  unidadeParlamentar: opcional,
+});
+
+/** Dados do Município e da Câmara divulgados com cada emenda (IN TCE-MG 05/2025, art. 7º, I, XI e XII). */
+export async function salvarDadosPublicacao(dados: z.input<typeof esquemaDadosPublicacao>): Promise<Resultado> {
+  const a = esquemaDadosPublicacao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { error } = await emendas
+    .from("exercicios")
+    .update({ municipio_nome: a.data.municipioNome, municipio_cnpj: a.data.municipioCnpj, unidade_parlamentar: a.data.unidadeParlamentar })
+    .eq("ano", a.data.ano);
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true };
+}
+
 const esquemaParecer = z.object({
   ano: z.number().int().min(2020).max(2100),
   secretariaId: z.uuid(),

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-10-29",
+    titulo: "Emendas: adequação à IN TCE-MG 05/2025 e à Recomendação MPC-MG 01/2025",
+    descricao:
+      "Nova tela Conformidade (item a item do art. 7º, por emenda) e novo bloco Transparência na emenda (localidade, cronograma previsto, finalidade e metas do plano de trabalho, anuência do SUS, identificador contábil). Novas pendências: publicidade incompleta (alta se já houve empenho ou pagamento — o sistema avisa, não bloqueia), conta repetida ou fora de banco oficial e relatório de gestão (prazo 30/06). Anexos ganharam Relatório de gestão e Anuência do SUS. O portal público passou a mostrar partido, descrição, localidade, gestor responsável, banco e conta, GND, datas de cada empenho/pagamento, processo e contrato, e a oferecer o plano de trabalho e os relatórios em PDF. Em Configurações › Exercício há os dados do Município e da Câmara.",
+  },
+  {
+    data: "2026-10-29",
     titulo: "Emendas: botão único “Exportar”",
     descricao:
       "Na lista de Emendas e em cada relatório, os botões de download viraram um só “Exportar”, que abre as opções (Excel, PDF, CSV). Em Relatórios, o menu do topo também baixa todos os relatórios em PDF ou imprime a página.",

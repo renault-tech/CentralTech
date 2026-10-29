@@ -29,6 +29,8 @@ export type TipoDocumento =
   | "nota_fiscal"
   | "comprovante_pagamento"
   | "prestacao_contas"
+  | "relatorio_gestao"
+  | "anuencia_sus"
   | "outro";
 
 export type Exercicio = {
@@ -42,6 +44,9 @@ export type Exercicio = {
   data_aprovacao_loa: string | null;
   numero_lei_loa: string | null;
   prazo_exequibilidade: string | null;
+  municipio_nome: string | null;
+  municipio_cnpj: string | null;
+  unidade_parlamentar: string | null;
 };
 
 export type Vereador = {
@@ -204,6 +209,18 @@ export type ExecucaoEmenda = {
   observacao: string | null;
   atualizado_em: string;
   atualizado_por: string | null;
+  /** IN TCE-MG 05/2025, art. 7º */
+  localidade: string | null;
+  inicio_previsto: string | null;
+  termino_previsto: string | null;
+  plano_metas: string | null;
+  plano_outras_fontes: number | null;
+  plano_despesa_corrente: number | null;
+  plano_despesa_capital: number | null;
+  anuencia_sus: "sim" | "nao" | "nao_se_aplica" | null;
+  anuencia_sus_data: string | null;
+  identificador_contabil: string | null;
+  fonte_recurso: string | null;
 };
 
 export type DocumentoEmenda = {
@@ -213,6 +230,7 @@ export type DocumentoEmenda = {
   nome_arquivo: string;
   caminho: string;
   tamanho: number | null;
+  competencia?: number | null;
   usuario_id: string | null;
   criado_em: string;
 };

@@ -223,6 +223,20 @@ export const listarPareceres = cache(async (ano: number): Promise<ParecerExequib
   return data ?? [];
 });
 
+/** Documentos (só tipo e competência) das emendas visíveis — alimentam a conformidade com a IN 05/2025. */
+export async function listarDocumentosResumo(idsEmendas: string[]): Promise<{ emenda_id: string; tipo: string; competencia: number | null }[]> {
+  if (idsEmendas.length === 0) return [];
+  const emendas = await criarClienteEmendas();
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const { data, error } = await emendas.from("documentos").select("emenda_id,tipo,competencia").in("emenda_id", lote);
+      if (error) falhou("documentos", error);
+      return (data ?? []).map((x) => ({ emenda_id: x.emenda_id as string, tipo: x.tipo as string, competencia: (x.competencia as number | null) ?? null }));
+    })
+  );
+  return lotes.flat();
+}
+
 /** Fases manuais e justificativas das emendas visíveis, em lotes paralelos. */
 export async function listarFasesEJustificativas(idsEmendas: string[]): Promise<{ fases: FaseEmenda[]; justificadas: PendenciaJustificada[] }> {
   if (idsEmendas.length === 0) return { fases: [], justificadas: [] };

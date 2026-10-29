@@ -6,6 +6,7 @@
  */
 
 import { baseDaPendencia } from "@/lib/emendas/base-legal";
+import { bancoOficial, faltas, type ItemConformidade, type SituacaoRelatorio } from "@/lib/emendas/conformidade";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
 import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
@@ -20,7 +21,7 @@ export type Pendencia = {
   /** Muda quando os dados mudam; justificativa só vale para a mesma assinatura. */
   assinatura: string;
   /** Aba do detalhe onde se resolve. */
-  aba: "fases" | "documentacao" | "financeiro" | "execucao";
+  aba: "fases" | "documentacao" | "financeiro" | "execucao" | "transparencia" | "documentos";
   /** Fundamento legal da regra, quando houver. */
   base?: string;
   justificativa?: string;
@@ -41,6 +42,8 @@ export type EntradaPendencias = {
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   justificadas?: PendenciaJustificada[];
+  /** IN TCE-MG 05/2025: itens do art. 7º já avaliados, relatórios de gestão e conta repetida. */
+  conformidade?: { itens: ItemConformidade[]; relatorios: SituacaoRelatorio[]; contaRepetida: boolean };
   /** AAAA-MM-DD */
   hoje: string;
 };
@@ -177,6 +180,53 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).`,
       aba: "fases",
     });
+  }
+
+  const conf = e.conformidade;
+  if (conf) {
+    const faltando = faltas(conf.itens);
+    if (faltando.length) {
+      const iniciou = emenda.empenhado > 0 || emenda.pago > 0;
+      add({
+        regra: "publicidade_incompleta",
+        gravidade: iniciou ? "alta" : "baixa",
+        titulo: iniciou ? "Execução sem publicidade completa (IN TCE-MG 05/2025)" : "Publicidade incompleta (IN TCE-MG 05/2025)",
+        detalhe: `Faltam para a divulgação obrigatória: ${faltando.map((f) => `${f.codigo === "art5" ? "art. 5º" : `item ${f.codigo}`} — ${f.nome}`).join("; ")}.${iniciou ? " As informações devem ser divulgadas antes da execução (art. 7º, § 2º)." : ""}`,
+        assinatura: `publicidade|${faltando.map((f) => f.codigo).join(",")}|${iniciou ? "exec" : "pre"}`,
+        aba: "transparencia",
+      });
+    }
+    const oficial = bancoOficial(execucao?.conta_bancaria);
+    if (conf.contaRepetida) {
+      add({
+        regra: "conta_repetida",
+        gravidade: "alta",
+        titulo: "Mesma conta bancária em mais de uma emenda",
+        detalhe: "A IN exige conta específica para cada transferência e veda contas de passagem (art. 6º). Abra conta própria para esta emenda ou corrija o cadastro.",
+        assinatura: `conta_repetida|${execucao?.conta_bancaria ?? ""}`,
+        aba: "execucao",
+      });
+    }
+    if (oficial === false) {
+      add({
+        regra: "conta_banco_nao_oficial",
+        gravidade: "media",
+        titulo: "Conta fora de instituição financeira oficial",
+        detalhe: `A conta informada (“${execucao?.conta_bancaria}”) não parece ser do Banco do Brasil ou da Caixa. O art. 6º da IN pede instituição financeira oficial, onde houver: confirmar com o jurídico.`,
+        assinatura: `banco|${execucao?.conta_bancaria ?? ""}`,
+        aba: "execucao",
+      });
+    }
+    for (const r of conf.relatorios) {
+      add({
+        regra: `relatorio_gestao:${r.competencia}`,
+        gravidade: r.situacao === "vencido" ? "alta" : "media",
+        titulo: r.situacao === "vencido" ? `Relatório de gestão ${r.competencia} em atraso` : `Relatório de gestão ${r.competencia} vence em breve`,
+        detalhe: `O relatório de gestão dos recursos de ${r.competencia} deve estar disponível até ${dataBr(r.prazo)} (IN TCE-MG 05/2025, art. 7º, X e § 1º). Anexe-o em Anexos, tipo “Relatório de gestão”, informando o ano.`,
+        assinatura: `relatorio|${r.competencia}|${r.situacao}`,
+        aba: "documentos",
+      });
+    }
   }
 
   const objeto = emenda.objeto.trim();

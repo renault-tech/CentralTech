@@ -112,30 +112,80 @@ export function PortalEmendas({ linhas, etapas, ano, anos }: { linhas: LinhaPort
                     {l.situacao === "impedida" && " · Impedida"}
                   </span>
                 </summary>
-                <dl className="grid gap-x-6 gap-y-2 border-t border-slate-100 p-3.5 text-[13px] sm:grid-cols-2">
-                  {[
-                    ["Beneficiário", l.beneficiario ? `${l.beneficiario}${l.cnpj ? ` · CNPJ ${l.cnpj}` : ""}` : null],
-                    ["Unidade orçamentária", l.unidade],
-                    ["Funcional programática", l.funcional],
-                    ["Natureza da despesa", l.natureza],
-                    ["Saúde", l.saude ? "Sim" : "Não"],
-                    ["Empenhado", brl(l.empenhado)],
-                    ["Liquidado", brl(l.liquidado)],
-                    ["Pago", `${brl(l.pago)}${l.ultimoPagamento ? ` (último em ${dataBr(l.ultimoPagamento)})` : ""}`],
-                    ["Termo de parceria", l.termo],
-                    ["Vigência", l.vigenciaFim ? `${l.vigenciaInicio ? dataBr(l.vigenciaInicio) : "—"} a ${dataBr(l.vigenciaFim)}` : null],
-                    ["Extrato publicado em", l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null],
-                    ["Conta da parceria", l.contaMascarada],
-                    ["Impedimento", l.impedimento],
-                  ]
-                    .filter(([, v]) => v)
-                    .map(([k, v]) => (
-                      <div key={k as string}>
-                        <dt className="text-xs text-slate-500">{k}</dt>
-                        <dd className="font-medium">{v}</dd>
-                      </div>
-                    ))}
-                </dl>
+                <div className="border-t border-slate-100 p-3.5 text-[13px]">
+                  {l.descricao && <p className="mb-3 whitespace-pre-line leading-relaxed text-slate-700">{l.descricao}</p>}
+                  <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                    {[
+                      ["Vereador(a)", `${l.vereador}${l.partido ? ` (${l.partido})` : ""}${l.unidadeParlamentar ? ` · ${l.unidadeParlamentar}` : ""}`],
+                      ["Emenda no orçamento", `nº ${l.numero}/${l.ano}${l.leiLoa ? ` · ${l.leiLoa}` : ""}`],
+                      ["Recebedor", l.beneficiario ? `${l.beneficiario}${l.cnpj ? ` · CNPJ ${l.cnpj}` : ""}` : l.municipio ? `${l.municipio}${l.municipioCnpj ? ` · CNPJ ${l.municipioCnpj}` : ""}` : null],
+                      ["Município", l.municipio ? `${l.municipio}${l.municipioCnpj ? ` · CNPJ ${l.municipioCnpj}` : ""}` : null],
+                      ["Localidade beneficiada", l.localidade],
+                      ["Órgão executor", l.unidade],
+                      ["Gestor responsável (Prefeitura)", l.gestorPrefeitura],
+                      ["Gestor responsável (entidade)", l.gestorEntidade],
+                      ["Funcional programática", l.funcional],
+                      ["Natureza da despesa", l.natureza],
+                      ["Grupo de natureza (GND)", l.gnd ? `${l.gnd}${l.categoria ? ` · ${l.categoria}` : ""}` : null],
+                      ["Saúde", l.saude ? `Sim${l.anuenciaSus ? ` · anuência do SUS: ${{ sim: "houve", nao: "não houve", nao_se_aplica: "não se aplica" }[l.anuenciaSus]}` : ""}` : "Não"],
+                      ["Cronograma previsto", l.inicioPrevisto || l.terminoPrevisto ? `${l.inicioPrevisto ? dataBr(l.inicioPrevisto) : "—"} a ${l.terminoPrevisto ? dataBr(l.terminoPrevisto) : "—"}` : null],
+                      ["Vigência do termo", l.vigenciaFim ? `${l.vigenciaInicio ? dataBr(l.vigenciaInicio) : "—"} a ${dataBr(l.vigenciaFim)}` : null],
+                      ["Termo / instrumento", l.termo],
+                      ["Processo administrativo", l.processo],
+                      ["Contrato", l.contrato],
+                      ["Extrato publicado em", l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null],
+                      ["Banco e conta dos recursos", l.conta],
+                      ["Identificador contábil", l.identificadorContabil],
+                      ["Fonte de recurso", l.fonteRecurso],
+                      ["Outras fontes no plano", l.planoOutrasFontes != null ? brl(l.planoOutrasFontes) : null],
+                      ["Impedimento", l.impedimento],
+                    ]
+                      .filter(([, v]) => v)
+                      .map(([k, v]) => (
+                        <div key={k as string}>
+                          <dt className="text-xs text-slate-500">{k}</dt>
+                          <dd className="font-medium">{v}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                  {l.planoMetas && (
+                    <div className="mt-3">
+                      <p className="text-xs text-slate-500">Finalidade e metas do plano de trabalho</p>
+                      <p className="whitespace-pre-line font-medium">{l.planoMetas}</p>
+                    </div>
+                  )}
+                  <div className="mt-3">
+                    <p className="text-xs text-slate-500">Recursos (empenho, liquidação e pagamento)</p>
+                    {l.movimentos.length === 0 ? (
+                      <p className="text-slate-600">Ainda sem movimentação. Empenhado {brl(l.empenhado)} · pago {brl(l.pago)}.</p>
+                    ) : (
+                      <ul className="mt-1 flex flex-col gap-0.5">
+                        {l.movimentos.map((m, i) => (
+                          <li key={i} className="tabular-nums">
+                            {{ empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação" }[m.tipo]} · {m.data ? dataBr(m.data) : "sem data informada"} · {brl(m.valor)}
+                            {m.numero ? ` · nº ${m.numero}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-slate-500">Documentos</p>
+                    {l.documentos.length === 0 ? (
+                      <p className="text-slate-600">Plano de trabalho e relatório de gestão: ainda não disponibilizados para esta emenda.</p>
+                    ) : (
+                      <ul className="mt-1 flex flex-wrap gap-2">
+                        {l.documentos.map((d) => (
+                          <li key={d.id}>
+                            <a className="inline-flex rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-[#5B3FA8] hover:bg-slate-50" href={`/transparencia/emendas/documento/${d.id}`} target="_blank" rel="noopener">
+                              {d.rotulo}{d.competencia ? ` ${d.competencia}` : ""} (PDF)
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </details>
             </li>
           ))}
@@ -154,8 +204,8 @@ export function PortalEmendas({ linhas, etapas, ano, anos }: { linhas: LinhaPort
             <a className="font-medium text-[#5B3FA8] underline" href={`/transparencia/emendas/dados?ano=${ano}&formato=json`}>JSON</a>
           </p>
           <p>
-            Publicação em cumprimento à Lei de Acesso à Informação (Lei 12.527/2011), à Lei de Responsabilidade Fiscal (art. 48-A) e à IN TCE-MG nº 05/2025.
-            Dados atualizados a cada poucos minutos a partir do sistema de gestão. Contas bancárias aparecem mascaradas e não são publicados dados pessoais (Lei 13.709/2018, LGPD).
+            Informações divulgadas conforme o art. 7º da Instrução Normativa TCE-MG nº 05/2025, a Lei de Acesso à Informação (Lei 12.527/2011) e a Lei de Responsabilidade Fiscal (art. 48-A).
+            Itens ainda não informados pela gestão não aparecem na emenda correspondente. Dados atualizados a cada poucos minutos a partir do sistema de gestão. Não são publicados CPF, endereços nem outros dados pessoais de pessoas físicas (Lei 13.709/2018, LGPD).
           </p>
           <p>
             Limite de emendas individuais e destinação mínima à saúde: Constituição Federal, art. 166, §§ 9º a 11, aplicados por simetria, e Lei Orgânica do Município.
