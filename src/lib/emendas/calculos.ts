@@ -4,8 +4,10 @@ import {
   listarExecucoes,
   listarFasesCatalogo,
   listarFasesEJustificativas,
+  listarDocumentosResumo,
   listarMovimentos,
   listarPareceres,
+  listarVereadores,
   obterCatalogoEtapas,
   type MovimentoResumo,
 } from "@/lib/emendas/dados";
@@ -22,13 +24,15 @@ export async function calcularEmendasDoExercicio(
   movimentosJaCarregados?: MovimentoResumo[]
 ): Promise<Map<string, CalculoEmenda>> {
   const ids = emendas.map((e) => e.id);
-  const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo] = await Promise.all([
+  const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo, documentos, vereadores] = await Promise.all([
     medir("calculos:fases-catalogo", () => listarFasesCatalogo()),
     movimentosJaCarregados ?? medir("calculos:movimentos", () => listarMovimentos(ids)),
     medir("calculos:execucoes", () => listarExecucoes(ids)),
     medir("calculos:fases-justificativas", () => listarFasesEJustificativas(ids)),
     medir("calculos:pareceres", () => listarPareceres(exercicio.ano)),
     medir("calculos:catalogo-etapas", () => obterCatalogoEtapas()),
+    medir("calculos:documentos", () => listarDocumentosResumo(ids)),
+    medir("calculos:vereadores", () => listarVereadores()),
   ]);
   return calcularEmendas({
     emendas,
@@ -40,6 +44,8 @@ export async function calcularEmendasDoExercicio(
     pareceres,
     justificadas,
     catalogo,
+    documentos,
+    partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
     hoje: new Date().toISOString().slice(0, 10),
   });
 }

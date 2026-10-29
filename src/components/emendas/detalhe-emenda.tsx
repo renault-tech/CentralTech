@@ -36,7 +36,7 @@ export const BOTAO_SECUNDARIO =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const TIPOS_DOC: { valor: TipoDocumento; rotulo: string; modalidade?: "repasse" | "direta" }[] = [
-  { valor: "plano_trabalho", rotulo: "Plano de trabalho da entidade", modalidade: "repasse" },
+  { valor: "plano_trabalho", rotulo: "Plano de trabalho (IN 05/2025, art. 7º, IX)" },
   { valor: "certidoes", rotulo: "Certidões e regularidade da entidade", modalidade: "repasse" },
   { valor: "termo", rotulo: "Termo de fomento / colaboração", modalidade: "repasse" },
   { valor: "pedido", rotulo: "Pedido / termo de referência", modalidade: "direta" },
@@ -45,6 +45,8 @@ const TIPOS_DOC: { valor: TipoDocumento; rotulo: string; modalidade?: "repasse" 
   { valor: "nota_fiscal", rotulo: "Nota fiscal / liquidação" },
   { valor: "comprovante_pagamento", rotulo: "Comprovante de pagamento" },
   { valor: "prestacao_contas", rotulo: "Prestação de contas da entidade", modalidade: "repasse" },
+  { valor: "relatorio_gestao", rotulo: "Relatório de gestão dos recursos (IN 05/2025, art. 7º, X)" },
+  { valor: "anuencia_sus", rotulo: "Anuência / aprovação do SUS (emendas de saúde)" },
   { valor: "outro", rotulo: "Outro documento" },
 ];
 
@@ -245,6 +247,7 @@ export function DetalheEmendaCliente({
               executar={executar}
               irParaAba={(destino) => {
                 if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
+                else if (destino === "transparencia") document.getElementById("bloco-transparencia")?.scrollIntoView({ behavior: "smooth" });
                 else setAba(destino);
               }}
             />
@@ -920,6 +923,7 @@ function Documentos({
 }) {
   const tipos = TIPOS_DOC.filter((t) => !t.modalidade || t.modalidade === modalidade);
   const [tipo, setTipo] = React.useState<TipoDocumento>(tipos[0].valor);
+  const [competencia, setCompetencia] = React.useState(String(new Date().getFullYear() - 1));
   const [enviando, setEnviando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
   const entrada = React.useRef<HTMLInputElement>(null);
@@ -935,7 +939,7 @@ function Documentos({
       setEnviando(false);
       return setErro("Não foi possível enviar o arquivo (sem permissão nesta secretaria?).");
     }
-    const r = await executar(() => registrarDocumento({ emendaId, tipo, nomeArquivo: arquivo.name, caminho, tamanho: arquivo.size }));
+    const r = await executar(() => registrarDocumento({ emendaId, tipo, nomeArquivo: arquivo.name, caminho, tamanho: arquivo.size, competencia: tipo === "relatorio_gestao" ? Number(competencia) : null }));
     setEnviando(false);
     if (!r.sucesso) setErro(r.erro);
     if (entrada.current) entrada.current.value = "";
@@ -944,7 +948,7 @@ function Documentos({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] text-slate-600">
-        Checklist de {modalidade === "repasse" ? "repasse a entidade (parceria)" : "aplicação direta (compra pela Prefeitura)"}. Arquivos ficam no próprio sistema, com acesso controlado pela secretaria.
+        Checklist de {modalidade === "repasse" ? "repasse a entidade (parceria)" : "aplicação direta (compra pela Prefeitura)"}. Arquivos ficam no próprio sistema, com acesso controlado pela secretaria. <strong>Plano de trabalho, relatório de gestão e anuência do SUS são divulgados no portal público</strong> (IN TCE-MG 05/2025, art. 7º): anexe apenas versões que possam ser publicadas.
       </p>
       <ul className="flex flex-col gap-2">
         {tipos.filter((t) => t.valor !== "outro").map((t) => {
@@ -976,6 +980,12 @@ function Documentos({
               ))}
             </select>
           </label>
+          {tipo === "relatorio_gestao" && (
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
+              Ano a que se refere
+              <input className={cn(CAMPO, "w-24")} inputMode="numeric" maxLength={4} value={competencia} onChange={(e) => setCompetencia(e.target.value.replace(/\D/g, ""))} />
+            </label>
+          )}
           <input ref={entrada} type="file" className="sr-only" id={`arquivo-${emendaId}`} onChange={(e) => e.target.files?.[0] && void enviar(e.target.files[0])} />
           <label htmlFor={`arquivo-${emendaId}`} className={cn(BOTAO_PRIMARIO, "cursor-pointer", enviando && "pointer-events-none opacity-50")}>
             <FileUp className="h-4 w-4" aria-hidden /> {enviando ? "Enviando…" : "Anexar arquivo"}

@@ -122,3 +122,23 @@ Ato normativo do ciclo de contas; adaptação do plano de contas e classificaç�
 
 ## 8. Resumo
 O sistema entrega boa parte da **rastreabilidade** (fases, financeiro, histórico, pendências, vínculo com o Compras) e um **portal de transparência funcional**, mas **não atende integralmente ao art. 7º da IN 05/2025**: dos 17 elementos do art. 7º, só 2 estão plenos (IV valor e V órgão/beneficiário), 8 estão parciais e 7 faltam por completo (localidade, Plano de Trabalho, Relatório de gestão, CNPJ, gestor, conta/banco e anuência do SUS). Além disso, o portal **oculta dois dados que a IN manda publicar** (gestor e conta) e **não impede a execução sem publicidade completa**, que é o ponto de maior risco regulatório (suspensão de emendas).
+
+
+---
+
+## 9. Status da adequação (29/10/2026)
+
+Decisões do dono: **publicar** gestor responsável e banco/conta completos (conta de pessoa jurídica e agente público no exercício da função); **alertar** — sem bloquear — quando houver empenho/pagamento sem publicidade completa.
+
+**Feito no sistema:**
+- Banco: localidade, cronograma previsto, finalidade/metas e outras fontes do plano, anuência do SUS, identificador contábil e fonte de recurso (por emenda); Município (nome/CNPJ) e unidade parlamentar (por exercício); documentos `relatorio_gestao` (com ano) e `anuencia_sus`.
+- Tela **Conformidade** (`/emendas/conformidade`): item a item do art. 7º, por emenda e total, com filtro por item.
+- Bloco **Transparência** em cada emenda (o que falta e formulário); anexos de plano de trabalho, relatório de gestão e anuência do SUS.
+- Pendências novas: `publicidade_incompleta` (alta se já executada), `conta_repetida`, `conta_banco_nao_oficial`, `relatorio_gestao` (prazo 30/06, aviso 60 dias antes).
+- Portal público: partido, unidade parlamentar, LOA, município/CNPJ, descrição, localidade, gestor responsável, banco e conta, GND/categoria, datas de cada empenho/liquidação/pagamento, processo, contrato, cronograma, anuência do SUS, identificador contábil, plano de trabalho e relatórios em PDF (rota pública restrita a esses três tipos); rodapé reescrito sem afirmar conformidade integral; CSV/JSON ampliados.
+
+**Ainda depende de preenchimento/decisão (não é código):**
+- Preencher: partido dos 15 vereadores, CNPJ dos 215 beneficiários, nº da LOA, Município/CNPJ/Câmara, RCL e % da RCL, localidade/metas/cronograma/SUS/identificador de cada emenda, planos de trabalho (nenhum anexado).
+- Conferir contas em cooperativas (Sicredi/Sicoob) e contas repetidas (art. 6º) com o jurídico.
+- Ato normativo do ciclo de fiscalização/aprovação das contas (art. 8º, IV); informação ao TCE-MG (prazo 01/02/2026) e URL oficial do portal; OPP/fundo a fundo (se aplicável).
+- Layout do Portal de Emendas do TCE-MG (exportação) — aguardar instruções do Tribunal.

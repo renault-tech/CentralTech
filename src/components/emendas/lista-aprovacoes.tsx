@@ -23,6 +23,15 @@ const ROTULO_CAMPO: Record<string, string> = {
   gestor_pmc: "Gestor na Prefeitura",
   observacao: "Observação",
   processo_id: "Processo do Compras (vínculo)",
+  localidade: "Localidade beneficiada",
+  inicio_previsto: "Início previsto",
+  termino_previsto: "Término previsto",
+  plano_metas: "Finalidade e metas do plano",
+  plano_outras_fontes: "Outras fontes de recurso",
+  anuencia_sus: "Anuência do SUS",
+  anuencia_sus_data: "Data da anuência do SUS",
+  identificador_contabil: "Identificador contábil",
+  fonte_recurso: "Fonte de recurso",
 };
 const SITUACAO: Record<string, string> = { pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", nao_se_aplica: "Não se aplica" };
 const ESTADO: Record<string, string> = { conferido: "Conferido", presumido: "Presumido", pendente: "Pendente", nao_se_aplica: "Não se aplica" };

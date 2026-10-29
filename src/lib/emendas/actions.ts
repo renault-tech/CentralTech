@@ -325,55 +325,107 @@ const esquemaExecucao = z
     message: "O fim da vigência não pode ser antes do início.",
   });
 
-/** Parceria e execução (termo, vigência, extrato, conta, gestores). Grava quem registra a execução da emenda. */
-export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Promise<Resultado> {
-  const a = esquemaExecucao.safeParse(dados);
-  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+type CamposExecucao = Record<string, string | number | null>;
+
+/** Grava campos de `execucao`: gestor/admin direto; secretaria grava campo vazio e propõe a troca de campo já preenchido. */
+async function gravarCamposExecucao(emendaId: string, campos: CamposExecucao, rotulo: string): Promise<Resultado> {
   const ctx = await exigirAcesso();
   if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
-
   const emendas = await criarClienteEmendas();
-  const campos: Record<string, string | null> = {
-    numero_termo: a.data.numeroTermo,
-    processo_licitatorio: a.data.processoLicitatorio,
-    data_envio_pagamento: a.data.dataEnvioPagamento,
-    vigencia_inicio: a.data.vigenciaInicio,
-    vigencia_fim: a.data.vigenciaFim,
-    data_publicacao_extrato: a.data.dataPublicacaoExtrato,
-    conta_bancaria: a.data.contaBancaria,
-    gestor_osc: a.data.gestorOsc,
-    gestor_pmc: a.data.gestorPmc,
-    observacao: a.data.observacao,
-  };
-  // Gestor/admin gravam direto. Secretaria: campo vazio grava; campo já preenchido
-  // que muda vira proposta para o gestor aprovar.
   let aviso: string | undefined;
   if (!ehGestor(ctx.perfil)) {
-    const { data: atual } = await emendas.from("execucao").select("*").eq("id", a.data.emendaId).maybeSingle();
+    const { data: atual } = await emendas.from("execucao").select("*").eq("id", emendaId).maybeSingle();
     const propostas = [];
     for (const [campo, novo] of Object.entries(campos)) {
       const antigo = (atual as Record<string, unknown> | null)?.[campo] ?? null;
-      if (antigo !== null && antigo !== "" && antigo !== novo) {
-        propostas.push({ alvo: "execucao" as const, chave: null, campo, valorAtual: antigo, valorProposto: novo });
+      const mudou = typeof antigo === "number" && typeof novo === "number" ? antigo !== novo : String(antigo ?? "") !== String(novo ?? "");
+      if (antigo !== null && antigo !== "" && mudou) {
+        propostas.push({ alvo: "execucao" as const, chave: null, campo, valorAtual: antigo as string, valorProposto: novo === null ? null : String(novo) });
         delete campos[campo];
       }
     }
-    const falha = await proporAlteracoes(a.data.emendaId, propostas);
+    const falha = await proporAlteracoes(emendaId, propostas);
     if (falha) return { sucesso: false, erro: falha };
     if (propostas.length) aviso = `${propostas.length} alteração(ões) em dado já preenchido enviada(s) para aprovação do gestor.`;
   }
   const { error } = await emendas.from("execucao").upsert({
-    id: a.data.emendaId,
+    id: emendaId,
     ...campos,
     atualizado_em: new Date().toISOString(),
     atualizado_por: ctx.usuario.id,
   });
   if (error) {
-    console.error("[salvarExecucao]", error);
+    console.error(`[${rotulo}]`, error);
     return { sucesso: false, erro: traduzir(error) };
   }
-  revalidar(a.data.emendaId);
+  revalidar(emendaId);
   return { sucesso: true, aviso };
+}
+
+/** Parceria e execução (termo, vigência, extrato, conta, gestores). Grava quem registra a execução da emenda. */
+export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Promise<Resultado> {
+  const a = esquemaExecucao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  return gravarCamposExecucao(
+    a.data.emendaId,
+    {
+      numero_termo: a.data.numeroTermo,
+      processo_licitatorio: a.data.processoLicitatorio,
+      data_envio_pagamento: a.data.dataEnvioPagamento,
+      vigencia_inicio: a.data.vigenciaInicio,
+      vigencia_fim: a.data.vigenciaFim,
+      data_publicacao_extrato: a.data.dataPublicacaoExtrato,
+      conta_bancaria: a.data.contaBancaria,
+      gestor_osc: a.data.gestorOsc,
+      gestor_pmc: a.data.gestorPmc,
+      observacao: a.data.observacao,
+    },
+    "salvarExecucao"
+  );
+}
+
+const valorOpcional = z
+  .string()
+  .trim()
+  .transform((v) => (v === "" ? null : v.replace(/\./g, "").replace(",", ".")))
+  .refine((v) => v === null || /^\d{1,12}(\.\d{1,2})?$/.test(v), "Valor inválido (use números, ex.: 1.500,00)");
+
+const esquemaTransparencia = z
+  .object({
+    emendaId: z.uuid(),
+    localidade: textoOpcional(200),
+    inicioPrevisto: dataOpcional,
+    terminoPrevisto: dataOpcional,
+    planoMetas: textoOpcional(4000),
+    planoOutrasFontes: valorOpcional,
+    anuenciaSus: z.enum(["sim", "nao", "nao_se_aplica"]).nullable(),
+    anuenciaSusData: dataOpcional,
+    identificadorContabil: textoOpcional(120),
+    fonteRecurso: textoOpcional(120),
+  })
+  .refine((d) => !d.inicioPrevisto || !d.terminoPrevisto || d.terminoPrevisto >= d.inicioPrevisto, {
+    message: "O término previsto não pode ser antes do início.",
+  });
+
+/** Dados de transparência exigidos pela IN TCE-MG 05/2025 (art. 7º): localidade, cronograma, plano de trabalho, SUS, identificador contábil. */
+export async function salvarTransparencia(dados: z.input<typeof esquemaTransparencia>): Promise<Resultado> {
+  const a = esquemaTransparencia.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  return gravarCamposExecucao(
+    a.data.emendaId,
+    {
+      localidade: a.data.localidade,
+      inicio_previsto: a.data.inicioPrevisto,
+      termino_previsto: a.data.terminoPrevisto,
+      plano_metas: a.data.planoMetas,
+      plano_outras_fontes: a.data.planoOutrasFontes,
+      anuencia_sus: a.data.anuenciaSus,
+      anuencia_sus_data: a.data.anuenciaSusData,
+      identificador_contabil: a.data.identificadorContabil,
+      fonte_recurso: a.data.fonteRecurso,
+    },
+    "salvarTransparencia"
+  );
 }
 
 /** Sugestões de processos do Compras para o campo de vínculo (só quem edita a emenda; leitura estreita). */
@@ -671,8 +723,11 @@ const esquemaDocumento = z.object({
     "nota_fiscal",
     "comprovante_pagamento",
     "prestacao_contas",
+    "relatorio_gestao",
+    "anuencia_sus",
     "outro",
   ]),
+  competencia: z.number().int().min(2000).max(2100).nullable().optional(),
   nomeArquivo: z.string().trim().min(1).max(255),
   caminho: z.string().min(3).max(500),
   tamanho: z.number().int().nonnegative().nullable(),
@@ -694,6 +749,7 @@ export async function registrarDocumento(dados: z.input<typeof esquemaDocumento>
     nome_arquivo: a.data.nomeArquivo,
     caminho: a.data.caminho,
     tamanho: a.data.tamanho,
+    competencia: a.data.tipo === "relatorio_gestao" ? (a.data.competencia ?? null) : null,
     usuario_id: ctx.usuario.id,
   });
   if (error) {

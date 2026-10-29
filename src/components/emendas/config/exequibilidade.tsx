@@ -6,11 +6,49 @@ import { Check, Trash2 } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
-import { registrarImpedimentosEmLote, removerParecer, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
+import { registrarImpedimentosEmLote, removerParecer, salvarDadosPublicacao, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import type { Exercicio, ParecerExequibilidade, Secretaria } from "@/types/emendas";
 
 /** Datas do ano, preenchidas uma vez: valem para todas as emendas. */
+export function EditorDadosPublicacao({ exercicio }: { exercicio: Exercicio }) {
+  const [nome, setNome] = React.useState(exercicio.municipio_nome ?? "");
+  const [cnpj, setCnpj] = React.useState(exercicio.municipio_cnpj ?? "");
+  const [unidade, setUnidade] = React.useState(exercicio.unidade_parlamentar ?? "");
+  const { erro, salvando, salvar } = useSalvar();
+  const [salvo, setSalvo] = React.useState(false);
+  const mudou = () => setSalvo(false);
+  return (
+    <Secao
+      titulo={`Dados de publicação de ${exercicio.ano}`}
+      apoio="Divulgados em cada emenda no portal público: Município e CNPJ do recebedor, e a unidade parlamentar (IN TCE-MG 05/2025, art. 7º, I, XI e XII)."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Município
+          <input className={CAMPO} maxLength={200} value={nome} placeholder="Município de Cataguases" onChange={(e) => { setNome(e.target.value); mudou(); }} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          CNPJ do Município
+          <input className={CAMPO} maxLength={20} value={cnpj} placeholder="00.000.000/0000-00" onChange={(e) => { setCnpj(e.target.value); mudou(); }} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Unidade parlamentar
+          <input className={CAMPO} maxLength={200} value={unidade} placeholder="Câmara Municipal de Cataguases" onChange={(e) => { setUnidade(e.target.value); mudou(); }} />
+        </label>
+      </div>
+      <BaseLegalLinha chave="publicidade" className="mt-2" />
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" className={BOTAO} disabled={salvando} onClick={() => void salvar(() => salvarDadosPublicacao({ ano: exercicio.ano, municipioNome: nome, municipioCnpj: cnpj, unidadeParlamentar: unidade }), () => setSalvo(true))}>
+          {salvando ? "Salvando…" : "Salvar"}
+        </button>
+        {salvo && <span className="text-sm text-green-700">Salvo.</span>}
+      </div>
+      <Erro texto={erro} />
+    </Secao>
+  );
+}
+
 export function EditorDatasExercicio({ exercicio }: { exercicio: Exercicio }) {
   const [loa, setLoa] = React.useState(exercicio.data_aprovacao_loa ?? "");
   const [lei, setLei] = React.useState(exercicio.numero_lei_loa ?? "");
