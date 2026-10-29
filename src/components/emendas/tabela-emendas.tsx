@@ -3,9 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Download, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
@@ -134,20 +135,12 @@ export function TabelaEmendas({
             {filtradas.length} emendas · {brl(total)} indicados · {brl(pago)} pagos
           </p>
         </div>
-        <a
-          href={`/emendas/exportar?${exportar}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho hover:bg-slate-50"
-        >
-          <Download className="h-4 w-4" aria-hidden />
-          Exportar Excel
-        </a>
-        <a
-          href={`/emendas/exportar?${exportar}&formato=pdf`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho hover:bg-slate-50"
-        >
-          <Download className="h-4 w-4" aria-hidden />
-          Exportar PDF
-        </a>
+        <MenuExportar
+          opcoes={[
+            { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
+            { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
+          ]}
+        />
       </div>
 
       <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-200">
