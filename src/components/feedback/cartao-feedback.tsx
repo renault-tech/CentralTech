@@ -46,6 +46,16 @@ export function CartaoFeedback({ item, gerir }: { item: FeedbackComAnexos; gerir
         </span>
       </div>
       <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">{item.mensagem}</p>
+      {item.resposta && (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <p className="text-[11px] font-semibold text-emerald-800">
+            Resposta da equipe
+            {item.respondido_em ? ` · ${dataHora(item.respondido_em)}` : ""}
+            {gerir && item.respondido_por ? ` · ${item.respondido_por}` : ""}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{item.resposta}</p>
+        </div>
+      )}
       {item.anexosUrl.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {item.anexos.map((c, i) => {
@@ -68,7 +78,7 @@ export function CartaoFeedback({ item, gerir }: { item: FeedbackComAnexos; gerir
       )}
       {gerir && (
         <div className="mt-3">
-          <AcoesFeedback id={item.id} status={item.status} />
+          <AcoesFeedback id={item.id} status={item.status} resposta={item.resposta} />
         </div>
       )}
     </div>

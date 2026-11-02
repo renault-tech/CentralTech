@@ -7,6 +7,7 @@ const base: ItemExportado = {
     id: "abc", app: "compras", usuario_id: "u", autor_nome: "Ana", autor_email: "a@x.br", tipo: "suporte",
     mensagem: "Botão não abre\nna tela de contratos", pagina: "/contratos", anexos: ["u/1.png"], status: "novo",
     criado_em: "2026-10-01T15:00:00Z", atualizado_em: null,
+    resposta: null, respondido_em: null, respondido_por: null,
   },
   anexos: [{ caminho: "u/1.png", arquivo: "001-compras-1.png" }],
   anexosFalhos: 0,

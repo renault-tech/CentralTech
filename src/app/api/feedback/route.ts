@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   const admin = criarClienteAdmin();
   const { data } = await admin
     .from("feedback")
-    .select("id, tipo, mensagem, status, criado_em")
+    .select("id, tipo, mensagem, status, criado_em, resposta, respondido_em")
     .eq("app", "numera")
     .eq("usuario_id", eu.id)
     .order("criado_em", { ascending: false })

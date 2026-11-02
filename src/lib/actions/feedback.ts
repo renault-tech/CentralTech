@@ -49,6 +49,48 @@ const esquemaStatus = z.object({
   status: z.enum(["novo", "lido", "resolvido", "nao_possivel"]),
 });
 
+const esquemaResposta = z.object({
+  id: z.uuid(),
+  status: z.enum(["novo", "lido", "resolvido", "nao_possivel"]).optional(),
+  resposta: z.string().trim().min(3, "Escreva a resposta.").max(2000, "Resposta longa demais."),
+});
+
+/**
+ * Retorno ao autor: grava a resposta (e, se informado, o status) — o gatilho
+ * do banco avisa a pessoa no sino. A RLS só deixa a gestão atualizar.
+ */
+export async function responderFeedback(dados: {
+  id: string;
+  status?: StatusFeedback;
+  resposta: string;
+}): Promise<ResultadoFeedback> {
+  const a = esquemaResposta.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos." };
+  const supabase = await criarClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const nomeGestor =
+    (user?.user_metadata?.nome as string | undefined) ?? user?.email ?? "Equipe";
+  const agora = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("feedback")
+    .update({
+      ...(a.data.status ? { status: a.data.status } : {}),
+      resposta: a.data.resposta,
+      respondido_em: agora,
+      respondido_por: nomeGestor,
+      atualizado_em: agora,
+    })
+    .eq("id", a.data.id)
+    .select("id");
+  if (error || !data || data.length === 0) {
+    return { sucesso: false, erro: "Não foi possível salvar a resposta." };
+  }
+  revalidatePath("/feedback");
+  return { sucesso: true };
+}
+
 /** Muda o status — a RLS só deixa admin do Hub e admin/diretor do Compras. */
 export async function atualizarStatusFeedback(dados: {
   id: string;

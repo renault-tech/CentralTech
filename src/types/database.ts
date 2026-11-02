@@ -58,6 +58,10 @@ export type FeedbackCentral = {
   status: StatusFeedback;
   criado_em: string;
   atualizado_em: string | null;
+  /** Retorno escrito da gestão ao autor ({@link StatusFeedback} diz só o andamento). */
+  resposta: string | null;
+  respondido_em: string | null;
+  respondido_por: string | null;
 };
 
 /** Origem do aviso: um módulo ou a própria Central. */
