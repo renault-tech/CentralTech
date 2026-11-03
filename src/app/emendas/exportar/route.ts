@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { listarEmendas, listarExecucoes, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
-import { NOME_MODALIDADE, infoEtapa } from "@/lib/emendas/regras";
+import { NOME_MODALIDADE, combinaSituacaoFinanceira, infoEtapa } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
       (!p.get("t") || tipoDaEmenda(r) === p.get("t")) &&
       (!p.get("etapa") || r.etapa === p.get("etapa")) &&
       (!p.get("situacao") || r.situacao === p.get("situacao")) &&
+      (!p.get("fin") || combinaSituacaoFinanceira(p.get("fin")!, r)) &&
+      (!p.get("sd") || (p.get("sd") === "1" ? r.saude : !r.saude)) &&
+      (!p.get("rem") || (p.get("rem") === "1" ? r.remanejada : !r.remanejada)) &&
       (numeros.length === 0 || numeros.includes(r.numero)) &&
       (!q || q.split(/\s+/).every((parte) => normalizar([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome].join(" ")).includes(parte)))
   );

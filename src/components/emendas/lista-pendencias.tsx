@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
-import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
+import { AREAS_PENDENCIA, ASSUNTO_DA_REGRA, NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import type { TipoExecucao } from "@/types/emendas";
@@ -38,17 +38,38 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
   const params = useSearchParams();
   const pathname = usePathname();
   const [limite, setLimite] = React.useState(POR_PAGINA);
-  const f = { t: params.get("t") ?? "", g: params.get("g") ?? "", s: params.get("s") ?? "", r: params.get("r") ?? "", j: params.get("j") ?? "" };
+  const [busca, setBusca] = React.useState(params.get("q") ?? "");
+  const f = { t: params.get("t") ?? "", g: params.get("g") ?? "", s: params.get("s") ?? "", r: params.get("r") ?? "", a: params.get("a") ?? "", j: params.get("j") ?? "" };
   const definir = (m: Record<string, string>) => {
     setLimite(POR_PAGINA);
     atualizarFiltrosNaUrl(params, m, pathname, () => {});
   };
 
-  const regras = Array.from(new Map(linhas.map((l) => [l.regra.split(":")[0], l.titulo])).entries());
+  const chaveRegra = (l: LinhaPendencia) => l.regra.split(":")[0];
+  const areaDe = (l: LinhaPendencia) => ASSUNTO_DA_REGRA[chaveRegra(l)]?.area ?? "Cadastro";
+  const q = busca.trim().toLowerCase();
   const totalJustificadas = linhas.filter((l) => l.justificativa).length;
-  const filtradas = linhas.filter(
-    (l) => (f.j === "1" || !l.justificativa) && (!f.t || l.tipo === f.t) && (!f.g || l.gravidade === f.g) && (!f.s || l.secretariaId === f.s) && (!f.r || l.regra.split(":")[0] === f.r)
+  // Tudo menos o próprio filtro de assunto/área: os números dos seletores respondem aos outros filtros.
+  const base = linhas.filter(
+    (l) =>
+      (f.j === "1" || !l.justificativa) &&
+      (!f.t || l.tipo === f.t) &&
+      (!f.g || l.gravidade === f.g) &&
+      (!f.s || l.secretariaId === f.s) &&
+      (!q || `${l.numero} ${l.objeto} ${l.secretaria}`.toLowerCase().includes(q))
   );
+  const contagem = (fn: (l: LinhaPendencia) => string) => {
+    const m = new Map<string, number>();
+    for (const l of base) m.set(fn(l), (m.get(fn(l)) ?? 0) + 1);
+    return m;
+  };
+  const porArea = contagem(areaDe);
+  const porRegra = contagem(chaveRegra);
+  const nomeRegra = (r: string) => ASSUNTO_DA_REGRA[r]?.nome ?? linhas.find((l) => chaveRegra(l) === r)?.titulo ?? r;
+  const regras = Array.from(new Set(linhas.map(chaveRegra)))
+    .filter((r) => !f.a || (ASSUNTO_DA_REGRA[r]?.area ?? "Cadastro") === f.a)
+    .sort((x, y) => nomeRegra(x).localeCompare(nomeRegra(y)));
+  const filtradas = base.filter((l) => (!f.a || areaDe(l) === f.a) && (!f.r || chaveRegra(l) === f.r));
   const porGravidade = (g: Gravidade) => filtradas.filter((l) => l.gravidade === g).length;
 
   return (
@@ -91,12 +112,26 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
           Assunto
           <select className={ESTILO_CAMPO} value={f.r} onChange={(e) => definir({ r: e.target.value })}>
             <option value="">Todos</option>
-            {regras.map(([r, titulo]) => (
+            {regras.map((r) => (
               <option key={r} value={r}>
-                {titulo}
+                {nomeRegra(r)} ({porRegra.get(r) ?? 0})
               </option>
             ))}
           </select>
+        </label>
+        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600 sm:max-w-[220px]">
+          Buscar
+          <input
+            type="search"
+            value={busca}
+            placeholder="Nº, objeto ou secretaria"
+            className={ESTILO_CAMPO}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setLimite(POR_PAGINA);
+              atualizarFiltrosNaUrl(params, { q: e.target.value.trim() }, pathname, () => {});
+            }}
+          />
         </label>
         {totalJustificadas > 0 && (
           <label className="flex h-[38px] items-center gap-2 text-sm text-slate-700">
@@ -109,6 +144,21 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
           <span style={{ color: COR.alta }}>{porGravidade("alta")} altas</span> · <span style={{ color: COR.media }}>{porGravidade("media")} médias</span> ·{" "}
           {porGravidade("baixa")} baixas
         </p>
+      </div>
+
+      <div role="group" aria-label="Filtrar por área" className="flex flex-wrap gap-2">
+        {[{ nome: "", rotulo: "Todas as áreas", n: base.length }, ...AREAS_PENDENCIA.map((a) => ({ nome: a as string, rotulo: a as string, n: porArea.get(a) ?? 0 }))].map((a) => (
+          <button
+            key={a.nome || "todas"}
+            type="button"
+            aria-pressed={f.a === a.nome}
+            onClick={() => definir({ a: a.nome, r: "" })}
+            className={`inline-flex h-[34px] items-center gap-2 rounded-full border px-3 text-[13px] ${f.a === a.nome ? "border-cataguases-marinho bg-cataguases-marinho text-white" : "border-slate-300 bg-white text-cataguases-marinho hover:bg-slate-50"}`}
+          >
+            {a.rotulo}
+            <span className="font-semibold tabular-nums">{a.n}</span>
+          </button>
+        ))}
       </div>
 
       <ul className="flex flex-col gap-2">

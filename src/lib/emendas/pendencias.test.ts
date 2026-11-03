@@ -79,3 +79,17 @@ describe("objeto pouco descritivo", () => {
     expect(regras({ emenda: { ...emenda, objeto: "Repasse ao Hospital de Cataguases para custeio de leitos" } })).not.toContain("objeto_generico");
   });
 });
+
+describe("pendências financeiras novas", () => {
+  const mov = (tipo: string, data: string | null, numero: string | null = "1") => ({ emenda_id: "e1", tipo, numero, data });
+  it("lançamentos sem data viram um assunto cada", () => {
+    const r = regras({ movimentos: [mov("empenho", null), mov("pagamento", null), mov("liquidacao", "2026-05-01")] });
+    expect(r).toEqual(expect.arrayContaining(["empenho_sem_data", "pagamento_sem_data"]));
+    expect(r).not.toContain("liquidacao_sem_data");
+  });
+  it("pago sem empenho e paga sem pagamento", () => {
+    expect(regras({ emenda: { ...emenda, pago: 10, empenhado: 0 } })).toContain("pago_sem_empenho");
+    expect(regras({ emenda: { ...emenda, etapa: "paga" } })).toContain("paga_sem_pagamento");
+    expect(regras({ emenda: { ...emenda, etapa: "paga", pago: 5, empenhado: 5 } })).not.toContain("paga_sem_pagamento");
+  });
+});

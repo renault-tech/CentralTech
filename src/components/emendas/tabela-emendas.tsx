@@ -12,7 +12,8 @@ import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
-import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
+import { brl, combinaSituacaoFinanceira, dataBr, etapasEmOrdem, infoEtapa, numeroVereador, SITUACOES_FINANCEIRAS } from "@/lib/emendas/regras";
+import { ASSUNTO_DA_REGRA } from "@/lib/emendas/pendencias";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo, Secretaria, Vereador } from "@/types/emendas";
 
@@ -72,6 +73,10 @@ export function TabelaEmendas({
     t: params.get("t") ?? "",
     p: params.get("p") ?? "",
     situacao: params.get("situacao") ?? "",
+    fin: params.get("fin") ?? "",
+    sd: params.get("sd") ?? "",
+    rem: params.get("rem") ?? "",
+    pe: params.get("pe") ?? "",
     ordem: params.get("ordem") ?? "numero",
     numeros: (params.get("numeros") ?? "").split(",").filter(Boolean).map(Number),
   };
@@ -85,6 +90,10 @@ export function TabelaEmendas({
   const semTipo = emendas.filter(
     (r) =>
       (!f.p || (resumos[r.id]?.abertas ?? 0) > 0) &&
+      (!f.pe || (resumos[r.id]?.regras ?? []).includes(f.pe)) &&
+      (!f.fin || combinaSituacaoFinanceira(f.fin, r)) &&
+      (!f.sd || (f.sd === "1" ? r.saude : !r.saude)) &&
+      (!f.rem || (f.rem === "1" ? r.remanejada : !r.remanejada)) &&
       (!f.v || r.vereador_id === f.v) &&
       (!f.s || r.secretaria_id === f.s) &&
       (!f.situacao || r.situacao === f.situacao) &&
@@ -120,7 +129,7 @@ export function TabelaEmendas({
   const pago = filtradas.reduce((t, r) => t + r.pago, 0);
 
   const exportar = new URLSearchParams({ ano: String(ano) });
-  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t"] as const) {
+  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t", "fin", "sd", "rem"] as const) {
     const v = params.get(k);
     if (v) exportar.set(k, v);
   }
@@ -222,6 +231,48 @@ export function TabelaEmendas({
           <select className={ESTILO_CAMPO} value={f.p} onChange={(e) => definir({ p: e.target.value })}>
             <option value="">Todas</option>
             <option value="1">Só com pendência</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Situação financeira
+          <select className={ESTILO_CAMPO} value={f.fin} onChange={(e) => definir({ fin: e.target.value })}>
+            <option value="">Todas</option>
+            {SITUACOES_FINANCEIRAS.map(([k, nome]) => (
+              <option key={k} value={k}>
+                {nome}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Pendência de
+          <select className={ESTILO_CAMPO} value={f.pe} onChange={(e) => definir({ pe: e.target.value })}>
+            <option value="">Qualquer assunto</option>
+            {Object.entries(ASSUNTO_DA_REGRA)
+              .map(([k, a]) => [k, a.nome, emendas.filter((r) => (resumos[r.id]?.regras ?? []).includes(k)).length] as const)
+              .filter(([, , n]) => n > 0)
+              .sort((a, b) => a[1].localeCompare(b[1]))
+              .map(([k, nome, n]) => (
+                <option key={k} value={k}>
+                  {nome} ({n})
+                </option>
+              ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Saúde
+          <select className={ESTILO_CAMPO} value={f.sd} onChange={(e) => definir({ sd: e.target.value })}>
+            <option value="">Todas</option>
+            <option value="1">Só Saúde</option>
+            <option value="0">Fora da Saúde</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Remanejamento
+          <select className={ESTILO_CAMPO} value={f.rem} onChange={(e) => definir({ rem: e.target.value })}>
+            <option value="">Todas</option>
+            <option value="1">Remanejadas</option>
+            <option value="0">Não remanejadas</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
