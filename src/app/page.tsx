@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Hash, Landmark, Lock, ScrollText, ShoppingBag, UserPlus, type LucideIcon } from "lucide-react";
+import { Hash, Landmark, Lock, ScrollText, ShoppingBag, Sparkles, Truck, UserPlus, type LucideIcon } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
@@ -20,6 +20,12 @@ function saudacao(): string {
   const h = Number(new Intl.DateTimeFormat("pt-BR", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }).format(new Date()));
   return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
+
+/** Módulos planejados: só vitrine (não são módulos de verdade, não têm acesso nem pedido). */
+const EM_BREVE: { nome: string; descricao: string; icone: LucideIcon }[] = [
+  { nome: "Frotas", descricao: "Controle de veículos, abastecimento e manutenção.", icone: Truck },
+  { nome: "Em Breve", descricao: "Um novo módulo está a caminho.", icone: Sparkles },
+];
 
 const CARTAO =
   "rounded-3xl border border-[rgba(12,29,51,0.07)] bg-white/80 shadow-[0_1px_2px_rgba(12,29,51,0.05),0_10px_30px_rgba(12,29,51,0.06)] backdrop-blur";
@@ -163,6 +169,20 @@ export default async function PaginaInicial({
               </form>
             )
           )}
+          {EM_BREVE.map(({ nome, descricao, icone: Icone }) => (
+            <div key={nome} className={`${CARTAO_TRAVADO} flex h-full flex-col gap-3.5 p-[22px]`} aria-label={`${nome}: em breve`}>
+              <div className="flex items-start justify-between">
+                <span className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-[rgba(12,29,51,0.10)]">
+                  <Icone className="h-6 w-6 text-slate-600" strokeWidth={1.8} aria-hidden />
+                </span>
+                <span className="inline-flex h-6 items-center rounded-full bg-[rgba(233,166,59,0.22)] px-2.5 text-xs font-semibold text-[#8A5A00]">Em breve</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-semibold tracking-[-0.015em] text-slate-600">{nome}</h2>
+                <p className="text-sm leading-snug text-slate-600">{descricao}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>

@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-03",
+    titulo: "Frotas e novos módulos a caminho",
+    descricao: "A tela inicial passou a mostrar os próximos módulos: Frotas e mais um, ainda por anunciar. São só um aviso por enquanto, sem acesso.",
+  },
+  {
+    data: "2026-11-03",
     titulo: "Nova tela inicial",
     descricao:
       "A tela inicial ganhou um visual novo: saudação pelo horário, cartões maiores com ícone e cor de cada módulo, aviso de pedidos de acesso mais claro e módulos sem acesso com botão de solicitar. O funcionamento é o mesmo.",
