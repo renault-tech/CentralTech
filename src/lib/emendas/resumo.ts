@@ -31,13 +31,15 @@ export type ResumoLinha = {
   faseAtual: string | null;
   abertas: number;
   gravidade: Gravidade | null;
+  /** Assuntos (regra sem sufixo) das pendências abertas — para filtrar a lista. */
+  regras: string[];
 };
 
 export type EntradaResumos = {
   emendas: EmendaResumo[];
   fasesCatalogo: FaseFluxo[];
   manuais: FaseEmenda[];
-  movimentos: { emenda_id: string; tipo: string; data: string | null }[];
+  movimentos: { emenda_id: string; tipo: string; numero?: string | null; data: string | null }[];
   execucoes: ExecucaoEmenda[];
   exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade" | "numero_lei_loa" | "municipio_nome" | "municipio_cnpj" | "unidade_parlamentar"> | null;
   /** Partido por vereador (id → partido). */
@@ -103,6 +105,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
         execucao,
         exercicio: e.exercicio,
         temParecer: !!parecer,
+        movimentos: movs.get(emenda.id) ?? [],
         justificadas: justificadas.get(emenda.id),
         conformidade: {
           itens,
@@ -124,5 +127,6 @@ export function resumoDaLinha(c: CalculoEmenda): ResumoLinha {
     faseAtual: faseAtual(c.fases)?.fase.nome ?? null,
     abertas: c.pendencias.filter((x) => !x.justificativa).length,
     gravidade: maiorGravidade(c.pendencias),
+    regras: Array.from(new Set(c.pendencias.filter((x) => !x.justificativa).map((x) => x.regra.split(":")[0]))),
   };
 }

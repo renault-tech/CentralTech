@@ -32,6 +32,33 @@ export type Pendencia = {
 export const ORDEM_GRAVIDADE: Record<Gravidade, number> = { alta: 0, media: 1, baixa: 2 };
 export const NOME_GRAVIDADE: Record<Gravidade, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
 
+/** Assuntos para separar as pendências: área (agrupa) e nome curto (por regra, sem o sufixo). */
+export const AREAS_PENDENCIA = ["Financeiro", "Prazos e vigência", "Execução", "Publicidade e conta", "Cadastro"] as const;
+export const ASSUNTO_DA_REGRA: Record<string, { area: (typeof AREAS_PENDENCIA)[number]; nome: string }> = {
+  empenho_sem_data: { area: "Financeiro", nome: "Empenho sem data" },
+  liquidacao_sem_data: { area: "Financeiro", nome: "Liquidação sem data" },
+  pagamento_sem_data: { area: "Financeiro", nome: "Pagamento sem data" },
+  empenho_sem_numero: { area: "Financeiro", nome: "Empenho sem número" },
+  pago_sem_empenho: { area: "Financeiro", nome: "Pago sem empenho" },
+  paga_sem_pagamento: { area: "Financeiro", nome: "Paga sem pagamento lançado" },
+  empenho_maior: { area: "Financeiro", nome: "Empenhado acima do valor" },
+  pago_maior: { area: "Financeiro", nome: "Pago acima do empenhado" },
+  vigencia: { area: "Prazos e vigência", nome: "Vigência (terminando ou encerrada)" },
+  exequibilidade_vencida: { area: "Prazos e vigência", nome: "Exequibilidade vencida sem parecer" },
+  data_fora_de_ordem: { area: "Prazos e vigência", nome: "Datas fora de ordem" },
+  relatorio_gestao: { area: "Prazos e vigência", nome: "Relatório de gestão" },
+  nao_iniciada: { area: "Execução", nome: "Sem andamento" },
+  impedimento: { area: "Execução", nome: "Impedimento em aberto" },
+  termo_sem_extrato: { area: "Publicidade e conta", nome: "Termo sem extrato publicado" },
+  publicidade_incompleta: { area: "Publicidade e conta", nome: "Publicidade incompleta" },
+  sem_conta: { area: "Publicidade e conta", nome: "Parceria sem conta" },
+  conta_repetida: { area: "Publicidade e conta", nome: "Conta repetida" },
+  conta_banco_nao_oficial: { area: "Publicidade e conta", nome: "Conta em banco não oficial" },
+  tipo_incoerente: { area: "Cadastro", nome: "Tipo incoerente com a natureza" },
+  objeto_generico: { area: "Cadastro", nome: "Objeto pouco descritivo" },
+  sem_beneficiario: { area: "Cadastro", nome: "Sem beneficiário" },
+};
+
 export type EntradaPendencias = {
   emenda: EmendaResumo;
   fases: FaseCalculada[];
@@ -42,6 +69,8 @@ export type EntradaPendencias = {
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   justificadas?: PendenciaJustificada[];
+  /** Movimentos financeiros da emenda (para achar lançamentos sem data ou sem número). */
+  movimentos?: { emenda_id: string; tipo: string; numero?: string | null; data: string | null }[];
   /** IN TCE-MG 05/2025: itens do art. 7º já avaliados, relatórios de gestão e conta repetida. */
   conformidade?: { itens: ItemConformidade[]; relatorios: SituacaoRelatorio[]; contaRepetida: boolean };
   /** AAAA-MM-DD */
@@ -178,6 +207,69 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       gravidade: "media",
       titulo: "Datas fora de ordem",
       detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).`,
+      aba: "fases",
+    });
+  }
+
+  // Lançamentos financeiros incompletos: cada tipo vira um assunto próprio para filtrar.
+  const movs = (e.movimentos ?? []).filter((m) => m.emenda_id === emenda.id);
+  const semData = (tipo: string) => movs.filter((m) => m.tipo === tipo && !m.data).length;
+  const nomes: [string, string, string][] = [
+    ["empenho", "empenho_sem_data", "Empenho sem data"],
+    ["liquidacao", "liquidacao_sem_data", "Liquidação sem data"],
+    ["pagamento", "pagamento_sem_data", "Pagamento sem data"],
+  ];
+  for (const [tipoMov, regra, titulo] of nomes) {
+    const n = semData(tipoMov);
+    if (n > 0) {
+      add({
+        regra,
+        gravidade: "media",
+        titulo,
+        detalhe: `${n} lançamento(s) de ${tipoMov === "liquidacao" ? "liquidação" : tipoMov} sem data. Sem a data não dá para calcular prazos nem publicar a execução; informe em Financeiro.`,
+        assinatura: `${regra}|${n}`,
+        aba: "financeiro",
+      });
+    }
+  }
+  const empSemNumero = movs.filter((m) => m.tipo === "empenho" && !(m.numero ?? "").trim()).length;
+  if (empSemNumero > 0) {
+    add({
+      regra: "empenho_sem_numero",
+      gravidade: "baixa",
+      titulo: "Empenho sem número",
+      detalhe: `${empSemNumero} empenho(s) lançado(s) sem o número do empenho.`,
+      assinatura: `empenho_sem_numero|${empSemNumero}`,
+      aba: "financeiro",
+    });
+  }
+  if (emenda.pago > 0 && emenda.empenhado <= 0) {
+    add({
+      regra: "pago_sem_empenho",
+      gravidade: "alta",
+      titulo: "Pago sem empenho registrado",
+      detalhe: `Há ${emenda.pago.toFixed(2)} pagos, mas nenhum empenho lançado. Registre o empenho em Financeiro.`,
+      assinatura: `pago_sem_empenho|${emenda.pago}`,
+      aba: "financeiro",
+    });
+  }
+  if (["paga", "concluida"].includes(emenda.etapa) && emenda.pago <= 0) {
+    add({
+      regra: "paga_sem_pagamento",
+      gravidade: "media",
+      titulo: "Marcada como paga, sem pagamento lançado",
+      detalhe: "A fase indica pagamento, mas não há nenhum pagamento em Financeiro. Lance o pagamento (valor e data) ou corrija a fase.",
+      assinatura: `paga_sem_pagamento|${emenda.etapa}`,
+      aba: "financeiro",
+    });
+  }
+  if (tipo !== "direta" && !emenda.beneficiario_id && !concluiuTudo) {
+    add({
+      regra: "sem_beneficiario",
+      gravidade: "media",
+      titulo: "Sem beneficiário",
+      detalhe: "Repasse sem entidade beneficiária cadastrada.",
+      assinatura: "sem_beneficiario",
       aba: "fases",
     });
   }

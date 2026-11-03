@@ -504,3 +504,33 @@ export function alertas(
 
   return out;
 }
+
+
+/** Situação financeira de uma emenda, para filtros (lista e exportação). */
+export const SITUACOES_FINANCEIRAS = [
+  ["paga", "Totalmente paga"],
+  ["paga_parcial", "Paga em parte"],
+  ["empenhada_sem_pagamento", "Empenhada, sem pagamento"],
+  ["sem_empenho", "Sem empenho"],
+  ["sem_data_pagamento", "Paga, sem data de pagamento"],
+] as const;
+
+export function combinaSituacaoFinanceira(
+  chave: string,
+  r: { valor: number; empenhado: number; pago: number; ultimo_pagamento: string | null }
+): boolean {
+  switch (chave) {
+    case "paga":
+      return r.valor > 0 && r.pago >= r.valor - 0.005;
+    case "paga_parcial":
+      return r.pago > 0.005 && r.pago < r.valor - 0.005;
+    case "empenhada_sem_pagamento":
+      return r.empenhado > 0.005 && r.pago <= 0.005;
+    case "sem_empenho":
+      return r.empenhado <= 0.005;
+    case "sem_data_pagamento":
+      return r.pago > 0.005 && !r.ultimo_pagamento;
+    default:
+      return true;
+  }
+}

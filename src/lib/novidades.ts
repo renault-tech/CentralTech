@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-03",
+    titulo: "Emendas: mais filtros e pendências por assunto",
+    descricao:
+      "Novas pendências financeiras (empenho, liquidação e pagamento sem data, empenho sem número, pago sem empenho, paga sem pagamento lançado, sem beneficiário). Em Pendências: filtro por área, assunto com contagem e busca. Na lista: situação financeira (paga, paga em parte, empenhada sem pagamento, sem empenho, sem data de pagamento), pendência por assunto, Saúde e remanejadas. Os filtros valem também na exportação (exceto o de assunto da pendência).",
+  },
+  {
+    data: "2026-11-03",
     titulo: "Texto ilegível no modo escuro do navegador",
     descricao:
       "A Central só tem tema claro e agora avisa isso ao navegador, que deixa de escurecer a página sozinho (o modo escuro automático do Chrome/Edge deixava as letras cinza muito claras). Se você usa uma extensão de modo escuro (como Dark Reader), desative-a para este site.",
