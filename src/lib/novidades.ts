@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-03",
+    titulo: "Nova tela inicial",
+    descricao:
+      "A tela inicial ganhou um visual novo: saudação pelo horário, cartões maiores com ícone e cor de cada módulo, aviso de pedidos de acesso mais claro e módulos sem acesso com botão de solicitar. O funcionamento é o mesmo.",
+  },
+  {
+    data: "2026-11-03",
     titulo: "Emendas: mais filtros e pendências por assunto",
     descricao:
       "Novas pendências financeiras (empenho, liquidação e pagamento sem data, empenho sem número, pago sem empenho, paga sem pagamento lançado, sem beneficiário). Em Pendências: filtro por área, assunto com contagem e busca. Na lista: situação financeira (paga, paga em parte, empenhada sem pagamento, sem empenho, sem data de pagamento), pendência por assunto, Saúde e remanejadas. Os filtros valem também na exportação (exceto o de assunto da pendência).",
