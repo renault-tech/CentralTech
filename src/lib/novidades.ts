@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-03",
+    titulo: "Texto ilegível no modo escuro do navegador",
+    descricao:
+      "A Central só tem tema claro e agora avisa isso ao navegador, que deixa de escurecer a página sozinho (o modo escuro automático do Chrome/Edge deixava as letras cinza muito claras). Se você usa uma extensão de modo escuro (como Dark Reader), desative-a para este site.",
+  },
+  {
     data: "2026-10-29",
     titulo: "Emendas: adequação à IN TCE-MG 05/2025 e à Recomendação MPC-MG 01/2025",
     descricao:

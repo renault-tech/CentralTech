@@ -23,6 +23,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#0C1D33",
+  // O Hub só tem tema claro: avisa o navegador para NÃO escurecer a página sozinho (modo escuro automático
+  // do Chrome/Edge inverte cores e deixa o texto cinza muito claro e ilegível).
+  colorScheme: "only light",
 };
 
 export default function RootLayout({
