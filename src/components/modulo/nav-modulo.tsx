@@ -29,7 +29,7 @@ export function NavModulo({ itens, rotuloAria, tour, acao }: { itens: ItemNav[];
   return (
     <div className="border-b border-slate-200 bg-white print:hidden">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 px-4 sm:px-6">
-        <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label={rotuloAria} data-tour={tour}>
+        <nav className="-mb-px flex flex-wrap gap-x-1" aria-label={rotuloAria} data-tour={tour}>
           {itens.map((item) => {
             if (item.externo) {
               return (

@@ -4,6 +4,7 @@ import {
   avisosNota,
   chaveServico,
   custoManutencao,
+  nfAcimaDaOc,
   dataDoCusto,
   diasEntre,
   formatarData,
@@ -104,10 +105,8 @@ const man = {
   analisado_em: null as string | null,
   oc_numero: null as string | null,
   oc_emitida_em: null as string | null,
-  oc_enviada_em: null as string | null,
   nf_numero: null as string | null,
   nf_emissao: null as string | null,
-  docs_retornaram_em: null as string | null,
   enviada_contabilidade_em: null as string | null,
 };
 
@@ -117,14 +116,9 @@ describe("situação da manutenção", () => {
     const lib = { ...man, status_analise: "liberado" as const, analisado_em: "2026-11-03" };
     expect(situacaoManutencao(lib)).toMatchObject({ etapa: "liberada", desde: "2026-11-03" });
     expect(situacaoManutencao({ ...lib, oc_numero: "1841/2026" })).toMatchObject({ etapa: "oc_emitida", desde: "2026-11-03" });
-    expect(situacaoManutencao({ ...lib, oc_numero: "1841/2026", oc_enviada_em: "2026-11-04" })).toMatchObject({
-      etapa: "aguardando_nf",
-      desde: "2026-11-04",
-    });
-    const comNf = { ...lib, oc_numero: "1841/2026", oc_enviada_em: "2026-11-04", nf_numero: "N1", nf_emissao: "2026-11-10" };
-    expect(situacaoManutencao(comNf)).toMatchObject({ etapa: "aguardando_docs", desde: "2026-11-10" });
-    expect(situacaoManutencao({ ...comNf, docs_retornaram_em: "2026-11-11" })).toMatchObject({ etapa: "docs_retornaram" });
-    expect(situacaoManutencao({ ...comNf, docs_retornaram_em: "2026-11-11", enviada_contabilidade_em: "2026-11-12" })).toMatchObject({
+    const comNf = { ...lib, oc_numero: "1841/2026", nf_numero: "N1", nf_emissao: "2026-11-10" };
+    expect(situacaoManutencao(comNf)).toMatchObject({ etapa: "nf_registrada", desde: "2026-11-10" });
+    expect(situacaoManutencao({ ...comNf, enviada_contabilidade_em: "2026-11-12" })).toMatchObject({
       etapa: "concluida",
       emAndamento: false,
     });
@@ -141,10 +135,21 @@ describe("situação da manutenção", () => {
   });
   it("marca a etapa atual nos passos", () => {
     const passos = passosManutencao(man);
-    expect(passos.map((p) => p.estado)).toEqual(["feito", "atual", "futuro", "futuro", "futuro", "futuro", "futuro", "futuro"]);
+    expect(passos.map((p) => p.estado)).toEqual(["feito", "atual", "futuro", "futuro", "futuro", "futuro"]);
     const liberada = passosManutencao({ ...man, status_analise: "liberado", analisado_em: "2026-11-03", oc_numero: "1/2026" });
-    expect(liberada.map((p) => p.estado)).toEqual(["feito", "feito", "feito", "feito", "atual", "futuro", "futuro", "futuro"]);
+    expect(liberada.map((p) => p.estado)).toEqual(["feito", "feito", "feito", "feito", "atual", "futuro"]);
     expect(passosManutencao({ ...man, status_analise: "recusado", analisado_em: "2026-11-03" }).some((p) => p.estado === "atual")).toBe(false);
+  });
+});
+
+describe("NF acima da OC", () => {
+  it("devolve a diferença só quando a NF passa da OC", () => {
+    expect(nfAcimaDaOc({ oc_valor: 199, nf_valor: 205 })).toBe(6);
+    expect(nfAcimaDaOc({ oc_valor: 199, nf_valor: 199 })).toBeNull();
+    expect(nfAcimaDaOc({ oc_valor: 199, nf_valor: 150 })).toBeNull();
+    expect(nfAcimaDaOc({ oc_valor: null, nf_valor: 205 })).toBeNull();
+    expect(nfAcimaDaOc({ oc_valor: 199, nf_valor: null })).toBeNull();
+    expect(nfAcimaDaOc({ oc_valor: 0.1 + 0.2, nf_valor: 0.3 })).toBeNull(); // sem erro de ponto flutuante
   });
 });
 

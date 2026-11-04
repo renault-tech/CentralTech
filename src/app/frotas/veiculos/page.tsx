@@ -9,7 +9,7 @@ import { brl } from "@/lib/frotas/regras";
 import { resumirRevisao, revisarVeiculos } from "@/lib/frotas/revisao";
 import { montarUrl } from "@/lib/frotas/url";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
-import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
 import { opcoesExportar } from "@/lib/frotas/exportacao";
 
 export const metadata = { title: "Veículos · Frotas" };
@@ -47,7 +47,7 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
         subtitulo={`${veiculos.length} veículos: ${contagem.proprio} próprios, ${contagem.convenio} de convênio e ${contagem.alugado} alugados. O valor de referência vem da tabela FIPE.`}
         acao={
           <>
-            <MenuExportar opcoes={opcoesExportar([{ r: "veiculos", rotulo: "Veículos da lista", formatos: ["xlsx", "pdf", "csv"] }], base)} />
+            <MenuExportarFrotas opcoes={opcoesExportar([{ r: "veiculos", rotulo: "Veículos da lista", formatos: ["xlsx", "pdf", "csv"] }], base)} />
             {gestor && (
               <>
                 <Link href="/frotas/veiculos/importar" className={CLASSE_BOTAO_SECUNDARIO}>

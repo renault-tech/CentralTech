@@ -19,6 +19,7 @@ export function opcoesExportar(
     i.formatos.map((formato) => ({
       rotulo: `${i.rotulo} · ${ROTULO_FORMATO[formato].rotulo}`,
       detalhe: ROTULO_FORMATO[formato].detalhe,
+      relatorio: i.r === "completo" ? undefined : i.r,
       href: montarUrl("/frotas/exportar", { ...(i.r === "completo" ? {} : filtros), r: i.r, formato }),
     }))
   );

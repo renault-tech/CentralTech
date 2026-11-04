@@ -14,7 +14,7 @@ export function AbasNavegacao({ abas, label }: { abas: Aba[]; label: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-slate-200" aria-label={label}>
+    <nav className="flex flex-wrap gap-x-1 border-b border-slate-200" aria-label={label}>
       {abas.map((aba) => {
         const ativa = pathname === aba.href;
         return (

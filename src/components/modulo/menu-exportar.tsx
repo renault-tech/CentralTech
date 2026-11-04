@@ -5,7 +5,7 @@ import { ChevronDown, Download } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type OpcaoExportar = { rotulo: string; detalhe?: string; href?: string; imprimir?: boolean };
+export type OpcaoExportar = { rotulo: string; detalhe?: string; href?: string; imprimir?: boolean; aoClicar?: () => void; relatorio?: string };
 
 /**
  * Botão "Exportar" que abre a lista de formatos (Excel, PDF, CSV…) — o MESMO em todos os módulos.
@@ -86,6 +86,7 @@ export function MenuExportar({ opcoes, compacto = false, rotulo = "Exportar" }: 
                     onClick={() => {
                       setAberto(false);
                       if (o.imprimir) window.print();
+                      o.aoClicar?.();
                     }}
                     className="block min-h-11 w-full px-3 py-2 text-left hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--modulo-texto)]"
                   >

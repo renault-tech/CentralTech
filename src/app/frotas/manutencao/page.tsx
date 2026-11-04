@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { FormularioDocumentos, FormularioOrcamento, PainelDecisao, type OpcaoVeiculo } from "@/components/frotas/formularios-manutencao";
-import { Barra, Cartao, CLASSE_BOTAO, Mensagem, Selo, SeloDias, TituloPagina, Vazio } from "@/components/frotas/ui";
+import { EtapasDocumentacao, FormularioOrcamento, PainelDecisao, type OpcaoVeiculo } from "@/components/frotas/formularios-manutencao";
+import { Barra, Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo, SeloDias, TituloPagina, Vazio } from "@/components/frotas/ui";
 import { analisarOrcamento } from "@/lib/frotas/analise";
 import { listarFornecedores, listarManutencoes, listarNotas, listarSecretarias, listarVeiculos, obterContextoFrotas, obterParametros } from "@/lib/frotas/dados";
 import { filtrarManutencoes, lerFiltroManutencao } from "@/lib/frotas/filtros";
@@ -13,13 +13,14 @@ import {
   nivelPorPercentual,
   passosManutencao,
   pct,
+  nfAcimaDaOc,
   situacaoManutencao,
   type EtapaManutencao,
 } from "@/lib/frotas/regras";
 import { montarUrl } from "@/lib/frotas/url";
 import { dataNoFuso } from "@/lib/fuso";
 import { cn } from "@/lib/utils";
-import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
 import { opcoesExportar } from "@/lib/frotas/exportacao";
 
 export const metadata = { title: "Manutenção · Frotas" };
@@ -29,10 +30,8 @@ const TOM_ETAPA: Record<EtapaManutencao, "neutro" | "azul" | "verde" | "ambar" |
   novo_orcamento: "ambar",
   recusada: "vermelho",
   liberada: "neutro",
-  oc_emitida: "neutro",
-  aguardando_nf: "ambar",
-  aguardando_docs: "ambar",
-  docs_retornaram: "azul",
+  oc_emitida: "ambar",
+  nf_registrada: "azul",
   concluida: "verde",
 };
 
@@ -90,10 +89,10 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
     <>
       <TituloPagina
         titulo="Manutenção de veículos"
-        subtitulo="Do orçamento da secretaria até a documentação na Contabilidade. A OC é emitida no IPM; aqui só se registra o número."
+        subtitulo="Do orçamento da secretaria até a NF na Contabilidade. A OC é emitida no IPM; aqui só se registra o número."
         acao={
           <>
-            <MenuExportar
+            <MenuExportarFrotas
               opcoes={opcoesExportar(
                 [
                   { r: "manutencoes", rotulo: "Manutenções da lista", formatos: ["xlsx", "pdf", "csv"] },
@@ -103,9 +102,14 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
               )}
             />
             {gestor && (
-              <Link href={montarUrl("/frotas/manutencao", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
-                Registrar orçamento
-              </Link>
+              <>
+                <Link href="/frotas/manutencao/importar" className={CLASSE_BOTAO_SECUNDARIO}>
+                  Importar PDFs
+                </Link>
+                <Link href={montarUrl("/frotas/manutencao", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
+                  Registrar orçamento
+                </Link>
+              </>
             )}
           </>
         }
@@ -171,6 +175,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                       <span className="flex flex-wrap items-center gap-1.5">
                         <Selo tom={TOM_ETAPA[s.etapa]}>{s.rotulo}</Selo>
                         {s.emAndamento && nivel !== "ok" && <SeloDias dias={dias} nivel={nivel} />}
+                        {nfAcimaDaOc(m) !== null && <Selo tom="vermelho">NF acima da OC</Selo>}
                       </span>
                     </Link>
                   </li>
@@ -209,7 +214,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                   </div>
                   <Selo tom={TOM_ETAPA[situacaoAtual.etapa]}>{situacaoAtual.rotulo}</Selo>
                 </div>
-                <ol className="mt-5 grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4 xl:grid-cols-8">
+                <ol className="mt-5 grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3 xl:grid-cols-6">
                   {passos.map((p, i) => (
                     <li key={p.chave} className="flex min-w-0 flex-col gap-1.5">
                       <span
@@ -333,15 +338,13 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
               {atual.status_analise === "liberado" && (
                 <Cartao titulo="Documentação" apoio={gestor ? undefined : "Somente leitura"}>
                   {gestor ? (
-                    <FormularioDocumentos key={`${atual.id}-${atual.atualizado_em}`} manutencao={atual} />
+                    <EtapasDocumentacao manutencao={atual} dataHoje={hoje} />
                   ) : (
                     <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                       {[
                         ["OC (IPM)", atual.oc_numero ?? "—"],
                         ["Valor da OC", brl(atual.oc_valor)],
-                        ["OC enviada à secretaria", formatarData(atual.oc_enviada_em)],
                         ["NF da oficina", atual.nf_numero ? `${atual.nf_numero} · ${brl(atual.nf_valor)} · ${formatarData(atual.nf_emissao)}` : "—"],
-                        ["Documentos voltaram ao Frotas", formatarData(atual.docs_retornaram_em)],
                         ["Enviada à Contabilidade", formatarData(atual.enviada_contabilidade_em)],
                       ].map(([r, v]) => (
                         <div key={r}>

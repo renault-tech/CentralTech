@@ -111,11 +111,9 @@ export type Manutencao = {
   oc_numero: string | null;
   oc_valor: number | null;
   oc_emitida_em: string | null;
-  oc_enviada_em: string | null;
   nf_numero: string | null;
   nf_emissao: string | null;
   nf_valor: number | null;
-  docs_retornaram_em: string | null;
   enviada_contabilidade_em: string | null;
   observacoes: string | null;
   criado_em: string;

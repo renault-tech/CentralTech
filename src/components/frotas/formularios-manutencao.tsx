@@ -3,7 +3,18 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { decidirOrcamento, excluirManutencao, registrarDocumentos, salvarManutencao } from "@/lib/frotas/actions";
+import {
+  decidirOrcamento,
+  desfazerEtapa,
+  excluirManutencao,
+  registrarContabilidade,
+  registrarNf,
+  registrarOc,
+  salvarManutencao,
+  salvarObservacoesManutencao,
+  type Resultado,
+} from "@/lib/frotas/actions";
+import { nfAcimaDaOc } from "@/lib/frotas/regras";
 import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
@@ -174,117 +185,312 @@ export function PainelDecisao({ id }: { id: string }) {
   );
 }
 
-/** OC do IPM, NF da oficina e as datas de cada etapa (o banco confere a ordem). */
-export function FormularioDocumentos({ manutencao }: { manutencao: Manutencao }) {
-  const router = useRouter();
-  const m = manutencao;
-  const [ocNumero, setOcNumero] = React.useState(m.oc_numero ?? "");
-  const [ocValor, setOcValor] = React.useState(valorParaCampo(m.oc_valor));
-  const [ocEmitida, setOcEmitida] = React.useState(m.oc_emitida_em ?? "");
-  const [ocEnviada, setOcEnviada] = React.useState(m.oc_enviada_em ?? "");
-  const [nfNumero, setNfNumero] = React.useState(m.nf_numero ?? "");
-  const [nfEmissao, setNfEmissao] = React.useState(m.nf_emissao ?? "");
-  const [nfValor, setNfValor] = React.useState(valorParaCampo(m.nf_valor));
-  const [docs, setDocs] = React.useState(m.docs_retornaram_em ?? "");
-  const [contabilidade, setContabilidade] = React.useState(m.enviada_contabilidade_em ?? "");
-  const [observacoes, setObservacoes] = React.useState(m.observacoes ?? "");
-  const [erro, setErro] = React.useState<string | null>(null);
-  const [aviso, setAviso] = React.useState<string | null>(null);
-  const [ok, setOk] = React.useState(false);
-  const [pendente, iniciar] = React.useTransition();
+type EstadoEtapa = "feita" | "atual" | "bloqueada";
 
-  function salvar(e: React.FormEvent) {
-    e.preventDefault();
+function brl(v: number | null) {
+  return v === null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function data(iso: string | null) {
+  return iso ? iso.split("-").reverse().join("/") : "—";
+}
+
+/** Uma etapa da documentação: resumo quando feita (com "Corrigir"), formulário quando é a vez, aviso quando ainda não pode. */
+function CartaoEtapa({
+  numero,
+  titulo,
+  estado,
+  resumo,
+  bloqueio,
+  podeDesfazer,
+  onDesfazer,
+  children,
+}: {
+  numero: number;
+  titulo: string;
+  estado: EstadoEtapa;
+  resumo: string;
+  bloqueio: string;
+  podeDesfazer: boolean;
+  onDesfazer: () => void;
+  children: (fechar: () => void) => React.ReactNode;
+}) {
+  const [editando, setEditando] = React.useState(false);
+  const aberto = estado === "atual" || editando;
+  return (
+    <section className={`rounded-lg border p-3.5 ${estado === "atual" ? "border-[color:var(--modulo)] bg-white" : "border-slate-200 bg-slate-50"}`} aria-label={titulo}>
+      <header className="flex flex-wrap items-center gap-2">
+        <span
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${estado === "feita" ? "bg-[color:var(--modulo-texto)] text-white" : estado === "atual" ? "border-2 border-[color:var(--modulo)] text-[color:var(--modulo-texto)]" : "border border-slate-300 text-slate-500"}`}
+          aria-hidden
+        >
+          {estado === "feita" ? "✓" : numero}
+        </span>
+        <h4 className="text-sm font-semibold text-cataguases-marinho">{titulo}</h4>
+        {estado === "feita" && !editando && (
+          <span className="ml-auto flex gap-3 text-xs">
+            <button type="button" onClick={() => setEditando(true)} className="font-medium text-[color:var(--modulo-texto)] underline underline-offset-2">
+              Corrigir
+            </button>
+            {podeDesfazer && (
+              <button type="button" onClick={onDesfazer} className="font-medium text-red-700 underline underline-offset-2">
+                Desfazer
+              </button>
+            )}
+          </span>
+        )}
+      </header>
+      {estado === "feita" && !editando && <p className="mt-1.5 break-words pl-8 text-[13px] text-slate-700">{resumo}</p>}
+      {estado === "bloqueada" && <p className="mt-1.5 pl-8 text-[13px] text-slate-500">{bloqueio}</p>}
+      {aberto && <div className="mt-3">{children(() => setEditando(false))}</div>}
+    </section>
+  );
+}
+
+type PropsEtapas = { manutencao: Manutencao; dataHoje: string };
+
+/** OC, NF e Contabilidade: três etapas separadas, cada uma salva sozinha e na hora em que acontece. */
+export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
+  const router = useRouter();
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [pendente, iniciar] = React.useTransition();
+  const temOc = !!m.oc_numero;
+  const temNf = !!m.nf_numero;
+  const temCtb = !!m.enviada_contabilidade_em;
+  const dif = nfAcimaDaOc(m);
+
+  function desfazer(etapa: "oc" | "nf" | "contabilidade") {
+    const aviso =
+      etapa === "oc"
+        ? "Desfazer a OC? Ela é apagada."
+        : etapa === "nf"
+          ? "Desfazer a NF? Ela é apagada."
+          : "Desfazer o envio à Contabilidade?";
+    if (!window.confirm(aviso)) return;
     setErro(null);
-    setAviso(null);
-    setOk(false);
-    const oc = lerValor(ocValor);
-    const nf = lerValor(nfValor);
-    if (Number.isNaN(oc) || Number.isNaN(nf)) return setErro("Confira os valores (ex.: 4.850,00).");
     iniciar(async () => {
-      const r = await registrarDocumentos({
-        id: m.id,
-        ocNumero: ocNumero || null,
-        ocValor: oc,
-        ocEmitidaEm: ocEmitida || null,
-        ocEnviadaEm: ocEnviada || null,
-        nfNumero: nfNumero || null,
-        nfEmissao: nfEmissao || null,
-        nfValor: nf,
-        docsRetornaramEm: docs || null,
-        enviadaContabilidadeEm: contabilidade || null,
-        observacoes,
-      });
+      const r = await desfazerEtapa({ id: m.id, etapa });
       if (!r.sucesso) return setErro(r.erro);
-      setOk(true);
-      if (r.aviso) setAviso(r.aviso);
       router.refresh();
     });
   }
 
-  function excluir() {
-    if (!window.confirm("Excluir esta manutenção? O histórico da alteração fica registrado.")) return;
+  return (
+    <div className="flex flex-col gap-3">
+      {dif !== null && (
+        <Mensagem tipo="aviso">
+          A NF ({brl(m.nf_valor)}) está {brl(dif)} acima da OC ({brl(m.oc_valor)}). Confira com a oficina antes de enviar à Contabilidade.
+        </Mensagem>
+      )}
+      {erro && <Mensagem tipo="erro">{erro}</Mensagem>}
+      <fieldset disabled={pendente} className="flex flex-col gap-3">
+        <CartaoEtapa
+          numero={1}
+          titulo="Ordem de compra (OC do IPM)"
+          estado={temOc ? "feita" : "atual"}
+          resumo={`OC ${m.oc_numero} · ${brl(m.oc_valor)} · emitida em ${data(m.oc_emitida_em)}`}
+          bloqueio=""
+          podeDesfazer={!temNf}
+          onDesfazer={() => desfazer("oc")}
+        >
+          {(fechar) => <FormOc key={`oc-${m.atualizado_em}`} m={m} dataHoje={dataHoje} aoSalvar={fechar} />}
+        </CartaoEtapa>
+        <CartaoEtapa
+          numero={2}
+          titulo="Nota fiscal da oficina"
+          estado={temNf ? "feita" : temOc ? "atual" : "bloqueada"}
+          resumo={`NF ${m.nf_numero} · ${brl(m.nf_valor)} · emitida em ${data(m.nf_emissao)}`}
+          bloqueio="Disponível depois de registrar a OC."
+          podeDesfazer={!temCtb}
+          onDesfazer={() => desfazer("nf")}
+        >
+          {(fechar) => <FormNf key={`nf-${m.atualizado_em}`} m={m} dataHoje={dataHoje} aoSalvar={fechar} />}
+        </CartaoEtapa>
+        <CartaoEtapa
+          numero={3}
+          titulo="Envio à Contabilidade"
+          estado={temCtb ? "feita" : temNf ? "atual" : "bloqueada"}
+          resumo={`Enviada à Contabilidade em ${data(m.enviada_contabilidade_em)}`}
+          bloqueio="Disponível depois de registrar a NF."
+          podeDesfazer
+          onDesfazer={() => desfazer("contabilidade")}
+        >
+          {(fechar) => <FormContabilidade key={`ct-${m.atualizado_em}`} m={m} dataHoje={dataHoje} aoSalvar={fechar} />}
+        </CartaoEtapa>
+      </fieldset>
+      <Observacoes m={m} />
+    </div>
+  );
+}
+
+function useEnvio(aoSalvar: () => void) {
+  const router = useRouter();
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [aviso, setAviso] = React.useState<string | null>(null);
+  const [pendente, iniciar] = React.useTransition();
+  function enviar(acao: () => Promise<Resultado>) {
+    setErro(null);
+    setAviso(null);
     iniciar(async () => {
-      const r = await excluirManutencao(m.id);
+      const r = await acao();
       if (!r.sucesso) return setErro(r.erro);
-      router.replace("/frotas/manutencao");
+      if (r.aviso) setAviso(r.aviso);
+      else aoSalvar();
+      router.refresh();
     });
   }
+  return { erro, aviso, pendente, enviar, setErro };
+}
 
-  const campo = "text-[13px]";
+function Rodape({ erro, aviso, pendente, rotulo }: { erro: string | null; aviso: string | null; pendente: boolean; rotulo: string }) {
   return (
-    <form onSubmit={salvar} className="flex flex-col gap-4">
-      <fieldset className="grid gap-3 sm:grid-cols-2">
-        <legend className={`mb-2 font-semibold text-cataguases-marinho ${campo}`}>Ordem de compra (IPM)</legend>
-        <Campo rotulo="Nº da OC" htmlFor="o-num">
-          <input id="o-num" value={ocNumero} onChange={(e) => setOcNumero(e.target.value)} className={ESTILO_CAMPO_PADRAO} placeholder="ex.: 1841/2026" maxLength={40} />
-        </Campo>
-        <Campo rotulo="Valor da OC" htmlFor="o-val">
-          <input id="o-val" inputMode="decimal" value={ocValor} onChange={(e) => setOcValor(e.target.value)} className={`${ESTILO_CAMPO_PADRAO} tabular-nums`} placeholder="0,00" />
-        </Campo>
-        <Campo rotulo="OC emitida em" htmlFor="o-em">
-          <input id="o-em" type="date" value={ocEmitida} onChange={(e) => setOcEmitida(e.target.value)} className={ESTILO_CAMPO_PADRAO} />
-        </Campo>
-        <Campo rotulo="OC enviada à secretaria em" htmlFor="o-env">
-          <input id="o-env" type="date" value={ocEnviada} onChange={(e) => setOcEnviada(e.target.value)} className={ESTILO_CAMPO_PADRAO} />
-        </Campo>
-      </fieldset>
-      <fieldset className="grid gap-3 border-t border-slate-100 pt-3.5 sm:grid-cols-3">
-        <legend className={`mb-2 font-semibold text-cataguases-marinho ${campo}`}>Nota fiscal da oficina</legend>
-        <Campo rotulo="Nº da NF" htmlFor="n-num">
-          <input id="n-num" value={nfNumero} onChange={(e) => setNfNumero(e.target.value)} className={ESTILO_CAMPO_PADRAO} maxLength={40} />
-        </Campo>
-        <Campo rotulo="Data de emissão" htmlFor="n-em">
-          <input id="n-em" type="date" value={nfEmissao} onChange={(e) => setNfEmissao(e.target.value)} className={ESTILO_CAMPO_PADRAO} />
-        </Campo>
-        <Campo rotulo="Valor da NF" htmlFor="n-val">
-          <input id="n-val" inputMode="decimal" value={nfValor} onChange={(e) => setNfValor(e.target.value)} className={`${ESTILO_CAMPO_PADRAO} tabular-nums`} placeholder="0,00" />
-        </Campo>
-      </fieldset>
-      <fieldset className="grid gap-3 border-t border-slate-100 pt-3.5 sm:grid-cols-2">
-        <legend className={`mb-2 font-semibold text-cataguases-marinho ${campo}`}>Retorno e Contabilidade</legend>
-        <Campo rotulo="Documentação voltou ao Frotas em" htmlFor="r-docs">
-          <input id="r-docs" type="date" value={docs} onChange={(e) => setDocs(e.target.value)} className={ESTILO_CAMPO_PADRAO} />
-        </Campo>
-        <Campo rotulo="Enviada à Contabilidade em" htmlFor="r-ctb">
-          <input id="r-ctb" type="date" value={contabilidade} onChange={(e) => setContabilidade(e.target.value)} className={ESTILO_CAMPO_PADRAO} />
-        </Campo>
-      </fieldset>
-      <Campo rotulo="Observações" htmlFor="r-obs">
-        <textarea id="r-obs" rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} maxLength={2000} className={ESTILO_CAMPO_PADRAO} />
-      </Campo>
+    <>
       {erro && <Mensagem tipo="erro">{erro}</Mensagem>}
       {aviso && <Mensagem tipo="aviso">{aviso}</Mensagem>}
-      {ok && !erro && !aviso && <Mensagem tipo="ok">Salvo.</Mensagem>}
-      <div className="flex flex-wrap gap-2">
+      <div>
         <button type="submit" disabled={pendente} className={CLASSE_BOTAO}>
-          {pendente ? "Salvando…" : "Salvar documentação"}
+          {pendente ? "Salvando…" : rotulo}
         </button>
-        <button type="button" onClick={excluir} disabled={pendente} className={`${CLASSE_BOTAO_PERIGO} ml-auto`}>
+      </div>
+    </>
+  );
+}
+
+type PropsForm = { m: Manutencao; dataHoje: string; aoSalvar: () => void };
+
+function FormOc({ m, dataHoje, aoSalvar }: PropsForm) {
+  const [numero, setNumero] = React.useState(m.oc_numero ?? "");
+  const [valor, setValor] = React.useState(valorParaCampo(m.oc_valor ?? m.orcamento_valor));
+  const [emitida, setEmitida] = React.useState(m.oc_emitida_em ?? dataHoje);
+  const { erro, aviso, pendente, enviar, setErro } = useEnvio(aoSalvar);
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const v = lerValor(valor);
+        if (v === null || Number.isNaN(v)) return setErro("Confira o valor (ex.: 4.850,00).");
+        enviar(() => registrarOc({ id: m.id, ocNumero: numero, ocValor: v, ocEmitidaEm: emitida }));
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Campo rotulo="Nº da OC" htmlFor="o-num">
+          <input id="o-num" value={numero} onChange={(e) => setNumero(e.target.value)} className={ESTILO_CAMPO_PADRAO} placeholder="ex.: 1841/2026" maxLength={40} required />
+        </Campo>
+        <Campo rotulo="Valor da OC" htmlFor="o-val">
+          <input id="o-val" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} className={`${ESTILO_CAMPO_PADRAO} tabular-nums`} placeholder="0,00" required />
+        </Campo>
+        <Campo rotulo="OC emitida em" htmlFor="o-em">
+          <input id="o-em" type="date" value={emitida} onChange={(e) => setEmitida(e.target.value)} className={ESTILO_CAMPO_PADRAO} required />
+        </Campo>
+      </div>
+      <Rodape erro={erro} aviso={aviso} pendente={pendente} rotulo="Registrar OC" />
+    </form>
+  );
+}
+
+function FormNf({ m, dataHoje, aoSalvar }: PropsForm) {
+  const [numero, setNumero] = React.useState(m.nf_numero ?? "");
+  const [emissao, setEmissao] = React.useState(m.nf_emissao ?? dataHoje);
+  const [valor, setValor] = React.useState(valorParaCampo(m.nf_valor));
+  const { erro, aviso, pendente, enviar, setErro } = useEnvio(aoSalvar);
+  const digitado = lerValor(valor);
+  const acima = m.oc_valor !== null && digitado !== null && !Number.isNaN(digitado) && digitado > m.oc_valor;
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (digitado === null || Number.isNaN(digitado)) return setErro("Confira o valor (ex.: 4.850,00).");
+        enviar(() => registrarNf({ id: m.id, nfNumero: numero, nfEmissao: emissao, nfValor: digitado }));
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Campo rotulo="Nº da NF" htmlFor="n-num">
+          <input id="n-num" value={numero} onChange={(e) => setNumero(e.target.value)} className={ESTILO_CAMPO_PADRAO} maxLength={40} required />
+        </Campo>
+        <Campo rotulo="Data de emissão" htmlFor="n-em">
+          <input id="n-em" type="date" value={emissao} onChange={(e) => setEmissao(e.target.value)} className={ESTILO_CAMPO_PADRAO} required />
+        </Campo>
+        <Campo rotulo="Valor da NF" htmlFor="n-val">
+          <input id="n-val" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} className={`${ESTILO_CAMPO_PADRAO} tabular-nums`} placeholder="0,00" required />
+        </Campo>
+      </div>
+      {acima && <Mensagem tipo="aviso">Este valor passa da OC ({brl(m.oc_valor)}). Dá para salvar, mas confira com a oficina.</Mensagem>}
+      <Rodape erro={erro} aviso={aviso} pendente={pendente} rotulo="Registrar NF" />
+    </form>
+  );
+}
+
+function FormContabilidade({ m, dataHoje, aoSalvar }: PropsForm) {
+  const [dataEnvio, setDataEnvio] = React.useState(m.enviada_contabilidade_em ?? dataHoje);
+  const { erro, aviso, pendente, enviar } = useEnvio(aoSalvar);
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        enviar(() => registrarContabilidade({ id: m.id, enviadaContabilidadeEm: dataEnvio }));
+      }}
+    >
+      <div className="max-w-xs">
+        <Campo rotulo="Enviada à Contabilidade em" htmlFor="c-em">
+          <input id="c-em" type="date" value={dataEnvio} onChange={(e) => setDataEnvio(e.target.value)} className={ESTILO_CAMPO_PADRAO} required />
+        </Campo>
+      </div>
+      <Rodape erro={erro} aviso={aviso} pendente={pendente} rotulo="Registrar envio" />
+    </form>
+  );
+}
+
+/** Observações e exclusão da manutenção. */
+function Observacoes({ m }: { m: Manutencao }) {
+  const router = useRouter();
+  const [texto, setTexto] = React.useState(m.observacoes ?? "");
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [ok, setOk] = React.useState(false);
+  const [pendente, iniciar] = React.useTransition();
+  return (
+    <div className="flex flex-col gap-2 border-t border-slate-100 pt-3.5">
+      <Campo rotulo="Observações" htmlFor="r-obs">
+        <textarea id="r-obs" rows={2} value={texto} onChange={(e) => { setTexto(e.target.value); setOk(false); }} maxLength={2000} className={ESTILO_CAMPO_PADRAO} />
+      </Campo>
+      {erro && <Mensagem tipo="erro">{erro}</Mensagem>}
+      {ok && !erro && <Mensagem tipo="ok">Salvo.</Mensagem>}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pendente}
+          className={CLASSE_BOTAO_SECUNDARIO}
+          onClick={() =>
+            iniciar(async () => {
+              setErro(null);
+              const r = await salvarObservacoesManutencao({ id: m.id, observacoes: texto });
+              if (!r.sucesso) return setErro(r.erro);
+              setOk(true);
+              router.refresh();
+            })
+          }
+        >
+          Salvar observações
+        </button>
+        <button
+          type="button"
+          disabled={pendente}
+          className={`${CLASSE_BOTAO_PERIGO} ml-auto`}
+          onClick={() => {
+            if (!window.confirm("Excluir esta manutenção? O histórico da alteração fica registrado.")) return;
+            iniciar(async () => {
+              const r = await excluirManutencao(m.id);
+              if (!r.sucesso) return setErro(r.erro);
+              router.replace("/frotas/manutencao");
+            });
+          }}
+        >
           Excluir manutenção
         </button>
       </div>
-      <p className="text-xs text-slate-500">Se o valor da NF passar do valor da OC, o sistema avisa. Datas fora de ordem são recusadas, e cada alteração fica registrada.</p>
-    </form>
+      <p className="text-xs text-slate-500">Cada etapa é salva na hora em que acontece. Datas fora de ordem são recusadas, e cada alteração fica registrada.</p>
+    </div>
   );
 }

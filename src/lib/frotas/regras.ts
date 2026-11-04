@@ -164,9 +164,7 @@ export type EtapaManutencao =
   | "recusada"
   | "liberada"
   | "oc_emitida"
-  | "aguardando_nf"
-  | "aguardando_docs"
-  | "docs_retornaram"
+  | "nf_registrada"
   | "concluida";
 
 export const ROTULO_ETAPA_MANUTENCAO: Record<EtapaManutencao, string> = {
@@ -174,10 +172,8 @@ export const ROTULO_ETAPA_MANUTENCAO: Record<EtapaManutencao, string> = {
   novo_orcamento: "Novo orçamento pedido",
   recusada: "Recusada",
   liberada: "Liberada, falta a OC",
-  oc_emitida: "OC emitida, a enviar à secretaria",
-  aguardando_nf: "Aguardando NF",
-  aguardando_docs: "Aguardando os documentos",
-  docs_retornaram: "Documentos no Frotas, a enviar à Contabilidade",
+  oc_emitida: "OC emitida, aguardando a NF",
+  nf_registrada: "NF registrada, a enviar à Contabilidade",
   concluida: "Concluída",
 };
 
@@ -188,10 +184,8 @@ type CamposManutencao = Pick<
   | "analisado_em"
   | "oc_numero"
   | "oc_emitida_em"
-  | "oc_enviada_em"
   | "nf_numero"
   | "nf_emissao"
-  | "docs_retornaram_em"
   | "enviada_contabilidade_em"
 >;
 
@@ -209,16 +203,14 @@ export function situacaoManutencao(m: CamposManutencao): SituacaoManutencao {
   if (m.status_analise === "a_analisar") return faz("a_analisar", m.orcamento_recebido_em);
   const liberadoEm = m.analisado_em ?? m.orcamento_recebido_em;
   if (m.enviada_contabilidade_em) return faz("concluida", m.enviada_contabilidade_em, false);
-  if (m.docs_retornaram_em) return faz("docs_retornaram", m.docs_retornaram_em);
-  if (m.nf_numero) return faz("aguardando_docs", m.nf_emissao ?? m.oc_enviada_em ?? liberadoEm);
-  if (m.oc_enviada_em) return faz("aguardando_nf", m.oc_enviada_em);
+  if (m.nf_numero) return faz("nf_registrada", m.nf_emissao ?? m.oc_emitida_em ?? liberadoEm);
   if (m.oc_numero) return faz("oc_emitida", m.oc_emitida_em ?? liberadoEm);
   return faz("liberada", liberadoEm);
 }
 
 export type PassoManutencao = { chave: string; nome: string; data: string | null; estado: "feito" | "atual" | "futuro" };
 
-/** Os 8 passos do fluxo, com o estado de cada um (alimenta o indicador de etapas da tela). */
+/** Os 6 passos do fluxo, com o estado de cada um (alimenta o indicador de etapas da tela). */
 export function passosManutencao(m: CamposManutencao): PassoManutencao[] {
   const recusada = m.status_analise === "recusado";
   const liberada = m.status_analise === "liberado";
@@ -227,9 +219,7 @@ export function passosManutencao(m: CamposManutencao): PassoManutencao[] {
     { chave: "analise", nome: "Análise do Frotas", data: liberada || recusada ? m.analisado_em : null },
     { chave: "liberado", nome: "Serviço liberado", data: liberada ? m.analisado_em : null },
     { chave: "oc", nome: "OC emitida no IPM", data: m.oc_numero ? (m.oc_emitida_em ?? m.analisado_em) : null },
-    { chave: "oc_enviada", nome: "OC enviada à secretaria", data: m.oc_enviada_em },
     { chave: "nf", nome: "NF da oficina", data: m.nf_emissao },
-    { chave: "docs", nome: "Documentos de volta ao Frotas", data: m.docs_retornaram_em },
     { chave: "contabilidade", nome: "Enviado à Contabilidade", data: m.enviada_contabilidade_em },
   ];
   const feitos = [
@@ -237,9 +227,7 @@ export function passosManutencao(m: CamposManutencao): PassoManutencao[] {
     liberada || recusada,
     liberada,
     !!m.oc_numero,
-    !!m.oc_enviada_em,
     !!m.nf_numero,
-    !!m.docs_retornaram_em,
     !!m.enviada_contabilidade_em,
   ];
   const primeiroPendente = feitos.findIndex((f) => !f);
@@ -258,6 +246,13 @@ export function custoManutencao(
 ): number | null {
   if (m.status_analise !== "liberado") return null;
   return m.nf_valor ?? m.oc_valor ?? m.orcamento_valor;
+}
+
+/** Quanto a NF passa do valor da OC (em reais), ou null quando não passa ou falta um dos valores. */
+export function nfAcimaDaOc(m: Pick<Manutencao, "oc_valor" | "nf_valor">): number | null {
+  if (m.oc_valor === null || m.nf_valor === null) return null;
+  const diferenca = Math.round((m.nf_valor - m.oc_valor) * 100) / 100;
+  return diferenca > 0 ? diferenca : null;
 }
 
 /** Data de referência do custo (para janelas de 12 meses etc.). */

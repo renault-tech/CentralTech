@@ -12,7 +12,7 @@ import {
 } from "@/lib/frotas/analise";
 import { neutralizarFormula } from "@/lib/emendas/relatorios";
 import type { AvisoRevisao } from "@/lib/frotas/revisao";
-import { diasEntre, formatarData, pct, situacaoManutencao, situacaoNota } from "@/lib/frotas/regras";
+import { diasEntre, formatarData, nfAcimaDaOc, pct, situacaoManutencao, situacaoNota } from "@/lib/frotas/regras";
 import type { Fornecedor, Manutencao, NotaCombustivel, ParametrosFrotas, SecretariaFrotas, Veiculo } from "@/types/frotas";
 
 export type Tabela = {
@@ -126,13 +126,18 @@ export function relatorioCombustivel(d: DadosRelatorio, lista: NotaCombustivel[]
   ];
 }
 
+function textoNfAcimaDaOc(m: Manutencao): string | null {
+  const dif = nfAcimaDaOc(m);
+  return dif === null ? null : `NF acima da OC em ${dif.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`;
+}
+
 export function relatorioManutencoes(d: DadosRelatorio, lista: Manutencao[]): Tabela[] {
   const n = nomes(d);
   return [
     {
       titulo: "Manutenções",
-      colunas: ["Secretaria", "Veículo", "Serviço", "Oficina", "Orçamento recebido", "Orçamento", "Situação", "OC (IPM)", "Valor da OC", "OC enviada à secretaria", "NF", "Emissão da NF", "Valor da NF", "Documentos voltaram", "Enviada à Contabilidade", "Observações"],
-      monetarias: [5, 8, 12],
+      colunas: ["Secretaria", "Veículo", "Serviço", "Oficina", "Orçamento recebido", "Orçamento", "Situação", "OC (IPM)", "Valor da OC", "NF", "Emissão da NF", "Valor da NF", "Enviada à Contabilidade", "Alerta", "Observações"],
+      monetarias: [5, 8, 11],
       linhas: lista.map((m) => [
         n.secretaria.get(m.secretaria_id) ?? "",
         descreveVeiculo(n.veiculo.get(m.veiculo_id)),
@@ -143,12 +148,11 @@ export function relatorioManutencoes(d: DadosRelatorio, lista: Manutencao[]): Ta
         situacaoManutencao(m).rotulo,
         m.oc_numero ?? "",
         m.oc_valor ?? "",
-        m.oc_enviada_em ? formatarData(m.oc_enviada_em) : "",
         m.nf_numero ?? "",
         m.nf_emissao ? formatarData(m.nf_emissao) : "",
         m.nf_valor ?? "",
-        m.docs_retornaram_em ? formatarData(m.docs_retornaram_em) : "",
         m.enviada_contabilidade_em ? formatarData(m.enviada_contabilidade_em) : "",
+        textoNfAcimaDaOc(m) ?? "",
         m.observacoes ?? "",
       ]),
     },
@@ -195,7 +199,7 @@ export function relatorioGastoSecretaria(d: DadosRelatorio): Tabela[] {
 export function relatorioContabilidade(d: DadosRelatorio): Tabela[] {
   const n = nomes(d);
   const notas = d.notas.filter((x) => situacaoNota(x).etapa === "assinada").sort((a, b) => (a.retornou_em ?? "").localeCompare(b.retornou_em ?? ""));
-  const manutencoes = d.manutencoes.filter((m) => situacaoManutencao(m).etapa === "docs_retornaram").sort((a, b) => (a.docs_retornaram_em ?? "").localeCompare(b.docs_retornaram_em ?? ""));
+  const manutencoes = d.manutencoes.filter((m) => situacaoManutencao(m).etapa === "nf_registrada").sort((a, b) => (a.nf_emissao ?? "").localeCompare(b.nf_emissao ?? ""));
   return [
     {
       titulo: "NFs de combustível assinadas, a enviar à Contabilidade",
@@ -214,9 +218,9 @@ export function relatorioContabilidade(d: DadosRelatorio): Tabela[] {
       total: ["", "Total", "", "", soma(notas.map((x) => x.valor)), "", ""],
     },
     {
-      titulo: "Manutenções com os documentos no Frotas, a enviar à Contabilidade",
+      titulo: "Manutenções com NF registrada, a enviar à Contabilidade",
       aba: "Manutenções a enviar",
-      colunas: ["Secretaria", "Veículo", "OC (IPM)", "NF", "Valor da NF", "Documentos voltaram em", "Dias no Frotas"],
+      colunas: ["Secretaria", "Veículo", "OC (IPM)", "NF", "Valor da NF", "NF emitida em", "Dias com a NF"],
       monetarias: [4],
       linhas: manutencoes.map((m) => [
         n.secretaria.get(m.secretaria_id) ?? "",
@@ -224,8 +228,8 @@ export function relatorioContabilidade(d: DadosRelatorio): Tabela[] {
         m.oc_numero ?? "",
         m.nf_numero ?? "",
         m.nf_valor ?? "",
-        formatarData(m.docs_retornaram_em),
-        diasEntre(m.docs_retornaram_em as string, d.hoje),
+        formatarData(m.nf_emissao),
+        diasEntre(m.nf_emissao as string, d.hoje),
       ]),
       total: ["", "", "", "Total", soma(manutencoes.map((m) => m.nf_valor ?? 0)), "", ""],
     },

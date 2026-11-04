@@ -68,10 +68,8 @@ const man = (id: string, extra: Partial<Manutencao> = {}) =>
     analisado_em: null,
     oc_numero: null,
     oc_emitida_em: null,
-    oc_enviada_em: null,
     nf_numero: null,
     nf_emissao: null,
-    docs_retornaram_em: null,
     enviada_contabilidade_em: null,
     ...extra,
   }) as Manutencao;
@@ -80,9 +78,9 @@ describe("filtrarManutencoes", () => {
   const veiculos = new Map([["a", veic("a")]]);
   const lista = [
     man("1"),
-    man("2", { status_analise: "liberado", analisado_em: "2026-11-03", oc_numero: "9/2026", oc_enviada_em: "2026-11-04" }),
+    man("2", { status_analise: "liberado", analisado_em: "2026-11-03", oc_numero: "9/2026" }),
     man("3", { status_analise: "recusado", analisado_em: "2026-11-03" }),
-    man("4", { status_analise: "liberado", analisado_em: "2026-10-01", oc_numero: "8/2026", oc_enviada_em: "2026-10-02", nf_numero: "x", nf_emissao: "2026-10-03", docs_retornaram_em: "2026-10-04", enviada_contabilidade_em: "2026-10-05" }),
+    man("4", { status_analise: "liberado", analisado_em: "2026-10-01", oc_numero: "8/2026", nf_numero: "x", nf_emissao: "2026-10-03", enviada_contabilidade_em: "2026-10-05" }),
   ];
   const ctx = { veiculos, secretarias: new Map([["edu", "Educação"]]) };
   it("por padrão mostra só o que está em andamento", () => {
