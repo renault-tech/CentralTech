@@ -6,6 +6,7 @@ import { CircleHelp, PlayCircle } from "lucide-react";
 
 import { CHAVE_TOUR_PENDENTE } from "@/components/ajuda/gerenciador-tours";
 import { TOURS, tourPorRota, type Tour } from "@/lib/tours/tours";
+import { CLASSE_ICONE_CABECALHO } from "@/components/layout/cabecalho-estilos";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,6 +18,7 @@ export function BotaoAjuda() {
   const [aberto, setAberto] = React.useState(false);
   const [semTour, setSemTour] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const botaoRef = React.useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -29,8 +31,17 @@ export function BotaoAjuda() {
         setAberto(false);
       }
     }
+    function aoApertarEsc(evento: KeyboardEvent) {
+      if (evento.key !== "Escape") return;
+      setAberto(false);
+      botaoRef.current?.focus();
+    }
     document.addEventListener("mousedown", aoClicarFora);
-    return () => document.removeEventListener("mousedown", aoClicarFora);
+    document.addEventListener("keydown", aoApertarEsc);
+    return () => {
+      document.removeEventListener("mousedown", aoClicarFora);
+      document.removeEventListener("keydown", aoApertarEsc);
+    };
   }, [aberto]);
 
   async function iniciar(tour: Tour) {
@@ -50,19 +61,22 @@ export function BotaoAjuda() {
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="sm:relative">
       <button
+        ref={botaoRef}
         type="button"
         data-tour="botao-ajuda"
         aria-label="Ajuda"
+        aria-expanded={aberto}
+        aria-haspopup="true"
         onClick={() => setAberto((a) => !a)}
-        className="flex h-10 w-10 items-center justify-center rounded-[13px] border border-[rgba(12,29,51,0.1)] bg-white text-slate-600 transition-colors hover:bg-slate-100"
+        className={CLASSE_ICONE_CABECALHO}
       >
         <CircleHelp className="h-5 w-5" aria-hidden strokeWidth={1.8} />
       </button>
 
       {aberto && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-slate-200 bg-white text-slate-800 shadow-lg">
+        <div className="absolute inset-x-3 top-full z-20 mt-1 rounded-lg border border-slate-200 bg-white text-slate-800 shadow-lg sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-72">
           <div className="border-b border-slate-100 px-4 py-2.5">
             <p className="text-sm font-medium">Central de ajuda</p>
           </div>

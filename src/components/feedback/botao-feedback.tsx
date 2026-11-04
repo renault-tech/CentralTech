@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { enviarFeedback } from "@/lib/actions/feedback";
 import { APPS_FEEDBACK, ORDEM_APPS, ROTULO_TIPO } from "@/lib/feedback/apps";
 import { criarClienteNavegador } from "@/lib/supabase/client";
+import { CLASSE_ICONE_CABECALHO } from "@/components/layout/cabecalho-estilos";
 import { cn, ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
 import type { AppFeedback, TipoFeedback } from "@/types/database";
 
@@ -106,7 +107,7 @@ export function BotaoFeedback({ appInicial = "hub" }: { appInicial?: AppFeedback
         aria-label="Enviar feedback"
         title="Enviar feedback"
         onClick={() => setAberto(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+        className={CLASSE_ICONE_CABECALHO}
       >
         <Megaphone className="h-5 w-5" aria-hidden strokeWidth={1.8} />
       </button>

@@ -1,8 +1,13 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
-import { NavModulo } from "@/components/emendas/nav-modulo";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+
+import { NavModulo } from "@/components/modulo/nav-modulo";
+import { estiloModulo } from "@/components/modulo/tema";
+import { CLASSE_BOTAO } from "@/components/modulo/ui";
+import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
@@ -31,9 +36,9 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   if (ctx.situacao === "sem_perfil") {
     promessaCatalogo.catch(() => {});
     return (
-      <div className="min-h-dvh bg-slate-50">
+      <div className="min-h-dvh bg-slate-50" style={estiloModulo(MODULOS.emendas)}>
         <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
+        <main id="conteudo" className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
           <h1 className="text-xl font-semibold text-cataguases-marinho">Seu acesso ainda não foi configurado</h1>
           <p className="mt-2 text-sm text-slate-600">
             O módulo Emendas está liberado para você na Central, mas falta definir o seu perfil e as secretarias
@@ -63,10 +68,22 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   ];
 
   return (
-    <div className="min-h-dvh bg-slate-50 print:bg-white">
+    <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
       <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
-      <NavModulo itens={itens} podeCriar={gestor} />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+      <NavModulo
+        itens={itens}
+        rotuloAria="Seções do módulo Emendas"
+        tour="nav-emendas"
+        acao={
+          gestor && (
+            <Link href="/emendas/nova" className={CLASSE_BOTAO}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nova emenda
+            </Link>
+          )
+        }
+      />
+      <main id="conteudo" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
         <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
       </main>
     </div>

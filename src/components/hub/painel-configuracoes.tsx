@@ -175,9 +175,21 @@ export function PainelConfiguracoes({
                     </td>
                     {TODOS_MODULOS.map((m) => {
                       const liberado = u.modulos.includes(m.chave);
+                      // Administrador do Hub tem acesso pleno a todos os módulos, marcado ou não:
+                      // a tabela mostra isso (anel tracejado = acesso implícito de administrador).
+                      const implicito = !liberado && u.adminHub;
                       return (
                         <td key={m.chave} className="px-2 py-2 text-center">
-                          {liberado ? (
+                          {implicito ? (
+                            <span
+                              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-dashed"
+                              style={{ borderColor: m.cor, color: m.corTexto }}
+                              title={`${m.nomeCurto}: acesso pleno de administrador`}
+                            >
+                              <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                              <span className="sr-only">{m.nomeCurto}: acesso pleno de administrador</span>
+                            </span>
+                          ) : liberado ? (
                             <span
                               className="inline-flex h-6 w-6 items-center justify-center rounded-full"
                               style={{ backgroundColor: `${m.cor}1A`, color: m.corTexto }}
@@ -391,10 +403,17 @@ function FormularioAcesso({
                 />
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: m.cor }} aria-hidden />
                 <span className={marcado ? "font-medium text-slate-700" : undefined}>{m.nome}</span>
+                {!marcado && adminHub && <span className="ml-auto text-[11px] text-slate-500">acesso pleno de administrador</span>}
               </label>
             );
           })}
         </div>
+        {adminHub && (
+          <p className="mt-1.5 text-xs text-slate-600">
+            Administrador do Hub tem acesso pleno a todos os módulos. Marque aqui só o que precisar de cadastro próprio
+            (perfil, setor etc.) nos apps que têm login à parte.
+          </p>
+        )}
         {usuario?.modulos.includes("numera") && !modulos.includes("numera") && (
           <p className="mt-1.5 text-xs text-amber-700">
             Numera tem projeto próprio, sem SSO — desmarcar aqui só tira o cartão do Hub, a conta de

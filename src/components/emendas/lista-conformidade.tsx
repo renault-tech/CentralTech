@@ -38,7 +38,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-cataguases-marinho">Conformidade com a IN TCE-MG 05/2025 · {ano}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Conformidade com a IN TCE-MG 05/2025 · {ano}</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
             Itens que o art. 7º manda divulgar antes da execução da emenda (e o identificador contábil do art. 5º). O sistema <strong>alerta</strong>; não impede o empenho.
           </p>

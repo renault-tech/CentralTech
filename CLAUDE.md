@@ -1794,3 +1794,34 @@ rotas `/frotas/*` neste repositório, mesma sessão (sem link mágico), schema p
   cada veículo uma vez, ~150, e atualizar uma vez por mês, ~150 consultas) e cabe folgado no limite diário; usar a BrasilAPI só como reserva, manualmente. O
   vínculo com a FIPE é por veículo (ids da marca/modelo/ano guardados), então a atualização mensal é uma consulta por veículo. **Ainda não testado contra a API
   real**: no primeiro uso, vincular um veículo e conferir valor, mês de referência e código FIPE.
+
+## Padrão visual dos módulos (04/11/2026)
+
+Pedido do dono: identidade visual única entre os módulos. Auditoria (skills de UX e de design) achou: o botão de Ajuda era um quadrado branco no
+cabeçalho marinho (os outros, ícones escuros de tamanhos diferentes); nenhum controle do cabeçalho tinha foco visível; alvos de 36–40 px; sem botão
+explícito para voltar à Central dentro dos módulos; navegação, botões, cartão, título e menu Exportar duplicados e divergentes entre Emendas e Frotas;
+painel do sino e menu Exportar saíam da tela no celular (conferido em captura: "visos" em vez de "Avisos"). **Direção mantida de propósito**: a
+identidade institucional que já existe (marinho `#0C1D33`, dourado, brasão, Geist), só consolidada — não se trocou fonte nem paleta.
+
+- **Cor do módulo por variável CSS**: cada layout de módulo põe `style={estiloModulo(MODULOS.x)}` (`components/modulo/tema.ts`), que define `--modulo`
+  (faixa, ponto, sublinhado — nunca texto) e `--modulo-texto` (botões e texto, ≥ 4,5:1 sobre branco; há teste de contraste). Fora de módulo, `globals.css`
+  define o padrão (dourado/marinho). **Módulo novo = uma entrada em `MODULOS` + `style={estiloModulo(...)}` no layout**; botões, navegação e Exportar já saem na cor dele.
+- **Kit compartilhado** em `src/components/modulo/`: `ui.tsx` (`CLASSE_BOTAO`/`_SECUNDARIO`/`_PERIGO`/`_COMPACTO`, `Cartao`, `Selo*`, `TituloPagina`, `Campo`,
+  `Mensagem`, `Vazio`), `nav-modulo.tsx` (faixa de navegação única; `acao` = botão principal à direita), `menu-exportar.tsx` (Esc devolve o foco, setas
+  navegam, abre para o lado com tela). `components/frotas/ui.tsx` reexporta e guarda só o que é do Frotas; `components/emendas/menu-exportar.tsx` reexporta.
+  Os botões têm 44 px de altura no celular e 36 px no computador, com anel de foco na cor do módulo.
+- **Cabeçalho** (`components/layout/cabecalho-hub.tsx`, dividido em `CabecalhoHub` (dados) e `CabecalhoVisual` (puro)): faixa de 3 px na cor do módulo; em módulo,
+  brasão + **"← Central"** (voltar) + nome do módulo com o ponto da cor; à direita, nesta ordem: Novidades, Configurações, Feedback (gestão) · **sino, megafone,
+  ajuda** · usuário, Sair. Todos os controles usam `cabecalho-estilos.ts` (`CLASSE_ICONE_CABECALHO`, `CLASSE_LINK_CABECALHO`, `CLASSE_CONTADOR_CABECALHO`): 40 px no
+  computador e 44 px no celular, foco dourado (`.cabecalho-escuro`), no celular Configurações/Feedback/Sair viram ícones. Sino, ajuda e feedback usam a mesma classe;
+  sino e ajuda fecham com Esc devolvendo o foco e têm painel que cabe na tela no celular; o painel do sino é `role="dialog"`.
+- **Global** (`globals.css`): foco visível em todo elemento interativo (`:focus-visible`, azul; dourado no cabeçalho escuro), `cursor-pointer` nos botões e link de **"Pular para o
+  conteúdo"** (`id="conteudo"` no `<main>` de toda tela com cabeçalho). Título de página padrão: `text-2xl font-semibold tracking-tight` (`TituloPagina`; as telas do Emendas
+  que têm o próprio `<h1>` seguem o mesmo).
+- **Admin com acesso pleno**: Configurações → Usuários e acessos mostra o administrador com todos os módulos (anel tracejado = implícito) e o formulário avisa; o acesso real
+  já era pleno (`hub.eh_admin_hub()` em `meu_perfil` do Emendas e do Frotas, `listarModulosComAcesso` e `temAcessoAoModulo`). Compras, Requerimentos e Numera têm login e cadastro
+  à parte: o administrador só entra neles se também tiver conta lá.
+- **Apps fora deste repositório** (Compras, Requerimentos, Numera): este é o padrão a seguir no cabeçalho deles (ordem, "← Central", controles de 40/44 px, foco, Esc nos painéis);
+  não foram alterados aqui.
+- **Verificado em navegador** (Chromium headless, 1280 e 390 px, com os componentes reais numa página de teste temporária, removida): cabeçalho, navegação, botões, selos,
+  campos, Exportar e sino nos dois módulos; sem rolagem horizontal; alvos medidos (40×40 / 44×44); foco volta ao botão após Esc. **Não verificado**: leitor de tela, o diálogo de feedback no celular, as telas autenticadas reais.

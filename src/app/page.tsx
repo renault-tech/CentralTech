@@ -67,7 +67,7 @@ export default async function PaginaInicial({
       <GerenciadorTours />
       <CabecalhoHub usuario={usuario} />
 
-      <main className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 pb-14 pt-10 sm:px-6">
+      <main id="conteudo" className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 pb-14 pt-10 sm:px-6">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.025em] text-cataguases-marinho sm:text-[40px]">
             {saudacao()}, {usuario.nome.split(" ")[0]}.
