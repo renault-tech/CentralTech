@@ -1854,3 +1854,11 @@ Pedido do dono: o visual "Apple" (vidro) do Compras vale para tudo. Hub (+ Emend
 - **A faixa de 3 px do topo do cabeçalho é a cor do módulo (identidade)**: a regra do cabeçalho em vidro claro só mexe em `border-bottom/right-color`, nunca em `border-color` (antes apagava a faixa).
 - Cartões em vidro = `bg-white` com `rounded-xl|2xl`; campos, menus e `rounded-lg` ficam sólidos. Cartão novo que deve ser vidro: `rounded-xl`.
 - Detalhe do processo em "folha" é do Compras (não existe equivalente nos outros).
+
+## Paridade entre módulos (05/11/2026)
+
+Regra do dono: **o que existe num módulo deve existir nos outros**. Estado:
+- **Aparência (estilo Apple ou Clássico + modo claro/escuro/automático)** em todos: Hub e Compras e Requerimentos em Minha conta → Aparência; Numera numa janela aberta pelo nome do usuário (`abrirAparencia()`; Clássico = `html.estilo-classico`, o padrão é o vidro que já era dele). Preferência por navegador/domínio.
+- **Minha conta** (aparência + trocar senha): Hub, Compras e Requerimentos (`/conta`, nome no cabeçalho). Numera só tem Aparência (senha é pela Central).
+- **Configurações**: toda área usa o mesmo desenho — `CabecalhoPagina` + `AbasNavegacao` + **índice de cards** (`IndiceConfiguracoes`, `components/layout/indice-configuracoes.tsx`; Compras e Requerimentos têm cópia idêntica). Frotas e Emendas ganharam o índice (antes: Frotas era uma página com seções empilhadas; Emendas redirecionava direto para a primeira aba). **Tela nova de configuração = um card no índice + uma aba.**
+- Diferenças que ficam de propósito (específicas do app): detalhe do processo em folha/linha, zoom, notas, chat e aviso da plataforma (Compras); Ajuda (não existe no Requerimentos).
