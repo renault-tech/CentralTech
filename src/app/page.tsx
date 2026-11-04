@@ -163,15 +163,6 @@ export default async function PaginaInicial({
               </form>
             )
           )}
-          {/* Frotas: mesmo visual dos módulos liberados, mas sem acesso para ninguém (ainda não existe). */}
-          <div className={`${CARTAO} relative flex h-full flex-col gap-3.5 p-[22px]`} aria-label="Frotas: em breve">
-            <span className="absolute right-4 top-4 inline-flex h-6 items-center rounded-full bg-[rgba(233,166,59,0.22)] px-2.5 text-xs font-semibold text-[#8A5A00]">Em breve</span>
-            <IconeModulo chave="frotas" cor="#D97706" />
-            <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-semibold tracking-[-0.015em] text-cataguases-marinho">Frotas</h2>
-              <p className="text-sm leading-snug text-slate-600">Controle de veículos, abastecimento e manutenção.</p>
-            </div>
-          </div>
           <div className={`${CARTAO_TRAVADO} flex h-full flex-col gap-3.5 p-[22px]`} aria-label="Em Breve">
             <div className="flex items-start justify-between">
               <span className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-[rgba(12,29,51,0.10)]">

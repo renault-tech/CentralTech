@@ -26,7 +26,7 @@ export async function CabecalhoHub({
   /** Módulo interno (Emendas): faixa do topo na cor dele e o nome do
    * módulo no lugar de "Prefeitura de Cataguases" — mesmo padrão de header
    * de todos os apps (faixa de 3px na cor do app). */
-  modulo?: { nome: string; cor: string; app?: "emendas" };
+  modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" };
 }) {
   // Pedido do usuário: "preciso ser avisado no hub que há pedido pendente".
   // O selo fica no próprio link de Configurações (visível em toda tela) e

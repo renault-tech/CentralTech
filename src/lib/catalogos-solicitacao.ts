@@ -47,5 +47,11 @@ export const PERFIS_EMENDAS = [
   { valor: "consulta", rotulo: "Consulta (só visualiza)" },
 ] as const;
 
+/** Perfis do módulo Frotas (`frotas.usuarios.perfil`). */
+export const PERFIS_FROTAS = [
+  { valor: "gestor", rotulo: "Gestor de frotas (Setor de Frotas: vê e edita tudo)" },
+  { valor: "consulta", rotulo: "Consulta (só visualiza)" },
+] as const;
+
 /** Perfis do Emendas que precisam de uma secretaria "própria". */
 export const PERFIS_EMENDAS_COM_SECRETARIA = ["admin_secretaria", "operador"];

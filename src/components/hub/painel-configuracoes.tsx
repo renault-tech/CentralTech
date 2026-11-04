@@ -283,7 +283,7 @@ function FormularioAcesso({
   // rebaixar um perfil sem querer só por reabrir este formulário.
   const jaTinha = React.useCallback((m: Modulo) => !!usuario?.modulos.includes(m), [usuario]);
   const precisaDecisao = (m: Modulo) => modulos.includes(m) && !jaTinha(m);
-  const modulosParaDecisao = (["compras", "requerimentos", "numera", "emendas"] as Modulo[]).filter(precisaDecisao);
+  const modulosParaDecisao = (["compras", "requerimentos", "numera", "emendas", "frotas"] as Modulo[]).filter(precisaDecisao);
 
   function alternarModulo(m: Modulo, marcado: boolean) {
     setModulos((prev) => (marcado ? [...prev, m] : prev.filter((x) => x !== m)));

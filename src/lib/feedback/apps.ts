@@ -12,10 +12,11 @@ export const APPS_FEEDBACK: Record<AppFeedback, { nome: string; cor: string; cor
   requerimentos: { nome: "Requerimentos", cor: "#C63B22", corTexto: "#C63B22" },
   numera: { nome: "Numera", cor: "#0071e3", corTexto: "#0058B0" },
   emendas: { nome: "Emendas", cor: "#6B4FBB", corTexto: "#5B3FA8" },
+  frotas: { nome: "Frotas", cor: "#5C7A1F", corTexto: "#3F5A12" },
   hub: { nome: "Central Cataguases", cor: "#E9A63B", corTexto: "#8A5E00" },
 };
 
-export const ORDEM_APPS: AppFeedback[] = ["compras", "requerimentos", "numera", "emendas", "hub"];
+export const ORDEM_APPS: AppFeedback[] = ["compras", "requerimentos", "numera", "emendas", "frotas", "hub"];
 
 export const ROTULO_TIPO: Record<TipoFeedback, string> = { suporte: "Suporte", sugestao: "Sugestão" };
 

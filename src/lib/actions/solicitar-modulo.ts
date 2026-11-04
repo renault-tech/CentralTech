@@ -8,7 +8,7 @@ import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import type { Modulo } from "@/types/database";
 
-const esquemaModulo = z.enum(["compras", "numera", "requerimentos", "emendas"]);
+const esquemaModulo = z.enum(["compras", "numera", "requerimentos", "emendas", "frotas"]);
 
 /**
  * Pedido de acesso com um clique, a partir do card inativo na tela inicial.

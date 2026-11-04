@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-04",
+    titulo: "Frotas: novo módulo para o Setor de Frotas",
+    descricao:
+      "O Frotas agora está na Central. Reúne o cadastro dos veículos (próprios, de convênio e alugados, com o valor da tabela FIPE), o controle das notas fiscais de combustível por secretaria a cada quinzena e a manutenção, do orçamento da secretaria à OC do IPM, à NF da oficina e à Contabilidade. O painel destaca o que está parado há muitos dias e a análise mostra quanto cada veículo gasta em manutenção em relação ao que vale. O acesso é concedido em Configurações → Usuários e acessos.",
+  },
+  {
     data: "2026-11-03",
     titulo: "Frotas e novos módulos a caminho",
     descricao: "A tela inicial passou a mostrar os próximos módulos: Frotas e mais um, ainda por anunciar. São só um aviso por enquanto, sem acesso.",

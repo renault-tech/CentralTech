@@ -85,6 +85,34 @@ export const TOURS: Tour[] = [
       },
     ],
   },
+  {
+    id: "frotas-painel",
+    nome: "Frotas",
+    descricao: "Como ler o painel de pendências do Setor de Frotas",
+    rota: "/frotas",
+    passos: [
+      {
+        seletor: '[data-tour="nav-frotas"]',
+        titulo: "Módulo Frotas",
+        descricao:
+          "Painel para o que está pendente, Combustível para as NFs de cada secretaria, Manutenção para o caminho do orçamento até a Contabilidade, Veículos para o cadastro e Análise da frota para o custo de cada veículo.",
+        lado: "bottom",
+      },
+      {
+        seletor: '[data-tour="resumo-frotas"]',
+        titulo: "Resumo geral",
+        descricao:
+          "Quantos documentos há em cada situação. Clicar num cartão abre a lista já filtrada. Em vermelho, o que passou do prazo de alerta.",
+        lado: "bottom",
+      },
+      {
+        seletor: '[data-tour="quinzena-frotas"]',
+        titulo: "Quinzena de combustível",
+        descricao: "Cada secretaria deve ter uma NF por quinzena. Aqui aparecem as que ainda não mandaram a da quinzena anterior.",
+        lado: "left",
+      },
+    ],
+  },
 ];
 
 /** Tour cuja rota é prefixo exato do pathname atual (a rota vazia do boas-vindas nunca "casa" aqui). */

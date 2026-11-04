@@ -1719,3 +1719,51 @@ Análise completa e status em `docs/analise-conformidade-tce-emendas.md`. Decis�
 - **Regras puras** em `lib/emendas/conformidade.ts` (testadas): `avaliarArt7` (itens I a XVII + art. 5º, com `aplica` por tipo/saúde/execução), `gndDaNatureza`, `contasRepetidas`, `relatoriosDeGestao` (30/06 do ano seguinte ao 1º pagamento). `resumo.ts` devolve `conformidade` por emenda e alimenta as pendências `publicidade_incompleta`, `conta_repetida`, `conta_banco_nao_oficial`, `relatorio_gestao:AAAA`. **Novo item do art. 7º = nova entrada em `avaliarArt7`.**
 - **Telas**: `/emendas/conformidade` (resumo por item + lista), bloco `PainelTransparencia` (`salvarTransparencia` → `gravarCamposExecucao`, mesma regra de propostas), `EditorDadosPublicacao` (Configurações › Exercício), anexos novos.
 - **Portal** (`portal.ts`): lista fechada ampliada (gestor, conta completa, datas dos movimentos…); `GET /transparencia/emendas/documento/[id]` entrega por link temporário SÓ plano de trabalho, relatório de gestão e anuência do SUS (`TIPOS_DOCUMENTO_PUBLICO`) de emendas não canceladas. Nunca expor CPF, endereço de pessoa física nem outros anexos.
+
+## Módulo Frotas (5º módulo — roda DENTRO do Hub, 04/11/2026) — Etapa 1
+
+Pedido do dono, a partir das necessidades da funcionária do Setor de Frotas (mockup aprovado antes de construir; o fluxo mudou: a
+secretaria manda o **orçamento**, o Frotas analisa contra o histórico e libera, a secretaria executa na oficina/posto). Como o Emendas:
+rotas `/frotas/*` neste repositório, mesma sessão (sem link mágico), schema próprio `frotas` no projeto compartilhado. Cor `#5C7A1F`
+(texto `#3F5A12`); `MODULOS.frotas` tem `interno: true`; o card "Em breve" da Início virou o módulo real.
+
+- **Passo manual do dono (obrigatório)**: Supabase → Settings → API → Exposed schemas → adicionar `frotas` (o schema só aparece na lista
+  depois de criado, o que já foi feito). Sem isso toda tela do módulo falha (PGRST106) e o bloco "Frotas" do formulário de acesso devolve erro.
+- **Acesso = admin do Hub OU (`frotas.usuarios` + módulo `frotas` em `hub.acessos_modulo`)**. De propósito NÃO há `ativo` próprio nem cascata em
+  `hub.definir_acesso` (função grande, o MCP trava ao recriá-la): tirar o módulo na Central corta o acesso na hora (`frotas.meu_perfil()` confere
+  `acessos_modulo`) e marcar de novo devolve. Perfis: `gestor` (Setor de Frotas, tudo) e `consulta` (só lê). Para mudar o perfil de quem já tem o
+  módulo: desmarcar e marcar de novo em Configurações → Usuários (o formulário de decisão só aparece para módulo recém-marcado).
+- **Banco** (`20261104000000_frotas_schema.sql`, aplicada por MCP em partes; a RLS/privilégios foi reaplicada por `execute_sql` sem os `drop`/`revoke`
+  que o MCP trata como destrutivos e pede confirmação): `secretarias` (com `controla_combustivel`), `fornecedores` (posto/oficina/locadora),
+  `veiculos`, `notas_combustivel`, `manutencoes`, `parametros` (1 linha: limites dos alertas), `auditoria` (gatilho genérico, como no Emendas), `usuarios`.
+  Regras no BANCO: ordem das datas da NF (emissão ≤ envio ≤ retorno ≤ Contabilidade) e da manutenção (cadeia OC → envio da OC → NF → retorno dos
+  documentos → Contabilidade, NF com número+data+valor juntos, OC só com serviço liberado), NF única por secretaria+posto+número, OC única, alugado
+  exige locadora, valor de referência sempre com a fonte. Só gestor escreve (RLS); `anon` sem nenhum privilégio. Testado em transação desfeita com
+  perfis simulados (28 cenários: anon, sem acesso, consulta, gestor, admin, módulo removido e devolvido). Integração na Central: CHECKs de
+  `acessos_modulo`/`solicitacoes_acesso`/`notificacoes` aceitam `frotas`; linha `frotas` em `hub.apps_feedback` (+ `APPS_FEEDBACK`).
+- **Fluxos**: NF de combustível = **por secretaria a cada quinzena** (sem litros nem veículo: isso fica no sistema de abastecimento); a situação é
+  deduzida das datas (`situacaoNota`). Manutenção: `situacaoManutencao`/`passosManutencao` (orçamento → análise → liberado → OC do IPM → OC enviada →
+  NF → documentos de volta → Contabilidade); a OC é emitida no IPM, aqui só o número. Orçamento recusado/novo orçamento ficam no registro; um novo
+  orçamento reabre a análise. O custo conta a NF, senão a OC, senão o orçamento liberado (`custoManutencao`).
+- **Código**: `src/lib/frotas/` — `regras.ts` (datas, quinzenas, níveis de alerta, etapas), `revisao.ts` (dados a revisar do cadastro), `analise.ts`
+  (painel, custo × valor do veículo, 7 alertas automáticos, análise de um orçamento), `filtros.ts`, `entrada.ts`, `fipe-parse.ts` (+ `fipe.ts`, rede),
+  `importacao/{normalizar,planilha,xlsx}.ts`, `dados.ts` (leituras sob a RLS), `actions.ts` e `actions-importacao.ts` (escritas; nenhuma usa
+  service_role). Telas em `src/app/frotas/*` (painel, combustivel, manutencao, veiculos[/importar], analise, configuracoes) e `src/components/frotas/*`.
+  Tudo puro é testado (`*.test.ts`, 100+ testes). Filtros das listas vão na URL por formulário GET (sem JS).
+- **Importação da planilha de veículos** (`/frotas/veiculos/importar`): prévia sem gravar → confirmar. Reconhece as abas pelas colunas (patrimônio =
+  próprios, setor = convênio, locadora = alugados), padroniza placa ("QOR - 2576" → QOR-2576), combustível ("DISEL S10"), ano ("2023/24"), marca,
+  secretaria+setor ("SAUDE / PSF" → Saúde + PSF; Conselho Tutelar → setor do Gabinete), separa motos da classe "leve" e tira o motivo da parada
+  ("aguardando leilão") da finalidade. **Não corrige duplicidades**: placa repetida (QQB-9947 está nos Próprios e no Convênio), patrimônio repetido,
+  zerado ou fora do padrão e máquinas sem placa entram como estão e ficam em "Dados a revisar" até serem corrigidos ou marcados "está correto"
+  (`revisao_ignorada`). Reimportar não duplica nem sobrescreve (chave = vínculo+placa+patrimônio+modelo+ano). O `cabeçalho` da planilha é "COMBUT."
+  (abreviado): o teste pegou o erro de só reconhecer "COMBUST…".
+- **FIPE** (`fipe.ts`, API pública da Parallelum v2; `FIPE_API_URL`/`FIPE_API_TOKEN` opcionais): em Veículos → editar → "Procurar na FIPE" (tipo →
+  marca → modelo mais parecido → ano/combustível → "Usar este valor"), que guarda os ids e o valor; "Atualizar valores da FIPE" refaz os já ligados
+  (25 por clique). Máquinas não têm FIPE: valor digitado na mão (`valor_fonte = manual`). **Não testado contra a API real** (o ambiente de
+  desenvolvimento não alcança a internet): só a leitura das respostas e a escolha de modelo/ano têm teste (`fipe-parse.test.ts`). Conferir no
+  primeiro uso; se a API exigir token ou mudar o formato, ajustar `fipe.ts`/`lerLista`.
+- **Ainda não feito (etapas seguintes)**: secretarias vendo/confirmando as próprias pendências (hoje só o Setor de Frotas e a consulta), avisos no sino,
+  relatórios por vereador/secretaria/veículo com Excel e PDF, importação do histórico de gastos mensais por secretaria (a funcionária tem 1 planilha),
+  consumo por veículo (dependeria dos dados do sistema de abastecimento).
+- **Verificado**: `tsc`/`eslint`/`vitest` (184)/`next build` limpos. **Não testado no navegador nem contra o banco pelo app** (sandbox sem acesso a
+  `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas, a leitura do .xlsx real (ExcelJS) e a FIPE.

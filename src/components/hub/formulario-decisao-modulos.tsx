@@ -10,6 +10,7 @@ import {
   NIVEIS_NUMERA,
   PERFIS_EMENDAS,
   PERFIS_EMENDAS_COM_SECRETARIA,
+  PERFIS_FROTAS,
   type CatalogoItem,
   type DocumentoNumera,
 } from "@/lib/catalogos-solicitacao";
@@ -67,6 +68,8 @@ export function FormularioDecisaoModulos({
   const [secretariaEmendas, setSecretariaEmendas] = React.useState<string>("");
   const [verOutrasEmendas, setVerOutrasEmendas] = React.useState(true);
 
+  const [perfilFrotas, setPerfilFrotas] = React.useState<string>("consulta");
+
   function alternarIncluido(m: Modulo, marcado: boolean) {
     setIncluidos((prev) => {
       const novo = new Set(prev);
@@ -80,12 +83,14 @@ export function FormularioDecisaoModulos({
   const mostraRequerimentos = modulosVisiveis.includes("requerimentos");
   const mostraNumera = modulosVisiveis.includes("numera");
   const mostraEmendas = modulosVisiveis.includes("emendas");
+  const mostraFrotas = modulosVisiveis.includes("frotas");
   const incluiVarios = modulosVisiveis.length > 1;
 
   const incluiCompras = mostraCompras && incluidos.has("compras");
   const incluiRequerimentos = mostraRequerimentos && incluidos.has("requerimentos");
   const incluiNumera = mostraNumera && incluidos.has("numera");
   const incluiEmendas = mostraEmendas && incluidos.has("emendas");
+  const incluiFrotas = mostraFrotas && incluidos.has("frotas");
 
   const decisoes: DecisaoAprovacao = {};
   if (incluiCompras) {
@@ -110,6 +115,9 @@ export function FormularioDecisaoModulos({
       verOutras: perfilEmendas === "gestor" ? true : verOutrasEmendas,
     };
   }
+  if (incluiFrotas) {
+    decisoes.frotas = { perfil: perfilFrotas as NonNullable<DecisaoAprovacao["frotas"]>["perfil"] };
+  }
 
   // Validação: o banco recusaria (com erro cru de RPC/constraint) perfil
   // que exige setor/secretaria sem um selecionado — checar aqui evita a
@@ -127,7 +135,7 @@ export function FormularioDecisaoModulos({
     incluiEmendas &&
     ((PERFIS_EMENDAS_COM_SECRETARIA.includes(perfilEmendas) && !secretariaEmendas) ||
       (perfilEmendas === "consulta" && !secretariaEmendas && !verOutrasEmendas));
-  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera && !incluiEmendas;
+  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera && !incluiEmendas && !incluiFrotas;
   const valido = !faltaSetorCompras && !faltaSecretariaRequerimentos && !faltaSecretariaEmendas && !nenhumIncluido;
 
   // Reporta pro pai a cada mudança relevante — evita o pai duplicar esta
@@ -140,6 +148,8 @@ export function FormularioDecisaoModulos({
     incluiRequerimentos,
     incluiNumera,
     incluiEmendas,
+    incluiFrotas,
+    perfilFrotas,
     perfilEmendas,
     secretariaEmendas,
     verOutrasEmendas,
@@ -151,7 +161,7 @@ export function FormularioDecisaoModulos({
     docsNumera,
   ]);
 
-  if (!mostraCompras && !mostraRequerimentos && !mostraNumera && !mostraEmendas) return null;
+  if (!mostraCompras && !mostraRequerimentos && !mostraNumera && !mostraEmendas && !mostraFrotas) return null;
 
   return (
     <div className="space-y-3">
@@ -385,6 +395,37 @@ export function FormularioDecisaoModulos({
               )}
               <p className="mt-1.5 text-xs text-slate-500">
                 Ajuste fino (secretaria a secretaria) fica em Emendas → Configurações → Usuários.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+      {mostraFrotas && (
+        <div className="rounded-md border border-slate-200 p-3">
+          {incluiVarios && (
+            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={incluiFrotas}
+                onChange={(e) => alternarIncluido("frotas", e.target.checked)}
+              />
+              Incluir Frotas nesta decisão
+            </label>
+          )}
+          {incluiFrotas && (
+            <>
+              <p className="text-xs font-semibold text-slate-600">Frotas — perfil</p>
+              <div className="mt-2">
+                <select className={ESTILO_CAMPO} value={perfilFrotas} onChange={(e) => setPerfilFrotas(e.target.value)}>
+                  {PERFIS_FROTAS.map((p) => (
+                    <option key={p.valor} value={p.valor}>
+                      {p.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Se o schema “frotas” não estiver exposto na API do Supabase, o acesso não é gravado.
               </p>
             </>
           )}
