@@ -16,7 +16,7 @@ export default async function PaginaRelatorios({ searchParams }: { searchParams:
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-cataguases-marinho">Relatórios de {exercicio.ano}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Relatórios de {exercicio.ano}</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
             Dados de apoio à prestação de contas (IN TCE-MG 05/2025; LRF, art. 48-A; Lei 13.019/2014, arts. 38, 51 e 69; Lei 4.320/1964, arts. 58 a 65). O envio oficial segue o sistema do TCE-MG; aqui ficam os números prontos para conferir, imprimir ou baixar em CSV.
           </p>

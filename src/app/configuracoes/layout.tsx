@@ -29,7 +29,7 @@ export default async function LayoutConfiguracoes({
     <div className="min-h-dvh bg-slate-50">
       <CabecalhoHub usuario={usuario} />
 
-      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <main id="conteudo" className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <CabecalhoPagina
           titulo="Configurações"
           subtitulo="Quem tem acesso ao hub e quais cards de módulo cada pessoa vê."

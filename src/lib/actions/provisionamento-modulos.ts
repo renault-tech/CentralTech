@@ -25,6 +25,7 @@ import { criarClienteCompras } from "@/lib/supabase/compras-cliente";
 import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
+import { criarClienteFrotas } from "@/lib/supabase/frotas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
@@ -43,11 +44,15 @@ export type DecisaoEmendas = {
   verOutras: boolean;
 };
 
+/** Acesso ao Frotas: só o perfil (Setor de Frotas = gestor; os demais, consulta). */
+export type DecisaoFrotas = { perfil: "gestor" | "consulta" };
+
 export type DecisaoAprovacao = {
   compras?: DecisaoCompras;
   requerimentos?: DecisaoRequerimentos;
   numera?: DecisaoNumera;
   emendas?: DecisaoEmendas;
+  frotas?: DecisaoFrotas;
 };
 
 export type ResultadoModulo = { sucesso: boolean; mensagem?: string; linkPrimeiroAcesso?: string };
@@ -435,6 +440,28 @@ export async function aprovarEmendas(
   if (error) {
     console.error("[aprovarEmendas] falha:", error);
     return { sucesso: false, mensagem: error.message };
+  }
+  return { sucesso: true, linkPrimeiroAcesso };
+}
+
+/**
+ * Frotas não guarda "ativo" próprio: o acesso é `frotas.usuarios` (perfil) +
+ * o módulo marcado em `hub.acessos_modulo` (gravado pelo bookkeeping). Tirar
+ * o módulo na Central já corta o acesso e marcar de novo devolve, sem cascata.
+ */
+export async function aprovarFrotas(
+  authId: string,
+  decisao: DecisaoFrotas,
+  linkPrimeiroAcesso: string | undefined
+): Promise<ResultadoModulo> {
+  const frotas = await criarClienteFrotas();
+  const { error } = await frotas.rpc("definir_acesso", { p_usuario: authId, p_perfil: decisao.perfil });
+  if (error) {
+    console.error("[aprovarFrotas] falha:", error);
+    return {
+      sucesso: false,
+      mensagem: `${error.message} (o schema “frotas” está exposto na API do Supabase?)`,
+    };
   }
   return { sucesso: true, linkPrimeiroAcesso };
 }

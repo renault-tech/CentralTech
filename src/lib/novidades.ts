@@ -13,6 +13,24 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-04",
+    titulo: "Visual padronizado em todos os módulos",
+    descricao:
+      "O cabeçalho agora é o mesmo em toda a Central: brasão, botão “← Central” para voltar, o nome do módulo com a cor dele e, à direita, os mesmos botões de sino, feedback e ajuda (antes cada um tinha tamanho e forma diferentes). Botões e a navegação dos módulos seguem um só padrão, com a cor de cada módulo, foco visível para quem usa o teclado, alvos maiores no celular e um atalho “Pular para o conteúdo”. No celular, o painel de avisos e o menu Exportar não ficam mais cortados. Em Configurações → Usuários e acessos, o administrador aparece com acesso pleno a todos os módulos.",
+  },
+  {
+    data: "2026-11-04",
+    titulo: "Frotas: exportação e avisos no sino",
+    descricao:
+      "Em todas as telas do Frotas há um botão Exportar: veículos, NFs de combustível e manutenções saem em Excel, PDF ou CSV exatamente como estão filtrados na tela; a Análise exporta o custo × valor do veículo e o gasto por secretaria; o Painel exporta as pendências e a remessa à Contabilidade (a relação imprimível do que o Setor de Frotas tem em mãos para mandar). Além disso, o sino da Central passou a avisar o Setor de Frotas, toda manhã, de documento parado há muitos dias, orçamento esperando análise, secretaria sem NF na quinzena e veículo que passou do limite de custo em relação ao seu valor.",
+  },
+  {
+    data: "2026-11-04",
+    titulo: "Frotas: novo módulo para o Setor de Frotas",
+    descricao:
+      "O Frotas agora está na Central. Reúne o cadastro dos veículos (próprios, de convênio e alugados, com o valor da tabela FIPE), o controle das notas fiscais de combustível por secretaria a cada quinzena e a manutenção, do orçamento da secretaria à OC do IPM, à NF da oficina e à Contabilidade. O painel destaca o que está parado há muitos dias e a análise mostra quanto cada veículo gasta em manutenção em relação ao que vale. O acesso é concedido em Configurações → Usuários e acessos.",
+  },
+  {
     data: "2026-11-03",
     titulo: "Frotas e novos módulos a caminho",
     descricao: "A tela inicial passou a mostrar os próximos módulos: Frotas e mais um, ainda por anunciar. São só um aviso por enquanto, sem acesso.",

@@ -23,7 +23,7 @@ export default async function PaginaNovidades() {
     <div className="min-h-dvh bg-slate-50">
       <CabecalhoHub usuario={usuario} />
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <main id="conteudo" className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <CabecalhoPagina
           titulo="Novidades"
           subtitulo="O que mudou na Central Cataguases, mais recente primeiro."

@@ -1719,3 +1719,109 @@ Análise completa e status em `docs/analise-conformidade-tce-emendas.md`. Decis�
 - **Regras puras** em `lib/emendas/conformidade.ts` (testadas): `avaliarArt7` (itens I a XVII + art. 5º, com `aplica` por tipo/saúde/execução), `gndDaNatureza`, `contasRepetidas`, `relatoriosDeGestao` (30/06 do ano seguinte ao 1º pagamento). `resumo.ts` devolve `conformidade` por emenda e alimenta as pendências `publicidade_incompleta`, `conta_repetida`, `conta_banco_nao_oficial`, `relatorio_gestao:AAAA`. **Novo item do art. 7º = nova entrada em `avaliarArt7`.**
 - **Telas**: `/emendas/conformidade` (resumo por item + lista), bloco `PainelTransparencia` (`salvarTransparencia` → `gravarCamposExecucao`, mesma regra de propostas), `EditorDadosPublicacao` (Configurações › Exercício), anexos novos.
 - **Portal** (`portal.ts`): lista fechada ampliada (gestor, conta completa, datas dos movimentos…); `GET /transparencia/emendas/documento/[id]` entrega por link temporário SÓ plano de trabalho, relatório de gestão e anuência do SUS (`TIPOS_DOCUMENTO_PUBLICO`) de emendas não canceladas. Nunca expor CPF, endereço de pessoa física nem outros anexos.
+
+## Módulo Frotas (5º módulo — roda DENTRO do Hub, 04/11/2026) — Etapa 1
+
+Pedido do dono, a partir das necessidades da funcionária do Setor de Frotas (mockup aprovado antes de construir; o fluxo mudou: a
+secretaria manda o **orçamento**, o Frotas analisa contra o histórico e libera, a secretaria executa na oficina/posto). Como o Emendas:
+rotas `/frotas/*` neste repositório, mesma sessão (sem link mágico), schema próprio `frotas` no projeto compartilhado. Cor `#5C7A1F`
+(texto `#3F5A12`); `MODULOS.frotas` tem `interno: true`; o card "Em breve" da Início virou o módulo real.
+
+- **Passo manual do dono (obrigatório)**: Supabase → Settings → API → Exposed schemas → adicionar `frotas` (o schema só aparece na lista
+  depois de criado, o que já foi feito). Sem isso toda tela do módulo falha (PGRST106) e o bloco "Frotas" do formulário de acesso devolve erro.
+- **Acesso = admin do Hub OU (`frotas.usuarios` + módulo `frotas` em `hub.acessos_modulo`)**. De propósito NÃO há `ativo` próprio nem cascata em
+  `hub.definir_acesso` (função grande, o MCP trava ao recriá-la): tirar o módulo na Central corta o acesso na hora (`frotas.meu_perfil()` confere
+  `acessos_modulo`) e marcar de novo devolve. Perfis: `gestor` (Setor de Frotas, tudo) e `consulta` (só lê). Para mudar o perfil de quem já tem o
+  módulo: desmarcar e marcar de novo em Configurações → Usuários (o formulário de decisão só aparece para módulo recém-marcado).
+- **Banco** (`20261104000000_frotas_schema.sql`, aplicada por MCP em partes; a RLS/privilégios foi reaplicada por `execute_sql` sem os `drop`/`revoke`
+  que o MCP trata como destrutivos e pede confirmação): `secretarias` (com `controla_combustivel`), `fornecedores` (posto/oficina/locadora),
+  `veiculos`, `notas_combustivel`, `manutencoes`, `parametros` (1 linha: limites dos alertas), `auditoria` (gatilho genérico, como no Emendas), `usuarios`.
+  Regras no BANCO: ordem das datas da NF (emissão ≤ envio ≤ retorno ≤ Contabilidade) e da manutenção (cadeia OC → envio da OC → NF → retorno dos
+  documentos → Contabilidade, NF com número+data+valor juntos, OC só com serviço liberado), NF única por secretaria+posto+número, OC única, alugado
+  exige locadora, valor de referência sempre com a fonte. Só gestor escreve (RLS); `anon` sem nenhum privilégio. Testado em transação desfeita com
+  perfis simulados (28 cenários: anon, sem acesso, consulta, gestor, admin, módulo removido e devolvido). Integração na Central: CHECKs de
+  `acessos_modulo`/`solicitacoes_acesso`/`notificacoes` aceitam `frotas`; linha `frotas` em `hub.apps_feedback` (+ `APPS_FEEDBACK`).
+- **Fluxos**: NF de combustível = **por secretaria a cada quinzena** (sem litros nem veículo: isso fica no sistema de abastecimento); a situação é
+  deduzida das datas (`situacaoNota`). Manutenção: `situacaoManutencao`/`passosManutencao` (orçamento → análise → liberado → OC do IPM → OC enviada →
+  NF → documentos de volta → Contabilidade); a OC é emitida no IPM, aqui só o número. Orçamento recusado/novo orçamento ficam no registro; um novo
+  orçamento reabre a análise. O custo conta a NF, senão a OC, senão o orçamento liberado (`custoManutencao`).
+- **Código**: `src/lib/frotas/` — `regras.ts` (datas, quinzenas, níveis de alerta, etapas), `revisao.ts` (dados a revisar do cadastro), `analise.ts`
+  (painel, custo × valor do veículo, 7 alertas automáticos, análise de um orçamento), `filtros.ts`, `entrada.ts`, `fipe-parse.ts` (+ `fipe.ts`, rede),
+  `importacao/{normalizar,planilha,xlsx}.ts`, `dados.ts` (leituras sob a RLS), `actions.ts` e `actions-importacao.ts` (escritas; nenhuma usa
+  service_role). Telas em `src/app/frotas/*` (painel, combustivel, manutencao, veiculos[/importar], analise, configuracoes) e `src/components/frotas/*`.
+  Tudo puro é testado (`*.test.ts`, 100+ testes). Filtros das listas vão na URL por formulário GET (sem JS).
+- **Importação da planilha de veículos** (`/frotas/veiculos/importar`): prévia sem gravar → confirmar. Reconhece as abas pelas colunas (patrimônio =
+  próprios, setor = convênio, locadora = alugados), padroniza placa ("QOR - 2576" → QOR-2576), combustível ("DISEL S10"), ano ("2023/24"), marca,
+  secretaria+setor ("SAUDE / PSF" → Saúde + PSF; Conselho Tutelar → setor do Gabinete), separa motos da classe "leve" e tira o motivo da parada
+  ("aguardando leilão") da finalidade. **Não corrige duplicidades**: placa repetida (QQB-9947 está nos Próprios e no Convênio), patrimônio repetido,
+  zerado ou fora do padrão e máquinas sem placa entram como estão e ficam em "Dados a revisar" até serem corrigidos ou marcados "está correto"
+  (`revisao_ignorada`). Reimportar não duplica nem sobrescreve (chave = vínculo+placa+patrimônio+modelo+ano). O `cabeçalho` da planilha é "COMBUT."
+  (abreviado): o teste pegou o erro de só reconhecer "COMBUST…".
+- **FIPE** (`fipe.ts`, API pública da Parallelum v2; `FIPE_API_URL`/`FIPE_API_TOKEN` opcionais): em Veículos → editar → "Procurar na FIPE" (tipo →
+  marca → modelo mais parecido → ano/combustível → "Usar este valor"), que guarda os ids e o valor; "Atualizar valores da FIPE" refaz os já ligados
+  (25 por clique). Máquinas não têm FIPE: valor digitado na mão (`valor_fonte = manual`). **Não testado contra a API real** (o ambiente de
+  desenvolvimento não alcança a internet): só a leitura das respostas e a escolha de modelo/ano têm teste (`fipe-parse.test.ts`). Conferir no
+  primeiro uso; se a API exigir token ou mudar o formato, ajustar `fipe.ts`/`lerLista`.
+- **Ainda não feito (etapas seguintes)**: secretarias vendo/confirmando as próprias pendências (hoje só o Setor de Frotas e a consulta), importação do histórico de gastos mensais por secretaria (a funcionária tem 1 planilha),
+  consumo por veículo (dependeria dos dados do sistema de abastecimento).
+- **Verificado**: `tsc`/`eslint`/`vitest` (184)/`next build` limpos. **Não testado no navegador nem contra o banco pelo app** (sandbox sem acesso a
+  `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas, a leitura do .xlsx real (ExcelJS) e a FIPE.
+
+### Frotas: exportar, sino e a fonte do valor FIPE (04/11/2026)
+
+- **Exportar** (`/frotas/exportar?r=<relatório>&formato=xlsx|pdf|csv`, mais os filtros da tela): `src/lib/frotas/relatorios.ts` (puro, testado) monta as
+  tabelas — veículos (com valor e avisos de revisão), NFs de combustível, manutenções, custo × valor do veículo, gasto por secretaria, **remessa à
+  Contabilidade** (NFs assinadas e manutenções com documentos no Frotas, com total e dias parado; é a relação imprimível) e pendências; `r=completo` (só
+  Excel) junta tudo, uma aba por relatório. `xlsx-saida.ts` (ExcelJS: cabeçalho fixo, moeda, total), `montarPdfTabelas` do Emendas (ganhou o parâmetro
+  `rodape`) e CSV com BOM/`;`/vírgula decimal e fórmulas neutralizadas. Sob a RLS de quem pede: quem só consulta exporta o que enxerga. Botão "Exportar"
+  (`MenuExportar`) em todas as telas; as listas levam os filtros da URL junto (`opcoesExportar`). CSV só nos relatórios de uma tabela.
+- **Sino** (migration `20261104010000_frotas_avisos_sino.sql`, aplicada por MCP; job `frotas-avisar-pendencias` no pg_cron às 11h05 UTC = 8h05 em
+  Brasília): `frotas.avisar_pendencias()` chama `hub.notificar` (app `frotas`; o sino e o selo do card da Central já leem `hub.notificacoes`, nada novo
+  no front). Aviso por "ação de outra pessoa" quase não existiria (quem age não é avisado e o Setor de Frotas faz quase tudo), então o sino cobre o que
+  ninguém está olhando: NF com a secretaria há N dias, NF assinada esperando a Contabilidade, manutenção parada em cada etapa (liberada sem OC, OC sem
+  envio, sem NF, sem documentos, documentos à espera da Contabilidade), orçamento sem análise, quinzena fechada sem NF (uma vez, 5 dias depois de ela
+  acabar) e veículo acima de `pct_atencao`/`pct_critico` do valor. N = `dias_atencao`/`dias_critico` de `frotas.parametros` (os mesmos do Painel). Cada aviso
+  tem `chave_unica` (não repete; piorar de atenção para crítico gera um novo). **Recebem**: gestores do módulo (perfil `gestor`, ativo, com o módulo
+  marcado); consulta e admins do Hub não (veem tudo no Painel). A função só roda pelo agendador (sem EXECUTE para ninguém); falha numa seção vira
+  WARNING e não derruba as outras. Testado em transação desfeita: 5 avisos ao gestor, 0 à consulta, 0 na segunda chamada, NF recente sem aviso; a aritmética
+  das quinzenas conferida em 9 datas (virada de mês e de ano, fevereiro). Para desligar: `select cron.unschedule('frotas-avisar-pendencias')`.
+- **Fonte do valor FIPE (pesquisa de 04/11/2026; as páginas oficiais não puderam ser abertas — o ambiente bloqueia a rede —, então os pontos abaixo vêm
+  de resultados de busca e de SDKs de terceiros e precisam de conferência)**: (1) *fipe.online / Parallelum v2* (a que o código usa): sem chave, cerca de 500
+  consultas por dia; com token gratuito (`X-Subscription-Token`), cerca de 1.000; planos pagos sem limite e com histórico. Consulta por marca → modelo → ano
+  ou direto por **código FIPE + ano** (`/{tipo}/{codigoFipe}/years/{ano}`), e o parâmetro `reference` escolhe o mês da tabela. Fontes divergem no endereço
+  (`fipe.parallelum.com.br` × `fipe.api.br`): por isso `FIPE_API_URL`. (2) *BrasilAPI* (`/api/fipe`): sem chave, código aberto (MIT), mas os termos pedem para não fazer
+  varredura automática nem laços de requisições; não publica cota. **Recomendação**: ficar na Parallelum com o token gratuito — o uso é pequeno (vincular
+  cada veículo uma vez, ~150, e atualizar uma vez por mês, ~150 consultas) e cabe folgado no limite diário; usar a BrasilAPI só como reserva, manualmente. O
+  vínculo com a FIPE é por veículo (ids da marca/modelo/ano guardados), então a atualização mensal é uma consulta por veículo. **Ainda não testado contra a API
+  real**: no primeiro uso, vincular um veículo e conferir valor, mês de referência e código FIPE.
+
+## Padrão visual dos módulos (04/11/2026)
+
+Pedido do dono: identidade visual única entre os módulos. Auditoria (skills de UX e de design) achou: o botão de Ajuda era um quadrado branco no
+cabeçalho marinho (os outros, ícones escuros de tamanhos diferentes); nenhum controle do cabeçalho tinha foco visível; alvos de 36–40 px; sem botão
+explícito para voltar à Central dentro dos módulos; navegação, botões, cartão, título e menu Exportar duplicados e divergentes entre Emendas e Frotas;
+painel do sino e menu Exportar saíam da tela no celular (conferido em captura: "visos" em vez de "Avisos"). **Direção mantida de propósito**: a
+identidade institucional que já existe (marinho `#0C1D33`, dourado, brasão, Geist), só consolidada — não se trocou fonte nem paleta.
+
+- **Cor do módulo por variável CSS**: cada layout de módulo põe `style={estiloModulo(MODULOS.x)}` (`components/modulo/tema.ts`), que define `--modulo`
+  (faixa, ponto, sublinhado — nunca texto) e `--modulo-texto` (botões e texto, ≥ 4,5:1 sobre branco; há teste de contraste). Fora de módulo, `globals.css`
+  define o padrão (dourado/marinho). **Módulo novo = uma entrada em `MODULOS` + `style={estiloModulo(...)}` no layout**; botões, navegação e Exportar já saem na cor dele.
+- **Kit compartilhado** em `src/components/modulo/`: `ui.tsx` (`CLASSE_BOTAO`/`_SECUNDARIO`/`_PERIGO`/`_COMPACTO`, `Cartao`, `Selo*`, `TituloPagina`, `Campo`,
+  `Mensagem`, `Vazio`), `nav-modulo.tsx` (faixa de navegação única; `acao` = botão principal à direita), `menu-exportar.tsx` (Esc devolve o foco, setas
+  navegam, abre para o lado com tela). `components/frotas/ui.tsx` reexporta e guarda só o que é do Frotas; `components/emendas/menu-exportar.tsx` reexporta.
+  Os botões têm 44 px de altura no celular e 36 px no computador, com anel de foco na cor do módulo.
+- **Cabeçalho** (`components/layout/cabecalho-hub.tsx`, dividido em `CabecalhoHub` (dados) e `CabecalhoVisual` (puro)): faixa de 3 px na cor do módulo; em módulo,
+  brasão + **"← Central"** (voltar) + nome do módulo com o ponto da cor; à direita, nesta ordem: Novidades, Configurações, Feedback (gestão) · **sino, megafone,
+  ajuda** · usuário, Sair. Todos os controles usam `cabecalho-estilos.ts` (`CLASSE_ICONE_CABECALHO`, `CLASSE_LINK_CABECALHO`, `CLASSE_CONTADOR_CABECALHO`): 40 px no
+  computador e 44 px no celular, foco dourado (`.cabecalho-escuro`), no celular Configurações/Feedback/Sair viram ícones. Sino, ajuda e feedback usam a mesma classe;
+  sino e ajuda fecham com Esc devolvendo o foco e têm painel que cabe na tela no celular; o painel do sino é `role="dialog"`.
+- **Global** (`globals.css`): foco visível em todo elemento interativo (`:focus-visible`, azul; dourado no cabeçalho escuro), `cursor-pointer` nos botões e link de **"Pular para o
+  conteúdo"** (`id="conteudo"` no `<main>` de toda tela com cabeçalho). Título de página padrão: `text-2xl font-semibold tracking-tight` (`TituloPagina`; as telas do Emendas
+  que têm o próprio `<h1>` seguem o mesmo).
+- **Admin com acesso pleno**: Configurações → Usuários e acessos mostra o administrador com todos os módulos (anel tracejado = implícito) e o formulário avisa; o acesso real
+  já era pleno (`hub.eh_admin_hub()` em `meu_perfil` do Emendas e do Frotas, `listarModulosComAcesso` e `temAcessoAoModulo`). Compras, Requerimentos e Numera têm login e cadastro
+  à parte: o administrador só entra neles se também tiver conta lá.
+- **Apps fora deste repositório** (Compras, Requerimentos, Numera): este é o padrão a seguir no cabeçalho deles (ordem, "← Central", controles de 40/44 px, foco, Esc nos painéis);
+  não foram alterados aqui.
+- **Verificado em navegador** (Chromium headless, 1280 e 390 px, com os componentes reais numa página de teste temporária, removida): cabeçalho, navegação, botões, selos,
+  campos, Exportar e sino nos dois módulos; sem rolagem horizontal; alvos medidos (40×40 / 44×44); foco volta ao botão após Esc. **Não verificado**: leitor de tela, o diálogo de feedback no celular, as telas autenticadas reais.

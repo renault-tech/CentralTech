@@ -40,7 +40,8 @@ function larguras(t: TabelaPdf): number[] {
   return peso.map((p) => (p / soma) * LARGURA);
 }
 
-export function montarPdfTabelas(opts: { titulo: string; subtitulo?: string; tabelas: TabelaPdf[] }): Uint8Array {
+/** `rodape`: identificação do módulo no pé de cada página (padrão: Emendas). */
+export function montarPdfTabelas(opts: { titulo: string; subtitulo?: string; tabelas: TabelaPdf[]; rodape?: string }): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   let y = M;
 
@@ -115,7 +116,7 @@ export function montarPdfTabelas(opts: { titulo: string; subtitulo?: string; tab
   for (let p = 1; p <= paginas; p++) {
     doc.setPage(p);
     doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(148, 163, 184);
-    doc.text(seguro(`Central Cataguases - Emendas Impositivas - gerado em ${gerado}`), M, ALTURA - 6);
+    doc.text(seguro(`${opts.rodape ?? "Central Cataguases - Emendas Impositivas"} - gerado em ${gerado}`), M, ALTURA - 6);
     doc.text(`Pagina ${p} de ${paginas}`, 297 - M, ALTURA - 6, { align: "right" });
   }
   return new Uint8Array(doc.output("arraybuffer"));

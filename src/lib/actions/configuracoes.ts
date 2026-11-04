@@ -15,6 +15,7 @@ import {
   aprovarRequerimentos,
   aprovarNumera,
   aprovarEmendas,
+  aprovarFrotas,
   type DecisaoAprovacao,
   type ResultadoModulo,
 } from "@/lib/actions/provisionamento-modulos";
@@ -31,7 +32,7 @@ const esquemaAcesso = z.object({
   email: z.email("Informe um e-mail válido"),
   nome: z.string().trim().min(2, "Informe o nome"),
   adminHub: z.boolean(),
-  modulos: z.array(z.enum(["compras", "numera", "requerimentos", "emendas"])),
+  modulos: z.array(z.enum(["compras", "numera", "requerimentos", "emendas", "frotas"])),
   ativo: z.boolean(),
   decisoes: z
     .object({
@@ -45,6 +46,7 @@ const esquemaAcesso = z.object({
           verOutras: z.boolean(),
         })
         .optional(),
+      frotas: z.object({ perfil: z.enum(["gestor", "consulta"]) }).optional(),
     })
     .default({}),
 });
@@ -124,6 +126,9 @@ export async function definirAcesso(dados: {
   }
   if (decisoes?.emendas) {
     resultados.emendas = await aprovarEmendas(conta.id, decisoes.emendas, linkCompartilhado, ativo);
+  }
+  if (decisoes?.frotas) {
+    resultados.frotas = await aprovarFrotas(conta.id, decisoes.frotas, linkCompartilhado);
   }
 
   await enviarLinkNoEmailEAnotar(pessoa, linkCompartilhado, modulos, resultados);

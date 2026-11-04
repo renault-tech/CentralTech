@@ -71,6 +71,16 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     corTexto: "#5B3FA8",
     interno: true,
   },
+  frotas: {
+    chave: "frotas",
+    nome: "Frotas",
+    nomeCurto: "Frotas",
+    descricao: "Controle de veículos, notas fiscais de combustível e manutenção da frota municipal.",
+    url: "/frotas",
+    cor: "#5C7A1F",
+    corTexto: "#3F5A12",
+    interno: true,
+  },
 };
 
 /**

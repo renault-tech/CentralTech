@@ -12,7 +12,7 @@ export type UsuarioHub = {
   criado_em: string;
 };
 
-export type Modulo = "compras" | "numera" | "requerimentos" | "emendas";
+export type Modulo = "compras" | "numera" | "requerimentos" | "emendas" | "frotas";
 
 export type AcessoModulo = {
   id: string;

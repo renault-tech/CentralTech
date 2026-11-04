@@ -41,6 +41,12 @@
     --ring: 212 64% 40%;
 
     --radius: 0.5rem;
+
+    /* Cor do módulo em que a pessoa está (cada layout de módulo redefine as duas). Fora de módulo:
+       dourado da Central na faixa e azul marinho nos botões. `--modulo` = faixa, ponto e marcas
+       (nunca texto); `--modulo-texto` = botões e texto, sempre com 4,5:1 ou mais sobre branco. */
+    --modulo: #E9A63B;
+    --modulo-texto: #0C1D33;
   }
 
   .dark {
@@ -80,6 +86,21 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+  }
+  /* Foco visível em TODO elemento interativo, em qualquer módulo (quem tem classe própria de
+     foco, como os campos de formulário, continua com a dele: as utilitárias vêm depois). */
+  :where(a, button, summary, [role="button"], [role="menuitem"], input, select, textarea):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  /* No cabeçalho escuro o anel é dourado (o azul não aparece sobre o marinho). */
+  .cabecalho-escuro :where(a, button, summary, [role="button"], [role="menuitem"]):focus-visible {
+    outline-color: #E9A63B;
+  }
+  button:not(:disabled),
+  [role="button"],
+  summary {
+    cursor: pointer;
   }
 }
 

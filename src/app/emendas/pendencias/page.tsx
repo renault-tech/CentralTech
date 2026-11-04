@@ -46,7 +46,7 @@ export default async function PaginaPendencias({ searchParams }: { searchParams:
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold text-cataguases-marinho">Pendências de {exercicio.ano}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Pendências de {exercicio.ano}</h1>
         <p className="mt-1 text-sm text-slate-600">O que merece atenção do gestor. Justificadas ficam fora da lista até os dados mudarem.</p>
       </div>
       <Suspense>

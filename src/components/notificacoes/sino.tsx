@@ -5,6 +5,7 @@ import { Bell, X } from "lucide-react";
 
 import { COR_APP_AVISO, NOME_APP_AVISO, destinoDoAviso } from "@/lib/notificacoes/links";
 import { limparNovo, marcarComoLidas, useNotificacoes } from "@/lib/notificacoes/store";
+import { CLASSE_ICONE_CABECALHO } from "@/components/layout/cabecalho-estilos";
 import { cn } from "@/lib/utils";
 import type { NotificacaoHub } from "@/types/database";
 
@@ -31,6 +32,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
   const { lista, porApp, novo } = useNotificacoes(usuarioId);
   const [aberto, setAberto] = React.useState(false);
   const caixa = React.useRef<HTMLDivElement>(null);
+  const botao = React.useRef<HTMLButtonElement>(null);
 
   const total = Object.values(porApp).reduce((t, n) => t + (n ?? 0), 0);
   const compras = porApp.compras ?? 0;
@@ -40,7 +42,11 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
     const fora = (e: MouseEvent) => {
       if (caixa.current && !caixa.current.contains(e.target as Node)) setAberto(false);
     };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setAberto(false);
+      botao.current?.focus(); // o foco volta ao sino, não se perde na página
+    };
     document.addEventListener("mousedown", fora);
     document.addEventListener("keydown", esc);
     return () => {
@@ -56,29 +62,35 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
   }, [novo]);
 
   return (
-    <div ref={caixa} className="relative">
+    <div ref={caixa} className="sm:relative">
       <button
+        ref={botao}
         type="button"
         onClick={() => setAberto((v) => !v)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+        className={CLASSE_ICONE_CABECALHO}
         aria-label={total > 0 ? `Avisos: ${total} não lido(s)` : "Avisos"}
         aria-expanded={aberto}
+        aria-haspopup="dialog"
         data-tour="sino-avisos"
       >
-        <Bell className={cn("h-[18px] w-[18px]", novo && "animate-pulse")} aria-hidden />
+        <Bell className={cn("h-5 w-5", novo && "animate-pulse motion-reduce:animate-none")} aria-hidden strokeWidth={1.8} />
         {total > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cataguases-vermelho px-1 text-[10px] font-semibold text-white">
+          <span className="absolute right-0.5 top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cataguases-vermelho px-1 text-[11px] font-semibold leading-none text-white">
             {total > 99 ? "99+" : total}
           </span>
         )}
       </button>
 
       {aberto && (
-        <div className="absolute right-0 z-50 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl">
+        <div
+          role="dialog"
+          aria-label="Avisos"
+          className="absolute inset-x-3 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-[380px]"
+        >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold text-cataguases-marinho">Avisos</p>
             {lista.some((n) => !n.lida_em) && (
-              <button type="button" onClick={() => void marcarComoLidas()} className="text-xs font-medium text-cataguases-azul hover:underline">
+              <button type="button" onClick={() => void marcarComoLidas()} className="inline-flex min-h-8 items-center text-xs font-medium text-cataguases-azul hover:underline">
                 Marcar todas como lidas
               </button>
             )}
@@ -106,7 +118,10 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
                 <button
                   type="button"
                   onClick={() => abrir(n)}
-                  className={cn("flex w-full gap-3 px-4 py-3 text-left hover:bg-slate-50", !n.lida_em && "bg-amber-50/50")}
+                  className={cn(
+                    "flex min-h-11 w-full gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cataguases-azul",
+                    !n.lida_em && "bg-amber-50/50"
+                  )}
                 >
                   <span
                     className="mt-1.5 h-2 w-2 flex-none rounded-full"
@@ -146,7 +161,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
             <span className="mt-0.5 block text-sm font-semibold text-cataguases-marinho">{novo.titulo}</span>
             {novo.mensagem && <span className="mt-0.5 block truncate text-xs text-slate-500">{novo.mensagem}</span>}
           </button>
-          <button type="button" onClick={limparNovo} className="text-slate-400 hover:text-slate-600" aria-label="Fechar aviso">
+          <button type="button" onClick={limparNovo} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-700" aria-label="Fechar aviso">
             <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
