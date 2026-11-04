@@ -7,6 +7,8 @@ import { listarFornecedores, listarNotas, listarSecretarias, obterContextoFrotas
 import { brl, formatarData, nivelPorDias, quinzenasRecentes, situacaoNota, diasEntre, type EtapaNota } from "@/lib/frotas/regras";
 import { montarUrl } from "@/lib/frotas/url";
 import { dataNoFuso } from "@/lib/fuso";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { opcoesExportar } from "@/lib/frotas/exportacao";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 
 export const metadata = { title: "Combustível · Frotas" };
@@ -50,11 +52,22 @@ export default async function PaginaCombustivel({ searchParams }: { searchParams
         titulo="Notas fiscais de combustível"
         subtitulo="Uma NF por secretaria a cada 15 dias. Litros e veículos ficam no sistema de abastecimento; aqui só o controle do documento."
         acao={
-          gestor && (
-            <Link href={montarUrl("/frotas/combustivel", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
-              Lançar NF
-            </Link>
-          )
+          <>
+            <MenuExportar
+              opcoes={opcoesExportar(
+                [
+                  { r: "combustivel", rotulo: "NFs da lista", formatos: ["xlsx", "pdf", "csv"] },
+                  { r: "contabilidade", rotulo: "Remessa à Contabilidade", formatos: ["pdf"] },
+                ],
+                base
+              )}
+            />
+            {gestor && (
+              <Link href={montarUrl("/frotas/combustivel", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
+                Lançar NF
+              </Link>
+            )}
+          </>
         }
       />
 

@@ -19,6 +19,8 @@ import {
 import { montarUrl } from "@/lib/frotas/url";
 import { dataNoFuso } from "@/lib/fuso";
 import { cn } from "@/lib/utils";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { opcoesExportar } from "@/lib/frotas/exportacao";
 
 export const metadata = { title: "Manutenção · Frotas" };
 
@@ -90,11 +92,22 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
         titulo="Manutenção de veículos"
         subtitulo="Do orçamento da secretaria até a documentação na Contabilidade. A OC é emitida no IPM; aqui só se registra o número."
         acao={
-          gestor && (
-            <Link href={montarUrl("/frotas/manutencao", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
-              Registrar orçamento
-            </Link>
-          )
+          <>
+            <MenuExportar
+              opcoes={opcoesExportar(
+                [
+                  { r: "manutencoes", rotulo: "Manutenções da lista", formatos: ["xlsx", "pdf", "csv"] },
+                  { r: "contabilidade", rotulo: "Remessa à Contabilidade", formatos: ["pdf"] },
+                ],
+                base
+              )}
+            />
+            {gestor && (
+              <Link href={montarUrl("/frotas/manutencao", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
+                Registrar orçamento
+              </Link>
+            )}
+          </>
         }
       />
 

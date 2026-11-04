@@ -5,6 +5,8 @@ import { ROTULO_PARECER, calcularAlertas, calcularIndicadores, custoPorVeiculo, 
 import { listarManutencoes, listarNotas, listarSecretarias, listarVeiculos, obterParametros } from "@/lib/frotas/dados";
 import { brl, pct } from "@/lib/frotas/regras";
 import { dataNoFuso } from "@/lib/fuso";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { opcoesExportar } from "@/lib/frotas/exportacao";
 
 export const metadata = { title: "Análise da frota · Frotas" };
 
@@ -38,6 +40,15 @@ export default async function PaginaAnalise() {
       <TituloPagina
         titulo="Análise da frota"
         subtitulo="Quanto cada veículo custa em manutenção comparado ao que ele vale, e onde o gasto está concentrado. Últimos 12 meses."
+        acao={
+          <MenuExportar
+            opcoes={opcoesExportar([
+              { r: "custo", rotulo: "Custo × valor do veículo", formatos: ["xlsx", "pdf", "csv"] },
+              { r: "gasto-secretaria", rotulo: "Gasto por secretaria", formatos: ["xlsx", "pdf", "csv"] },
+              { r: "completo", rotulo: "Tudo em uma planilha", formatos: ["xlsx"] },
+            ])}
+          />
+        }
       />
 
       {semValor > 0 && (

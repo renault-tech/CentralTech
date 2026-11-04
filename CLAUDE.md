@@ -1762,8 +1762,35 @@ rotas `/frotas/*` neste repositório, mesma sessão (sem link mágico), schema p
   (25 por clique). Máquinas não têm FIPE: valor digitado na mão (`valor_fonte = manual`). **Não testado contra a API real** (o ambiente de
   desenvolvimento não alcança a internet): só a leitura das respostas e a escolha de modelo/ano têm teste (`fipe-parse.test.ts`). Conferir no
   primeiro uso; se a API exigir token ou mudar o formato, ajustar `fipe.ts`/`lerLista`.
-- **Ainda não feito (etapas seguintes)**: secretarias vendo/confirmando as próprias pendências (hoje só o Setor de Frotas e a consulta), avisos no sino,
-  relatórios por vereador/secretaria/veículo com Excel e PDF, importação do histórico de gastos mensais por secretaria (a funcionária tem 1 planilha),
+- **Ainda não feito (etapas seguintes)**: secretarias vendo/confirmando as próprias pendências (hoje só o Setor de Frotas e a consulta), importação do histórico de gastos mensais por secretaria (a funcionária tem 1 planilha),
   consumo por veículo (dependeria dos dados do sistema de abastecimento).
 - **Verificado**: `tsc`/`eslint`/`vitest` (184)/`next build` limpos. **Não testado no navegador nem contra o banco pelo app** (sandbox sem acesso a
   `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas, a leitura do .xlsx real (ExcelJS) e a FIPE.
+
+### Frotas: exportar, sino e a fonte do valor FIPE (04/11/2026)
+
+- **Exportar** (`/frotas/exportar?r=<relatório>&formato=xlsx|pdf|csv`, mais os filtros da tela): `src/lib/frotas/relatorios.ts` (puro, testado) monta as
+  tabelas — veículos (com valor e avisos de revisão), NFs de combustível, manutenções, custo × valor do veículo, gasto por secretaria, **remessa à
+  Contabilidade** (NFs assinadas e manutenções com documentos no Frotas, com total e dias parado; é a relação imprimível) e pendências; `r=completo` (só
+  Excel) junta tudo, uma aba por relatório. `xlsx-saida.ts` (ExcelJS: cabeçalho fixo, moeda, total), `montarPdfTabelas` do Emendas (ganhou o parâmetro
+  `rodape`) e CSV com BOM/`;`/vírgula decimal e fórmulas neutralizadas. Sob a RLS de quem pede: quem só consulta exporta o que enxerga. Botão "Exportar"
+  (`MenuExportar`) em todas as telas; as listas levam os filtros da URL junto (`opcoesExportar`). CSV só nos relatórios de uma tabela.
+- **Sino** (migration `20261104010000_frotas_avisos_sino.sql`, aplicada por MCP; job `frotas-avisar-pendencias` no pg_cron às 11h05 UTC = 8h05 em
+  Brasília): `frotas.avisar_pendencias()` chama `hub.notificar` (app `frotas`; o sino e o selo do card da Central já leem `hub.notificacoes`, nada novo
+  no front). Aviso por "ação de outra pessoa" quase não existiria (quem age não é avisado e o Setor de Frotas faz quase tudo), então o sino cobre o que
+  ninguém está olhando: NF com a secretaria há N dias, NF assinada esperando a Contabilidade, manutenção parada em cada etapa (liberada sem OC, OC sem
+  envio, sem NF, sem documentos, documentos à espera da Contabilidade), orçamento sem análise, quinzena fechada sem NF (uma vez, 5 dias depois de ela
+  acabar) e veículo acima de `pct_atencao`/`pct_critico` do valor. N = `dias_atencao`/`dias_critico` de `frotas.parametros` (os mesmos do Painel). Cada aviso
+  tem `chave_unica` (não repete; piorar de atenção para crítico gera um novo). **Recebem**: gestores do módulo (perfil `gestor`, ativo, com o módulo
+  marcado); consulta e admins do Hub não (veem tudo no Painel). A função só roda pelo agendador (sem EXECUTE para ninguém); falha numa seção vira
+  WARNING e não derruba as outras. Testado em transação desfeita: 5 avisos ao gestor, 0 à consulta, 0 na segunda chamada, NF recente sem aviso; a aritmética
+  das quinzenas conferida em 9 datas (virada de mês e de ano, fevereiro). Para desligar: `select cron.unschedule('frotas-avisar-pendencias')`.
+- **Fonte do valor FIPE (pesquisa de 04/11/2026; as páginas oficiais não puderam ser abertas — o ambiente bloqueia a rede —, então os pontos abaixo vêm
+  de resultados de busca e de SDKs de terceiros e precisam de conferência)**: (1) *fipe.online / Parallelum v2* (a que o código usa): sem chave, cerca de 500
+  consultas por dia; com token gratuito (`X-Subscription-Token`), cerca de 1.000; planos pagos sem limite e com histórico. Consulta por marca → modelo → ano
+  ou direto por **código FIPE + ano** (`/{tipo}/{codigoFipe}/years/{ano}`), e o parâmetro `reference` escolhe o mês da tabela. Fontes divergem no endereço
+  (`fipe.parallelum.com.br` × `fipe.api.br`): por isso `FIPE_API_URL`. (2) *BrasilAPI* (`/api/fipe`): sem chave, código aberto (MIT), mas os termos pedem para não fazer
+  varredura automática nem laços de requisições; não publica cota. **Recomendação**: ficar na Parallelum com o token gratuito — o uso é pequeno (vincular
+  cada veículo uma vez, ~150, e atualizar uma vez por mês, ~150 consultas) e cabe folgado no limite diário; usar a BrasilAPI só como reserva, manualmente. O
+  vínculo com a FIPE é por veículo (ids da marca/modelo/ano guardados), então a atualização mensal é uma consulta por veículo. **Ainda não testado contra a API
+  real**: no primeiro uso, vincular um veículo e conferir valor, mês de referência e código FIPE.

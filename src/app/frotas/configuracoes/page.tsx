@@ -30,6 +30,13 @@ export default async function PaginaConfiguracoesFrotas() {
             <ListaFornecedores tipo="locadora" fornecedores={por("locadora")} />
           </div>
         </Cartao>
+        <Cartao titulo="Avisos no sino">
+          <p className="text-sm text-slate-700">
+            Todo dia, por volta das 8h, quem tem o perfil “Gestor de frotas” recebe no sino da Central: NF esperando a assinatura da secretaria ou a ida à Contabilidade,
+            manutenção parada numa etapa, orçamento esperando análise, secretaria sem NF na quinzena (5 dias depois de ela acabar) e veículo que passou dos limites de custo.
+            Cada situação é avisada uma vez, e de novo se piorar (de “atenção” para “crítico”). Os prazos e percentuais são os dos limites acima.
+          </p>
+        </Cartao>
         <Cartao titulo="Quem acessa o módulo">
           <p className="text-sm text-slate-700">
             O acesso é concedido na Central, em{" "}
