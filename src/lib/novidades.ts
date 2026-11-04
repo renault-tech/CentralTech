@@ -32,6 +32,12 @@ export const NOVIDADES: Novidade[] = [
   },
   {
     data: "2026-11-05",
+    titulo: "O mesmo botão para voltar à Central em todos os módulos",
+    descricao:
+      "Compras, Requerimentos e Numera passaram a ter o mesmo cabeçalho da Central, do Emendas e do Frotas: o botão \"← Central\" à esquerda, ao lado do nome do módulo, e à direita os avisos, o feedback e a ajuda na mesma ordem e no mesmo tamanho, seguidos do seu nome e de Sair. No Compras saiu o segundo atalho para a Central que ficava na barra lateral.",
+  },
+  {
+    data: "2026-11-05",
     titulo: "Frotas: OC, NF e Contabilidade em etapas, colunas da exportação e orçamentos em PDF",
     descricao:
       "Na manutenção, a OC, a NF da oficina e o envio à Contabilidade agora são registrados em etapas separadas, cada uma quando acontece (saíram \"OC enviada à secretaria\" e \"documentos de volta ao Frotas\"). Se a NF passar do valor da OC, o aviso fica na tela, na lista, no painel de alertas e na exportação até ser corrigido. Em Exportar → \"Escolher colunas…\" você decide o que aparece nos arquivos (tudo por padrão; a escolha fica guardada na sua conta e vale em qualquer computador). Novo: \"Importar PDFs\" cria vários orçamentos de uma vez, lendo o texto dos PDFs para você conferir (os PDFs não são guardados). Também corrigidas palavras cortadas nos menus de navegação do celular.",

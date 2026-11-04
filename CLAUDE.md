@@ -1821,8 +1821,12 @@ identidade institucional que já existe (marinho `#0C1D33`, dourado, brasão, Ge
 - **Admin com acesso pleno**: Configurações → Usuários e acessos mostra o administrador com todos os módulos (anel tracejado = implícito) e o formulário avisa; o acesso real
   já era pleno (`hub.eh_admin_hub()` em `meu_perfil` do Emendas e do Frotas, `listarModulosComAcesso` e `temAcessoAoModulo`). Compras, Requerimentos e Numera têm login e cadastro
   à parte: o administrador só entra neles se também tiver conta lá.
-- **Apps fora deste repositório** (Compras, Requerimentos, Numera): este é o padrão a seguir no cabeçalho deles (ordem, "← Central", controles de 40/44 px, foco, Esc nos painéis);
-  não foram alterados aqui.
+- **Apps fora deste repositório** (Compras, Requerimentos, Numera) — **alinhados em 05/11/2026**: cada um tem uma cópia de `cabecalho-estilos.ts`
+  (Compras e Requerimentos; o Numera repete as medidas em `styles.css`, `.topbar-*`) e o mesmo desenho: logo/brasão (→ início do app), **"← Central"** (borda
+  `white/20`, único atalho para a Central — o da barra lateral do Compras saiu), divisor, ponto na cor do app + nome; à direita: links do app (Requerimentos:
+  Início, Configurações) · avisos → feedback → ajuda (→ tema no Compras) · nome → Sair (ícone no celular). Foco dourado por `.cabecalho-escuro`.
+  Diferenças que ficaram de propósito: Requerimentos não tem Ajuda (o app não tem tutorial) e o Numera não tem sino (projeto Supabase à parte, avisos
+  ainda não chegam lá). Mudou um controle aqui? Repetir nos três repositórios.
 - **Verificado em navegador** (Chromium headless, 1280 e 390 px, com os componentes reais numa página de teste temporária, removida): cabeçalho, navegação, botões, selos,
   campos, Exportar e sino nos dois módulos; sem rolagem horizontal; alvos medidos (40×40 / 44×44); foco volta ao botão após Esc. **Não verificado**: leitor de tela, o diálogo de feedback no celular, as telas autenticadas reais.
 
