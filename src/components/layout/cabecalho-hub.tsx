@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Inbox, LogOut, Settings } from "lucide-react";
 
 import { Brasao } from "@/components/brasao";
+import { AlternarTema } from "@/components/layout/alternar-tema";
 import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 import { sair } from "@/lib/actions/auth";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
@@ -66,7 +67,7 @@ export function CabecalhoVisual({
 }) {
   return (
     <header
-      className="cabecalho-escuro relative border-b border-t-[3px] border-b-slate-200 border-t-[#E9A63B] bg-cataguases-marinho text-white print:hidden"
+      className="cabecalho-escuro tema-fixo relative border-b border-t-[3px] border-b-slate-200 border-t-[#E9A63B] bg-cataguases-marinho text-white print:hidden"
       style={modulo ? { borderTopColor: modulo.cor } : undefined}
     >
       <a
@@ -142,6 +143,7 @@ export function CabecalhoVisual({
           <SinoNotificacoes usuarioId={usuario.id} />
           <BotaoFeedback appInicial={modulo?.app ?? "hub"} />
           <BotaoAjuda />
+          <AlternarTema />
           <span aria-hidden className="mx-1 hidden h-6 w-px bg-white/15 sm:block" />
           <Link href="/conta" className={`${CLASSE_LINK_CABECALHO} hidden max-w-[14rem] sm:inline-flex`} title="Minha conta">
             <span className="truncate">{usuario.nome}</span>

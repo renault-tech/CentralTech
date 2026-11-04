@@ -96,7 +96,7 @@ export function ImportadorOrcamentos({ veiculos, oficinas, dataHoje }: { veiculo
             <section key={`${l.arquivo}-${i}`} className={`rounded-lg border p-3.5 ${l.incluir ? "border-slate-200" : "border-slate-200 bg-slate-50 opacity-70"}`}>
               <header className="mb-2 flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-cataguases-marinho">
-                  <input type="checkbox" checked={l.incluir} onChange={(e) => mudar(i, { incluir: e.target.checked })} className="size-4 accent-[color:var(--modulo-texto)]" />
+                  <input type="checkbox" checked={l.incluir} onChange={(e) => mudar(i, { incluir: e.target.checked })} className="size-4 accent-[color:var(--modulo-tinta)]" />
                   <span className="break-all">{l.arquivo}</span>
                 </label>
               </header>
@@ -148,7 +148,7 @@ export function ImportadorOrcamentos({ veiculos, oficinas, dataHoje }: { veiculo
         </div>
       )}
       {resultado && !linhas && (
-        <Link href="/frotas/manutencao" className="text-sm font-semibold text-[color:var(--modulo-texto)] underline">
+        <Link href="/frotas/manutencao" className="text-sm font-semibold text-[color:var(--modulo-tinta)] underline">
           Ver as manutenções
         </Link>
       )}

@@ -76,7 +76,7 @@ export function BotaoAjuda() {
       </button>
 
       {aberto && (
-        <div className="absolute inset-x-3 top-full z-20 mt-1 rounded-lg border border-slate-200 bg-white text-slate-800 shadow-lg sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-72">
+        <div className="tema-atual absolute inset-x-3 top-full z-20 mt-1 rounded-lg border border-slate-200 bg-white text-slate-800 shadow-lg sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-72">
           <div className="border-b border-slate-100 px-4 py-2.5">
             <p className="text-sm font-medium">Central de ajuda</p>
           </div>

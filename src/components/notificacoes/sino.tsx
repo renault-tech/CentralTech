@@ -85,7 +85,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
         <div
           role="dialog"
           aria-label="Avisos"
-          className="absolute inset-x-3 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-[380px]"
+          className="tema-atual absolute inset-x-3 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-[380px]"
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold text-cataguases-marinho">Avisos</p>
