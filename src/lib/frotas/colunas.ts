@@ -47,45 +47,12 @@ export function aplicarColunasOcultas(tabelas: Tabela[], ocultas: string[]): Tab
   });
 }
 
-const CHAVE = "frotas:export-colunas:v1";
-
-const EVENTO = "frotas:export-colunas";
-let memoria: string | null = null; // quando o navegador não deixa gravar, vale até recarregar
-
-/** O que a pessoa escondeu, por relatório, como texto JSON (guardado no navegador). */
-export function lerOcultasBruto(): string {
-  try {
-    return window.localStorage.getItem(CHAVE) ?? memoria ?? "{}";
-  } catch {
-    return memoria ?? "{}";
-  }
-}
-
+/** Lê o JSON de preferências (aceita só objeto; qualquer outra coisa vira vazio). */
 export function lerOcultas(bruto: string): Partial<Record<IdRelatorio, string[]>> {
   try {
     const dado = JSON.parse(bruto);
-    return dado && typeof dado === "object" ? dado : {};
+    return dado && typeof dado === "object" && !Array.isArray(dado) ? dado : {};
   } catch {
     return {};
   }
-}
-
-export function guardarOcultas(todas: Partial<Record<IdRelatorio, string[]>>) {
-  const texto = JSON.stringify(todas);
-  memoria = texto;
-  try {
-    window.localStorage.setItem(CHAVE, texto);
-  } catch {
-    /* sem armazenamento (janela privada) */
-  }
-  window.dispatchEvent(new Event(EVENTO));
-}
-
-export function assinarOcultas(aoMudar: () => void) {
-  window.addEventListener(EVENTO, aoMudar);
-  window.addEventListener("storage", aoMudar);
-  return () => {
-    window.removeEventListener(EVENTO, aoMudar);
-    window.removeEventListener("storage", aoMudar);
-  };
 }

@@ -4,19 +4,17 @@ import * as React from "react";
 import { X } from "lucide-react";
 
 import { MenuExportar, type OpcaoExportar } from "@/components/modulo/menu-exportar";
-import { COLUNAS_RELATORIO, SEPARADOR_COLUNAS, assinarOcultas, guardarOcultas, lerOcultas, lerOcultasBruto } from "@/lib/frotas/colunas";
+import { useColunasExportacao, type Ocultas } from "@/components/frotas/colunas-exportacao";
+import { COLUNAS_RELATORIO, SEPARADOR_COLUNAS } from "@/lib/frotas/colunas";
 import { ROTULO_RELATORIO, type IdRelatorio } from "@/lib/frotas/relatorios";
 import { CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO } from "@/components/modulo/ui";
-
-type Ocultas = Partial<Record<IdRelatorio, string[]>>;
 
 /**
  * "Exportar" do Frotas: o menu de sempre, mais "Escolher colunas…". O padrão é tudo; o que a pessoa
  * esconde fica guardado neste navegador (por relatório) e vai na URL de cada exportação.
  */
 export function MenuExportarFrotas({ opcoes, compacto }: { opcoes: OpcaoExportar[]; compacto?: boolean }) {
-  const bruto = React.useSyncExternalStore(assinarOcultas, lerOcultasBruto, () => "{}");
-  const ocultas: Ocultas = React.useMemo(() => lerOcultas(bruto), [bruto]);
+  const { ocultas, guardar: guardarOcultas } = useColunasExportacao();
   const [aberto, setAberto] = React.useState(false);
 
   const relatorios = [...new Set(opcoes.map((o) => o.relatorio).filter((r): r is IdRelatorio => !!r && r in COLUNAS_RELATORIO))];
@@ -40,7 +38,7 @@ export function MenuExportarFrotas({ opcoes, compacto }: { opcoes: OpcaoExportar
   return (
     <>
       <MenuExportar opcoes={todas} compacto={compacto} />
-      {aberto && <EscolherColunas relatorios={relatorios} ocultas={ocultas} alterar={alterar} fechar={() => setAberto(false)} />}
+      {aberto && <EscolherColunas relatorios={relatorios} ocultas={ocultas} alterar={alterar} limparTudo={() => guardarOcultas({})} fechar={() => setAberto(false)} />}
     </>
   );
 }
@@ -49,11 +47,13 @@ function EscolherColunas({
   relatorios,
   ocultas,
   alterar,
+  limparTudo,
   fechar,
 }: {
   relatorios: IdRelatorio[];
   ocultas: Ocultas;
   alterar: (r: IdRelatorio, proximas: string[]) => void;
+  limparTudo: () => void;
   fechar: () => void;
 }) {
   const fecharRef = React.useRef<HTMLButtonElement>(null);
@@ -70,7 +70,7 @@ function EscolherColunas({
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-base font-semibold text-cataguases-marinho">Colunas da exportação</h2>
-            <p className="mt-0.5 text-xs text-slate-600">Desmarque o que não quer nos arquivos. Sua escolha fica guardada neste navegador.</p>
+            <p className="mt-0.5 text-xs text-slate-600">Desmarque o que não quer nos arquivos. Sua escolha fica guardada na sua conta.</p>
           </div>
           <button ref={fecharRef} type="button" onClick={fechar} aria-label="Fechar" className="-mr-2 flex size-10 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100">
             <X className="size-5" aria-hidden />
@@ -113,7 +113,7 @@ function EscolherColunas({
           })}
         </div>
         <footer className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
-          <button type="button" onClick={() => guardarOcultas({})} className={CLASSE_BOTAO_SECUNDARIO}>
+          <button type="button" onClick={limparTudo} className={CLASSE_BOTAO_SECUNDARIO}>
             Mostrar tudo
           </button>
           <button type="button" onClick={fechar} className={CLASSE_BOTAO}>

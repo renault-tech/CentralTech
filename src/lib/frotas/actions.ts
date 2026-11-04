@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { COLUNAS_RELATORIO } from "@/lib/frotas/colunas";
 import { dataNoFuso } from "@/lib/fuso";
 import { obterContextoFrotas } from "@/lib/frotas/dados";
 import { normalizarPlaca } from "@/lib/frotas/importacao/normalizar";
@@ -552,5 +553,28 @@ export async function salvarParametros(dados: z.input<typeof esquemaParametros>)
     .eq("id", 1);
   if (error) return falha(traduzir(error));
   atualizarTelas();
+  return { sucesso: true };
+}
+
+// ------------------------------------------------------------- preferências
+
+/** Guarda, por usuário, as colunas escondidas nas exportações (tudo visível é o padrão). */
+export async function salvarColunasOcultas(ocultas: Record<string, string[]>): Promise<Resultado> {
+  const ctx = await obterContextoFrotas();
+  if (ctx.situacao !== "ok") return falha("Sem acesso ao módulo.");
+  const limpo: Record<string, string[]> = {};
+  for (const [r, nomes] of Object.entries(ocultas ?? {})) {
+    const validas = COLUNAS_RELATORIO[r as keyof typeof COLUNAS_RELATORIO];
+    if (!validas || !Array.isArray(nomes)) continue;
+    const escolhidas = [...new Set(nomes.filter((n): n is string => typeof n === "string" && validas.includes(n)))];
+    if (escolhidas.length > 0 && escolhidas.length < validas.length) limpo[r] = escolhidas;
+  }
+  const frotas = await criarClienteFrotas();
+  const { data: sessao } = await frotas.auth.getUser();
+  if (!sessao.user) return falha("Sessão expirada.");
+  const { error } = await frotas
+    .from("preferencias_exportacao")
+    .upsert({ usuario_id: sessao.user.id, ocultas: limpo, atualizado_em: new Date().toISOString() }, { onConflict: "usuario_id" });
+  if (error) return falha("Não foi possível guardar a escolha.");
   return { sucesso: true };
 }
