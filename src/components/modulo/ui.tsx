@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  */
 
 const BOTAO_BASE =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-200 " +
+  "btn-ui inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-200 " +
   "h-11 px-4 sm:h-9 sm:px-3.5 disabled:pointer-events-none disabled:opacity-50 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--modulo-tinta)] focus-visible:ring-offset-2";
 
