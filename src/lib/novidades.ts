@@ -17,6 +17,9 @@ export const NOVIDADES: Novidade[] = [
     titulo: "Modo escuro na Central, no Emendas e no Frotas",
     descricao:
       "Agora dá para trocar entre claro e escuro pelo botão de lua/sol no cabeçalho, igual ao Compras. Em Minha conta → Aparência você também pode deixar no Automático (segue o tema do aparelho). A escolha fica guardada neste navegador.",
+  },
+  {
+    data: "2026-11-05",
     titulo: "O mesmo botão para voltar à Central em todos os módulos",
     descricao:
       "Compras, Requerimentos e Numera passaram a ter o mesmo cabeçalho da Central, do Emendas e do Frotas: o botão \"← Central\" à esquerda, ao lado do nome do módulo, e à direita os avisos, o feedback e a ajuda na mesma ordem e no mesmo tamanho, seguidos do seu nome e de Sair. No Compras saiu o segundo atalho para a Central que ficava na barra lateral.",
