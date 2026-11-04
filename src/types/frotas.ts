@@ -65,6 +65,8 @@ export type Veiculo = {
   atualizado_em: string;
 };
 
+export type PreferenciaExportacao = { usuario_id: string; ocultas: Record<string, string[]>; atualizado_em: string };
+
 export type ParametrosFrotas = {
   id: 1;
   dias_atencao: number;
@@ -111,11 +113,9 @@ export type Manutencao = {
   oc_numero: string | null;
   oc_valor: number | null;
   oc_emitida_em: string | null;
-  oc_enviada_em: string | null;
   nf_numero: string | null;
   nf_emissao: string | null;
   nf_valor: number | null;
-  docs_retornaram_em: string | null;
   enviada_contabilidade_em: string | null;
   observacoes: string | null;
   criado_em: string;
@@ -155,6 +155,7 @@ export type DatabaseFrotas = {
       fornecedores: Tabela<Fornecedor, "tipo" | "nome", "id" | "criado_em">;
       veiculos: Tabela<Veiculo, "modelo" | "vinculo" | "secretaria_id", "id" | "criado_em" | "atualizado_em">;
       parametros: Tabela<ParametrosFrotas, "id", "atualizado_em">;
+      preferencias_exportacao: Tabela<PreferenciaExportacao, "usuario_id", never>;
       notas_combustivel: Tabela<
         NotaCombustivel,
         "secretaria_id" | "numero_nf" | "periodo_inicio" | "periodo_fim" | "data_emissao" | "valor",

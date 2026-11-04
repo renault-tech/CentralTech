@@ -87,7 +87,7 @@ export function Selo({ children, tom = "neutro" }: { children: ReactNode; tom?: 
     ambar: "bg-amber-100 text-amber-900",
     vermelho: "bg-red-100 text-red-800",
   } as const;
-  return <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", estilos[tom])}>{children}</span>;
+  return <span className={cn("inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-semibold leading-tight", estilos[tom])}>{children}</span>;
 }
 
 export function Vazio({ children }: { children: ReactNode }) {

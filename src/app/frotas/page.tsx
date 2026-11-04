@@ -4,7 +4,7 @@ import { calcularPainel, type ItemPendencia } from "@/lib/frotas/analise";
 import { listarManutencoes, listarNotas, listarSecretarias, listarVeiculos, obterContextoFrotas, obterParametros } from "@/lib/frotas/dados";
 import { brl, formatarData, pct } from "@/lib/frotas/regras";
 import { dataNoFuso } from "@/lib/fuso";
-import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
 import { opcoesExportar } from "@/lib/frotas/exportacao";
 import { Barra, Cartao, CartaoNumero, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, SeloDias, SeloNivel, TituloPagina, Vazio } from "@/components/frotas/ui";
 
@@ -82,7 +82,7 @@ export default async function PainelFrotas() {
         subtitulo={`Situação dos documentos em ${formatarData(hoje)}. Alerta amarelo a partir de ${params.dias_atencao} dias parado na mesma etapa, vermelho a partir de ${params.dias_critico}.`}
         acao={
           <>
-            <MenuExportar
+            <MenuExportarFrotas
               opcoes={opcoesExportar([
                 { r: "pendencias", rotulo: "Pendências", formatos: ["xlsx", "pdf"] },
                 { r: "contabilidade", rotulo: "Remessa à Contabilidade", formatos: ["pdf", "xlsx"] },

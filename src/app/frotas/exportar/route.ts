@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { obterContextoFrotas } from "@/lib/frotas/dados";
 import { montarRelatorio } from "@/lib/frotas/relatorios-dados";
+import { aplicarColunasOcultas, lerColunasOcultas } from "@/lib/frotas/colunas";
 import { RELATORIOS, RELATORIOS_UMA_TABELA, nomeArquivo, tabelaParaCsv, type IdRelatorio } from "@/lib/frotas/relatorios";
 import { tabelasParaXlsx } from "@/lib/frotas/xlsx-saida";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
@@ -9,7 +10,7 @@ import { montarPdfTabelas } from "@/lib/emendas/pdf";
 export const dynamic = "force-dynamic";
 
 /**
- * Exporta um relatório do Frotas: `?r=<relatório>&formato=xlsx|pdf|csv` (mais os
+ * Exporta um relatório do Frotas: `?r=<relatório>&formato=xlsx|pdf|csv` (mais `sem=Coluna|Coluna` (colunas escondidas) e os
  * filtros da tela, que valem para veículos, NFs e manutenções). `r=completo`
  * só sai em Excel (uma aba por relatório). Sempre sob a RLS de quem pede: quem
  * só consulta exporta o que enxerga.
@@ -30,6 +31,8 @@ export async function GET(request: NextRequest) {
 
   const params = Object.fromEntries([...q.entries()].map(([k, v]) => [k, v]));
   const rel = await montarRelatorio(r as IdRelatorio | "completo", params);
+  // Colunas que a pessoa escondeu (`sem=A|B`); a planilha completa sempre sai inteira.
+  if (r !== "completo") rel.tabelas = aplicarColunasOcultas(rel.tabelas, lerColunasOcultas(q.get("sem")));
   const cabecalhos = { "Cache-Control": "private, no-store" };
 
   if (formato === "csv") {

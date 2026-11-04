@@ -6,6 +6,8 @@ import { NavModulo } from "@/components/modulo/nav-modulo";
 import { estiloModulo } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { obterContextoFrotas, listarManutencoes } from "@/lib/frotas/dados";
+import { ProvedorColunasExportacao } from "@/components/frotas/colunas-exportacao";
+import { lerColunasOcultasDoUsuario } from "@/lib/frotas/preferencias";
 import { COR_MODULO } from "@/lib/frotas/regras";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +45,12 @@ export default async function LayoutFrotas({ children }: { children: React.React
     );
   }
 
-  const orcamentos = await listarManutencoes()
-    .then((l) => l.filter((m) => m.status_analise === "a_analisar").length)
-    .catch(() => 0);
+  const [orcamentos, colunasOcultas] = await Promise.all([
+    listarManutencoes()
+      .then((l) => l.filter((m) => m.status_analise === "a_analisar").length)
+      .catch(() => 0),
+    lerColunasOcultasDoUsuario(),
+  ]);
   const itens = [
     { href: "/frotas", rotulo: "Painel", exato: true },
     { href: "/frotas/combustivel", rotulo: "Combustível" },
@@ -60,7 +65,7 @@ export default async function LayoutFrotas({ children }: { children: React.React
       <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
       <NavModulo itens={itens} rotuloAria="Seções do módulo Frotas" tour="nav-frotas" />
       <main id="conteudo" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
-        {children}
+        <ProvedorColunasExportacao iniciais={colunasOcultas}>{children}</ProvedorColunasExportacao>
       </main>
     </div>
   );

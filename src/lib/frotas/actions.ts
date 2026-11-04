@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { COLUNAS_RELATORIO } from "@/lib/frotas/colunas";
 import { dataNoFuso } from "@/lib/fuso";
 import { obterContextoFrotas } from "@/lib/frotas/dados";
 import { normalizarPlaca } from "@/lib/frotas/importacao/normalizar";
-import { avisosNota, quinzenaDe } from "@/lib/frotas/regras";
+import { avisosNota, nfAcimaDaOc, quinzenaDe } from "@/lib/frotas/regras";
 import type { CodigoRevisao } from "@/lib/frotas/revisao";
 import { criarClienteFrotas } from "@/lib/supabase/frotas-cliente";
+import type { Manutencao } from "@/types/frotas";
 
 /**
  * Ações do módulo Frotas. A permissão de verdade está no banco (RLS do schema
@@ -29,7 +31,7 @@ const MENSAGENS_DO_BANCO: [RegExp, string][] = [
   [/man_oc_unica/i, "Esta OC já está registrada em outra manutenção."],
   [/man_oc_exige_liberacao/i, "A OC só pode ser registrada depois de liberar o serviço."],
   [/man_nf_completa/i, "Informe número, data de emissão e valor da NF juntos."],
-  [/man_cadeia/i, "Siga a ordem: OC, envio da OC, NF, retorno dos documentos e Contabilidade. Uma etapa não pode ser preenchida antes da anterior."],
+  [/man_cadeia/i, "Siga a ordem: OC, NF e Contabilidade. Uma etapa não pode ser preenchida antes da anterior."],
   [/man_ordem_datas/i, "Há uma data anterior à da etapa que vem antes dela."],
   [/man_analise_datada/i, "A decisão sobre o orçamento precisa de data de análise."],
   [/veiculo_alugado_tem_locadora/i, "Veículo alugado precisa da locadora."],
@@ -346,54 +348,109 @@ export async function decidirOrcamento(dados: z.input<typeof esquemaDecisao>): P
   return { sucesso: true, id: a.data.id };
 }
 
-const esquemaDocumentos = z.object({
+const MSG_NF_ACIMA = (dif: number) =>
+  `O valor da NF passa do valor da OC em ${dif.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}. Confira com a oficina antes de seguir.`;
+
+type EtapaGravar = { id: string; campos: Partial<Omit<Manutencao, "id" | "criado_em" | "atualizado_em">>; exige: (m: Manutencao) => string | null };
+
+/** Lê a manutenção como está no banco, confere a etapa anterior e grava só os campos da etapa. */
+async function gravarEtapa({ id, campos, exige }: EtapaGravar): Promise<{ resultado: Resultado; manutencao?: Manutencao }> {
+  if (!(await exigirGestor())) return { resultado: falha("Só o Setor de Frotas altera manutenções.") };
+  const frotas = await criarClienteFrotas();
+  const { data: atual, error: erroLeitura } = await frotas.from("manutencoes").select("*").eq("id", id).single();
+  if (erroLeitura || !atual) return { resultado: falha("Manutenção não encontrada.") };
+  if (atual.status_analise !== "liberado") return { resultado: falha("Libere o serviço antes de registrar a OC, a NF ou o envio à Contabilidade.") };
+  const impedimento = exige(atual as Manutencao);
+  if (impedimento) return { resultado: falha(impedimento) };
+  const { data: gravada, error } = await frotas.from("manutencoes").update(campos).eq("id", id).select("*").single();
+  if (error) return { resultado: falha(traduzir(error)) };
+  atualizarTelas();
+  return { resultado: { sucesso: true, id }, manutencao: gravada as Manutencao };
+}
+
+const esquemaOc = z.object({
   id: z.uuid(),
-  ocNumero: texto(40),
-  ocValor: dinheiro.nullable().optional().transform((v) => v ?? null),
-  ocEmitidaEm: dataOpcional,
-  ocEnviadaEm: dataOpcional,
-  nfNumero: texto(40),
-  nfEmissao: dataOpcional,
-  nfValor: dinheiro.nullable().optional().transform((v) => v ?? null),
-  docsRetornaramEm: dataOpcional,
-  enviadaContabilidadeEm: dataOpcional,
-  observacoes: texto(2000),
+  ocNumero: z.string().trim().min(1, "Informe o número da OC").max(40),
+  ocValor: dinheiro,
+  ocEmitidaEm: data,
 });
 
-/** OC do IPM, NF da oficina e as datas de cada etapa. O banco confere a ordem. */
-export async function registrarDocumentos(dados: z.input<typeof esquemaDocumentos>): Promise<Resultado> {
-  const a = esquemaDocumentos.safeParse(dados);
+/** Etapa 1: OC emitida no IPM (já vai à secretaria ao ser emitida). */
+export async function registrarOc(dados: z.input<typeof esquemaOc>): Promise<Resultado> {
+  const a = esquemaOc.safeParse(dados);
+  if (!a.success) return invalido(a.error);
+  const d = a.data;
+  const { resultado, manutencao } = await gravarEtapa({
+    id: d.id,
+    campos: { oc_numero: d.ocNumero, oc_valor: d.ocValor, oc_emitida_em: d.ocEmitidaEm },
+    exige: () => null,
+  });
+  if (!resultado.sucesso || !manutencao) return resultado;
+  // Se a NF já estava registrada, a OC corrigida pode ter passado a ficar abaixo dela.
+  const dif = nfAcimaDaOc(manutencao);
+  return dif === null ? resultado : { ...resultado, aviso: MSG_NF_ACIMA(dif) };
+}
+
+const esquemaNf = z.object({
+  id: z.uuid(),
+  nfNumero: z.string().trim().min(1, "Informe o número da NF").max(40),
+  nfEmissao: data,
+  nfValor: dinheiro,
+});
+
+/** Etapa 2: NF da oficina — ela valida o serviço. Compara com o valor da OC que está gravada. */
+export async function registrarNf(dados: z.input<typeof esquemaNf>): Promise<Resultado> {
+  const a = esquemaNf.safeParse(dados);
+  if (!a.success) return invalido(a.error);
+  const d = a.data;
+  const { resultado, manutencao } = await gravarEtapa({
+    id: d.id,
+    campos: { nf_numero: d.nfNumero, nf_emissao: d.nfEmissao, nf_valor: d.nfValor },
+    exige: (m) => (m.oc_numero ? null : "Registre a OC antes da NF."),
+  });
+  if (!resultado.sucesso || !manutencao) return resultado;
+  const dif = nfAcimaDaOc(manutencao);
+  return dif === null ? resultado : { ...resultado, aviso: MSG_NF_ACIMA(dif) };
+}
+
+const esquemaContabilidade = z.object({ id: z.uuid(), enviadaContabilidadeEm: data });
+
+/** Etapa 3: envio à Contabilidade, depois da NF. */
+export async function registrarContabilidade(dados: z.input<typeof esquemaContabilidade>): Promise<Resultado> {
+  const a = esquemaContabilidade.safeParse(dados);
+  if (!a.success) return invalido(a.error);
+  const d = a.data;
+  const { resultado } = await gravarEtapa({
+    id: d.id,
+    campos: { enviada_contabilidade_em: d.enviadaContabilidadeEm },
+    exige: (m) => (m.nf_numero ? null : "Registre a NF antes de enviar à Contabilidade."),
+  });
+  return resultado;
+}
+
+/** Desfaz uma etapa (só a última registrada): apaga os campos dela e das seguintes. */
+export async function desfazerEtapa(dados: { id: string; etapa: "oc" | "nf" | "contabilidade" }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.id).success || !["oc", "nf", "contabilidade"].includes(dados.etapa)) return falha("Dados inválidos");
+  const campos: Record<string, null> =
+    dados.etapa === "contabilidade"
+      ? { enviada_contabilidade_em: null }
+      : dados.etapa === "nf"
+        ? { nf_numero: null, nf_emissao: null, nf_valor: null, enviada_contabilidade_em: null }
+        : { oc_numero: null, oc_valor: null, oc_emitida_em: null, nf_numero: null, nf_emissao: null, nf_valor: null, enviada_contabilidade_em: null };
+  const { resultado } = await gravarEtapa({ id: dados.id, campos, exige: () => null });
+  return resultado;
+}
+
+/** Observações da manutenção (texto livre, em qualquer etapa). */
+export async function salvarObservacoesManutencao(dados: { id: string; observacoes: string }): Promise<Resultado> {
+  const a = z.object({ id: z.uuid(), observacoes: texto(2000) }).safeParse(dados);
   if (!a.success) return invalido(a.error);
   if (!(await exigirGestor())) return falha("Só o Setor de Frotas altera manutenções.");
-  const d = a.data;
   const frotas = await criarClienteFrotas();
-  const { data: atual, error: erroLeitura } = await frotas.from("manutencoes").select("status_analise").eq("id", d.id).single();
-  if (erroLeitura) return falha("Manutenção não encontrada.");
-  if (atual.status_analise !== "liberado" && (d.ocNumero || d.nfNumero)) return falha("Libere o serviço antes de registrar a OC e a NF.");
-
-  const { error } = await frotas
-    .from("manutencoes")
-    .update({
-      oc_numero: d.ocNumero,
-      oc_valor: d.ocValor,
-      oc_emitida_em: d.ocEmitidaEm,
-      oc_enviada_em: d.ocEnviadaEm,
-      nf_numero: d.nfNumero,
-      nf_emissao: d.nfEmissao,
-      nf_valor: d.nfValor,
-      docs_retornaram_em: d.docsRetornaramEm,
-      enviada_contabilidade_em: d.enviadaContabilidadeEm,
-      observacoes: d.observacoes,
-    })
-    .eq("id", d.id);
+  const { error } = await frotas.from("manutencoes").update({ observacoes: a.data.observacoes }).eq("id", a.data.id);
   if (error) return falha(traduzir(error));
-
-  const aviso =
-    d.nfValor !== null && d.ocValor !== null && d.nfValor > d.ocValor
-      ? "O valor da NF passa do valor da OC. Confira com a oficina antes de seguir."
-      : undefined;
   atualizarTelas();
-  return { sucesso: true, id: d.id, aviso };
+  return { sucesso: true, id: a.data.id };
 }
 
 export async function excluirManutencao(id: string): Promise<Resultado> {
@@ -496,5 +553,28 @@ export async function salvarParametros(dados: z.input<typeof esquemaParametros>)
     .eq("id", 1);
   if (error) return falha(traduzir(error));
   atualizarTelas();
+  return { sucesso: true };
+}
+
+// ------------------------------------------------------------- preferências
+
+/** Guarda, por usuário, as colunas escondidas nas exportações (tudo visível é o padrão). */
+export async function salvarColunasOcultas(ocultas: Record<string, string[]>): Promise<Resultado> {
+  const ctx = await obterContextoFrotas();
+  if (ctx.situacao !== "ok") return falha("Sem acesso ao módulo.");
+  const limpo: Record<string, string[]> = {};
+  for (const [r, nomes] of Object.entries(ocultas ?? {})) {
+    const validas = COLUNAS_RELATORIO[r as keyof typeof COLUNAS_RELATORIO];
+    if (!validas || !Array.isArray(nomes)) continue;
+    const escolhidas = [...new Set(nomes.filter((n): n is string => typeof n === "string" && validas.includes(n)))];
+    if (escolhidas.length > 0 && escolhidas.length < validas.length) limpo[r] = escolhidas;
+  }
+  const frotas = await criarClienteFrotas();
+  const { data: sessao } = await frotas.auth.getUser();
+  if (!sessao.user) return falha("Sessão expirada.");
+  const { error } = await frotas
+    .from("preferencias_exportacao")
+    .upsert({ usuario_id: sessao.user.id, ocultas: limpo, atualizado_em: new Date().toISOString() }, { onConflict: "usuario_id" });
+  if (error) return falha("Não foi possível guardar a escolha.");
   return { sucesso: true };
 }

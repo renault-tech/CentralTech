@@ -71,11 +71,9 @@ function manutencao(veiculo_id: string, parcial: Partial<Manutencao> = {}): Manu
     oc_numero: null,
     oc_valor: null,
     oc_emitida_em: null,
-    oc_enviada_em: null,
     nf_numero: null,
     nf_emissao: null,
     nf_valor: null,
-    docs_retornaram_em: null,
     enviada_contabilidade_em: null,
     observacoes: null,
     criado_em: "",
@@ -142,8 +140,18 @@ describe("custo × valor do veículo", () => {
 
   it("usa a NF, depois a OC, depois o orçamento liberado", () => {
     const v = veiculo("a", { valor_referencia: 10000 });
-    const m = manutencao("a", { orcamento_valor: 1000, oc_numero: "1/2026", oc_valor: 900, oc_enviada_em: "2026-09-05", nf_numero: "9", nf_emissao: "2026-09-20", nf_valor: 850 });
+    const m = manutencao("a", { orcamento_valor: 1000, oc_numero: "1/2026", oc_valor: 900, nf_numero: "9", nf_emissao: "2026-09-20", nf_valor: 850 });
     expect(custoPorVeiculo(entrada({ veiculos: [v], manutencoes: [m] }))[0].custo12m).toBe(850);
+  });
+
+  it("alerta enquanto a NF estiver acima da OC, e some quando for corrigida", () => {
+    const v = veiculo("a", { valor_referencia: 10000 });
+    const acima = manutencao("a", { oc_numero: "1/2026", oc_valor: 199, nf_numero: "9", nf_emissao: "2026-09-20", nf_valor: 205 });
+    const alerta = calcularAlertas(entrada({ veiculos: [v], manutencoes: [acima] })).find((a) => a.codigo === "nf_acima_oc");
+    expect(alerta).toMatchObject({ nivel: "critico" });
+    expect(alerta?.itens).toHaveLength(1);
+    const ok = { ...acima, nf_valor: 199 };
+    expect(calcularAlertas(entrada({ veiculos: [v], manutencoes: [ok] })).some((a) => a.codigo === "nf_acima_oc")).toBe(false);
   });
 
   it("deixa de fora alugado, sem valor e sem gasto", () => {
@@ -235,9 +243,9 @@ describe("painel de pendências", () => {
     ];
     const veiculos = [veiculo("hlf6885")];
     const manutencoes = [
-      manutencao("hlf6885", { oc_numero: "1841/2026", oc_enviada_em: "2026-10-15" }),
+      manutencao("hlf6885", { oc_numero: "1841/2026", oc_emitida_em: "2026-10-15" }),
       manutencao("hlf6885", { status_analise: "a_analisar", analisado_em: null, orcamento_recebido_em: "2026-11-02" }),
-      manutencao("hlf6885", { oc_numero: "1/2026", oc_enviada_em: "2026-10-02", nf_numero: "5", nf_emissao: "2026-10-10", nf_valor: 100, docs_retornaram_em: "2026-10-11", enviada_contabilidade_em: "2026-10-12" }),
+      manutencao("hlf6885", { oc_numero: "1/2026", nf_numero: "5", nf_emissao: "2026-10-10", nf_valor: 100, enviada_contabilidade_em: "2026-10-12" }),
     ];
     const p = calcularPainel(entrada({ notas, manutencoes, veiculos }));
 

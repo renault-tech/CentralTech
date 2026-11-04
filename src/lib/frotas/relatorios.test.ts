@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+import { COLUNAS_RELATORIO, aplicarColunasOcultas, lerColunasOcultas } from "@/lib/frotas/colunas";
 import { PARAMETROS_PADRAO } from "@/lib/frotas/regras";
 import {
   nomeArquivo,
@@ -13,10 +14,11 @@ import {
   relatorioManutencoes,
   relatorioPendencias,
   relatorioVeiculos,
+  type Tabela,
   tabelaParaCsv,
   type DadosRelatorio,
 } from "@/lib/frotas/relatorios";
-import { revisarVeiculos } from "@/lib/frotas/revisao";
+import { revisarVeiculos, type AvisoRevisao } from "@/lib/frotas/revisao";
 import { tabelasParaXlsx } from "@/lib/frotas/xlsx-saida";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
 import type { Manutencao, NotaCombustivel, Veiculo } from "@/types/frotas";
@@ -37,8 +39,8 @@ const nota = (id: string, extra: Partial<NotaCombustivel> = {}): NotaCombustivel
 const man = (id: string, extra: Partial<Manutencao> = {}): Manutencao =>
   ({
     id, veiculo_id: "hlf", secretaria_id: "su", fornecedor_id: "o1", servico: "Embreagem", descricao: null, orcamento_valor: 15700, orcamento_recebido_em: "2026-09-01",
-    status_analise: "liberado", analisado_em: "2026-09-02", oc_numero: "1841/2026", oc_valor: 15700, oc_emitida_em: null, oc_enviada_em: "2026-10-15", nf_numero: null,
-    nf_emissao: null, nf_valor: null, docs_retornaram_em: null, enviada_contabilidade_em: null, observacoes: null, ...extra,
+    status_analise: "liberado", analisado_em: "2026-09-02", oc_numero: "1841/2026", oc_valor: 15700, oc_emitida_em: null, nf_numero: null,
+    nf_emissao: null, nf_valor: null, enviada_contabilidade_em: null, observacoes: null, ...extra,
   }) as Manutencao;
 
 const dados: DadosRelatorio = {
@@ -46,8 +48,8 @@ const dados: DadosRelatorio = {
   veiculos: [veiculo("hlf"), veiculo("sem", { placa: null, patrimonio: "0000000", valor_referencia: null, valor_fonte: null })],
   manutencoes: [
     man("1"),
-    man("2", { oc_numero: "9/2026", oc_enviada_em: "2026-10-02", nf_numero: "5", nf_emissao: "2026-10-10", nf_valor: 100, docs_retornaram_em: "2026-10-20", orcamento_valor: 100 }),
-    man("3", { status_analise: "a_analisar", analisado_em: null, oc_numero: null, oc_valor: null, oc_enviada_em: null, orcamento_recebido_em: "2026-11-02" }),
+    man("2", { oc_numero: "9/2026", nf_numero: "5", nf_emissao: "2026-10-10", nf_valor: 100, orcamento_valor: 100 }),
+    man("3", { status_analise: "a_analisar", analisado_em: null, oc_numero: null, oc_valor: null, orcamento_recebido_em: "2026-11-02" }),
   ],
   notas: [
     nota("1", { enviada_secretaria_em: "2026-10-12" }),
@@ -89,7 +91,7 @@ describe("relatórios", () => {
 
   it("manutenções: uma linha por registro, com a situação", () => {
     const [t] = relatorioManutencoes(dados, dados.manutencoes);
-    expect(t.linhas.map((l) => l[6])).toEqual(["Aguardando NF", "Documentos no Frotas, a enviar à Contabilidade", "Orçamento a analisar"]);
+    expect(t.linhas.map((l) => l[6])).toEqual(["OC emitida, aguardando a NF", "NF registrada, a enviar à Contabilidade", "Orçamento a analisar"]);
     expect(t.linhas[0][1]).toBe("HLF - Gol 2011");
     expect(t.linhas.every((l) => l.length === t.colunas.length)).toBe(true);
   });
@@ -109,13 +111,13 @@ describe("relatórios", () => {
     expect(nfs.total?.[4]).toBe(500.5);
     expect(mans.linhas).toHaveLength(1);
     expect(mans.linhas[0][2]).toBe("9/2026");
-    expect(mans.linhas[0][6]).toBe(15);
+    expect(mans.linhas[0][6]).toBe(25);
   });
 
   it("pendências: NFs, manutenções e orçamentos, do mais parado ao menos", () => {
     const [t] = relatorioPendencias(dados);
     expect(t.titulo).toContain("04/11/2026");
-    expect(t.linhas.map((l) => l[0])).toEqual(["NF aguardando retorno da secretaria", "Aguardando NF", "Orçamento a analisar"]);
+    expect(t.linhas.map((l) => l[0])).toEqual(["NF aguardando retorno da secretaria", "OC emitida, aguardando a NF", "Orçamento a analisar"]);
     expect(t.linhas[0][6]).toBe("Crítico");
   });
 
@@ -154,5 +156,35 @@ describe("saídas", () => {
   it("nome de arquivo sem caracteres estranhos", () => {
     expect(nomeArquivo("gasto-secretaria", "2026-11-04", "xlsx")).toBe("frotas-gasto-secretaria-2026-11-04.xlsx");
     expect(nomeArquivo("../x", "2026-11-04", "pdf")).toBe("frotas-..-x-2026-11-04.pdf");
+  });
+
+  it("o catálogo de colunas bate com as tabelas de cada relatório", () => {
+    const avisos = new Map<string, AvisoRevisao[]>();
+    const por: Record<string, Tabela[]> = {
+      veiculos: relatorioVeiculos(dados, dados.veiculos, avisos),
+      combustivel: relatorioCombustivel(dados, dados.notas),
+      manutencoes: relatorioManutencoes(dados, dados.manutencoes),
+      custo: relatorioCusto(dados),
+      "gasto-secretaria": relatorioGastoSecretaria(dados),
+      contabilidade: relatorioContabilidade(dados),
+      pendencias: relatorioPendencias(dados),
+    };
+    for (const [id, tabelas] of Object.entries(por)) {
+      const uniao = [...new Set(tabelas.flatMap((t) => t.colunas))];
+      expect(COLUNAS_RELATORIO[id as keyof typeof COLUNAS_RELATORIO], id).toEqual(uniao);
+    }
+  });
+
+  it("esconde colunas mantendo linhas, total e colunas em reais alinhados", () => {
+    const [t] = relatorioManutencoes(dados, dados.manutencoes);
+    const [sem] = aplicarColunasOcultas([t], ["Veículo", "Observações"]);
+    expect(sem.colunas).not.toContain("Veículo");
+    expect(sem.colunas).toHaveLength(t.colunas.length - 2);
+    expect(sem.linhas.every((l) => l.length === sem.colunas.length)).toBe(true);
+    // as colunas em reais continuam sendo as de valor
+    expect(sem.monetarias.map((i) => sem.colunas[i])).toEqual(["Orçamento", "Valor da OC", "Valor da NF"]);
+    expect(aplicarColunasOcultas([t], [])).toEqual([t]);
+    expect(aplicarColunasOcultas([t], t.colunas)[0]).toBe(t); // nada sobraria: mantém inteira
+    expect(lerColunasOcultas("Veículo|Alerta")).toEqual(["Veículo", "Alerta"]);
   });
 });

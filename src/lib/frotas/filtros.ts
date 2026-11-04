@@ -49,7 +49,7 @@ export type FiltroManutencao = {
   situacao?: "andamento" | "a_analisar" | "aguardando" | "concluidas" | "recusadas" | "todas";
 };
 
-const ETAPAS_AGUARDANDO: EtapaManutencao[] = ["aguardando_nf", "aguardando_docs"];
+const ETAPAS_AGUARDANDO: EtapaManutencao[] = ["oc_emitida"];
 
 export function filtrarManutencoes(
   manutencoes: Manutencao[],

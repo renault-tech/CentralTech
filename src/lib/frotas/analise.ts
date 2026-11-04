@@ -10,6 +10,7 @@ import {
   diasEntre,
   nivelPorDias,
   nivelPorPercentual,
+  nfAcimaDaOc,
   quinzenaAnterior,
   quinzenaDe,
   quinzenasRecentes,
@@ -114,7 +115,8 @@ export type Alerta = {
     | "orcamento_acima_media"
     | "reincidencia"
     | "sem_nf_quinzena"
-    | "combustivel_acima_media";
+    | "combustivel_acima_media"
+    | "nf_acima_oc";
   texto: string;
   nivel: Exclude<NivelAlerta, "ok">;
   itens: string[];
@@ -145,6 +147,17 @@ export function calcularAlertas(entrada: Entrada): Alerta[] {
       texto: `Manutenção acima de ${params.pct_critico}% do valor do veículo`,
       nivel: "critico",
       itens: critico.map((c) => nomeVeiculo(c.veiculo)),
+    });
+  }
+
+  // NF da oficina com valor acima da OC (confere a nota antes de pagar).
+  const nfAcima = manutencoes.filter((m) => nfAcimaDaOc(m) !== null);
+  if (nfAcima.length > 0) {
+    alertas.push({
+      codigo: "nf_acima_oc",
+      texto: "NF da oficina acima do valor da OC",
+      nivel: "critico",
+      itens: nfAcima.map((m) => `${nomeVeiculo(porId.get(m.veiculo_id))} · ${m.servico}`),
     });
   }
 
@@ -328,7 +341,7 @@ export function calcularPainel(entrada: Entrada): Painel {
 
   const emAndamento = manutencoes.map((m) => ({ m, s: situacaoManutencao(m) })).filter(({ s }) => s.emAndamento);
   const manutencoesAguardando: ItemPendencia[] = emAndamento
-    .filter(({ s }) => s.etapa === "aguardando_nf" || s.etapa === "aguardando_docs")
+    .filter(({ s }) => s.etapa === "oc_emitida")
     .map(({ m, s }) => {
       const dias = diasEntre(s.desde, hoje);
       return {
@@ -372,12 +385,12 @@ export function calcularPainel(entrada: Entrada): Painel {
       nfsAguardando: nfsAguardando.length,
       nfsAguardandoComAlerta: nfsAguardando.filter((i) => i.nivel !== "ok").length,
       manutComOc: emAndamento.filter(({ m }) => !!m.oc_numero).length,
-      manutAguardandoNf: emAndamento.filter(({ s }) => s.etapa === "aguardando_nf").length,
-      manutAguardandoNfComAlerta: manutencoesAguardando.filter((i) => i.nivel !== "ok" && i.etapa === "aguardando_nf").length,
+      manutAguardandoNf: emAndamento.filter(({ s }) => s.etapa === "oc_emitida").length,
+      manutAguardandoNfComAlerta: manutencoesAguardando.filter((i) => i.nivel !== "ok" && i.etapa === "oc_emitida").length,
       orcamentos: orcamentos.length,
       orcamentoMaisAntigo: orcamentos.length ? orcamentos[0].dias : null,
       paraContabilidade:
-        comSituacao.filter(({ s }) => s.etapa === "assinada").length + emAndamento.filter(({ s }) => s.etapa === "docs_retornaram").length,
+        comSituacao.filter(({ s }) => s.etapa === "assinada").length + emAndamento.filter(({ s }) => s.etapa === "nf_registrada").length,
     },
     nfsAguardando,
     manutencoesAguardando,

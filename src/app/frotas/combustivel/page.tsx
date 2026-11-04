@@ -7,7 +7,7 @@ import { listarFornecedores, listarNotas, listarSecretarias, obterContextoFrotas
 import { brl, formatarData, nivelPorDias, quinzenasRecentes, situacaoNota, diasEntre, type EtapaNota } from "@/lib/frotas/regras";
 import { montarUrl } from "@/lib/frotas/url";
 import { dataNoFuso } from "@/lib/fuso";
-import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
 import { opcoesExportar } from "@/lib/frotas/exportacao";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ export default async function PaginaCombustivel({ searchParams }: { searchParams
         subtitulo="Uma NF por secretaria a cada 15 dias. Litros e veículos ficam no sistema de abastecimento; aqui só o controle do documento."
         acao={
           <>
-            <MenuExportar
+            <MenuExportarFrotas
               opcoes={opcoesExportar(
                 [
                   { r: "combustivel", rotulo: "NFs da lista", formatos: ["xlsx", "pdf", "csv"] },

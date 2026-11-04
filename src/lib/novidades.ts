@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-05",
+    titulo: "Frotas: OC, NF e Contabilidade em etapas, colunas da exportação e orçamentos em PDF",
+    descricao:
+      "Na manutenção, a OC, a NF da oficina e o envio à Contabilidade agora são registrados em etapas separadas, cada uma quando acontece (saíram \"OC enviada à secretaria\" e \"documentos de volta ao Frotas\"). Se a NF passar do valor da OC, o aviso fica na tela, na lista, no painel de alertas e na exportação até ser corrigido. Em Exportar → \"Escolher colunas…\" você decide o que aparece nos arquivos (tudo por padrão; a escolha fica guardada na sua conta e vale em qualquer computador). Novo: \"Importar PDFs\" cria vários orçamentos de uma vez, lendo o texto dos PDFs para você conferir (os PDFs não são guardados). Também corrigidas palavras cortadas nos menus de navegação do celular.",
+  },
+  {
     data: "2026-11-04",
     titulo: "Visual padronizado em todos os módulos",
     descricao:
