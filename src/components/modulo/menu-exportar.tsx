@@ -76,7 +76,7 @@ export function MenuExportar({ opcoes, compacto = false, rotulo = "Exportar" }: 
             return (
               <li key={o.rotulo} role="none">
                 {o.href ? (
-                  <a role="menuitem" href={o.href} onClick={() => setAberto(false)} className="block min-h-11 px-3 py-2 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--modulo-texto)]">
+                  <a role="menuitem" href={o.href} onClick={() => setAberto(false)} className="block min-h-11 px-3 py-2 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--modulo-tinta)]">
                     {conteudo}
                   </a>
                 ) : (
@@ -88,7 +88,7 @@ export function MenuExportar({ opcoes, compacto = false, rotulo = "Exportar" }: 
                       if (o.imprimir) window.print();
                       o.aoClicar?.();
                     }}
-                    className="block min-h-11 w-full px-3 py-2 text-left hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--modulo-texto)]"
+                    className="block min-h-11 w-full px-3 py-2 text-left hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--modulo-tinta)]"
                   >
                     {conteudo}
                   </button>

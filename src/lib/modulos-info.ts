@@ -15,6 +15,8 @@ export type InfoModulo = {
    * WCAG AA) — o azul vivo do Numera (#0071e3) mede ~4,54:1 sozinho,
    * abaixo da margem de segurança que o resto da plataforma usa. */
   corTexto: string;
+  /** Versão de `cor` para texto/ícone sobre as superfícies do modo escuro (≥4,5:1). */
+  corTextoEscuro: string;
   /** Módulo que roda DENTRO do próprio Hub (rotas deste repositório, mesma
    * sessão): o card leva direto para `url` (caminho interno), sem link
    * mágico nem login próprio. */
@@ -42,6 +44,7 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "https://app-compras-brown.vercel.app",
     cor: "#0C1D33",
     corTexto: "#0C1D33",
+    corTextoEscuro: "#E2EAF6",
   },
   numera: {
     chave: "numera",
@@ -51,6 +54,7 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "https://app-numera-o-de-docs.vercel.app",
     cor: "#0071e3",
     corTexto: "#0058B0",
+    corTextoEscuro: "#6AA6EE",
   },
   requerimentos: {
     chave: "requerimentos",
@@ -60,6 +64,7 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "https://app-requerimentos-camara.vercel.app",
     cor: "#C63B22",
     corTexto: "#C63B22",
+    corTextoEscuro: "#FF8A7A",
   },
   emendas: {
     chave: "emendas",
@@ -69,6 +74,7 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "/emendas",
     cor: "#6B4FBB",
     corTexto: "#5B3FA8",
+    corTextoEscuro: "#B8A6F2",
     interno: true,
   },
   frotas: {
@@ -79,6 +85,7 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     url: "/frotas",
     cor: "#5C7A1F",
     corTexto: "#3F5A12",
+    corTextoEscuro: "#A9D261",
     interno: true,
   },
 };
@@ -103,6 +110,7 @@ export function moduloInfo(chave: string): InfoModulo {
       url: "#",
       cor: "#94A3B8",
       corTexto: "#475569",
+      corTextoEscuro: "#AEBDD2",
     }
   );
 }

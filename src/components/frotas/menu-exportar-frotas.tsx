@@ -85,7 +85,7 @@ function EscolherColunas({
                 <legend className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-sm font-semibold text-cataguases-marinho">
                   <span>{ROTULO_RELATORIO[r]}</span>
                   {escondidas.length > 0 && (
-                    <button type="button" onClick={() => alterar(r, [])} className="text-xs font-medium text-[color:var(--modulo-texto)] underline underline-offset-2">
+                    <button type="button" onClick={() => alterar(r, [])} className="text-xs font-medium text-[color:var(--modulo-tinta)] underline underline-offset-2">
                       Mostrar todas
                     </button>
                   )}
@@ -101,7 +101,7 @@ function EscolherColunas({
                           checked={visivel}
                           disabled={visivel && visiveis <= 1}
                           onChange={() => alterar(r, visivel ? [...escondidas, c] : escondidas.filter((x) => x !== c))}
-                          className="size-4 shrink-0 accent-[color:var(--modulo-texto)]"
+                          className="size-4 shrink-0 accent-[color:var(--modulo-tinta)]"
                         />
                         <span className="min-w-0 break-words">{c}</span>
                       </label>

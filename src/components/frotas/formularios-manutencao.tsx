@@ -221,7 +221,7 @@ function CartaoEtapa({
     <section className={`rounded-lg border p-3.5 ${estado === "atual" ? "border-[color:var(--modulo)] bg-white" : "border-slate-200 bg-slate-50"}`} aria-label={titulo}>
       <header className="flex flex-wrap items-center gap-2">
         <span
-          className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${estado === "feita" ? "bg-[color:var(--modulo-texto)] text-white" : estado === "atual" ? "border-2 border-[color:var(--modulo)] text-[color:var(--modulo-texto)]" : "border border-slate-300 text-slate-500"}`}
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${estado === "feita" ? "bg-[color:var(--modulo-texto)] text-white" : estado === "atual" ? "border-2 border-[color:var(--modulo)] text-[color:var(--modulo-tinta)]" : "border border-slate-300 text-slate-500"}`}
           aria-hidden
         >
           {estado === "feita" ? "✓" : numero}
@@ -229,7 +229,7 @@ function CartaoEtapa({
         <h4 className="text-sm font-semibold text-cataguases-marinho">{titulo}</h4>
         {estado === "feita" && !editando && (
           <span className="ml-auto flex gap-3 text-xs">
-            <button type="button" onClick={() => setEditando(true)} className="font-medium text-[color:var(--modulo-texto)] underline underline-offset-2">
+            <button type="button" onClick={() => setEditando(true)} className="font-medium text-[color:var(--modulo-tinta)] underline underline-offset-2">
               Corrigir
             </button>
             {podeDesfazer && (

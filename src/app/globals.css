@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    color-scheme: only light;
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 214 62% 12%;
 
@@ -47,6 +47,22 @@
        (nunca texto); `--modulo-texto` = botões e texto, sempre com 4,5:1 ou mais sobre branco. */
     --modulo: #E9A63B;
     --modulo-texto: #0C1D33;
+    /* Texto/ícone na cor do módulo: igual a `--modulo-texto` no claro, versão clara no escuro. */
+    --modulo-tinta: #0C1D33;
+    --surface: 255 255 255;
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+    --txt-marinho: 12 29 51;
+    --txt-azul: 37 99 168;
   }
 
   .dark {
@@ -77,6 +93,59 @@
     --border: 212 40% 20%;
     --input: 212 40% 20%;
     --ring: 212 64% 55%;
+
+    --surface: 17 28 46;
+    --slate-50: 15 26 44;
+    --slate-100: 22 36 58;
+    --slate-200: 36 52 78;
+    --slate-300: 54 72 102;
+    --slate-400: 126 144 172;
+    --slate-500: 147 164 189;
+    --slate-600: 174 189 210;
+    --slate-700: 197 209 225;
+    --slate-800: 221 229 240;
+    --slate-900: 238 243 250;
+    --slate-950: 246 249 253;
+    --txt-marinho: 226 234 246;
+    --txt-azul: 106 166 238;
+    --modulo-tinta: #E2EAF6;
+    color-scheme: dark;
+  }
+
+  /* Áreas que são sempre escuras (cabeçalho, faixas marinho) mantêm a escala clara por dentro, nos dois temas. */
+  .tema-fixo {
+    --surface: 255 255 255;
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+    --txt-marinho: 12 29 51;
+    --txt-azul: 37 99 168;
+  }
+  /* Dentro de uma área fixa, um painel que deve seguir o tema atual (sino, ajuda). */
+  .dark .tema-atual {
+    --surface: 17 28 46;
+    --slate-50: 15 26 44;
+    --slate-100: 22 36 58;
+    --slate-200: 36 52 78;
+    --slate-300: 54 72 102;
+    --slate-400: 126 144 172;
+    --slate-500: 147 164 189;
+    --slate-600: 174 189 210;
+    --slate-700: 197 209 225;
+    --slate-800: 221 229 240;
+    --slate-900: 238 243 250;
+    --slate-950: 246 249 253;
+    --txt-marinho: 226 234 246;
+    --txt-azul: 106 166 238;
+    --modulo-tinta: #E2EAF6;
   }
 }
 
@@ -103,6 +172,194 @@
     cursor: pointer;
   }
 }
+
+/* Cor do módulo como texto no escuro: o layout do módulo manda `--modulo-tinta` (claro) e
+   `--modulo-tinta-escuro`; no tema escuro vale a segunda. */
+html.dark [style*="--modulo-tinta-escuro"] {
+  --modulo-tinta: var(--modulo-tinta-escuro) !important;
+}
+
+/* ===== Modo escuro: cores fixas em style="" (semáforo/dourado) =====
+   Cores escuras usadas como TEXTO ganham versão clara no escuro. O HTML do servidor traz o hex;
+   depois de o React mexer no estilo o navegador reserializa em rgb() — os dois formatos são cobertos. */
+html.dark [style*="color:#9C6A17" i],
+html.dark [style*="color: #9C6A17" i],
+html.dark [style*="color: rgb(156, 106, 23)"] { color: #f0b04f !important; }
+html.dark [style*="color:#C0392B" i],
+html.dark [style*="color: #C0392B" i],
+html.dark [style*="color: rgb(192, 57, 43)"] { color: #ff8a82 !important; }
+html.dark [style*="color:#B45309" i],
+html.dark [style*="color: #B45309" i],
+html.dark [style*="color: rgb(180, 83, 9)"] { color: #f0a640 !important; }
+html.dark [style*="color:#8A6A26" i],
+html.dark [style*="color: #8A6A26" i],
+html.dark [style*="color: rgb(138, 106, 38)"] { color: #e3b85c !important; }
+html.dark [style*="color:#2B6CB0" i],
+html.dark [style*="color: #2B6CB0" i],
+html.dark [style*="color: rgb(43, 108, 176)"] { color: #6aa6ee !important; }
+html.dark [style*="color:#475569" i],
+html.dark [style*="color: #475569" i],
+html.dark [style*="color: rgb(71, 85, 105)"] { color: #aebdd2 !important; }
+html.dark [style*="color:#64748B" i],
+html.dark [style*="color: #64748B" i],
+html.dark [style*="color: rgb(100, 116, 139)"] { color: #a9b6ca !important; }
+html.dark [style*="color:#4F7A18" i],
+html.dark [style*="color: #4F7A18" i],
+html.dark [style*="color: rgb(79, 122, 24)"] { color: #8fd05a !important; }
+html.dark [style*="color:#0C1D33" i],
+html.dark [style*="color: #0C1D33" i],
+html.dark [style*="color: rgb(12, 29, 51)"] { color: #e2eaf6 !important; }
+html.dark [style*="color:#2563A8" i],
+html.dark [style*="color: #2563A8" i],
+html.dark [style*="color: rgb(37, 99, 168)"] { color: #6aa6ee !important; }
+html.dark [style*="color:#248A3D" i],
+html.dark [style*="color: #248A3D" i],
+html.dark [style*="color: rgb(36, 138, 61)"] { color: #6fdc9b !important; }
+html.dark [style*="color:#3F5A12" i],
+html.dark [style*="color: #3F5A12" i],
+html.dark [style*="color: rgb(63, 90, 18)"] { color: #a9d261 !important; }
+
+html.dark [style*="color:#0058B0" i],
+html.dark [style*="color: #0058B0" i],
+html.dark [style*="color: rgb(0, 88, 176)"] { color: #6aa6ee !important; }
+html.dark [style*="color:#C63B22" i],
+html.dark [style*="color: #C63B22" i],
+html.dark [style*="color: rgb(198, 59, 34)"] { color: #ff8a7a !important; }
+html.dark [style*="color:#5B3FA8" i],
+html.dark [style*="color: #5B3FA8" i],
+html.dark [style*="color: rgb(91, 63, 168)"] { color: #b8a6f2 !important; }
+html.dark [style*="color:#0F766E" i],
+html.dark [style*="color: #0F766E" i],
+html.dark [style*="color: rgb(15, 118, 110)"] { color: #5fd3c8 !important; }
+
+/* Textos e fundos em hex nos módulos Emendas/Frotas (classes arbitrárias do Tailwind): no escuro
+   o texto escuro vira a versão clara da mesma cor e os fundos claros viram um véu da cor. */
+.dark .text-\[\#5B3FA8\],
+.dark .text-\[\#6B4FBB\],
+.dark .text-\[\#4C3494\] { color: #b8a6f2; }
+.dark .text-\[\#3F5A12\] { color: #a9d261; }
+.dark .text-\[\#8A5A00\],
+.dark .text-\[\#9C6A17\] { color: #f0b04f; }
+.dark .text-\[\#14213A\] { color: #e2eaf6; }
+.dark .text-\[\#0A5FD0\] { color: #6aa6ee; }
+.dark .bg-\[\#DDD6F7\] { background-color: rgba(184, 166, 242, 0.22); }
+.dark .bg-\[\#F7FAF0\],
+.dark .bg-\[\#F4F8EA\] { background-color: rgba(169, 210, 97, 0.12); }
+.dark .bg-\[\#9DB7DB\] { background-color: rgba(106, 166, 238, 0.35); }
+
+/* Fundo branco literal vira a superfície do tema (bg-white/NN, usado sobre áreas escuras, não é afetado).
+   Fora de @layer de propósito: dentro de `utilities` o Tailwind expandiria `.bg-white` em todas as
+   variantes (file:, hover:…) e quebraria o build. */
+.dark .bg-white {
+  background-color: rgb(var(--surface));
+}
+.dark .tema-fixo .bg-white:not(.tema-atual) {
+  background-color: #fff;
+}
+.dark .tema-fixo .tema-atual.bg-white {
+  background-color: rgb(var(--surface));
+}
+
+/* ===== Modo escuro: paletas semânticas do Tailwind (avisos, selos, mensagens) =====
+   Fundo claro vira um véu translúcido da cor, texto escuro vira a versão clara e a borda fica discreta.
+   Gerado por tom (50/100 = fundo; 700–950 = texto; 200–400 = borda). */
+.dark .bg-red-50 { background-color: rgba(226,75,74, 0.14); }
+.dark .bg-red-100 { background-color: rgba(226,75,74, 0.2); }
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-red-800,
+.dark .text-red-900,
+.dark .text-red-950 { color: #ff8a82; }
+.dark .border-red-200,
+.dark .border-red-300,
+.dark .border-red-400 { border-color: rgba(226,75,74, 0.4); }
+.dark .hover\:bg-red-50:hover { background-color: rgba(226,75,74, 0.2); }
+.dark .bg-amber-50 { background-color: rgba(239,159,39, 0.14); }
+.dark .bg-amber-100 { background-color: rgba(239,159,39, 0.2); }
+.dark .text-amber-600,
+.dark .text-amber-700,
+.dark .text-amber-800,
+.dark .text-amber-900,
+.dark .text-amber-950 { color: #f0b04f; }
+.dark .border-amber-200,
+.dark .border-amber-300,
+.dark .border-amber-400 { border-color: rgba(239,159,39, 0.4); }
+.dark .hover\:bg-amber-50:hover { background-color: rgba(239,159,39, 0.2); }
+.dark .bg-green-50 { background-color: rgba(76,208,128, 0.14); }
+.dark .bg-green-100 { background-color: rgba(76,208,128, 0.2); }
+.dark .text-green-600,
+.dark .text-green-700,
+.dark .text-green-800,
+.dark .text-green-900,
+.dark .text-green-950 { color: #6fdc9b; }
+.dark .border-green-200,
+.dark .border-green-300,
+.dark .border-green-400 { border-color: rgba(76,208,128, 0.4); }
+.dark .hover\:bg-green-50:hover { background-color: rgba(76,208,128, 0.2); }
+.dark .bg-emerald-50 { background-color: rgba(76,208,128, 0.14); }
+.dark .bg-emerald-100 { background-color: rgba(76,208,128, 0.2); }
+.dark .text-emerald-600,
+.dark .text-emerald-700,
+.dark .text-emerald-800,
+.dark .text-emerald-900,
+.dark .text-emerald-950 { color: #6fdc9b; }
+.dark .border-emerald-200,
+.dark .border-emerald-300,
+.dark .border-emerald-400 { border-color: rgba(76,208,128, 0.4); }
+.dark .hover\:bg-emerald-50:hover { background-color: rgba(76,208,128, 0.2); }
+.dark .bg-violet-50 { background-color: rgba(167,139,250, 0.14); }
+.dark .bg-violet-100 { background-color: rgba(167,139,250, 0.2); }
+.dark .text-violet-600,
+.dark .text-violet-700,
+.dark .text-violet-800,
+.dark .text-violet-900,
+.dark .text-violet-950 { color: #c4b5fd; }
+.dark .border-violet-200,
+.dark .border-violet-300,
+.dark .border-violet-400 { border-color: rgba(167,139,250, 0.4); }
+.dark .hover\:bg-violet-50:hover { background-color: rgba(167,139,250, 0.2); }
+.dark .bg-blue-50 { background-color: rgba(96,165,250, 0.14); }
+.dark .bg-blue-100 { background-color: rgba(96,165,250, 0.2); }
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800,
+.dark .text-blue-900,
+.dark .text-blue-950 { color: #93c5fd; }
+.dark .border-blue-200,
+.dark .border-blue-300,
+.dark .border-blue-400 { border-color: rgba(96,165,250, 0.4); }
+.dark .hover\:bg-blue-50:hover { background-color: rgba(96,165,250, 0.2); }
+
+.dark .bg-sky-50 { background-color: rgba(56,189,248, 0.14); }
+.dark .bg-sky-100 { background-color: rgba(56,189,248, 0.2); }
+.dark .text-sky-600,
+.dark .text-sky-700,
+.dark .text-sky-800,
+.dark .text-sky-900,
+.dark .text-sky-950 { color: #7dd3fc; }
+.dark .border-sky-200,
+.dark .border-sky-300,
+.dark .border-sky-400 { border-color: rgba(56,189,248, 0.4); }
+.dark .bg-indigo-50 { background-color: rgba(129,140,248, 0.14); }
+.dark .bg-indigo-100 { background-color: rgba(129,140,248, 0.2); }
+.dark .text-indigo-600,
+.dark .text-indigo-700,
+.dark .text-indigo-800,
+.dark .text-indigo-900,
+.dark .text-indigo-950 { color: #a5b4fc; }
+.dark .border-indigo-200,
+.dark .border-indigo-300,
+.dark .border-indigo-400 { border-color: rgba(129,140,248, 0.4); }
+.dark .bg-teal-50 { background-color: rgba(45,212,191, 0.14); }
+.dark .bg-teal-100 { background-color: rgba(45,212,191, 0.2); }
+.dark .text-teal-600,
+.dark .text-teal-700,
+.dark .text-teal-800,
+.dark .text-teal-900,
+.dark .text-teal-950 { color: #5eead4; }
+.dark .border-teal-200,
+.dark .border-teal-300,
+.dark .border-teal-400 { border-color: rgba(45,212,191, 0.4); }
 
 /* Entrada suave e escalonada da página institucional */
 @layer utilities {
@@ -142,6 +399,16 @@
       radial-gradient(900px 500px at -6% 106%, rgba(233, 166, 59, 0.05), transparent 55%),
       linear-gradient(180deg, #f4f6fa, #eef1f6);
     background-attachment: fixed;
+  }
+  .dark .fundo-institucional {
+    background:
+      radial-gradient(1100px 600px at 78% -8%, rgba(46, 107, 184, 0.28), transparent 60%),
+      radial-gradient(900px 500px at -6% 106%, rgba(233, 166, 59, 0.07), transparent 55%),
+      linear-gradient(180deg, #08111f, #060d18);
+    background-attachment: fixed;
+  }
+  .dark .bg-cataguases-dourado {
+    color: #0c1d33;
   }
   @media (prefers-reduced-motion: reduce) {
     .animar-entrada,

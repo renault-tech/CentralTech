@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { PreferenciasAparencia } from "@/components/conta/preferencias-aparencia";
 import { FormularioMudarSenha } from "@/components/conta/formulario-mudar-senha";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,14 @@ export default async function PaginaMinhaConta() {
             </p>
           </div>
           <FormularioMudarSenha />
+        </div>
+
+        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4">
+            <h2 className="font-semibold text-slate-900">Aparência</h2>
+            <p className="text-sm text-slate-600">Escolha o modo de cor. A preferência fica guardada neste navegador.</p>
+          </div>
+          <PreferenciasAparencia />
         </div>
       </main>
     </div>
