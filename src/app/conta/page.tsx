@@ -19,7 +19,7 @@ export default async function PaginaMinhaConta() {
       <main id="conteudo" className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <CabecalhoPagina titulo="Minha conta" subtitulo={`Olá, ${usuario.nome}.`} />
 
-        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-5">
             <h2 className="font-semibold text-slate-900">Alterar senha</h2>
             <p className="text-sm text-slate-600">
@@ -37,10 +37,10 @@ export default async function PaginaMinhaConta() {
           <FormularioMudarSenha />
         </div>
 
-        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4">
             <h2 className="font-semibold text-slate-900">Aparência</h2>
-            <p className="text-sm text-slate-600">Escolha o modo de cor. A preferência fica guardada neste navegador.</p>
+            <p className="text-sm text-slate-600">Escolha o estilo e o modo de cor. A preferência fica guardada neste navegador.</p>
           </div>
           <PreferenciasAparencia />
         </div>

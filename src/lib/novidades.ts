@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-05",
+    titulo: "Visual Apple (vidro e cantos arredondados) em toda a Central",
+    descricao:
+      "A Central, o Emendas e o Frotas passaram para o mesmo visual do Compras: cartões em vidro translúcido, títulos grandes, botões em cápsula e o cabeçalho translúcido, mantendo a faixa de cor de cada módulo no topo. Quem preferir o visual anterior escolhe \"Clássico\" em Minha conta → Aparência.",
+  },
+  {
+    data: "2026-11-05",
     titulo: "Modo escuro na Central, no Emendas e no Frotas",
     descricao:
       "Agora dá para trocar entre claro e escuro pelo botão de lua/sol no cabeçalho, igual ao Compras. Em Minha conta → Aparência você também pode deixar no Automático (segue o tema do aparelho). A escolha fica guardada neste navegador.",

@@ -63,7 +63,7 @@ const config: Config = {
           marinho: "#0C1D33",
           "marinho-2": "#102A47",
           "marinho-3": "#1A4470",
-          azul: "#2563A8",
+          azul: "rgb(var(--azul) / <alpha-value>)",
           vermelho: "#C63B22",
           dourado: "#E9A63B",
         },

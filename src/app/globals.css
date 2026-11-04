@@ -63,6 +63,7 @@
     --slate-950: 2 6 23;
     --txt-marinho: 12 29 51;
     --txt-azul: 37 99 168;
+    --azul: 37 99 168;
   }
 
   .dark {
@@ -172,6 +173,200 @@
     cursor: pointer;
   }
 }
+
+/* ===== Estilo Apple (padrão) — camada sobre o visual clássico =====
+   Tudo aqui é opcional: sem a classe `estilo-apple` no <html> (Minha conta →
+   Aparência → Clássico) o app volta ao visual anterior. */
+html.estilo-apple:not(.dark) {
+  --azul: 29 79 145;
+  --txt-azul: 29 79 145;
+  --primary: 213 67% 33%;
+  --ring: 213 67% 33%;
+  --radius: 0.75rem;
+}
+html.estilo-apple.dark {
+  --azul: 46 107 184;
+  --primary: 212 74% 62%;
+  --ring: 212 74% 62%;
+  --radius: 0.75rem;
+}
+/* Cartões: vidro translúcido (só bg-white arredondado grande; campos e menus ficam sólidos). */
+html.estilo-apple .bg-white[class*="rounded-xl"],
+html.estilo-apple .bg-white[class*="rounded-2xl"],
+html.estilo-apple .bg-white[class*="rounded-[1"] {
+  background-color: rgb(var(--surface) / 0.74);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+html.estilo-apple.dark .bg-white[class*="rounded-xl"],
+html.estilo-apple.dark .bg-white[class*="rounded-2xl"],
+html.estilo-apple.dark .bg-white[class*="rounded-[1"] {
+  background-color: rgb(var(--surface) / 0.62);
+}
+/* Barra lateral e cabeçalho: vidro. Claro = vidro branco com texto escuro;
+   escuro = vidro marinho com texto claro (os textos já são claros). */
+html.estilo-apple :is(aside, header).tema-fixo {
+  -webkit-backdrop-filter: blur(28px) saturate(1.7);
+  backdrop-filter: blur(28px) saturate(1.7);
+}
+html.estilo-apple.dark :is(aside, header).tema-fixo {
+  background: rgba(10, 22, 40, 0.62) !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo {
+  color: #0b1522;
+}
+html.estilo-apple:not(.dark) :is(aside, header).tema-fixo {
+  background: rgba(255, 255, 255, 0.6) !important;
+  /* só a borda de baixo/lateral: a faixa de 3 px do topo é a cor do módulo (identidade) */
+  border-bottom-color: rgba(12, 29, 51, 0.09) !important;
+  border-right-color: rgba(12, 29, 51, 0.09) !important;
+  box-shadow: 0 1px 0 rgba(12, 29, 51, 0.04), 0 8px 30px rgba(12, 29, 51, 0.06) !important;
+}
+/* Os textos claros (feitos para fundo marinho) viram tinta escura no vidro claro. */
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo :is([class^="text-white"], [class*=" text-white"]):not([class*="linear-gradient"]):not([class*="bg-cataguases"]) {
+  color: #0b1522 !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo :is([class*="text-[rgba("], [class*="text-[#cbd6e6]"], [class*="text-slate-"]):not([class*="linear-gradient"]):not([class*="bg-cataguases"]) {
+  color: rgba(12, 29, 51, 0.66) !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo :is([class^="bg-white/"], [class*=" bg-white/"]) {
+  background: rgba(12, 29, 51, 0.06) !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo [class*="border-white/"] {
+  border-color: rgba(12, 29, 51, 0.09) !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo [class*="hover:bg-white"]:hover {
+  background: rgba(12, 29, 51, 0.09) !important;
+}
+html.estilo-apple:not(.dark) :is(aside, header, .cab-pagina).tema-fixo [class*="hover:text-white"]:hover {
+  color: #1d4f91 !important;
+}
+html.estilo-apple:not(.dark) aside.tema-fixo [aria-current="page"] {
+  background: rgba(29, 79, 145, 0.14) !important;
+  color: #1d4f91 !important;
+  box-shadow: none !important;
+}
+html.estilo-apple.dark aside.tema-fixo [aria-current="page"] {
+  background: rgba(91, 155, 232, 0.2) !important;
+}
+
+/* Título de página: grande e sem faixa — o título é o destaque, não o cartão. */
+html.estilo-apple .cab-pagina {
+  background: none !important;
+  box-shadow: none !important;
+  overflow: visible;
+  padding-left: 0;
+  padding-right: 0;
+}
+html.estilo-apple .cab-marca,
+html.estilo-apple .cab-regua {
+  display: none;
+}
+html.estilo-apple .cab-titulo {
+  font-size: 2.125rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #0b1522 !important;
+}
+html.estilo-apple.dark .cab-titulo {
+  color: #f2f6fc !important;
+}
+html.estilo-apple .cab-sub {
+  font-size: 0.95rem;
+  color: rgba(30, 45, 66, 0.64) !important;
+}
+html.estilo-apple.dark .cab-sub {
+  color: rgba(210, 224, 245, 0.62) !important;
+}
+
+/* Faixa "precisa da sua atenção": vidro vermelho suave em vez do bloco sólido. */
+html.estilo-apple .faixa-atencao {
+  background: rgba(255, 59, 48, 0.1) !important;
+  border: 1px solid rgba(255, 59, 48, 0.28);
+  box-shadow: none;
+}
+html.estilo-apple .faixa-rotulo,
+html.estilo-apple .faixa-valor {
+  color: #b42318 !important;
+}
+html.estilo-apple .faixa-sub {
+  color: rgba(12, 29, 51, 0.7) !important;
+}
+html.estilo-apple .faixa-cartao {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(255, 59, 48, 0.2) !important;
+}
+html.estilo-apple.dark .faixa-atencao {
+  background: rgba(255, 69, 58, 0.16) !important;
+  border-color: rgba(255, 99, 89, 0.35);
+}
+html.estilo-apple.dark .faixa-rotulo,
+html.estilo-apple.dark .faixa-valor {
+  color: #ff8a82 !important;
+}
+html.estilo-apple.dark .faixa-sub {
+  color: rgba(242, 246, 252, 0.8) !important;
+}
+html.estilo-apple.dark .faixa-cartao {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Números dos indicadores maiores; botões em cápsula. */
+html.estilo-apple .ind-numero {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+html.estilo-apple .btn-ui {
+  border-radius: 9999px;
+}
+
+/* Folha/modal: fundo menos pesado e desfocado (o vidro do cartão aparece sobre ele). */
+html.estilo-apple .fixed.inset-0.z-40.bg-black\/80 {
+  background: rgba(8, 17, 31, 0.38);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+/* Fundo com manchas suaves de azul e dourado — é o que o vidro "mostra". */
+html.estilo-apple .fundo-institucional {
+  background:
+    radial-gradient(720px 540px at 6% -6%, rgba(46, 107, 184, 0.4), transparent 62%),
+    radial-gradient(640px 460px at 98% 36%, rgba(233, 166, 59, 0.26), transparent 60%),
+    radial-gradient(780px 560px at 42% 112%, rgba(29, 79, 145, 0.26), transparent 60%),
+    linear-gradient(180deg, #f2f5fa, #eaeef5);
+  background-attachment: fixed;
+}
+html.estilo-apple.dark .fundo-institucional {
+  background:
+    radial-gradient(720px 540px at 6% -6%, rgba(46, 107, 184, 0.5), transparent 62%),
+    radial-gradient(640px 460px at 98% 36%, rgba(233, 166, 59, 0.12), transparent 60%),
+    radial-gradient(780px 560px at 42% 112%, rgba(91, 155, 232, 0.22), transparent 60%),
+    linear-gradient(180deg, #08111f, #050b15);
+  background-attachment: fixed;
+}
+
+/* Páginas dos módulos: o fundo com manchas vai no <body> e a raiz da página (min-h-dvh bg-slate-50)
+   fica transparente — é o que o vidro dos cartões "mostra". */
+html.estilo-apple body {
+  background:
+    radial-gradient(720px 540px at 6% -6%, rgba(46, 107, 184, 0.4), transparent 62%),
+    radial-gradient(640px 460px at 98% 36%, rgba(233, 166, 59, 0.26), transparent 60%),
+    radial-gradient(780px 560px at 42% 112%, rgba(29, 79, 145, 0.26), transparent 60%),
+    linear-gradient(180deg, #f2f5fa, #eaeef5);
+  background-attachment: fixed;
+}
+html.estilo-apple.dark body {
+  background:
+    radial-gradient(720px 540px at 6% -6%, rgba(46, 107, 184, 0.5), transparent 62%),
+    radial-gradient(640px 460px at 98% 36%, rgba(233, 166, 59, 0.12), transparent 60%),
+    radial-gradient(780px 560px at 42% 112%, rgba(91, 155, 232, 0.22), transparent 60%),
+    linear-gradient(180deg, #08111f, #050b15);
+  background-attachment: fixed;
+}
+html.estilo-apple .min-h-dvh.bg-slate-50,
+html.estilo-apple .min-h-dvh.bg-slate-100 { background-color: transparent; }
 
 /* Cor do módulo como texto no escuro: o layout do módulo manda `--modulo-tinta` (claro) e
    `--modulo-tinta-escuro`; no tema escuro vale a segunda. */

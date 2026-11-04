@@ -1846,3 +1846,11 @@ Pedido do dono: o modo escuro existia só no Compras e precisa existir em todos 
 - Hub tinha `color-scheme: only light` (para o Chrome não escurecer sozinho); trocado por `light dark` + classe `dark`.
 - Preferência é **por navegador/domínio**: cada app guarda a sua (não há sincronização entre Hub, Compras, Requerimentos e Numera).
 - Verificado em Chromium (1280 e 390 px, claro e escuro) com componentes reais numa página de teste temporária (removida). Telas autenticadas reais não testadas.
+
+## Estilo Apple em todos os módulos (05/11/2026)
+
+Pedido do dono: o visual "Apple" (vidro) do Compras vale para tudo. Hub (+ Emendas e Frotas) e Requerimentos receberam a **mesma camada** do Compras: bloco `html.estilo-apple` em `globals.css`, classe `estilo-apple` no `<html>` (default; `lib/tema.ts` agora também guarda `estilo` = `classico`; script do `<head>` aplica), ganchos de classe nos componentes (`cab-pagina/cab-marca/cab-regua/cab-titulo/cab-sub` em `CabecalhoPagina`, `btn-ui` nos botões, `tema-fixo` no cabeçalho), `--azul` por variável. Em Minha conta → Aparência (Hub) dá para voltar ao Clássico; Requerimentos e Numera não têm essa opção (só Apple). O Numera já era vidro desde o redesign dele.
+- Página sem `.fundo-institucional`: o fundo com manchas vai no `<body>` (`html.estilo-apple body`) e a raiz `.min-h-dvh.bg-slate-50` fica transparente — é o que o vidro dos cartões "mostra".
+- **A faixa de 3 px do topo do cabeçalho é a cor do módulo (identidade)**: a regra do cabeçalho em vidro claro só mexe em `border-bottom/right-color`, nunca em `border-color` (antes apagava a faixa).
+- Cartões em vidro = `bg-white` com `rounded-xl|2xl`; campos, menus e `rounded-lg` ficam sólidos. Cartão novo que deve ser vidro: `rounded-xl`.
+- Detalhe do processo em "folha" é do Compras (não existe equivalente nos outros).
