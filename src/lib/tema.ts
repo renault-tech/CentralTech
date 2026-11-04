@@ -50,13 +50,28 @@ export function aplicarTema(): void {
   window.dispatchEvent(new Event(EVENTO_TEMA));
 }
 
+/** Quem grava no banco (registrado pelo `SincronizarPreferencias`, só com sessão). */
+let gravadorRemoto: ((p: { tema: Modo | null; estilo: Estilo | null }) => void) | null = null;
+export function registrarGravadorRemoto(fn: typeof gravadorRemoto): void {
+  gravadorRemoto = fn;
+}
+
 export function definirModo(modo: Modo): void {
   gravar(CHAVE_MODO, modo === "auto" ? null : modo);
   aplicarTema();
+  gravadorRemoto?.({ tema: modo, estilo: null });
 }
 
 export function definirEstilo(estilo: Estilo): void {
   gravar(CHAVE_ESTILO, estilo === "classico" ? "classico" : null);
+  aplicarTema();
+  gravadorRemoto?.({ tema: null, estilo });
+}
+
+/** Aplica o que veio do banco (a pessoa trocou de computador/navegador), sem regravar no banco. */
+export function aplicarDoServidor(p: { tema: Modo; estilo: Estilo }): void {
+  gravar(CHAVE_MODO, p.tema === "auto" ? null : p.tema);
+  gravar(CHAVE_ESTILO, p.estilo === "classico" ? "classico" : null);
   aplicarTema();
 }
 

@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-06",
+    titulo: "Sua aparência acompanha você e o modo escuro ficou mais legível no celular",
+    descricao:
+      "O estilo (Apple ou Clássico) e o modo de cor agora ficam salvos na sua conta: ao entrar em outro computador ou navegador, a Central, o Compras e o Requerimentos já aparecem do jeito que você escolheu. No celular, o modo escuro ganhou cartões mais firmes, textos secundários mais claros e fontes pequenas maiores.",
+  },
+  {
     data: "2026-11-05",
     titulo: "Configurações iguais em todos os módulos e Aparência (Apple ou Clássico) em todos",
     descricao:
