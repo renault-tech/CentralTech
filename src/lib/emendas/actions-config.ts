@@ -86,11 +86,13 @@ export async function salvarDatasExercicio(dados: z.input<typeof esquemaDatasExe
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas
+  const { data: linhas, error } = await emendas
     .from("exercicios")
     .update({ data_aprovacao_loa: a.data.dataLoa, numero_lei_loa: a.data.numeroLei, prazo_exequibilidade: a.data.prazoExequibilidade })
-    .eq("ano", a.data.ano);
+    .eq("ano", a.data.ano)
+    .select("ano");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }
@@ -112,11 +114,13 @@ export async function salvarDadosPublicacao(dados: z.input<typeof esquemaDadosPu
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas
+  const { data: linhas, error } = await emendas
     .from("exercicios")
     .update({ municipio_nome: a.data.municipioNome, municipio_cnpj: a.data.municipioCnpj, unidade_parlamentar: a.data.unidadeParlamentar })
-    .eq("ano", a.data.ano);
+    .eq("ano", a.data.ano)
+    .select("ano");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }
@@ -207,12 +211,14 @@ export async function salvarFaseCatalogo(dados: z.input<typeof esquemaFaseCatalo
     const { data: atual } = await emendas.from("fluxo_fases").select("*").eq("tipo", a.data.tipo).eq("chave", a.data.chave).maybeSingle();
     if (!atual) return { sucesso: false, erro: "Fase não encontrada." };
     if (atual.derivacao === "loa" && !a.data.ativa) return { sucesso: false, erro: "A fase da LOA não pode ser desativada." };
-    const { error } = await emendas
+    const { data: linhas, error } = await emendas
       .from("fluxo_fases")
       .update({ nome: a.data.nome, referencia: a.data.referencia, ativa: a.data.ativa, ...(atual.derivacao ? {} : { etapa: a.data.etapa }) })
       .eq("tipo", a.data.tipo)
-      .eq("chave", a.data.chave);
+      .eq("chave", a.data.chave)
+      .select("chave");
     if (error) return { sucesso: false, erro: traduzir(error) };
+    if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   } else {
     const chave = slug(a.data.nome);
     if (chave.length < 2) return { sucesso: false, erro: "Nome inválido." };
@@ -278,12 +284,14 @@ export async function salvarItemChecklistCatalogo(dados: z.input<typeof esquemaI
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
   if (a.data.chave) {
-    const { error } = await emendas
+    const { data: linhas, error } = await emendas
       .from("checklist_itens")
       .update({ nome: a.data.nome, referencia_legal: a.data.referencia, condicao: a.data.condicao, ativo: a.data.ativo })
       .eq("tipo", a.data.tipo)
-      .eq("chave", a.data.chave);
+      .eq("chave", a.data.chave)
+      .select("chave");
     if (error) return { sucesso: false, erro: traduzir(error) };
+    if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   } else {
     const chave = slug(a.data.nome);
     if (chave.length < 2) return { sucesso: false, erro: "Nome inválido." };
@@ -389,10 +397,11 @@ export async function salvarVereador(dados: z.input<typeof esquemaVereador>): Pr
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
   const campos = { numero: a.data.numero, nome: a.data.nome, partido: a.data.partido, ativo: a.data.ativo };
-  const { error } = a.data.id
-    ? await emendas.from("vereadores").update(campos).eq("id", a.data.id)
-    : await emendas.from("vereadores").insert(campos);
+  const { data: linhas, error } = a.data.id
+    ? await emendas.from("vereadores").update(campos).eq("id", a.data.id).select("id")
+    : await emendas.from("vereadores").insert(campos).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }
@@ -410,10 +419,11 @@ export async function salvarSecretaria(dados: z.input<typeof esquemaSecretaria>)
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
-  const { error } = a.data.id
-    ? await emendas.from("secretarias").update({ nome: a.data.nome, ativo: a.data.ativo }).eq("id", a.data.id)
-    : await emendas.from("secretarias").insert({ nome: a.data.nome, ativo: a.data.ativo });
+  const { data: linhas, error } = a.data.id
+    ? await emendas.from("secretarias").update({ nome: a.data.nome, ativo: a.data.ativo }).eq("id", a.data.id).select("id")
+    : await emendas.from("secretarias").insert({ nome: a.data.nome, ativo: a.data.ativo }).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }
@@ -432,10 +442,11 @@ export async function salvarUnidade(dados: z.input<typeof esquemaUnidade>): Prom
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
   const campos = { codigo: a.data.codigo, nome: a.data.nome, secretaria_id: a.data.secretariaId, ativo: a.data.ativo };
-  const { error } = a.data.id
-    ? await emendas.from("unidades_orcamentarias").update(campos).eq("id", a.data.id)
-    : await emendas.from("unidades_orcamentarias").insert(campos);
+  const { data: linhas, error } = a.data.id
+    ? await emendas.from("unidades_orcamentarias").update(campos).eq("id", a.data.id).select("id")
+    : await emendas.from("unidades_orcamentarias").insert(campos).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }
@@ -462,11 +473,13 @@ export async function salvarBeneficiario(dados: z.input<typeof esquemaBeneficiar
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas
+  const { data: linhas, error } = await emendas
     .from("beneficiarios")
     .update({ nome: a.data.nome, cnpj: a.data.cnpj, tipo: a.data.tipo })
-    .eq("id", a.data.id);
+    .eq("id", a.data.id)
+    .select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
   return { sucesso: true };
 }

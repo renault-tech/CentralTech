@@ -143,9 +143,10 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
         <div className="flex gap-1">
           <button
             type="button"
-            aria-label="Salvar"
             disabled={salvando}
-            className="rounded p-1.5 text-green-700 hover:bg-green-50"
+            aria-label="Salvar"
+            title="Salvar"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6B4FBB] text-white shadow-sm hover:bg-[#5B3FA8] disabled:opacity-50"
             onClick={() =>
               void salvar(
                 () =>
@@ -161,10 +162,10 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
               )
             }
           >
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4" aria-hidden />
           </button>
-          <button type="button" aria-label="Cancelar" className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={aoFechar}>
-            <X className="h-4 w-4" />
+          <button type="button" aria-label="Cancelar" title="Cancelar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" onClick={aoFechar}>
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </td>

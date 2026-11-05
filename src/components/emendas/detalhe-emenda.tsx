@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2, X } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -300,7 +300,7 @@ export function DetalheEmendaCliente({
                       <th scope="col" className="px-3 py-2 font-medium">Documento</th>
                       <th scope="col" className="px-3 py-2 font-medium">Data</th>
                       <th scope="col" className="px-3 py-2 text-right font-medium">Valor</th>
-                      {gestor && <th scope="col" className="w-10 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
+                      {gestor && <th scope="col" className="w-24 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -865,26 +865,43 @@ function LinhaMovimento({
   const [editando, setEditando] = React.useState(false);
   const [numero, setNumero] = React.useState(movimento.numero ?? "");
   const [data, setData] = React.useState(movimento.data ?? "");
+  const [salvando, setSalvando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
   const faltando = !movimento.numero || !movimento.data;
+
+  function abrir() {
+    // Sempre parte do que está gravado agora (a linha pode ter sido atualizada depois da última edição).
+    setNumero(movimento.numero ?? "");
+    setData(movimento.data ?? "");
+    setErro(null);
+    setEditando(true);
+  }
+  async function salvar() {
+    setSalvando(true);
+    setErro(null);
+    const r = await aoCorrigir(numero, data || null);
+    setSalvando(false);
+    if (r.sucesso) setEditando(false);
+    else setErro(r.erro);
+  }
+
   if (editando) {
     return (
-      <tr className="border-t border-slate-100">
-        <td className="px-3 py-2">{nome}</td>
-        <td className="px-3 py-2"><input className={CAMPO} value={numero} onChange={(e) => setNumero(e.target.value)} aria-label="Número" /></td>
-        <td className="px-3 py-2"><input type="date" className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} aria-label="Data" /></td>
-        <td className="px-3 py-2 text-right tabular-nums">{brl(movimento.valor)}</td>
-        <td className="px-3 py-2">
-          <button
-            type="button"
-            aria-label="Salvar correção"
-            className="rounded p-1.5 text-green-700 hover:bg-green-50"
-            onClick={async () => {
-              const r = await aoCorrigir(numero, data || null);
-              if (r.sucesso) setEditando(false);
-            }}
-          >
-            <Check className="h-4 w-4" />
-          </button>
+      <tr className="border-t border-slate-100 bg-violet-50/40">
+        <td className="px-3 py-2 align-top">{nome}</td>
+        <td className="px-3 py-2 align-top"><input className={CAMPO} value={numero} onChange={(e) => setNumero(e.target.value)} aria-label="Número do documento" placeholder="Nº do documento" disabled={salvando} /></td>
+        <td className="px-3 py-2 align-top"><input type="date" className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} aria-label="Data" disabled={salvando} /></td>
+        <td className="px-3 py-2 text-right align-top tabular-nums">{brl(movimento.valor)}</td>
+        <td className="px-3 py-2 align-top">
+          <div className="flex items-center justify-end gap-1.5">
+            <button type="button" aria-label="Salvar correção" title="Salvar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6B4FBB] text-white shadow-sm hover:bg-[#5B3FA8] disabled:opacity-50" onClick={salvar} disabled={salvando}>
+              <Check className={cn("h-4 w-4", salvando && "animate-pulse")} aria-hidden />
+            </button>
+            <button type="button" aria-label="Cancelar" title="Cancelar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" onClick={() => setEditando(false)} disabled={salvando}>
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+          {erro && <p role="alert" className="mt-1.5 text-right text-xs text-red-700">{erro}</p>}
         </td>
       </tr>
     );
@@ -896,9 +913,9 @@ function LinhaMovimento({
       <td className="px-3 py-2.5">{movimento.data ? dataBr(movimento.data) : <span className="text-amber-800">sem data</span>}</td>
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>
       {gestor && (
-        <td className="px-3 py-2.5">
-          <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={() => setEditando(true)}>
-            <Pencil className="h-4 w-4" />
+        <td className="px-3 py-2.5 text-right">
+          <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
+            <Pencil className="h-4 w-4" aria-hidden />
           </button>
         </td>
       )}
