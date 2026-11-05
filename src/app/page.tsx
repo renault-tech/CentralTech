@@ -22,8 +22,8 @@ function saudacao(): string {
 }
 
 const CARTAO =
-  "rounded-3xl border border-[rgba(12,29,51,0.07)] bg-white/80 shadow-[0_1px_2px_rgba(12,29,51,0.05),0_10px_30px_rgba(12,29,51,0.06)] backdrop-blur";
-const CARTAO_TRAVADO = "rounded-3xl border-[1.5px] border-dashed border-[rgba(12,29,51,0.20)] bg-white/40";
+  "rounded-3xl border border-[rgba(12,29,51,0.07)] bg-white/80 dark:border-white/10 dark:bg-[rgb(var(--surface)/0.72)] shadow-[0_1px_2px_rgba(12,29,51,0.05),0_10px_30px_rgba(12,29,51,0.06)] backdrop-blur";
+const CARTAO_TRAVADO = "rounded-3xl border-[1.5px] border-dashed border-[rgba(12,29,51,0.20)] bg-white/40 dark:border-white/20 dark:bg-white/5";
 
 function IconeModulo({ chave, cor, travado }: { chave: string; cor: string; travado?: boolean }) {
   const Icone = ICONES[chave] ?? Hash;
@@ -57,13 +57,7 @@ export default async function PaginaInicial({
   const temAlgumAcesso = modulos.some((m) => m.temAcesso);
 
   return (
-    <div
-      className="min-h-dvh"
-      style={{
-        background:
-          "radial-gradient(900px 520px at 12% -8%, rgba(10,95,208,0.16), transparent 60%), radial-gradient(760px 480px at 96% 4%, rgba(233,166,59,0.20), transparent 62%), #F2F4F8",
-      }}
-    >
+    <div className="hub-home-fundo min-h-dvh">
       <GerenciadorTours />
       <CabecalhoHub usuario={usuario} />
 
@@ -76,7 +70,7 @@ export default async function PaginaInicial({
         </div>
 
         {pendentes > 0 && (
-          <Link href="/configuracoes/solicitacoes" className={`${CARTAO} flex items-center gap-3.5 px-[18px] py-3.5 text-[#14213A] transition-colors hover:bg-white`}>
+          <Link href="/configuracoes/solicitacoes" className={`${CARTAO} flex items-center gap-3.5 px-[18px] py-3.5 text-[#14213A] dark:text-slate-100 transition-colors hover:bg-white`}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(233,166,59,0.22)]">
               <UserPlus className="h-[18px] w-[18px] text-[#8A5A00]" aria-hidden />
             </span>
@@ -110,7 +104,7 @@ export default async function PaginaInicial({
               <form key={m.chave} action={abrirModulo.bind(null, m.chave)} className="h-full">
                 <button
                   type="submit"
-                  className={`${CARTAO} group relative flex h-full w-full flex-col gap-3.5 p-[22px] text-left transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_2px_4px_rgba(12,29,51,0.06),0_16px_36px_rgba(12,29,51,0.10)]`}
+                  className={`${CARTAO} group relative flex h-full w-full flex-col gap-3.5 p-[22px] text-left transition-all hover:-translate-y-0.5 hover:bg-white dark:hover:bg-[rgb(var(--surface))] hover:shadow-[0_2px_4px_rgba(12,29,51,0.06),0_16px_36px_rgba(12,29,51,0.10)]`}
                 >
                   <SeloModulo usuarioId={usuario.id} app={m.chave} />
                   <IconeModulo chave={m.chave} cor={m.cor} />

@@ -640,3 +640,17 @@ html.dark body {
   html.dark .text-\[10px\] { font-size: 11px; }
   html.dark .text-\[11px\] { font-size: 12px; }
 }
+
+/* Início do Hub: fundo próprio (claro com manchas; escuro marinho), nunca cor fixa inline. */
+.hub-home-fundo {
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgba(10, 95, 208, 0.16), transparent 60%),
+    radial-gradient(760px 480px at 96% 4%, rgba(233, 166, 59, 0.2), transparent 62%), #f2f4f8;
+}
+html.dark .hub-home-fundo {
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgba(46, 107, 184, 0.35), transparent 60%),
+    radial-gradient(760px 480px at 96% 4%, rgba(233, 166, 59, 0.1), transparent 62%), #08111f;
+}
+html.dark .hub-home-fundo [class*="text-[#8A5A00]"] { color: #f0b04f; }
+html.dark .hub-home-fundo [class*="text-[#0A5FD0]"] { color: #6aa6ee; }
