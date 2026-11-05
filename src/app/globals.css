@@ -614,3 +614,29 @@ html.dark [style*="color: rgb(15, 118, 110)"] { color: #5fd3c8 !important; }
     }
   }
 }
+
+/* ===== Escuro no celular: mais legível (06/11/2026) =====
+   Causas medidas: (1) o vidro do estilo Apple a 62% deixava as manchas azuis/douradas do fundo passarem
+   por baixo do texto (contraste variável, às vezes < 4,5:1); (2) `antialiased` afina texto claro sobre
+   escuro; (3) textos de 10–11 px e cinzas secundários ficavam no limite. No celular o cartão fica quase
+   opaco, sem desfoque (também poupa bateria) e o cinza secundário sobe um degrau (≥ 7:1). */
+html.dark body {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+@media (max-width: 767px) {
+  html.dark {
+    --slate-400: 150 166 192;
+    --slate-500: 168 183 206;
+    --muted-foreground: 212 22% 74%;
+  }
+  html.estilo-apple.dark .bg-white[class*="rounded-xl"],
+  html.estilo-apple.dark .bg-white[class*="rounded-2xl"],
+  html.estilo-apple.dark .bg-white[class*="rounded-[1"] {
+    background-color: rgb(var(--surface) / 0.95);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html.dark .text-\[10px\] { font-size: 11px; }
+  html.dark .text-\[11px\] { font-size: 12px; }
+}

@@ -10,6 +10,8 @@ import { contarFeedbackNovos, podeGerirFeedback } from "@/lib/dados/feedback";
 import { BotaoFeedback } from "@/components/feedback/botao-feedback";
 import { SinoNotificacoes } from "@/components/notificacoes/sino";
 import { CLASSE_CONTADOR_CABECALHO, CLASSE_LINK_CABECALHO } from "@/components/layout/cabecalho-estilos";
+import { SincronizarPreferencias } from "@/components/layout/sincronizar-preferencias";
+import { lerPreferencias } from "@/lib/dados/preferencias";
 import type { UsuarioHub } from "@/types/database";
 
 /**
@@ -35,19 +37,23 @@ export async function CabecalhoHub({
   // link de Configurações (visível em toda tela) e o link leva direto à lista de pedidos.
   // Quem não é admin do Hub pode gerir feedback (admin/diretor do Compras), então a contagem de
   // feedback roda junto e é descartada para quem não gerencia.
-  const [pendentes, gerenciaFeedback, feedbackContado] = await Promise.all([
+  const [pendentes, gerenciaFeedback, feedbackContado, preferencias] = await Promise.all([
     usuario.admin_hub ? contarSolicitacoesPendentes() : Promise.resolve(0),
     podeGerirFeedback(),
     contarFeedbackNovos(),
+    lerPreferencias(),
   ]);
   return (
-    <CabecalhoVisual
-      usuario={usuario}
-      modulo={modulo}
-      pendentes={pendentes}
-      gerenciaFeedback={gerenciaFeedback}
-      feedbackNovos={gerenciaFeedback ? feedbackContado : 0}
-    />
+    <>
+      <SincronizarPreferencias salvas={preferencias} />
+      <CabecalhoVisual
+        usuario={usuario}
+        modulo={modulo}
+        pendentes={pendentes}
+        gerenciaFeedback={gerenciaFeedback}
+        feedbackNovos={gerenciaFeedback ? feedbackContado : 0}
+      />
+    </>
   );
 }
 
