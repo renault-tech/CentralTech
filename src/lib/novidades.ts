@@ -14,9 +14,9 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-05",
-    titulo: "Emendas: correção de empenho, liquidação e pagamento com botão Salvar",
+    titulo: "Emendas: correção de empenho, liquidação e pagamento mais clara",
     descricao:
-      "Na aba Financeiro, ao completar o número ou a data de um lançamento, agora há botões Salvar e Cancelar, o aviso de erro aparece na própria linha e o sistema confirma que a gravação aconteceu de fato. O mesmo cuidado vale para as demais edições do módulo.",
+      "Na aba Financeiro, ao completar o número ou a data de um lançamento, o botão de salvar (✓) ganhou destaque, o aviso de erro aparece na própria linha e o sistema confirma que a gravação aconteceu de fato. O mesmo cuidado vale para as demais edições do módulo.",
   },
   {
     data: "2026-11-06",

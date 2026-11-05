@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pencil, Plus } from "lucide-react";
+import { Check, Pencil, Plus, X } from "lucide-react";
 
 import { salvarBeneficiario, salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador } from "@/lib/emendas/actions-config";
 import type { Resultado } from "@/lib/emendas/actions";
@@ -144,7 +144,9 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
           <button
             type="button"
             disabled={salvando}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50"
+            aria-label="Salvar"
+            title="Salvar"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6B4FBB] text-white shadow-sm hover:bg-[#5B3FA8] disabled:opacity-50"
             onClick={() =>
               void salvar(
                 () =>
@@ -160,10 +162,10 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
               )
             }
           >
-            <Check className="h-4 w-4" aria-hidden /> {salvando ? "Salvando…" : "Salvar"}
+            <Check className="h-4 w-4" aria-hidden />
           </button>
-          <button type="button" className="inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-sm text-cataguases-marinho hover:bg-slate-50" onClick={aoFechar}>
-            Cancelar
+          <button type="button" aria-label="Cancelar" title="Cancelar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" onClick={aoFechar}>
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </td>

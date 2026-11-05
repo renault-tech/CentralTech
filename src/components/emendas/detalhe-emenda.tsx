@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2, X } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -300,7 +300,7 @@ export function DetalheEmendaCliente({
                       <th scope="col" className="px-3 py-2 font-medium">Documento</th>
                       <th scope="col" className="px-3 py-2 font-medium">Data</th>
                       <th scope="col" className="px-3 py-2 text-right font-medium">Valor</th>
-                      {gestor && <th scope="col" className="w-48 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
+                      {gestor && <th scope="col" className="w-24 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -893,12 +893,12 @@ function LinhaMovimento({
         <td className="px-3 py-2 align-top"><input type="date" className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} aria-label="Data" disabled={salvando} /></td>
         <td className="px-3 py-2 text-right align-top tabular-nums">{brl(movimento.valor)}</td>
         <td className="px-3 py-2 align-top">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" className={cn(BOTAO_PRIMARIO, "h-9 px-3")} onClick={salvar} disabled={salvando}>
-              <Check className="h-4 w-4" aria-hidden /> {salvando ? "Salvando…" : "Salvar"}
+          <div className="flex items-center justify-end gap-1.5">
+            <button type="button" aria-label="Salvar correção" title="Salvar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6B4FBB] text-white shadow-sm hover:bg-[#5B3FA8] disabled:opacity-50" onClick={salvar} disabled={salvando}>
+              <Check className={cn("h-4 w-4", salvando && "animate-pulse")} aria-hidden />
             </button>
-            <button type="button" className={cn(BOTAO_SECUNDARIO, "h-9 px-3")} onClick={() => setEditando(false)} disabled={salvando}>
-              Cancelar
+            <button type="button" aria-label="Cancelar" title="Cancelar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" onClick={() => setEditando(false)} disabled={salvando}>
+              <X className="h-4 w-4" aria-hidden />
             </button>
           </div>
           {erro && <p role="alert" className="mt-1.5 text-right text-xs text-red-700">{erro}</p>}
@@ -914,8 +914,8 @@ function LinhaMovimento({
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>
       {gestor && (
         <td className="px-3 py-2.5 text-right">
-          <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("inline-flex items-center gap-1 rounded p-1.5 text-xs hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
-            <Pencil className="h-4 w-4" aria-hidden /> {faltando ? "Completar" : "Corrigir"}
+          <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
+            <Pencil className="h-4 w-4" aria-hidden />
           </button>
         </td>
       )}
