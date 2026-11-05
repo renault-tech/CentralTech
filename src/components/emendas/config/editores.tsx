@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pencil, Plus, X } from "lucide-react";
+import { Check, Pencil, Plus } from "lucide-react";
 
 import { salvarBeneficiario, salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador } from "@/lib/emendas/actions-config";
 import type { Resultado } from "@/lib/emendas/actions";
@@ -143,9 +143,8 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
         <div className="flex gap-1">
           <button
             type="button"
-            aria-label="Salvar"
             disabled={salvando}
-            className="rounded p-1.5 text-green-700 hover:bg-green-50"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50"
             onClick={() =>
               void salvar(
                 () =>
@@ -161,10 +160,10 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
               )
             }
           >
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4" aria-hidden /> {salvando ? "Salvando…" : "Salvar"}
           </button>
-          <button type="button" aria-label="Cancelar" className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={aoFechar}>
-            <X className="h-4 w-4" />
+          <button type="button" className="inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-sm text-cataguases-marinho hover:bg-slate-50" onClick={aoFechar}>
+            Cancelar
           </button>
         </div>
       </td>

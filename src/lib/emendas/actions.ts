@@ -500,11 +500,19 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores corrigem movimentos já registrados." };
 
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas.from("movimentos_financeiros").update({ numero: a.data.numero, data: a.data.data }).eq("id", a.data.id);
+  // `.select("id")` para saber se alguma linha foi mesmo alterada: sem isso, uma atualização
+  // que a RLS filtra devolve "sucesso" sem gravar nada.
+  const { data: gravadas, error } = await emendas
+    .from("movimentos_financeiros")
+    .update({ numero: a.data.numero, data: a.data.data })
+    .eq("id", a.data.id)
+    .eq("emenda_id", a.data.emendaId)
+    .select("id");
   if (error) {
     console.error("[corrigirMovimento]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
+  if (!gravadas || gravadas.length === 0) return { sucesso: false, erro: "Nada foi gravado: o lançamento não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar(a.data.emendaId);
   return { sucesso: true };
 }
@@ -551,14 +559,16 @@ export async function resolverImpedimento(dados: z.input<typeof esquemaResolucao
 
   const emendas = await criarClienteEmendas();
   const hoje = new Date().toISOString().slice(0, 10);
-  const { error } = await emendas
+  const { data: linhas, error } = await emendas
     .from("impedimentos")
     .update({ resolvido_em: hoje, resolucao: a.data.resolucao })
-    .eq("id", a.data.id);
+    .eq("id", a.data.id)
+    .select("id");
   if (error) {
     console.error("[resolverImpedimento]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o impedimento não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar(a.data.emendaId);
   return { sucesso: true };
 }
@@ -700,7 +710,8 @@ export async function definirCancelamento(emendaId: string, cancelada: boolean):
   const ctx = await exigirAcesso();
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores cancelam emendas." };
   const emendas = await criarClienteEmendas();
-  const { error } = await emendas.from("emendas").update({ situacao: cancelada ? "cancelada" : "normal" }).eq("id", emendaId);
+  const { data: linhas, error } = await emendas.from("emendas").update({ situacao: cancelada ? "cancelada" : "normal" }).eq("id", emendaId).select("id");
+  if (!error && !linhas?.length) return { sucesso: false, erro: "Nada foi gravado: a emenda não foi encontrada ou você não tem permissão." };
   if (error) {
     console.error("[definirCancelamento]", error);
     return { sucesso: false, erro: traduzir(error) };
