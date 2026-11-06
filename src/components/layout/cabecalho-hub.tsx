@@ -31,7 +31,7 @@ export async function CabecalhoHub({
   usuario: UsuarioHub;
   /** Módulo interno (Emendas, Frotas): faixa do topo na cor dele e o nome do módulo ao lado de
    * "← Central" — mesmo padrão de header de todos os apps (faixa de 3px na cor do app). */
-  modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" };
+  modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" | "imoveis" };
 }) {
   // Pedido do usuário: "preciso ser avisado no hub que há pedido pendente". O selo fica no próprio
   // link de Configurações (visível em toda tela) e o link leva direto à lista de pedidos.
@@ -66,7 +66,7 @@ export function CabecalhoVisual({
   feedbackNovos,
 }: {
   usuario: Pick<UsuarioHub, "id" | "nome" | "admin_hub">;
-  modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" };
+  modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" | "imoveis" };
   pendentes: number;
   gerenciaFeedback: boolean;
   feedbackNovos: number;

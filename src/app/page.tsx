@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Hash, Landmark, Lock, ScrollText, ShoppingBag, Sparkles, Truck, UserPlus, type LucideIcon } from "lucide-react";
+import { Building2, Hash, Landmark, Lock, ScrollText, ShoppingBag, Sparkles, Truck, UserPlus, type LucideIcon } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
@@ -13,7 +13,7 @@ import { SeloModulo } from "@/components/notificacoes/sino";
 
 export const dynamic = "force-dynamic";
 
-const ICONES: Record<string, LucideIcon> = { compras: ShoppingBag, requerimentos: ScrollText, emendas: Landmark, numera: Hash, frotas: Truck };
+const ICONES: Record<string, LucideIcon> = { compras: ShoppingBag, requerimentos: ScrollText, emendas: Landmark, numera: Hash, frotas: Truck, imoveis: Building2 };
 
 /** Saudação pelo horário de Brasília (o servidor roda em UTC). */
 function saudacao(): string {

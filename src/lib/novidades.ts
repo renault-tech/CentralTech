@@ -13,6 +13,24 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-06",
+    titulo: "Endereço preenchido pelo CEP",
+    descricao:
+      "No cadastro de imóvel, digite o CEP e o endereço (rua, bairro, cidade e UF) é preenchido sozinho; depois é só informar o número e o complemento. O endereço continua editável à mão, e o CEP fica registrado no próprio texto do endereço.",
+  },
+  {
+    data: "2026-11-06",
+    titulo: "Novo módulo: Imóveis e Consumo",
+    descricao:
+      "Controle dos aluguéis, das contas de água e luz e da entrega dos imóveis de todas as secretarias, no mesmo lugar. O painel mostra o gasto mensal e o que precisa de atenção: contrato perto do fim, consumo ou valor fora do normal, conta sem lançamento ou em atraso, e imóvel entregue com água ou luz ainda ligada. As contas podem ser digitadas ou lidas de PDFs da concessionária; contrato, comprovante de troca de titularidade e laudo de vistoria também podem ser lidos de PDF para preencher o cadastro, sem guardar o arquivo. As planilhas de controle de água (COPASA) e luz (Energisa) também podem ser importadas: o sistema mostra o que vai entrar, você confere e importa. Imóveis agora têm vínculo (alugado, próprio ou cedido) e os alertas funcionam também só com o valor da conta. Os limites dos alertas são configuráveis. Cada secretaria vê só os próprios imóveis e pendências. Peça o acesso pelo card do módulo na tela inicial.",
+  },
+  {
+    data: "2026-11-06",
+    titulo: "Filtros mudam na hora, sem botão \"Filtrar\"",
+    descricao:
+      "Em Frotas (Notas de combustível, Veículos e Manutenção) e em Feedback, escolher uma opção na lista ou marcar uma caixa já atualiza a tela. Nos campos de busca, a lista atualiza assim que você para de digitar. O botão \"Limpar\" continua disponível. Em Emendas, a busca também passa a ficar no endereço da página, para compartilhar o resultado por link.",
+  },
+  {
     data: "2026-11-05",
     titulo: "Emendas: correção de empenho, liquidação e pagamento mais clara",
     descricao:

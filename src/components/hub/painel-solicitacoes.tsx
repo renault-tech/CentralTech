@@ -25,6 +25,7 @@ type Props = {
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
   secretariasEmendas: CatalogoItem[];
+  secretariasImoveis: CatalogoItem[];
 };
 
 export function PainelSolicitacoes({
@@ -34,11 +35,12 @@ export function PainelSolicitacoes({
   secretariasRequerimentos,
   documentosNumera,
   secretariasEmendas,
+  secretariasImoveis,
 }: Props) {
   const [expandidaId, setExpandidaId] = React.useState<string | null>(null);
   const [historicoAberto, setHistoricoAberto] = React.useState(false);
 
-  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas };
+  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas, secretariasImoveis };
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -184,6 +186,7 @@ function FormularioDecisao({
   secretariasRequerimentos,
   documentosNumera,
   secretariasEmendas,
+  secretariasImoveis,
   onDecidido,
 }: {
   solicitacao: SolicitacaoAcesso;
@@ -191,6 +194,7 @@ function FormularioDecisao({
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
   secretariasEmendas: CatalogoItem[];
+  secretariasImoveis: CatalogoItem[];
   onDecidido: () => void;
 }) {
   const modulos = solicitacao.modulos_solicitados;
@@ -270,6 +274,7 @@ function FormularioDecisao({
         secretariasRequerimentos={secretariasRequerimentos}
         documentosNumera={documentosNumera}
         secretariasEmendas={secretariasEmendas}
+        secretariasImoveis={secretariasImoveis}
         onMudar={(d, valido) => {
           setDecisoes(d);
           setDecisoesValidas(valido);

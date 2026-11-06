@@ -8,7 +8,7 @@ import { X } from "lucide-react";
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
-import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
+import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
@@ -64,6 +64,7 @@ export function TabelaEmendas({
   const pathname = usePathname();
   const params = useSearchParams();
   const [busca, setBusca] = React.useState(params.get("q") ?? "");
+  const pausaUrl = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [limite, setLimite] = React.useState(POR_PAGINA);
 
   const f = {
@@ -182,6 +183,10 @@ export function TabelaEmendas({
             onChange={(e) => {
               setBusca(e.target.value);
               setLimite(POR_PAGINA);
+              // grava na URL (para o link reproduzir a busca) depois de uma pausa; o filtro local é imediato
+              const texto = e.target.value.trim();
+              if (pausaUrl.current) clearTimeout(pausaUrl.current);
+              pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
             }}
             placeholder="Objeto, beneficiário, vereador, nº ou ficha"
             className={ESTILO_CAMPO}

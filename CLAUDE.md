@@ -1866,3 +1866,93 @@ Regra do dono: **o que existe num módulo deve existir nos outros**. Estado:
 - **Minha conta** (aparência + trocar senha): Hub, Compras e Requerimentos (`/conta`, nome no cabeçalho). Numera só tem Aparência (senha é pela Central).
 - **Configurações**: toda área usa o mesmo desenho — `CabecalhoPagina` + `AbasNavegacao` + **índice de cards** (`IndiceConfiguracoes`, `components/layout/indice-configuracoes.tsx`; Compras e Requerimentos têm cópia idêntica). Frotas e Emendas ganharam o índice (antes: Frotas era uma página com seções empilhadas; Emendas redirecionava direto para a primeira aba). **Tela nova de configuração = um card no índice + uma aba.**
 - Diferenças que ficam de propósito (específicas do app): detalhe do processo em folha/linha, zoom, notas, chat e aviso da plataforma (Compras); Ajuda (não existe no Requerimentos).
+
+## Filtros imediatos em todos os módulos (06/11/2026)
+
+Regra do dono: **nenhum filtro exige botão "Filtrar"/"Aplicar"/"Buscar"** — escolher na lista suspensa, marcar a caixa ou clicar na opção muda a tela na hora; campo de texto aplica depois de uma pausa na digitação (~350 ms; Enter aplica já).
+- **Lista filtrada no servidor** (Frotas: Notas, Veículos, Manutenção; Feedback): envolver os campos em `FormularioFiltros` (`src/components/modulo/formulario-filtros.tsx`). Campos não controlados com `name`, mesmos nomes de parâmetro de antes; troca a URL com `router.replace(..., {scroll:false})` numa transição (a lista anterior fica visível, a busca não perde o foco). `limpar={{href, className, visivel?}}` desenha o "Limpar". Campos `hidden` do formulário seguem na URL.
+- **Lista que chega inteira ao navegador** (Emendas): `atualizarFiltrosNaUrl` (agora em `src/lib/filtros-url.ts`, o antigo `lib/emendas/url-filtros.ts` só reexporta) + filtro em memória; gravação do texto da busca na URL com pausa de 250 ms.
+- Seletor de exercício/ano usa `router.replace` (não `push`) para não empilhar histórico.
+- **Tela nova com filtro = um desses dois caminhos; nunca um `<form method="get">` com botão.**
+- Testado: `montarUrlComParametros` (vitest), `tsc`/`eslint`. **Não testado no navegador** (as telas exigem sessão e Supabase, que o sandbox não alcança): conferir no deploy que trocar a lista atualiza sem clicar e que o foco da busca se mantém.
+
+## Módulo Imóveis e Consumo (6º módulo — roda DENTRO do Hub, 06/11/2026)
+
+Pedido do dono: controlar aluguéis, contas de água e luz e a entrega dos imóveis de todas as secretarias (mockup aprovado antes de
+construir; o artifact "Imóveis e Consumo" ficou como referência visual). Como Emendas e Frotas: rotas `/imoveis/*` neste repositório,
+mesma sessão, schema próprio `imoveis` no projeto compartilhado. Cor `#0E7490` (texto `#0B5566`, escuro `#5EC4D9`); `MODULOS.imoveis`
+tem `interno: true`.
+
+- **Passo manual do dono (obrigatório)**: Supabase → Settings → API → Exposed schemas → adicionar `imoveis`. Sem isso toda tela falha
+  (PGRST106) e o bloco "Imóveis" do formulário de acesso devolve erro.
+- **Acesso = admin do Hub OU (`imoveis.usuarios` + módulo `imoveis` em `hub.acessos_modulo`)**, sem `ativo` próprio nem cascata em
+  `hub.definir_acesso` (mesmo desenho do Frotas). Perfis: `gestor` (Setor de Imóveis, tudo), `consulta` (só lê) e `secretaria` (lê SÓ os
+  imóveis, unidades, contas, entregas e pendências da própria secretaria; `secretaria_id` obrigatório nesse perfil, CHECK no banco).
+  Para mudar o perfil de quem já tem o módulo: desmarcar e marcar de novo em Configurações → Usuários.
+- **Banco** (`20261107000000_imoveis_schema.sql`, aplicada por MCP em partes `imoveis_01…05`): `secretarias`, `usuarios`, `imobiliarias`,
+  `imoveis` (contrato + proprietário embutidos), `unidades` (matrícula da água / UC da luz), `contas` (uma por unidade e mês, `referencia`
+  sempre dia 1), `entregas` (1:1 com o imóvel; `id` = id do imóvel), `documentos` (**sem uso, de propósito**: decisão do dono — PDFs NÃO são guardados, ver "Leitura de documentos"),
+  `pendencias_justificadas`, `parametros` (1 linha, limites editáveis), `preferencias_exportacao` (sem uso ainda), `auditoria`.
+  Regras no BANCO: datas da entrega em ordem, **encerrar só com água e luz desligadas, chaves, vistoria e titularidade das duas**
+  (`encerra_so_com_tudo_resolvido`), conta única por unidade+mês, UC única. `imoveis.sincronizar_situacao` passa o imóvel a
+  `em_entrega`/`entregue` conforme a entrega. RLS: leitura por `pode_ver_secretaria`/`pode_ver_imovel`; escrita só `eh_gestor()`.
+  Funções com `revoke … from public, anon` aplicado (conferido com `has_function_privilege`). **Lição**: o MCP pede confirmação humana
+  (e expira em 230 s) em `drop trigger`/`drop policy` e em `delete` dentro de bloco de teste; em schema novo basta `create` (sem `drop`),
+  e `create or replace trigger` evita o `drop`. `revoke` e `alter … drop constraint` passaram direto desta vez.
+- **Testado em transação desfeita** (perfis simulados): gestor vê/edita; consulta só lê; **secretaria vê só a própria secretaria** (imóveis,
+  contas, unidades; entrega alheia = 0); sem acesso, conta desativada e `anon` não veem nada; `definir_acesso` barrado para secretaria;
+  encerrar sem desligamento, conta duplicada e referência fora do dia 1 barrados.
+- **Alertas** (`lib/imoveis/regras.ts`, puro e testado): `analisarConsumo` (média dos `meses_media` meses anteriores, mínimo 3; acima de
+  `pct_acima` = crítico, abaixo de `pct_abaixo` e valor por unidade fora de `pct_valor` = atenção), `situacaoVigencia`, `etapasDaEntrega`,
+  `calcularPendencias` (+ `semJustificadas`: justificativa vale só enquanto a *assinatura* do dado não muda). **Todos os limites vêm de
+  `imoveis.parametros`** (Configurações → Limites dos alertas) — nunca constante no código.
+- **Avisos no sino** (`20261107010000_imoveis_avisos_sino.sql`, aplicada; job `imoveis-avisar-pendencias` às 11h05 UTC = 8h05 em Brasília):
+  `imoveis.avisar_pendencias()` → `hub.notificar` para os gestores (contrato, ligação ativa após a entrega, chaves sem desligamento, conta
+  sem lançamento, atraso, consumo). Testado: 5 tipos, nenhuma repetição na segunda chamada. Para desligar:
+  `select cron.unschedule('imoveis-avisar-pendencias')`.
+- **PDF da concessionária** (`pdf-conta.ts` + `actions-contas-pdf.ts`, `/imoveis/importar`): `unpdf` lê o texto, acha a unidade pela
+  matrícula/UC, propõe mês/consumo/valor/vencimento; a pessoa confere e confirma; o PDF nunca é guardado; PDF digitalizado = digitar.
+  **Calibrado só com textos de exemplo**: ajustar `lerContaDoTexto` com as primeiras faturas reais do SAAE e da Energisa.
+- **Telas**: Painel, Imóveis (lista com filtros imediatos; detalhe com abas Contrato · Contas · Entrega · Histórico), Água e Luz
+  (consolidado + lançar), Entregas, Vencimentos, Pendências (justificar), Configurações (limites, secretarias, imobiliárias), Exportar
+  (`/imoveis/exportar?r=imoveis|contas|pendencias|secretarias&formato=xlsx|pdf|csv`, sob a RLS). Todos os filtros usam `FormularioFiltros`.
+- **Leitura de documentos sem guardar o PDF** (`pdf-documento.ts` + `actions-documento-pdf.ts` + `leitor-documento.tsx`, nas abas Contrato e
+  Entrega do imóvel; só gestor): decisão do dono, para não ocupar espaço no banco. O servidor lê o TEXTO (`unpdf`) de um **contrato**
+  (número, vigência — início+fim ou início+prazo em meses —, aluguel, dia de vencimento, índice, locador e CPF/CNPJ), de um **comprovante
+  de troca de titularidade** (água/luz, unidade e data → etapa de titularidade da entrega) ou de um **laudo de vistoria** (data, vistoriador,
+  resultado → etapa de vistoria), PROPÕE os campos, a pessoa confere e marca o que aplicar (`aplicarDocumento`, só grava os marcados; a
+  auditoria registra a mudança). O arquivo nunca é gravado (nem banco, nem bucket, nem disco) e o limite é 5 MB. Só propõe o que achou. O
+  caminho PDF → `unpdf` → leitor foi conferido com PDFs gerados de verdade; **os padrões foram escritos com textos de exemplo**: ajustar
+  `pdf-documento.ts` com os primeiros contratos/laudos reais. PDF digitalizado (imagem) volta "sem texto".
+- **Importação das planilhas de controle (Excel)** (`/imoveis/importar`; `lib/imoveis/importacao/{planilha-contas,plano-contas,xlsx-contas}.ts`,
+  `actions-importacao-contas.ts`, `importador-planilha-contas.tsx`; só gestor): as planilhas reais da Prefeitura (**Energisa Total 2026** e
+  **COPASA 2026**) têm uma aba por secretaria, vários blocos por aba ("Proj. Atividade" + cabeçalho `CDC|Matrícula · Setor · Endereço · Jan…Dez`) e,
+  na Energisa, um segundo código sem cabeçalho (guardado só na leitura). **Os números mensais são VALOR em R$ (não kWh/m³)** — conferido pelos
+  valores (tarifa mínima idêntica entre unidades, "valor juros"); a prévia avisa e a gravação usa `valor`, `consumo` fica nulo. Fluxo: escolhe o
+  arquivo, o tipo (água/luz) e o ano → prévia (nada gravado) → por aba, a secretaria (sugerida pelo nome; SEDEGI pede escolha ou criação) → por
+  linha, importar sim/não e a que imóvel ligar (sugestão por nome igual ou endereço específico; "Rua Principal S/N" não serve para casar) →
+  `importarPlanilhaContas` relê o arquivo no servidor e grava: secretarias novas, imóveis novos (vínculo escolhido, aluguel 0), unidades e contas
+  (`origem = 'planilha'`, `upsert … ignoreDuplicates`: **reimportar não duplica nem sobrescreve mês já lançado**, testado no banco). Parcelas de
+  dívida (`VALOR JUROS`/`AMORT.` da Fazenda/COPASA) são ignoradas. Conferido com os arquivos reais: luz 194 unidades, ~1.667 contas;
+  água 141 linhas (2 parcelas de dívida), ~953 contas. **Não é uma transação única**: se parar no meio, rodar de novo completa sem duplicar.
+  Conferência opcional com as planilhas reais: `PLANILHAS_REAIS=/pasta npx vitest run src/lib/imoveis/importacao/planilhas-reais.test.ts`.
+  **Bug pego por essa conferência**: `/cultura/` casava "AGRICULTURA" (a regra de agricultura vem antes e `^cultura` ancora).
+- **Vínculo do imóvel** (`imoveis.imoveis.vinculo`: `alugado` | `proprio` | `cedido`, migration `20261107020000`): as planilhas cobrem TODOS os
+  pontos de consumo, não só os alugados. Imóveis que já existiam ficaram `alugado`; os criados pela importação entram com o vínculo escolhido
+  (padrão próprio) e aluguel 0. Filtro "Vínculo" na lista.
+- **Alertas por VALOR** (quando a conta não tem consumo): `analisarConsumo` cai para o valor em reais (`Anomalia.base = "valor"`; pendência
+  `valor_conta_{luz|agua}`, título "Valor da conta … fora do padrão") e a variação "vs. média" da área consolidada também. No sino,
+  `imoveis.avisar_valores()` (migration `20261107030000`, job `imoveis-avisar-valores` às 8h10 de Brasília; testado: 1 aviso, 0 na segunda chamada).
+- **Endereço pelo CEP** (`lib/cep.ts` puro e testado, `lib/cep-actions.ts`, `components/modulo/campo-endereco.tsx`; usado no cadastro de imóvel,
+  reutilizável em qualquer módulo): digitou os 8 números, consulta sozinho (sem botão) a ViaCEP e, se falhar ou não achar, a BrasilAPI, e monta
+  "Rua, número, complemento - Bairro - Cidade/UF - CEP 00000-000"; número e complemento recompõem na hora; o campo "Endereço" segue editável à mão
+  (editou, para de recompor). **A consulta roda no servidor** (server action `consultarCep`: exige login ativo, limite de 60 por 5 min por IP em
+  `hub.limites_requisicao`), então não depende de CORS nem da CSP do navegador. Sem coluna nova: o CEP fica dentro do texto do endereço
+  (`cepDoEndereco` o recupera ao editar). Testado com `fetch` falso (fonte principal, reserva, não encontrado × indisponível, CEP inválido);
+  **não testado contra as APIs reais** (sandbox sem internet): no primeiro uso, digitar um CEP de Cataguases e conferir.
+- **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado, ligar/mesclar imóveis duplicados depois de importar
+  (a prévia sugere a ligação por nome/endereço; se o nome de água e luz diferir, nascem dois imóveis para o mesmo lugar), empenho e dotação
+  (as planilhas trazem FICHA/EMPENHO/VALOR EMPENHO por secretaria, ainda não lidos), vencimento e pagamento das contas importadas (as planilhas não trazem).
+- **Verificado**: `tsc`/`eslint`/`vitest`/`next build` limpos; componentes (gráficos, etapas, formulário de conta) conferidos em Chromium
+  (1280 e 390 px, claro e escuro) numa página de teste temporária, removida. **Não testado ao vivo contra o banco** (sandbox sem acesso a
+  `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas e o fluxo de acesso por perfil.

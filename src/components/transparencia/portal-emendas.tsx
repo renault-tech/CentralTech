@@ -72,7 +72,7 @@ export function PortalEmendas({ linhas, etapas, ano, anos }: { linhas: LinhaPort
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
             Exercício
-            <select className={CAMPO} value={ano} onChange={(e) => router.push(`/transparencia/emendas?ano=${e.target.value}`)}>
+            <select className={CAMPO} value={ano} onChange={(e) => router.replace(`/transparencia/emendas?ano=${e.target.value}`)}>
               {anos.map((a) => <option key={a}>{a}</option>)}
             </select>
           </label>

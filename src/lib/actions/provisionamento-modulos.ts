@@ -26,6 +26,7 @@ import { criarClienteRequerimentos } from "@/lib/supabase/requerimentos-cliente"
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteFrotas } from "@/lib/supabase/frotas-cliente";
+import { criarClienteImoveis } from "@/lib/supabase/imoveis-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
@@ -47,12 +48,16 @@ export type DecisaoEmendas = {
 /** Acesso ao Frotas: só o perfil (Setor de Frotas = gestor; os demais, consulta). */
 export type DecisaoFrotas = { perfil: "gestor" | "consulta" };
 
+/** Acesso ao Imóveis: perfil e, para a secretaria, qual (ela só vê os próprios imóveis). */
+export type DecisaoImoveis = { perfil: "gestor" | "consulta" | "secretaria"; secretariaId: string | null };
+
 export type DecisaoAprovacao = {
   compras?: DecisaoCompras;
   requerimentos?: DecisaoRequerimentos;
   numera?: DecisaoNumera;
   emendas?: DecisaoEmendas;
   frotas?: DecisaoFrotas;
+  imoveis?: DecisaoImoveis;
 };
 
 export type ResultadoModulo = { sucesso: boolean; mensagem?: string; linkPrimeiroAcesso?: string };
@@ -462,6 +467,28 @@ export async function aprovarFrotas(
       sucesso: false,
       mensagem: `${error.message} (o schema “frotas” está exposto na API do Supabase?)`,
     };
+  }
+  return { sucesso: true, linkPrimeiroAcesso };
+}
+
+/** Imóveis, como o Frotas: sem `ativo` próprio; o acesso é `imoveis.usuarios` + módulo marcado no Hub. */
+export async function aprovarImoveis(
+  authId: string,
+  decisao: DecisaoImoveis,
+  linkPrimeiroAcesso: string | undefined
+): Promise<ResultadoModulo> {
+  if (decisao.perfil === "secretaria" && !decisao.secretariaId) {
+    return { sucesso: false, mensagem: "Escolha a secretaria para o perfil de secretaria." };
+  }
+  const imoveis = await criarClienteImoveis();
+  const { error } = await imoveis.rpc("definir_acesso", {
+    p_usuario: authId,
+    p_perfil: decisao.perfil,
+    p_secretaria: decisao.perfil === "secretaria" ? decisao.secretariaId : null,
+  });
+  if (error) {
+    console.error("[aprovarImoveis] falha:", error);
+    return { sucesso: false, mensagem: `${error.message} (o schema “imoveis” está exposto na API do Supabase?)` };
   }
   return { sucesso: true, linkPrimeiroAcesso };
 }

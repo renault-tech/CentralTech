@@ -53,5 +53,12 @@ export const PERFIS_FROTAS = [
   { valor: "consulta", rotulo: "Consulta (só visualiza)" },
 ] as const;
 
+/** Perfis do módulo Imóveis (`imoveis.usuarios.perfil`). A secretaria enxerga só os próprios imóveis. */
+export const PERFIS_IMOVEIS = [
+  { valor: "gestor", rotulo: "Gestor (Setor de Imóveis: vê e edita tudo)" },
+  { valor: "consulta", rotulo: "Consulta (só visualiza tudo)" },
+  { valor: "secretaria", rotulo: "Secretaria (vê só os imóveis e pendências da própria secretaria)" },
+] as const;
+
 /** Perfis do Emendas que precisam de uma secretaria "própria". */
 export const PERFIS_EMENDAS_COM_SECRETARIA = ["admin_secretaria", "operador"];

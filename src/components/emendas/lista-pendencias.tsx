@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { AREAS_PENDENCIA, ASSUNTO_DA_REGRA, NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
-import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
+import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import type { TipoExecucao } from "@/types/emendas";
 
@@ -39,6 +39,7 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
   const pathname = usePathname();
   const [limite, setLimite] = React.useState(POR_PAGINA);
   const [busca, setBusca] = React.useState(params.get("q") ?? "");
+  const pausaUrl = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const f = { t: params.get("t") ?? "", g: params.get("g") ?? "", s: params.get("s") ?? "", r: params.get("r") ?? "", a: params.get("a") ?? "", j: params.get("j") ?? "" };
   const definir = (m: Record<string, string>) => {
     setLimite(POR_PAGINA);
@@ -129,7 +130,10 @@ export function ListaPendencias({ linhas, secretarias }: { linhas: LinhaPendenci
             onChange={(e) => {
               setBusca(e.target.value);
               setLimite(POR_PAGINA);
-              atualizarFiltrosNaUrl(params, { q: e.target.value.trim() }, pathname, () => {});
+              // o filtro local é imediato; só a gravação na URL espera uma pausa na digitação
+              const texto = e.target.value.trim();
+              if (pausaUrl.current) clearTimeout(pausaUrl.current);
+              pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
             }}
           />
         </label>

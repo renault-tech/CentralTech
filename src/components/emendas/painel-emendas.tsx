@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Cartao, Kpi } from "@/components/emendas/ui";
-import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
+import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import {
   etapasEmOrdem,
   GRUPOS_EXECUCAO,

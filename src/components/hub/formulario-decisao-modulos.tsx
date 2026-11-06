@@ -11,6 +11,7 @@ import {
   PERFIS_EMENDAS,
   PERFIS_EMENDAS_COM_SECRETARIA,
   PERFIS_FROTAS,
+  PERFIS_IMOVEIS,
   type CatalogoItem,
   type DocumentoNumera,
 } from "@/lib/catalogos-solicitacao";
@@ -34,6 +35,7 @@ export function FormularioDecisaoModulos({
   secretariasRequerimentos,
   documentosNumera,
   secretariasEmendas,
+  secretariasImoveis,
   onMudar,
 }: {
   /** Módulos para os quais mostrar o bloco de decisão (o pai decide quais —
@@ -46,6 +48,7 @@ export function FormularioDecisaoModulos({
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
   secretariasEmendas: CatalogoItem[];
+  secretariasImoveis: CatalogoItem[];
   onMudar: (decisoes: DecisaoAprovacao, valido: boolean) => void;
 }) {
   // Por padrão todos os módulos visíveis entram na decisão (comportamento
@@ -69,6 +72,8 @@ export function FormularioDecisaoModulos({
   const [verOutrasEmendas, setVerOutrasEmendas] = React.useState(true);
 
   const [perfilFrotas, setPerfilFrotas] = React.useState<string>("consulta");
+  const [perfilImoveis, setPerfilImoveis] = React.useState<string>("consulta");
+  const [secretariaImoveis, setSecretariaImoveis] = React.useState<string>("");
 
   function alternarIncluido(m: Modulo, marcado: boolean) {
     setIncluidos((prev) => {
@@ -84,6 +89,7 @@ export function FormularioDecisaoModulos({
   const mostraNumera = modulosVisiveis.includes("numera");
   const mostraEmendas = modulosVisiveis.includes("emendas");
   const mostraFrotas = modulosVisiveis.includes("frotas");
+  const mostraImoveis = modulosVisiveis.includes("imoveis");
   const incluiVarios = modulosVisiveis.length > 1;
 
   const incluiCompras = mostraCompras && incluidos.has("compras");
@@ -91,6 +97,7 @@ export function FormularioDecisaoModulos({
   const incluiNumera = mostraNumera && incluidos.has("numera");
   const incluiEmendas = mostraEmendas && incluidos.has("emendas");
   const incluiFrotas = mostraFrotas && incluidos.has("frotas");
+  const incluiImoveis = mostraImoveis && incluidos.has("imoveis");
 
   const decisoes: DecisaoAprovacao = {};
   if (incluiCompras) {
@@ -115,6 +122,12 @@ export function FormularioDecisaoModulos({
       verOutras: perfilEmendas === "gestor" ? true : verOutrasEmendas,
     };
   }
+  if (incluiImoveis) {
+    decisoes.imoveis = {
+      perfil: perfilImoveis as NonNullable<DecisaoAprovacao["imoveis"]>["perfil"],
+      secretariaId: perfilImoveis === "secretaria" ? secretariaImoveis || null : null,
+    };
+  }
   if (incluiFrotas) {
     decisoes.frotas = { perfil: perfilFrotas as NonNullable<DecisaoAprovacao["frotas"]>["perfil"] };
   }
@@ -135,8 +148,9 @@ export function FormularioDecisaoModulos({
     incluiEmendas &&
     ((PERFIS_EMENDAS_COM_SECRETARIA.includes(perfilEmendas) && !secretariaEmendas) ||
       (perfilEmendas === "consulta" && !secretariaEmendas && !verOutrasEmendas));
-  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera && !incluiEmendas && !incluiFrotas;
-  const valido = !faltaSetorCompras && !faltaSecretariaRequerimentos && !faltaSecretariaEmendas && !nenhumIncluido;
+  const nenhumIncluido = !incluiCompras && !incluiRequerimentos && !incluiNumera && !incluiEmendas && !incluiFrotas && !incluiImoveis;
+  const faltaSecretariaImoveis = incluiImoveis && perfilImoveis === "secretaria" && !secretariaImoveis;
+  const valido = !faltaSetorCompras && !faltaSecretariaRequerimentos && !faltaSecretariaEmendas && !faltaSecretariaImoveis && !nenhumIncluido;
 
   // Reporta pro pai a cada mudança relevante — evita o pai duplicar esta
   // mesma lógica de montagem/validação de `decisoes`.
@@ -150,6 +164,9 @@ export function FormularioDecisaoModulos({
     incluiEmendas,
     incluiFrotas,
     perfilFrotas,
+    incluiImoveis,
+    perfilImoveis,
+    secretariaImoveis,
     perfilEmendas,
     secretariaEmendas,
     verOutrasEmendas,
@@ -161,7 +178,7 @@ export function FormularioDecisaoModulos({
     docsNumera,
   ]);
 
-  if (!mostraCompras && !mostraRequerimentos && !mostraNumera && !mostraEmendas && !mostraFrotas) return null;
+  if (!mostraCompras && !mostraRequerimentos && !mostraNumera && !mostraEmendas && !mostraFrotas && !mostraImoveis) return null;
 
   return (
     <div className="space-y-3">
@@ -426,6 +443,43 @@ export function FormularioDecisaoModulos({
               </div>
               <p className="mt-1.5 text-xs text-slate-500">
                 Se o schema “frotas” não estiver exposto na API do Supabase, o acesso não é gravado.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+      {mostraImoveis && (
+        <div className="rounded-md border border-slate-200 p-3">
+          {incluiVarios && (
+            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700">
+              <input type="checkbox" checked={incluiImoveis} onChange={(e) => alternarIncluido("imoveis", e.target.checked)} />
+              Incluir Imóveis nesta decisão
+            </label>
+          )}
+          {incluiImoveis && (
+            <>
+              <p className="text-xs font-semibold text-slate-600">Imóveis — perfil</p>
+              <div className="mt-2 space-y-2">
+                <select className={ESTILO_CAMPO} value={perfilImoveis} onChange={(e) => setPerfilImoveis(e.target.value)}>
+                  {PERFIS_IMOVEIS.map((p) => (
+                    <option key={p.valor} value={p.valor}>
+                      {p.rotulo}
+                    </option>
+                  ))}
+                </select>
+                {perfilImoveis === "secretaria" && (
+                  <select className={ESTILO_CAMPO} value={secretariaImoveis} onChange={(e) => setSecretariaImoveis(e.target.value)} aria-label="Secretaria">
+                    <option value="">Escolha a secretaria…</option>
+                    {secretariasImoveis.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Se o schema “imoveis” não estiver exposto na API do Supabase, o acesso não é gravado.
               </p>
             </>
           )}

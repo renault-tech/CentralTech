@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
+
 import { EtapasDocumentacao, FormularioOrcamento, PainelDecisao, type OpcaoVeiculo } from "@/components/frotas/formularios-manutencao";
 import { Barra, Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo, SeloDias, TituloPagina, Vazio } from "@/components/frotas/ui";
 import { analisarOrcamento } from "@/lib/frotas/analise";
@@ -132,7 +134,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
               </Link>
             ))}
           </div>
-          <form method="get" className="flex gap-2 border-b border-slate-100 p-3">
+          <FormularioFiltros className="flex gap-2 border-b border-slate-100 p-3">
             {filtro.situacao && <input type="hidden" name="sit" value={filtro.situacao} />}
             <label htmlFor="m-busca" className="sr-only">
               Buscar OC, NF, placa ou serviço
@@ -144,10 +146,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
               placeholder="OC, NF, placa ou serviço"
               className="min-w-0 flex-1 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-cataguases-azul focus:ring-1 focus:ring-cataguases-azul"
             />
-            <button type="submit" className="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-cataguases-marinho hover:bg-slate-50">
-              Buscar
-            </button>
-          </form>
+          </FormularioFiltros>
           {lista.length === 0 ? (
             <Vazio>Nenhuma manutenção encontrada.</Vazio>
           ) : (
