@@ -347,3 +347,13 @@ export function totaisMensais(imoveis: Imovel[], unidades: Unidade[], contas: Co
     return { referencia: r, aluguel, agua: soma("agua"), luz: soma("luz") };
   });
 }
+
+// ------------------------------------------------------------------ privacidade
+
+/** CPF/CNPJ mascarado para a tela (o dado completo só fica no cadastro, para quem edita). */
+export function mascararDocumento(doc: string | null | undefined): string {
+  const d = (doc ?? "").replace(/\D/g, "");
+  if (d.length === 11) return `***.${d.slice(3, 6)}.***-${d.slice(9)}`;
+  if (d.length === 14) return `**.***.${d.slice(5, 8)}/${d.slice(8, 12)}-**`;
+  return d ? "***" : "—";
+}

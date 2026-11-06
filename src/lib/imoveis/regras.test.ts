@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   analisarConsumo,
+  mascararDocumento,
   calcularPendencias,
   etapasDaEntrega,
   PARAMETROS_PADRAO,
@@ -161,5 +162,14 @@ describe("calcularPendencias", () => {
     const alvo = p.find((x) => x.chave === "consumo_luz")!;
     expect(semJustificadas(p, [{ imovel_id: "i1", chave: alvo.chave, assinatura: alvo.assinatura }]).some((x) => x.chave === "consumo_luz")).toBe(false);
     expect(semJustificadas(p, [{ imovel_id: "i1", chave: alvo.chave, assinatura: "antiga" }]).some((x) => x.chave === "consumo_luz")).toBe(true);
+  });
+});
+
+describe("mascararDocumento", () => {
+  it("mascara CPF e CNPJ", () => {
+    expect(mascararDocumento("123.456.789-09")).toBe("***.456.***-09");
+    expect(mascararDocumento("12.345.678/0001-95")).toBe("**.***.678/0001-**");
+    expect(mascararDocumento("")).toBe("—");
+    expect(mascararDocumento("123")).toBe("***");
   });
 });
