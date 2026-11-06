@@ -1891,7 +1891,7 @@ tem `interno: true`.
   Para mudar o perfil de quem já tem o módulo: desmarcar e marcar de novo em Configurações → Usuários.
 - **Banco** (`20261107000000_imoveis_schema.sql`, aplicada por MCP em partes `imoveis_01…05`): `secretarias`, `usuarios`, `imobiliarias`,
   `imoveis` (contrato + proprietário embutidos), `unidades` (matrícula da água / UC da luz), `contas` (uma por unidade e mês, `referencia`
-  sempre dia 1), `entregas` (1:1 com o imóvel; `id` = id do imóvel), `documentos` (tabela pronta, **upload ainda não construído**),
+  sempre dia 1), `entregas` (1:1 com o imóvel; `id` = id do imóvel), `documentos` (**sem uso, de propósito**: decisão do dono — PDFs NÃO são guardados, ver "Leitura de documentos"),
   `pendencias_justificadas`, `parametros` (1 linha, limites editáveis), `preferencias_exportacao` (sem uso ainda), `auditoria`.
   Regras no BANCO: datas da entrega em ordem, **encerrar só com água e luz desligadas, chaves, vistoria e titularidade das duas**
   (`encerra_so_com_tudo_resolvido`), conta única por unidade+mês, UC única. `imoveis.sincronizar_situacao` passa o imóvel a
@@ -1916,8 +1916,15 @@ tem `interno: true`.
 - **Telas**: Painel, Imóveis (lista com filtros imediatos; detalhe com abas Contrato · Contas · Entrega · Histórico), Água e Luz
   (consolidado + lançar), Entregas, Vencimentos, Pendências (justificar), Configurações (limites, secretarias, imobiliárias), Exportar
   (`/imoveis/exportar?r=imoveis|contas|pendencias|secretarias&formato=xlsx|pdf|csv`, sob a RLS). Todos os filtros usam `FormularioFiltros`.
-- **Ainda não feito**: anexos (contrato, laudo, comprovante de troca de titularidade — a tabela `documentos` existe, falta o bucket
-  privado `imoveis-documentos` e a tela de envio), escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado.
+- **Leitura de documentos sem guardar o PDF** (`pdf-documento.ts` + `actions-documento-pdf.ts` + `leitor-documento.tsx`, nas abas Contrato e
+  Entrega do imóvel; só gestor): decisão do dono, para não ocupar espaço no banco. O servidor lê o TEXTO (`unpdf`) de um **contrato**
+  (número, vigência — início+fim ou início+prazo em meses —, aluguel, dia de vencimento, índice, locador e CPF/CNPJ), de um **comprovante
+  de troca de titularidade** (água/luz, unidade e data → etapa de titularidade da entrega) ou de um **laudo de vistoria** (data, vistoriador,
+  resultado → etapa de vistoria), PROPÕE os campos, a pessoa confere e marca o que aplicar (`aplicarDocumento`, só grava os marcados; a
+  auditoria registra a mudança). O arquivo nunca é gravado (nem banco, nem bucket, nem disco) e o limite é 5 MB. Só propõe o que achou. O
+  caminho PDF → `unpdf` → leitor foi conferido com PDFs gerados de verdade; **os padrões foram escritos com textos de exemplo**: ajustar
+  `pdf-documento.ts` com os primeiros contratos/laudos reais. PDF digitalizado (imagem) volta "sem texto".
+- **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado.
 - **Verificado**: `tsc`/`eslint`/`vitest`/`next build` limpos; componentes (gráficos, etapas, formulário de conta) conferidos em Chromium
   (1280 e 390 px, claro e escuro) numa página de teste temporária, removida. **Não testado ao vivo contra o banco** (sandbox sem acesso a
   `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas e o fluxo de acesso por perfil.

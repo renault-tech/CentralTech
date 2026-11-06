@@ -16,7 +16,7 @@ export const NOVIDADES: Novidade[] = [
     data: "2026-11-06",
     titulo: "Novo módulo: Imóveis e Consumo",
     descricao:
-      "Controle dos aluguéis, das contas de água e luz e da entrega dos imóveis de todas as secretarias, no mesmo lugar. O painel mostra o gasto mensal e o que precisa de atenção: contrato perto do fim, consumo ou valor fora do normal, conta sem lançamento ou em atraso, e imóvel entregue com água ou luz ainda ligada. As contas podem ser digitadas ou lidas de PDFs da concessionária, e os limites dos alertas são configuráveis. Cada secretaria vê só os próprios imóveis e pendências. Peça o acesso pelo card do módulo na tela inicial.",
+      "Controle dos aluguéis, das contas de água e luz e da entrega dos imóveis de todas as secretarias, no mesmo lugar. O painel mostra o gasto mensal e o que precisa de atenção: contrato perto do fim, consumo ou valor fora do normal, conta sem lançamento ou em atraso, e imóvel entregue com água ou luz ainda ligada. As contas podem ser digitadas ou lidas de PDFs da concessionária; contrato, comprovante de troca de titularidade e laudo de vistoria também podem ser lidos de PDF para preencher o cadastro, sem guardar o arquivo. Os limites dos alertas são configuráveis. Cada secretaria vê só os próprios imóveis e pendências. Peça o acesso pelo card do módulo na tela inicial.",
   },
   {
     data: "2026-11-06",

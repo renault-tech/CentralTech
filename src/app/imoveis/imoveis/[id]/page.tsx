@@ -6,6 +6,7 @@ import { FormularioConta, type OpcaoUnidade } from "@/components/imoveis/formula
 import { FormularioEntrega } from "@/components/imoveis/formulario-entrega";
 import { FormularioImovel } from "@/components/imoveis/formulario-imovel";
 import { FormularioUnidade } from "@/components/imoveis/formulario-unidade";
+import { LeitorDocumento } from "@/components/imoveis/leitor-documento";
 import { GraficoColunas } from "@/components/imoveis/graficos";
 import { Cartao, SeloGravidade, SeloSituacaoImovel, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { carregarTudo } from "@/lib/imoveis/carregar";
@@ -131,6 +132,12 @@ export default async function DetalheImovel({ params, searchParams }: { params: 
           </div>
         ))}
 
+      {aba === "contrato" && gestor && sp.editar !== "1" && (
+        <Cartao className="mt-4" titulo="Ler contrato em PDF" apoio="Preenche o cadastro a partir do documento, sem guardar o arquivo">
+          <LeitorDocumento imovelId={id} tipoInicial="contrato" />
+        </Cartao>
+      )}
+
       {aba === "contas" && (
         <div className="flex flex-col gap-4">
           {unidades.length === 0 && <Cartao><Vazio>Nenhuma matrícula de água ou UC de energia cadastrada neste imóvel.</Vazio></Cartao>}
@@ -186,6 +193,12 @@ export default async function DetalheImovel({ params, searchParams }: { params: 
             </Cartao>
           )}
         </div>
+      )}
+
+      {aba === "entrega" && gestor && (
+        <Cartao className="mt-4" titulo="Ler documento em PDF" apoio="Comprovante de titularidade ou laudo de vistoria, sem guardar o arquivo">
+          <LeitorDocumento imovelId={id} tipoInicial="titularidade" />
+        </Cartao>
       )}
 
       {aba === "historico" && (

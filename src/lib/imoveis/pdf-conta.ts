@@ -44,7 +44,7 @@ export function detectarTipo(texto: string): TipoUnidade | null {
 }
 
 /** Acha a unidade cujo número (matrícula ou UC) aparece no texto, sem depender de pontuação nem de zeros à esquerda. */
-function acharUnidade(texto: string, tipo: TipoUnidade | null, unidades: Pick<Unidade, "id" | "tipo" | "numero">[]): { id: string | null; ambiguo: boolean } {
+export function acharUnidade(texto: string, tipo: TipoUnidade | null, unidades: Pick<Unidade, "id" | "tipo" | "numero">[]): { id: string | null; ambiguo: boolean } {
   const tokens = (texto.match(/\d[\d.\-/ ]{3,}\d/g) ?? []).map(soDigitos).filter((t) => t.length >= 4);
   const casam = unidades.filter((u) => {
     if (tipo && u.tipo !== tipo) return false;
