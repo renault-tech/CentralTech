@@ -44,7 +44,10 @@ export function FormularioConta({
     if (!unidade || c === null || Number.isNaN(c)) return null;
     const ref = `${mes}-01`;
     const base = unidade.historico.filter((p) => p.referencia !== ref);
-    return analisarConsumo([...base, { referencia: ref, consumo: c, valor: v !== null && !Number.isNaN(v) ? v : 0 }], par, UNIDADE_DE_MEDIDA[unidade.tipo]);
+    const valorInformado = v !== null && !Number.isNaN(v) && v > 0;
+    const todas = analisarConsumo([...base, { referencia: ref, consumo: c, valor: valorInformado ? v : 0 }], par, UNIDADE_DE_MEDIDA[unidade.tipo]);
+    // Sem o valor digitado ainda, não há como comparar o valor por unidade: só o consumo.
+    return valorInformado ? todas : todas.filter((x) => x.tipo !== "valor_unitario");
   }, [unidade, c, v, mes, par]);
 
   function salvar(e: React.FormEvent) {
@@ -80,8 +83,8 @@ export function FormularioConta({
   const campo = ESTILO_CAMPO_PADRAO;
   return (
     <form onSubmit={salvar} className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Campo rotulo="Unidade (matrícula ou UC)" htmlFor="c-un" className="lg:col-span-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <Campo rotulo="Unidade (matrícula ou UC)" htmlFor="c-un" className="col-span-full sm:col-span-2">
           <select id="c-un" required className={campo} value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)} disabled={!!conta}>
             {unidades.map((u) => <option key={u.id} value={u.id}>{u.rotulo}</option>)}
           </select>

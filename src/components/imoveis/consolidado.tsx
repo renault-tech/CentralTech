@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { FormularioConta, type OpcaoUnidade } from "@/components/imoveis/formulario-conta";
 import { GraficoLinhas } from "@/components/imoveis/graficos";
+import { MenuExportarImoveis } from "@/components/imoveis/menu-exportar-imoveis";
 import { Cartao, SeloGravidade, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { CLASSE_BOTAO_SECUNDARIO } from "@/components/modulo/ui";
@@ -59,7 +60,16 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
 
   return (
     <>
-      <TituloPagina titulo={`${nome}: consolidado`} subtitulo={`Todas as contas de ${nome.toLowerCase()} da Prefeitura. Cada conta também aparece dentro do imóvel a que pertence.`} />
+      <TituloPagina
+        titulo={`${nome}: consolidado`}
+        subtitulo={`Todas as contas de ${nome.toLowerCase()} da Prefeitura. Cada conta também aparece dentro do imóvel a que pertence.`}
+        acao={
+          <>
+            <MenuExportarImoveis relatorios={[{ r: "contas", rotulo: "Contas de água e luz" }]} />
+            {gestor && <Link href="/imoveis/importar" className={CLASSE_BOTAO_SECUNDARIO}>Importar PDF</Link>}
+          </>
+        }
+      />
 
       {gestor && opcoes.length > 0 && (
         <details className="mb-4 rounded-xl border border-slate-200 bg-white">

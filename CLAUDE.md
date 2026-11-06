@@ -1875,3 +1875,49 @@ Regra do dono: **nenhum filtro exige botão "Filtrar"/"Aplicar"/"Buscar"** — e
 - Seletor de exercício/ano usa `router.replace` (não `push`) para não empilhar histórico.
 - **Tela nova com filtro = um desses dois caminhos; nunca um `<form method="get">` com botão.**
 - Testado: `montarUrlComParametros` (vitest), `tsc`/`eslint`. **Não testado no navegador** (as telas exigem sessão e Supabase, que o sandbox não alcança): conferir no deploy que trocar a lista atualiza sem clicar e que o foco da busca se mantém.
+
+## Módulo Imóveis e Consumo (6º módulo — roda DENTRO do Hub, 06/11/2026)
+
+Pedido do dono: controlar aluguéis, contas de água e luz e a entrega dos imóveis de todas as secretarias (mockup aprovado antes de
+construir; o artifact "Imóveis e Consumo" ficou como referência visual). Como Emendas e Frotas: rotas `/imoveis/*` neste repositório,
+mesma sessão, schema próprio `imoveis` no projeto compartilhado. Cor `#0E7490` (texto `#0B5566`, escuro `#5EC4D9`); `MODULOS.imoveis`
+tem `interno: true`.
+
+- **Passo manual do dono (obrigatório)**: Supabase → Settings → API → Exposed schemas → adicionar `imoveis`. Sem isso toda tela falha
+  (PGRST106) e o bloco "Imóveis" do formulário de acesso devolve erro.
+- **Acesso = admin do Hub OU (`imoveis.usuarios` + módulo `imoveis` em `hub.acessos_modulo`)**, sem `ativo` próprio nem cascata em
+  `hub.definir_acesso` (mesmo desenho do Frotas). Perfis: `gestor` (Setor de Imóveis, tudo), `consulta` (só lê) e `secretaria` (lê SÓ os
+  imóveis, unidades, contas, entregas e pendências da própria secretaria; `secretaria_id` obrigatório nesse perfil, CHECK no banco).
+  Para mudar o perfil de quem já tem o módulo: desmarcar e marcar de novo em Configurações → Usuários.
+- **Banco** (`20261107000000_imoveis_schema.sql`, aplicada por MCP em partes `imoveis_01…05`): `secretarias`, `usuarios`, `imobiliarias`,
+  `imoveis` (contrato + proprietário embutidos), `unidades` (matrícula da água / UC da luz), `contas` (uma por unidade e mês, `referencia`
+  sempre dia 1), `entregas` (1:1 com o imóvel; `id` = id do imóvel), `documentos` (tabela pronta, **upload ainda não construído**),
+  `pendencias_justificadas`, `parametros` (1 linha, limites editáveis), `preferencias_exportacao` (sem uso ainda), `auditoria`.
+  Regras no BANCO: datas da entrega em ordem, **encerrar só com água e luz desligadas, chaves, vistoria e titularidade das duas**
+  (`encerra_so_com_tudo_resolvido`), conta única por unidade+mês, UC única. `imoveis.sincronizar_situacao` passa o imóvel a
+  `em_entrega`/`entregue` conforme a entrega. RLS: leitura por `pode_ver_secretaria`/`pode_ver_imovel`; escrita só `eh_gestor()`.
+  Funções com `revoke … from public, anon` aplicado (conferido com `has_function_privilege`). **Lição**: o MCP pede confirmação humana
+  (e expira em 230 s) em `drop trigger`/`drop policy` e em `delete` dentro de bloco de teste; em schema novo basta `create` (sem `drop`),
+  e `create or replace trigger` evita o `drop`. `revoke` e `alter … drop constraint` passaram direto desta vez.
+- **Testado em transação desfeita** (perfis simulados): gestor vê/edita; consulta só lê; **secretaria vê só a própria secretaria** (imóveis,
+  contas, unidades; entrega alheia = 0); sem acesso, conta desativada e `anon` não veem nada; `definir_acesso` barrado para secretaria;
+  encerrar sem desligamento, conta duplicada e referência fora do dia 1 barrados.
+- **Alertas** (`lib/imoveis/regras.ts`, puro e testado): `analisarConsumo` (média dos `meses_media` meses anteriores, mínimo 3; acima de
+  `pct_acima` = crítico, abaixo de `pct_abaixo` e valor por unidade fora de `pct_valor` = atenção), `situacaoVigencia`, `etapasDaEntrega`,
+  `calcularPendencias` (+ `semJustificadas`: justificativa vale só enquanto a *assinatura* do dado não muda). **Todos os limites vêm de
+  `imoveis.parametros`** (Configurações → Limites dos alertas) — nunca constante no código.
+- **Avisos no sino** (`20261107010000_imoveis_avisos_sino.sql`, aplicada; job `imoveis-avisar-pendencias` às 11h05 UTC = 8h05 em Brasília):
+  `imoveis.avisar_pendencias()` → `hub.notificar` para os gestores (contrato, ligação ativa após a entrega, chaves sem desligamento, conta
+  sem lançamento, atraso, consumo). Testado: 5 tipos, nenhuma repetição na segunda chamada. Para desligar:
+  `select cron.unschedule('imoveis-avisar-pendencias')`.
+- **PDF da concessionária** (`pdf-conta.ts` + `actions-contas-pdf.ts`, `/imoveis/importar`): `unpdf` lê o texto, acha a unidade pela
+  matrícula/UC, propõe mês/consumo/valor/vencimento; a pessoa confere e confirma; o PDF nunca é guardado; PDF digitalizado = digitar.
+  **Calibrado só com textos de exemplo**: ajustar `lerContaDoTexto` com as primeiras faturas reais do SAAE e da Energisa.
+- **Telas**: Painel, Imóveis (lista com filtros imediatos; detalhe com abas Contrato · Contas · Entrega · Histórico), Água e Luz
+  (consolidado + lançar), Entregas, Vencimentos, Pendências (justificar), Configurações (limites, secretarias, imobiliárias), Exportar
+  (`/imoveis/exportar?r=imoveis|contas|pendencias|secretarias&formato=xlsx|pdf|csv`, sob a RLS). Todos os filtros usam `FormularioFiltros`.
+- **Ainda não feito**: anexos (contrato, laudo, comprovante de troca de titularidade — a tabela `documentos` existe, falta o bucket
+  privado `imoveis-documentos` e a tela de envio), escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado.
+- **Verificado**: `tsc`/`eslint`/`vitest`/`next build` limpos; componentes (gráficos, etapas, formulário de conta) conferidos em Chromium
+  (1280 e 390 px, claro e escuro) numa página de teste temporária, removida. **Não testado ao vivo contra o banco** (sandbox sem acesso a
+  `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas e o fluxo de acesso por perfil.

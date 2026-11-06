@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MenuExportarImoveis } from "@/components/imoveis/menu-exportar-imoveis";
 import { SeloGravidade, SeloSituacaoImovel, Cartao, CLASSE_BOTAO, SeloDias, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { CLASSE_BOTAO_SECUNDARIO } from "@/components/modulo/ui";
@@ -34,7 +35,12 @@ export default async function ListaImoveis({ searchParams }: { searchParams: Pro
       <TituloPagina
         titulo="Imóveis"
         subtitulo="Todos os imóveis alugados pela Prefeitura, com contrato, proprietário, contas de água e luz e situação."
-        acao={gestor ? <Link href="/imoveis/imoveis/novo" className={CLASSE_BOTAO}>Novo imóvel</Link> : undefined}
+        acao={
+          <>
+            <MenuExportarImoveis relatorios={[{ r: "imoveis", rotulo: "Imóveis" }, { r: "secretarias", rotulo: "Gasto por secretaria" }]} />
+            {gestor && <Link href="/imoveis/imoveis/novo" className={CLASSE_BOTAO}>Novo imóvel</Link>}
+          </>
+        }
       />
       <Cartao semPadding>
         <FormularioFiltros

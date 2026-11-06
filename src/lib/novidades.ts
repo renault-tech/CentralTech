@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-06",
+    titulo: "Novo módulo: Imóveis e Consumo",
+    descricao:
+      "Controle dos aluguéis, das contas de água e luz e da entrega dos imóveis de todas as secretarias, no mesmo lugar. O painel mostra o gasto mensal e o que precisa de atenção: contrato perto do fim, consumo ou valor fora do normal, conta sem lançamento ou em atraso, e imóvel entregue com água ou luz ainda ligada. As contas podem ser digitadas ou lidas de PDFs da concessionária, e os limites dos alertas são configuráveis. Cada secretaria vê só os próprios imóveis e pendências. Peça o acesso pelo card do módulo na tela inicial.",
+  },
+  {
+    data: "2026-11-06",
     titulo: "Filtros mudam na hora, sem botão \"Filtrar\"",
     descricao:
       "Em Frotas (Notas de combustível, Veículos e Manutenção) e em Feedback, escolher uma opção na lista ou marcar uma caixa já atualiza a tela. Nos campos de busca, a lista atualiza assim que você para de digitar. O botão \"Limpar\" continua disponível. Em Emendas, a busca também passa a ficar no endereço da página, para compartilhar o resultado por link.",
