@@ -8,6 +8,7 @@ export type PerfilImoveis = "gestor" | "consulta" | "secretaria";
 export type PerfilEfetivoImoveis = PerfilImoveis | "admin";
 
 export type SituacaoImovel = "ativo" | "em_entrega" | "entregue";
+export type VinculoImovel = "alugado" | "proprio" | "cedido";
 export type TipoUnidade = "agua" | "luz";
 export type IndiceReajuste = "IPCA" | "IGP-M" | "INPC" | "outro";
 export type TipoDocumento = "contrato" | "vistoria" | "laudo" | "titularidade_agua" | "titularidade_luz" | "comprovante" | "outro";
@@ -40,6 +41,7 @@ export type Imovel = {
   setor: string | null;
   finalidade: string | null;
   situacao: SituacaoImovel;
+  vinculo: VinculoImovel;
   contrato_numero: string | null;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
@@ -77,7 +79,7 @@ export type Conta = {
   vencimento: string | null;
   pago_em: string | null;
   observacao: string | null;
-  origem: "digitada" | "pdf";
+  origem: "digitada" | "pdf" | "planilha";
   criado_em: string;
   atualizado_em: string;
 };

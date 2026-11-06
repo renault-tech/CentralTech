@@ -8,7 +8,7 @@ import { FormularioImovel } from "@/components/imoveis/formulario-imovel";
 import { FormularioUnidade } from "@/components/imoveis/formulario-unidade";
 import { LeitorDocumento } from "@/components/imoveis/leitor-documento";
 import { GraficoColunas } from "@/components/imoveis/graficos";
-import { Cartao, SeloGravidade, SeloSituacaoImovel, TituloPagina, Vazio } from "@/components/imoveis/ui";
+import { Cartao, ROTULO_VINCULO, SeloGravidade, SeloSituacaoImovel, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { carregarTudo } from "@/lib/imoveis/carregar";
 import { listarAuditoria, obterContextoImoveis } from "@/lib/imoveis/dados";
 import { analisarConsumo, brl, formatarData, mascararDocumento, referenciaDe, rotuloMes, ROTULO_TIPO, situacaoVigencia, UNIDADE_DE_MEDIDA, ultimosMeses } from "@/lib/imoveis/regras";
@@ -57,7 +57,7 @@ export default async function DetalheImovel({ params, searchParams }: { params: 
       <p className="mb-2 text-sm"><Link href="/imoveis/imoveis" className="font-medium text-[color:var(--modulo-tinta)] hover:underline">← Imóveis</Link></p>
       <TituloPagina
         titulo={imovel.nome}
-        subtitulo={`${imovel.endereco} · ${sec?.nome ?? "—"}${imovel.setor ? ` · ${imovel.setor}` : ""}`}
+        subtitulo={`${imovel.endereco} · ${sec?.nome ?? "—"}${imovel.setor ? ` · ${imovel.setor}` : ""} · ${ROTULO_VINCULO[imovel.vinculo]}`}
         acao={<SeloSituacaoImovel situacao={imovel.situacao} />}
       />
 

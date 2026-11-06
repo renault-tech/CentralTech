@@ -114,7 +114,7 @@ describe("etapasDaEntrega", () => {
 
 describe("calcularPendencias", () => {
   const imovel = (o: Partial<Imovel> = {}): Imovel => ({
-    id: "i1", nome: "CRAS", endereco: "Rua A", secretaria_id: "s1", setor: null, finalidade: null, situacao: "ativo", contrato_numero: null,
+    id: "i1", nome: "CRAS", endereco: "Rua A", secretaria_id: "s1", setor: null, finalidade: null, situacao: "ativo", vinculo: "alugado", contrato_numero: null,
     vigencia_inicio: null, vigencia_fim: "2030-01-01", valor_aluguel: 1000, dia_vencimento: 5, indice_reajuste: null, proximo_reajuste: null, imobiliaria_id: null,
     proprietario_nome: null, proprietario_documento: null, proprietario_contato: null, proprietario_conta: null, observacoes: null, criado_em: "", atualizado_em: "", ...o,
   });
@@ -171,5 +171,36 @@ describe("mascararDocumento", () => {
     expect(mascararDocumento("12.345.678/0001-95")).toBe("**.***.678/0001-**");
     expect(mascararDocumento("")).toBe("—");
     expect(mascararDocumento("123")).toBe("***");
+  });
+});
+
+describe("analisarConsumo sem consumo (só valor em reais)", () => {
+  const sv = (valores: number[], fim = "2026-11-01") => valores.map((valor, i) => ({ referencia: somarMeses(fim, i - (valores.length - 1)), consumo: null, valor }));
+  it("cai para o valor da conta e deixa claro na mensagem", () => {
+    const a = analisarConsumo(sv([100, 100, 100, 100, 100, 100, 190]), par);
+    expect(a).toHaveLength(1);
+    expect(a[0]).toMatchObject({ tipo: "acima", base: "valor", nivel: "critico" });
+    expect(a[0].texto).toMatch(/^Valor da conta \+90%/);
+  });
+  it("valor muito abaixo vira atenção", () => {
+    expect(analisarConsumo(sv([100, 100, 100, 100, 100, 100, 30]), par)[0]).toMatchObject({ tipo: "abaixo", base: "valor", nivel: "atencao" });
+  });
+  it("não avalia valor por unidade quando não há consumo", () => {
+    expect(analisarConsumo(sv([100, 100, 100, 100, 100, 100, 100]), par)).toEqual([]);
+  });
+  it("com consumo no histórico mas não na conta atual, usa o valor", () => {
+    const h = [100, 100, 100, 100].map((consumo, i) => ({ referencia: somarMeses("2026-11-01", i - 4), consumo, valor: 800 }));
+    h.push({ referencia: "2026-11-01", consumo: null as unknown as number, valor: 1600 });
+    expect(analisarConsumo(h, par)[0]).toMatchObject({ base: "valor", tipo: "acima" });
+  });
+});
+
+describe("pendência por valor", () => {
+  it("título e chave deixam claro que é o valor da conta", () => {
+    const unid = { id: "u1", imovel_id: "i1", tipo: "luz", numero: "UC 1", titular: null, ativa: true, criado_em: "", atualizado_em: "" } as Unidade;
+    const im = { id: "i1", nome: "CRAS", endereco: "Rua A", secretaria_id: "s1", situacao: "ativo", vinculo: "proprio", valor_aluguel: 0, vigencia_fim: null, proximo_reajuste: null } as unknown as Imovel;
+    const contas = [100, 100, 100, 100, 100, 100, 190].map((v, i) => ({ id: `c${i}`, unidade_id: "u1", referencia: somarMeses("2026-11-01", i - 6), consumo: null, valor: v, vencimento: null, pago_em: null })) as unknown as Conta[];
+    const p = calcularPendencias({ imoveis: [im], unidades: [unid], contas, entregas: [], hoje: "2026-11-05", par });
+    expect(p.find((x) => x.chave === "valor_conta_luz")).toMatchObject({ nivel: "critico", titulo: expect.stringContaining("Valor da conta") });
   });
 });

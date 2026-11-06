@@ -65,6 +65,8 @@ export type PontoConta = { referencia: string; consumo: number | null; valor: nu
 export type Anomalia = {
   tipo: "acima" | "abaixo" | "valor_unitario";
   nivel: "critico" | "atencao";
+  /** De onde veio a comparação: do consumo (m³/kWh) ou do valor em reais (quando a conta só tem o valor). */
+  base: "consumo" | "valor";
   /** Variação percentual sobre a média dos meses anteriores. */
   variacao: number;
   media: number;
@@ -74,49 +76,52 @@ export type Anomalia = {
 const media = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
 
 /**
- * Compara a conta MAIS RECENTE do histórico com a média dos `meses_media` meses anteriores (só meses com
- * consumo informado). Com menos de 3 meses de histórico não avalia (não há base). Consumo acima do limite
- * é crítico; abaixo do limite e valor por m³/kWh fora do padrão são atenção.
+ * Compara a conta MAIS RECENTE do histórico com a média dos `meses_media` meses anteriores. Com menos de 3 meses de histórico não
+ * avalia (não há base). Usa o CONSUMO (m³/kWh) quando a conta e o histórico têm consumo; senão cai para o VALOR em reais (é o caso de
+ * quem controla só o valor mensal, como nas planilhas de controle). Acima do limite = crítico; abaixo do limite e valor por m³/kWh
+ * fora do padrão = atenção.
  */
 export function analisarConsumo(historico: PontoConta[], par: Pick<ParametrosImoveis, "pct_acima" | "pct_abaixo" | "meses_media" | "pct_valor">, un = ""): Anomalia[] {
   const ordem = [...historico].sort((a, b) => a.referencia.localeCompare(b.referencia));
   const atual = ordem[ordem.length - 1];
-  if (!atual || atual.consumo === null) return [];
-  const anteriores = ordem
-    .slice(0, -1)
-    .filter((p) => p.consumo !== null && p.consumo > 0)
-    .slice(-par.meses_media);
-  if (anteriores.length < 3) return [];
+  if (!atual) return [];
+  const anteriores = ordem.slice(0, -1);
+  const comConsumo = anteriores.filter((p) => p.consumo !== null && p.consumo > 0).slice(-par.meses_media);
+  const usaConsumo = atual.consumo !== null && comConsumo.length >= 3;
+  const base: "consumo" | "valor" = usaConsumo ? "consumo" : "valor";
+  const prev = usaConsumo ? comConsumo : anteriores.filter((p) => p.valor > 0).slice(-par.meses_media);
+  if (prev.length < 3) return [];
+  const valorAtual = usaConsumo ? (atual.consumo as number) : atual.valor;
+  const serie = prev.map((p) => (usaConsumo ? (p.consumo as number) : p.valor));
+  const sufixo = usaConsumo && un ? ` ${un}` : "";
+  const mediaBase = media(serie);
+  const variacao = (valorAtual / mediaBase - 1) * 100;
+  const quem = usaConsumo ? "" : "Valor da conta ";
+  const fmtMedia = usaConsumo ? `${Math.round(mediaBase)}${sufixo}` : `R$ ${mediaBase.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const sufixo = un ? ` ${un}` : "";
   const out: Anomalia[] = [];
-  const mediaConsumo = media(anteriores.map((p) => p.consumo as number));
-  const variacao = (atual.consumo / mediaConsumo - 1) * 100;
   if (variacao > par.pct_acima) {
-    out.push({
-      tipo: "acima",
-      nivel: "critico",
-      variacao,
-      media: mediaConsumo,
-      texto: `+${Math.round(variacao)}% sobre a média de ${anteriores.length} meses (${Math.round(mediaConsumo)}${sufixo})`,
-    });
+    out.push({ tipo: "acima", nivel: "critico", base, variacao, media: mediaBase, texto: `${quem}${quem ? "+" : "+"}${Math.round(variacao)}% sobre a média de ${prev.length} meses (${fmtMedia})` });
   } else if (variacao < -par.pct_abaixo) {
     out.push({
       tipo: "abaixo",
       nivel: "atencao",
+      base,
       variacao,
-      media: mediaConsumo,
-      texto: `${Math.round(-variacao)}% abaixo da média de ${anteriores.length} meses: possível falha no medidor ou leitura estimada`,
+      media: mediaBase,
+      texto: usaConsumo ? `${Math.round(-variacao)}% abaixo da média de ${prev.length} meses: possível falha no medidor ou leitura estimada` : `Valor da conta ${Math.round(-variacao)}% abaixo da média de ${prev.length} meses (${fmtMedia}): confira se a conta veio completa`,
     });
   }
-  if (atual.consumo > 0) {
-    const unitarios = anteriores.map((p) => p.valor / (p.consumo as number));
+  // Valor por m³/kWh só existe quando há consumo.
+  if (usaConsumo && (atual.consumo as number) > 0) {
+    const unitarios = comConsumo.map((p) => p.valor / (p.consumo as number));
     const mediaUnit = media(unitarios);
-    const varUnit = (atual.valor / atual.consumo / mediaUnit - 1) * 100;
+    const varUnit = (atual.valor / (atual.consumo as number) / mediaUnit - 1) * 100;
     if (Math.abs(varUnit) > par.pct_valor) {
       out.push({
         tipo: "valor_unitario",
         nivel: "atencao",
+        base: "valor",
         variacao: varUnit,
         media: mediaUnit,
         texto: `Valor por${un ? ` ${un}` : " unidade"} ${varUnit > 0 ? "+" : ""}${Math.round(varUnit)}% sobre a média: confira tarifa e taxas`,
@@ -283,7 +288,7 @@ export function calcularPendencias({ imoveis, unidades, contas, entregas, hoje, 
         for (const a of analisarConsumo(historico, par, un)) {
           const chave = a.tipo === "valor_unitario" ? `valor_${u.tipo}` : `consumo_${u.tipo}`;
           const ultima = historico.sort((x, y) => x.referencia.localeCompare(y.referencia)).at(-1);
-          add({ chave, imovelId: im.id, nivel: a.nivel, titulo: a.tipo === "valor_unitario" ? `Valor da conta de ${nome.toLowerCase()} fora do padrão` : `Consumo de ${nome.toLowerCase()} fora do padrão`, detalhe: `${rotuloMes(ultima!.referencia)}: ${a.texto}.`, assinatura: `${ultima!.referencia}|${ultima!.consumo}|${ultima!.valor}` });
+          add({ chave: a.base === "valor" && a.tipo !== "valor_unitario" ? `valor_conta_${u.tipo}` : chave, imovelId: im.id, nivel: a.nivel, titulo: a.base === "valor" ? `Valor da conta de ${nome.toLowerCase()} fora do padrão` : `Consumo de ${nome.toLowerCase()} fora do padrão`, detalhe: `${rotuloMes(ultima!.referencia)}: ${a.texto}.`, assinatura: `${ultima!.referencia}|${ultima!.consumo}|${ultima!.valor}` });
         }
         if (diaDoMes >= par.dia_lancamento && !cs.some((c) => c.referencia === mesAtual) && !cs.some((c) => c.referencia === somarMeses(mesAtual, 1))) {
           add({ chave: `sem_conta_${u.tipo}`, imovelId: im.id, nivel: "atencao", titulo: `Conta de ${nome.toLowerCase()} do mês sem lançamento`, detalhe: `${u.numero}: nenhuma conta de ${rotuloMes(mesAtual)} até o dia ${par.dia_lancamento}.`, assinatura: mesAtual });

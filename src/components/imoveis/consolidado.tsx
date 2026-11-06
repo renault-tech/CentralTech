@@ -66,7 +66,7 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
         acao={
           <>
             <MenuExportarImoveis relatorios={[{ r: "contas", rotulo: "Contas de água e luz" }]} />
-            {gestor && <Link href="/imoveis/importar" className={CLASSE_BOTAO_SECUNDARIO}>Importar PDF</Link>}
+            {gestor && <Link href="/imoveis/importar" className={CLASSE_BOTAO_SECUNDARIO}>Importar contas</Link>}
           </>
         }
       />

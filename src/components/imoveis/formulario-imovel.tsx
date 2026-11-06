@@ -18,6 +18,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
     secretariaId: imovel?.secretaria_id ?? "",
     setor: imovel?.setor ?? "",
     finalidade: imovel?.finalidade ?? "",
+    vinculo: imovel?.vinculo ?? "alugado",
     contratoNumero: imovel?.contrato_numero ?? "",
     vigenciaInicio: imovel?.vigencia_inicio ?? "",
     vigenciaFim: imovel?.vigencia_fim ?? "",
@@ -49,6 +50,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
         secretariaId: v.secretariaId,
         setor: v.setor,
         finalidade: v.finalidade,
+        vinculo: v.vinculo as "alugado" | "proprio" | "cedido",
         contratoNumero: v.contratoNumero,
         vigenciaInicio: v.vigenciaInicio || null,
         vigenciaFim: v.vigenciaFim || null,
@@ -93,6 +95,13 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
           </select>
         </Campo>
         <Campo rotulo="Setor de uso" htmlFor="i-setor"><input id="i-setor" className={campo} value={v.setor} onChange={set("setor")} /></Campo>
+        <Campo rotulo="Vínculo com a Prefeitura" htmlFor="i-vinc">
+          <select id="i-vinc" className={campo} value={v.vinculo} onChange={set("vinculo")}>
+            <option value="alugado">Alugado</option>
+            <option value="proprio">Próprio</option>
+            <option value="cedido">Cedido</option>
+          </select>
+        </Campo>
         <Campo rotulo="Finalidade" htmlFor="i-fin" className="sm:col-span-2"><input id="i-fin" className={campo} value={v.finalidade} onChange={set("finalidade")} /></Campo>
       </fieldset>
 

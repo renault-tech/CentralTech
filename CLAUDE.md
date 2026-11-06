@@ -1924,7 +1924,28 @@ tem `interno: true`.
   auditoria registra a mudança). O arquivo nunca é gravado (nem banco, nem bucket, nem disco) e o limite é 5 MB. Só propõe o que achou. O
   caminho PDF → `unpdf` → leitor foi conferido com PDFs gerados de verdade; **os padrões foram escritos com textos de exemplo**: ajustar
   `pdf-documento.ts` com os primeiros contratos/laudos reais. PDF digitalizado (imagem) volta "sem texto".
-- **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado.
+- **Importação das planilhas de controle (Excel)** (`/imoveis/importar`; `lib/imoveis/importacao/{planilha-contas,plano-contas,xlsx-contas}.ts`,
+  `actions-importacao-contas.ts`, `importador-planilha-contas.tsx`; só gestor): as planilhas reais da Prefeitura (**Energisa Total 2026** e
+  **COPASA 2026**) têm uma aba por secretaria, vários blocos por aba ("Proj. Atividade" + cabeçalho `CDC|Matrícula · Setor · Endereço · Jan…Dez`) e,
+  na Energisa, um segundo código sem cabeçalho (guardado só na leitura). **Os números mensais são VALOR em R$ (não kWh/m³)** — conferido pelos
+  valores (tarifa mínima idêntica entre unidades, "valor juros"); a prévia avisa e a gravação usa `valor`, `consumo` fica nulo. Fluxo: escolhe o
+  arquivo, o tipo (água/luz) e o ano → prévia (nada gravado) → por aba, a secretaria (sugerida pelo nome; SEDEGI pede escolha ou criação) → por
+  linha, importar sim/não e a que imóvel ligar (sugestão por nome igual ou endereço específico; "Rua Principal S/N" não serve para casar) →
+  `importarPlanilhaContas` relê o arquivo no servidor e grava: secretarias novas, imóveis novos (vínculo escolhido, aluguel 0), unidades e contas
+  (`origem = 'planilha'`, `upsert … ignoreDuplicates`: **reimportar não duplica nem sobrescreve mês já lançado**, testado no banco). Parcelas de
+  dívida (`VALOR JUROS`/`AMORT.` da Fazenda/COPASA) são ignoradas. Conferido com os arquivos reais: luz 194 unidades, ~1.667 contas;
+  água 141 linhas (2 parcelas de dívida), ~953 contas. **Não é uma transação única**: se parar no meio, rodar de novo completa sem duplicar.
+  Conferência opcional com as planilhas reais: `PLANILHAS_REAIS=/pasta npx vitest run src/lib/imoveis/importacao/planilhas-reais.test.ts`.
+  **Bug pego por essa conferência**: `/cultura/` casava "AGRICULTURA" (a regra de agricultura vem antes e `^cultura` ancora).
+- **Vínculo do imóvel** (`imoveis.imoveis.vinculo`: `alugado` | `proprio` | `cedido`, migration `20261107020000`): as planilhas cobrem TODOS os
+  pontos de consumo, não só os alugados. Imóveis que já existiam ficaram `alugado`; os criados pela importação entram com o vínculo escolhido
+  (padrão próprio) e aluguel 0. Filtro "Vínculo" na lista.
+- **Alertas por VALOR** (quando a conta não tem consumo): `analisarConsumo` cai para o valor em reais (`Anomalia.base = "valor"`; pendência
+  `valor_conta_{luz|agua}`, título "Valor da conta … fora do padrão") e a variação "vs. média" da área consolidada também. No sino,
+  `imoveis.avisar_valores()` (migration `20261107030000`, job `imoveis-avisar-valores` às 8h10 de Brasília; testado: 1 aviso, 0 na segunda chamada).
+- **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado, ligar/mesclar imóveis duplicados depois de importar
+  (a prévia sugere a ligação por nome/endereço; se o nome de água e luz diferir, nascem dois imóveis para o mesmo lugar), empenho e dotação
+  (as planilhas trazem FICHA/EMPENHO/VALOR EMPENHO por secretaria, ainda não lidos), vencimento e pagamento das contas importadas (as planilhas não trazem).
 - **Verificado**: `tsc`/`eslint`/`vitest`/`next build` limpos; componentes (gráficos, etapas, formulário de conta) conferidos em Chromium
   (1280 e 390 px, claro e escuro) numa página de teste temporária, removida. **Não testado ao vivo contra o banco** (sandbox sem acesso a
   `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas e o fluxo de acesso por perfil.

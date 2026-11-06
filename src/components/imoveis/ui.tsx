@@ -1,6 +1,6 @@
 import { Selo, SeloNivel } from "@/components/modulo/ui";
 import type { Pendencia } from "@/lib/imoveis/regras";
-import type { SituacaoImovel } from "@/types/imoveis";
+import type { SituacaoImovel, VinculoImovel } from "@/types/imoveis";
 
 export * from "@/components/modulo/ui";
 
@@ -14,3 +14,5 @@ export function SeloSituacaoImovel({ situacao }: { situacao: SituacaoImovel }) {
 export function SeloGravidade({ nivel }: { nivel: Pendencia["nivel"] }) {
   return <SeloNivel nivel={nivel === "critico" ? "critico" : "atencao"}>{nivel === "critico" ? "Crítico" : "Atenção"}</SeloNivel>;
 }
+
+export const ROTULO_VINCULO: Record<VinculoImovel, string> = { alugado: "Alugado", proprio: "Próprio", cedido: "Cedido" };

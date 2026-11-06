@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { MenuExportarImoveis } from "@/components/imoveis/menu-exportar-imoveis";
-import { SeloGravidade, SeloSituacaoImovel, Cartao, CLASSE_BOTAO, SeloDias, TituloPagina, Vazio } from "@/components/imoveis/ui";
+import { SeloGravidade, SeloSituacaoImovel, Cartao, CLASSE_BOTAO, ROTULO_VINCULO, SeloDias, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { CLASSE_BOTAO_SECUNDARIO } from "@/components/modulo/ui";
 import { carregarTudo } from "@/lib/imoveis/carregar";
@@ -67,6 +67,15 @@ export default async function ListaImoveis({ searchParams }: { searchParams: Pro
               <option value="entregue">Entregue</option>
             </select>
           </div>
+          <div className="flex min-w-[130px] flex-1 flex-col gap-1">
+            <label htmlFor="f-vinc" className="text-xs font-semibold text-slate-600">Vínculo</label>
+            <select id="f-vinc" name="vinc" defaultValue={filtro.vinculo ?? ""} className={ESTILO_CAMPO_PADRAO}>
+              <option value="">Todos</option>
+              <option value="alugado">Alugado</option>
+              <option value="proprio">Próprio</option>
+              <option value="cedido">Cedido</option>
+            </select>
+          </div>
           <label className="flex h-9 items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" name="alerta" value="1" defaultChecked={filtro.alerta} />
             Só com pendência
@@ -92,7 +101,7 @@ export default async function ListaImoveis({ searchParams }: { searchParams: Pro
                     <tr key={i.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 first:sm:pl-5">
                         <Link href={`/imoveis/imoveis/${i.id}`} className="font-semibold text-cataguases-marinho hover:underline">{i.nome}</Link>
-                        <div className="text-xs text-slate-500">{i.endereco}{i.imobiliaria_id ? ` · ${nomeImob.get(i.imobiliaria_id) ?? ""}` : ""}</div>
+                        <div className="text-xs text-slate-500">{ROTULO_VINCULO[i.vinculo]} · {i.endereco}{i.imobiliaria_id ? ` · ${nomeImob.get(i.imobiliaria_id) ?? ""}` : ""}</div>
                       </td>
                       <td className="px-4 py-3">{nomeSec.get(i.secretaria_id) ?? "—"}</td>
                       <td className="px-4 py-3"><SeloSituacaoImovel situacao={i.situacao} /></td>
