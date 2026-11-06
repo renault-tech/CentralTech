@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
+
 import { AtualizarFipe } from "@/components/frotas/acoes-veiculos";
 import { FormularioVeiculo } from "@/components/frotas/formulario-veiculo";
 import { Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, SeloSituacaoVeiculo, Selo, TituloPagina, Vazio } from "@/components/frotas/ui";
@@ -89,7 +91,7 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
 
       <div className={abrirForm ? "grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(360px,1.2fr)]" : ""}>
         <Cartao semPadding>
-          <form method="get" className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5">
+          <FormularioFiltros className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5" limpar={{ href: "/frotas/veiculos", className: CLASSE_BOTAO_SECUNDARIO }}>
             <div className="flex min-w-[220px] flex-[2] flex-col gap-1">
               <label htmlFor="f-q" className="text-xs font-semibold text-slate-600">Buscar</label>
               <input id="f-q" name="q" defaultValue={filtro.q} placeholder="Placa, modelo, marca ou patrimônio" className={ESTILO_CAMPO_PADRAO} />
@@ -126,11 +128,7 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
               <input type="checkbox" name="rev" value="1" defaultChecked={filtro.revisar} />
               Só com aviso
             </label>
-            <div className="flex gap-2">
-              <button type="submit" className={CLASSE_BOTAO}>Filtrar</button>
-              <Link href="/frotas/veiculos" className={CLASSE_BOTAO_SECUNDARIO}>Limpar</Link>
-            </div>
-          </form>
+          </FormularioFiltros>
 
           {visiveis.length === 0 ? (
             <Vazio>{veiculos.length === 0 ? "Nenhum veículo cadastrado ainda." : "Nenhum veículo encontrado com esses filtros."}</Vazio>

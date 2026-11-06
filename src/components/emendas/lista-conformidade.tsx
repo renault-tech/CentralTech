@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
-import { atualizarFiltrosNaUrl } from "@/lib/emendas/url-filtros";
+import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { pct } from "@/lib/emendas/regras";
 import type { TipoExecucao } from "@/types/emendas";
 

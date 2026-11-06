@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
+
 import { FormularioNota } from "@/components/frotas/formulario-nota";
 import { Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Selo, SeloDias, TituloPagina, Vazio } from "@/components/frotas/ui";
 import { filtrarNotas, lerFiltroNotas } from "@/lib/frotas/filtros";
@@ -73,7 +75,7 @@ export default async function PaginaCombustivel({ searchParams }: { searchParams
 
       <div className={abrirForm ? "grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(340px,1.1fr)]" : ""}>
         <Cartao semPadding>
-          <form method="get" className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5">
+          <FormularioFiltros className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5" limpar={{ href: "/frotas/combustivel", className: CLASSE_BOTAO_SECUNDARIO }}>
             <div className="flex min-w-[200px] flex-[2] flex-col gap-1">
               <label htmlFor="f-q" className="text-xs font-semibold text-slate-600">Buscar</label>
               <input id="f-q" name="q" defaultValue={filtro.q} placeholder="Nº da NF, secretaria ou posto" className={ESTILO_CAMPO_PADRAO} />
@@ -107,11 +109,7 @@ export default async function PaginaCombustivel({ searchParams }: { searchParams
                 <option value="todas">Todas (inclui as antigas)</option>
               </select>
             </div>
-            <div className="flex gap-2">
-              <button type="submit" className={CLASSE_BOTAO}>Filtrar</button>
-              <Link href="/frotas/combustivel" className={CLASSE_BOTAO_SECUNDARIO}>Limpar</Link>
-            </div>
-          </form>
+          </FormularioFiltros>
 
           {lista.length === 0 ? (
             <Vazio>Nenhuma NF encontrada com esses filtros.</Vazio>

@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-06",
+    titulo: "Filtros mudam na hora, sem botão \"Filtrar\"",
+    descricao:
+      "Em Frotas (Notas de combustível, Veículos e Manutenção) e em Feedback, escolher uma opção na lista ou marcar uma caixa já atualiza a tela. Nos campos de busca, a lista atualiza assim que você para de digitar. O botão \"Limpar\" continua disponível. Em Emendas, a busca também passa a ficar no endereço da página, para compartilhar o resultado por link.",
+  },
+  {
     data: "2026-11-05",
     titulo: "Emendas: correção de empenho, liquidação e pagamento mais clara",
     descricao:

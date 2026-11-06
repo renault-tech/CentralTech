@@ -1,5 +1,7 @@
 import { Download } from "lucide-react";
 import Link from "next/link";
+
+import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
@@ -73,7 +75,10 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
         )}
 
         {aba === "gestao" && (
-          <form method="get" className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+          <FormularioFiltros
+            className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
+            limpar={{ href: "/feedback", className: "text-sm text-slate-500 hover:underline", visivel: Boolean(app || tipo || filtroStatus !== "pendentes") }}
+          >
             {[
               { name: "app", rotulo: "Aplicativo", valor: busca.app, opcoes: ORDEM_APPS.map((a) => [a, APPS_FEEDBACK[a].nome]) },
               { name: "tipo", rotulo: "Tipo", valor: busca.tipo, opcoes: Object.entries(ROTULO_TIPO) },
@@ -95,12 +100,6 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
                 </select>
               </div>
             ))}
-            <button type="submit" className="rounded-md bg-cataguases-marinho px-4 py-1.5 text-sm font-medium text-white hover:bg-cataguases-marinho/90">
-              Filtrar
-            </button>
-            {(app || tipo || filtroStatus !== "pendentes") && (
-              <Link href="/feedback" className="text-sm text-slate-500 hover:underline">Limpar</Link>
-            )}
             <div className="ml-auto flex gap-2">
               {[
                 { formato: "pdf", rotulo: "Exportar PDF", dica: "Um único PDF: cada pedido com seus screenshots logo abaixo. Anexe numa conversa com o Claude." },
@@ -118,7 +117,7 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
                 </a>
               ))}
             </div>
-          </form>
+          </FormularioFiltros>
         )}
 
         <p className="mt-4 text-xs text-slate-500">

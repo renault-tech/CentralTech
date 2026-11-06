@@ -1866,3 +1866,12 @@ Regra do dono: **o que existe num módulo deve existir nos outros**. Estado:
 - **Minha conta** (aparência + trocar senha): Hub, Compras e Requerimentos (`/conta`, nome no cabeçalho). Numera só tem Aparência (senha é pela Central).
 - **Configurações**: toda área usa o mesmo desenho — `CabecalhoPagina` + `AbasNavegacao` + **índice de cards** (`IndiceConfiguracoes`, `components/layout/indice-configuracoes.tsx`; Compras e Requerimentos têm cópia idêntica). Frotas e Emendas ganharam o índice (antes: Frotas era uma página com seções empilhadas; Emendas redirecionava direto para a primeira aba). **Tela nova de configuração = um card no índice + uma aba.**
 - Diferenças que ficam de propósito (específicas do app): detalhe do processo em folha/linha, zoom, notas, chat e aviso da plataforma (Compras); Ajuda (não existe no Requerimentos).
+
+## Filtros imediatos em todos os módulos (06/11/2026)
+
+Regra do dono: **nenhum filtro exige botão "Filtrar"/"Aplicar"/"Buscar"** — escolher na lista suspensa, marcar a caixa ou clicar na opção muda a tela na hora; campo de texto aplica depois de uma pausa na digitação (~350 ms; Enter aplica já).
+- **Lista filtrada no servidor** (Frotas: Notas, Veículos, Manutenção; Feedback): envolver os campos em `FormularioFiltros` (`src/components/modulo/formulario-filtros.tsx`). Campos não controlados com `name`, mesmos nomes de parâmetro de antes; troca a URL com `router.replace(..., {scroll:false})` numa transição (a lista anterior fica visível, a busca não perde o foco). `limpar={{href, className, visivel?}}` desenha o "Limpar". Campos `hidden` do formulário seguem na URL.
+- **Lista que chega inteira ao navegador** (Emendas): `atualizarFiltrosNaUrl` (agora em `src/lib/filtros-url.ts`, o antigo `lib/emendas/url-filtros.ts` só reexporta) + filtro em memória; gravação do texto da busca na URL com pausa de 250 ms.
+- Seletor de exercício/ano usa `router.replace` (não `push`) para não empilhar histórico.
+- **Tela nova com filtro = um desses dois caminhos; nunca um `<form method="get">` com botão.**
+- Testado: `montarUrlComParametros` (vitest), `tsc`/`eslint`. **Não testado no navegador** (as telas exigem sessão e Supabase, que o sandbox não alcança): conferir no deploy que trocar a lista atualiza sem clicar e que o foco da busca se mantém.

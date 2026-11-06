@@ -132,7 +132,7 @@ export function EditorPareceres({
     >
       <label className="mb-3 flex max-w-[160px] flex-col gap-1 text-xs font-medium text-slate-600">
         Exercício
-        <select className={CAMPO} value={ano} onChange={(e) => router.push(`/emendas/configuracoes/exequibilidade?ano=${e.target.value}`)}>
+        <select className={CAMPO} value={ano} onChange={(e) => router.replace(`/emendas/configuracoes/exequibilidade?ano=${e.target.value}`)}>
           {anos.map((a) => (
             <option key={a}>{a}</option>
           ))}
