@@ -21,6 +21,7 @@ export const NOME_APP_AVISO: Record<AppNotificacao, string> = {
   requerimentos: MODULOS.requerimentos.nomeCurto,
   emendas: MODULOS.emendas.nomeCurto,
   frotas: MODULOS.frotas.nomeCurto,
+  imoveis: MODULOS.imoveis.nomeCurto,
 };
 
 export const COR_APP_AVISO: Record<AppNotificacao, string> = {
@@ -30,4 +31,5 @@ export const COR_APP_AVISO: Record<AppNotificacao, string> = {
   requerimentos: MODULOS.requerimentos.cor,
   emendas: MODULOS.emendas.cor,
   frotas: MODULOS.frotas.cor,
+  imoveis: MODULOS.imoveis.cor,
 };

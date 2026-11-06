@@ -24,6 +24,7 @@ type Catalogos = {
   secretariasRequerimentos: CatalogoItem[];
   documentosNumera: DocumentoNumera[];
   secretariasEmendas: CatalogoItem[];
+  secretariasImoveis: CatalogoItem[];
 };
 
 export function PainelConfiguracoes({
@@ -32,6 +33,7 @@ export function PainelConfiguracoes({
   secretariasRequerimentos,
   documentosNumera,
   secretariasEmendas,
+  secretariasImoveis,
   abrirNovo = false,
 }: { usuarios: UsuarioComAcessos[]; abrirNovo?: boolean } & Catalogos) {
   // Bug real reportado pelo usuário: o formulário de edição abria sempre
@@ -66,7 +68,7 @@ export function PainelConfiguracoes({
     });
   }, [usuarios, busca]);
 
-  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas };
+  const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas, secretariasImoveis };
   const colunas = 3 + TODOS_MODULOS.length; // Usuário, Admin, Ativo, Ações + 1 por módulo
 
   function alternarEdicao(id: string) {
@@ -274,6 +276,7 @@ function FormularioAcesso({
   secretariasRequerimentos,
   documentosNumera,
   secretariasEmendas,
+  secretariasImoveis,
   onFechar,
 }: {
   usuario: UsuarioComAcessos | null;
@@ -295,7 +298,7 @@ function FormularioAcesso({
   // rebaixar um perfil sem querer só por reabrir este formulário.
   const jaTinha = React.useCallback((m: Modulo) => !!usuario?.modulos.includes(m), [usuario]);
   const precisaDecisao = (m: Modulo) => modulos.includes(m) && !jaTinha(m);
-  const modulosParaDecisao = (["compras", "requerimentos", "numera", "emendas", "frotas"] as Modulo[]).filter(precisaDecisao);
+  const modulosParaDecisao = (["compras", "requerimentos", "numera", "emendas", "frotas", "imoveis"] as Modulo[]).filter(precisaDecisao);
 
   function alternarModulo(m: Modulo, marcado: boolean) {
     setModulos((prev) => (marcado ? [...prev, m] : prev.filter((x) => x !== m)));
@@ -430,6 +433,7 @@ function FormularioAcesso({
             secretariasRequerimentos={secretariasRequerimentos}
             documentosNumera={documentosNumera}
             secretariasEmendas={secretariasEmendas}
+        secretariasImoveis={secretariasImoveis}
             onMudar={(d, valido) => {
               setDecisoes(d);
               setDecisoesValidas(valido);

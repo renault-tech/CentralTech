@@ -5,13 +5,14 @@ import {
   listarSecretariasRequerimentos,
   listarDocumentosNumera,
   listarSecretariasEmendas,
+  listarSecretariasImoveis,
 } from "@/lib/dados/solicitacoes";
 import { PainelSolicitacoes } from "@/components/hub/painel-solicitacoes";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaSolicitacoes() {
-  const [solicitacoes, decididas, setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas] =
+  const [solicitacoes, decididas, setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas, secretariasImoveis] =
     await Promise.all([
       listarSolicitacoesPendentes(),
       listarSolicitacoesDecididas(),
@@ -31,6 +32,10 @@ export default async function PaginaSolicitacoes() {
         console.error("[PaginaSolicitacoes] secretarias do Emendas indisponíveis:", e);
         return [];
       }),
+    listarSecretariasImoveis().catch((e) => {
+      console.error("[PaginaSolicitacoes] secretarias do Imóveis indisponíveis:", e);
+      return [];
+    }),
     ]);
 
   return (
@@ -41,6 +46,7 @@ export default async function PaginaSolicitacoes() {
       secretariasRequerimentos={secretariasRequerimentos}
       documentosNumera={documentosNumera}
       secretariasEmendas={secretariasEmendas}
+      secretariasImoveis={secretariasImoveis}
     />
   );
 }

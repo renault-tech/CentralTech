@@ -88,6 +88,17 @@ export const MODULOS: Record<Modulo, InfoModulo> = {
     corTextoEscuro: "#A9D261",
     interno: true,
   },
+  imoveis: {
+    chave: "imoveis",
+    nome: "Imóveis e Consumo",
+    nomeCurto: "Imóveis",
+    descricao: "Aluguéis, contas de água e luz, vencimentos e entrega dos imóveis de todas as secretarias.",
+    url: "/imoveis",
+    cor: "#0E7490",
+    corTexto: "#0B5566",
+    corTextoEscuro: "#5EC4D9",
+    interno: true,
+  },
 };
 
 /**

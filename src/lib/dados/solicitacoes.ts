@@ -138,3 +138,15 @@ export async function listarSecretariasEmendas(): Promise<CatalogoItem[]> {
   }
   return (data ?? []) as CatalogoItem[];
 }
+
+/** Secretarias do módulo Imóveis (escopo do perfil "secretaria" de lá). */
+export async function listarSecretariasImoveis(): Promise<CatalogoItem[]> {
+  await exigirAdminHub();
+  const admin = criarClienteAdminBruto();
+  const { data, error } = await admin.schema("imoveis").from("secretarias").select("id,nome").eq("ativa", true).order("nome");
+  if (error) {
+    console.error("[listarSecretariasImoveis] falha:", error);
+    throw new Error("Não foi possível carregar as secretarias do módulo Imóveis.");
+  }
+  return (data ?? []) as CatalogoItem[];
+}
