@@ -1943,6 +1943,13 @@ tem `interno: true`.
 - **Alertas por VALOR** (quando a conta não tem consumo): `analisarConsumo` cai para o valor em reais (`Anomalia.base = "valor"`; pendência
   `valor_conta_{luz|agua}`, título "Valor da conta … fora do padrão") e a variação "vs. média" da área consolidada também. No sino,
   `imoveis.avisar_valores()` (migration `20261107030000`, job `imoveis-avisar-valores` às 8h10 de Brasília; testado: 1 aviso, 0 na segunda chamada).
+- **Endereço pelo CEP** (`lib/cep.ts` puro e testado, `lib/cep-actions.ts`, `components/modulo/campo-endereco.tsx`; usado no cadastro de imóvel,
+  reutilizável em qualquer módulo): digitou os 8 números, consulta sozinho (sem botão) a ViaCEP e, se falhar ou não achar, a BrasilAPI, e monta
+  "Rua, número, complemento - Bairro - Cidade/UF - CEP 00000-000"; número e complemento recompõem na hora; o campo "Endereço" segue editável à mão
+  (editou, para de recompor). **A consulta roda no servidor** (server action `consultarCep`: exige login ativo, limite de 60 por 5 min por IP em
+  `hub.limites_requisicao`), então não depende de CORS nem da CSP do navegador. Sem coluna nova: o CEP fica dentro do texto do endereço
+  (`cepDoEndereco` o recupera ao editar). Testado com `fetch` falso (fonte principal, reserva, não encontrado × indisponível, CEP inválido);
+  **não testado contra as APIs reais** (sandbox sem internet): no primeiro uso, digitar um CEP de Cataguases e conferir.
 - **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado, ligar/mesclar imóveis duplicados depois de importar
   (a prévia sugere a ligação por nome/endereço; se o nome de água e luz diferir, nascem dois imóveis para o mesmo lugar), empenho e dotação
   (as planilhas trazem FICHA/EMPENHO/VALOR EMPENHO por secretaria, ainda não lidos), vencimento e pagamento das contas importadas (as planilhas não trazem).

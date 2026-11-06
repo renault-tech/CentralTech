@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
+import { CampoEndereco } from "@/components/modulo/campo-endereco";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/imoveis/ui";
 import { excluirImovel, salvarImovel } from "@/lib/imoveis/actions";
 import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
@@ -87,7 +88,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-1 text-sm font-semibold text-cataguases-marinho">Imóvel</legend>
         <Campo rotulo="Nome" htmlFor="i-nome"><input id="i-nome" required className={campo} value={v.nome} onChange={set("nome")} /></Campo>
-        <Campo rotulo="Endereço" htmlFor="i-end"><input id="i-end" required className={campo} value={v.endereco} onChange={set("endereco")} /></Campo>
+        <CampoEndereco id="i-end" valor={v.endereco} aoMudar={(endereco) => setV((x) => ({ ...x, endereco }))} />
         <Campo rotulo="Secretaria" htmlFor="i-sec">
           <select id="i-sec" required className={campo} value={v.secretariaId} onChange={set("secretariaId")}>
             <option value="">Escolha…</option>
