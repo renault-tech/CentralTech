@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-07",
+    titulo: "Imóveis: dados das planilhas de água e luz já cadastrados",
+    descricao:
+      "As planilhas de controle da Energisa e da COPASA de 2026 foram carregadas: 245 imóveis (nome do setor e endereço), 333 unidades de consumo e 2.620 contas, com as secretarias de cada aba. O que a planilha não traz ou deixa em dúvida (vínculo, contrato e aluguel, endereço genérico, possível imóvel repetido entre água e luz, conta zerada) aparece em Pendências como “Cadastro para revisar”. Abra o imóvel, corrija e marque “revisado” para o aviso sair.",
+  },
+  {
     data: "2026-11-06",
     titulo: "Endereço preenchido pelo CEP",
     descricao:

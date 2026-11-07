@@ -264,6 +264,10 @@ export function calcularPendencias({ imoveis, unidades, contas, entregas, hoje, 
     const ent = entregaDe.get(im.id) ?? null;
     const unids = unidades.filter((u) => u.imovel_id === im.id);
 
+    if (im.revisar_motivo) {
+      add({ chave: "cadastro_revisar", imovelId: im.id, nivel: "atencao", titulo: "Cadastro para revisar", detalhe: im.revisar_motivo.replace(/\s*\n\s*/g, " "), assinatura: im.revisar_motivo });
+    }
+
     if (im.situacao !== "entregue") {
       const v = situacaoVigencia(im.vigencia_fim, hoje, par);
       if (v.nivel === "vencido") {

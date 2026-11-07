@@ -86,14 +86,17 @@ const esquemaImovel = z.object({
   proprietarioContato: texto(120),
   proprietarioConta: texto(160),
   observacoes: texto(2000),
+  /** Marca o cadastro como revisado: apaga o aviso "Cadastro para revisar". */
+  revisado: z.boolean().optional(),
 });
 
 export async function salvarImovel(dados: z.input<typeof esquemaImovel>): Promise<Resultado> {
   const a = esquemaImovel.safeParse(dados);
   if (!a.success) return invalido(a.error);
   if (!(await exigirGestor())) return falha(SO_GESTOR);
-  const { id, ...v } = a.data;
+  const { id, revisado, ...v } = a.data;
   const linha = {
+    ...(id && revisado ? { revisar_motivo: null } : {}),
     nome: v.nome,
     endereco: v.endereco,
     secretaria_id: v.secretariaId,
