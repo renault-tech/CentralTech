@@ -44,8 +44,11 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
   const totalConsumo = doMes.reduce((a, l) => a + (l.conta?.consumo ?? 0), 0);
   const meses = ultimosMeses(referencia, 12);
   const idsVisiveis = new Set(linhas.map((l) => l.unidade.id));
-  const porMes = meses.map((m) => t.contas.filter((c) => c.referencia === m && idsVisiveis.has(c.unidade_id)).reduce((a, c) => a + c.valor, 0));
-  const totalAno = porMes.reduce((a, v) => a + v, 0);
+  const porMes = meses.map((m) => {
+    const cs = t.contas.filter((c) => c.referencia === m && idsVisiveis.has(c.unidade_id));
+    return cs.length ? cs.reduce((a, c) => a + c.valor, 0) : null;
+  });
+  const totalAno = porMes.reduce<number>((a, v) => a + (v ?? 0), 0);
   const comAnomalia = todas.filter((l) => l.anomalias.length > 0).length;
   const semConta = linhas.filter((l) => !l.conta && l.unidade.ativa && l.imovel.situacao === "ativo").length;
 

@@ -5,7 +5,7 @@ import { brl } from "@/lib/imoveis/regras";
  * Texto dos eixos usa `fill-slate-500` (a escala `slate` muda no modo escuro).
  */
 
-export type Serie = { rotulo: string; cor: string; valores: number[] };
+export type Serie = { rotulo: string; cor: string; valores: (number | null)[] };
 
 const fmtCurto = (v: number) => (v >= 1000 ? `${Math.round(v / 1000)} mil` : String(Math.round(v)));
 
@@ -16,7 +16,7 @@ export function GraficoLinhas({ rotulos, series, altura = 220, formato = fmtCurt
   const pr = 14;
   const pt = 14;
   const pb = 26;
-  const max = Math.max(1, ...series.flatMap((s) => s.valores)) * 1.1;
+  const max = Math.max(1, ...series.flatMap((s) => s.valores.filter((v): v is number => v !== null))) * 1.1;
   const y = (v: number) => pt + (H - pt - pb) * (1 - v / max);
   const x = (i: number) => pl + ((W - pl - pr) * i) / Math.max(1, rotulos.length - 1);
   return (
@@ -38,13 +38,25 @@ export function GraficoLinhas({ rotulos, series, altura = 220, formato = fmtCurt
         </text>
       ))}
       {series.map((s) => {
-        const d = s.valores.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join("");
-        const ultimo = s.valores.length - 1;
+        // Mês sem lançamento (null) é lacuna: a linha é interrompida em vez de cair a zero.
+        const trechos: number[][] = [];
+        s.valores.forEach((v, i) => {
+          if (v === null) return;
+          if (i > 0 && s.valores[i - 1] !== null) trechos[trechos.length - 1].push(i);
+          else trechos.push([i]);
+        });
         return (
           <g key={s.rotulo}>
-            <path d={`${d}L${x(ultimo)},${y(0)}L${x(0)},${y(0)}Z`} fill={s.cor} opacity={0.08} />
-            <path d={d} fill="none" stroke={s.cor} strokeWidth={2.4} strokeLinejoin="round" />
-            <circle cx={x(ultimo)} cy={y(s.valores[ultimo] ?? 0)} r={4.5} fill={s.cor} className="stroke-white" strokeWidth={2} />
+            {trechos.map((idx) => {
+              const d = idx.map((i, k) => `${k ? "L" : "M"}${x(i)},${y(s.valores[i] as number)}`).join("");
+              return (
+                <g key={idx[0]}>
+                  {idx.length > 1 && <path d={`${d}L${x(idx[idx.length - 1])},${y(0)}L${x(idx[0])},${y(0)}Z`} fill={s.cor} opacity={0.08} />}
+                  <path d={d} fill="none" stroke={s.cor} strokeWidth={2.4} strokeLinejoin="round" />
+                  <circle cx={x(idx[idx.length - 1])} cy={y(s.valores[idx[idx.length - 1]] as number)} r={idx.length === 1 ? 3.5 : 4.5} fill={s.cor} className="stroke-white" strokeWidth={2} />
+                </g>
+              );
+            })}
           </g>
         );
       })}

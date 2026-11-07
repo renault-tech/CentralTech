@@ -4,6 +4,7 @@ import {
   analisarConsumo,
   mascararDocumento,
   calcularPendencias,
+  totaisMensais,
   etapasDaEntrega,
   PARAMETROS_PADRAO,
   proximoVencimentoAluguel,
@@ -208,5 +209,19 @@ describe("pendência por valor", () => {
     const contas = [100, 100, 100, 100, 100, 100, 190].map((v, i) => ({ id: `c${i}`, unidade_id: "u1", referencia: somarMeses("2026-11-01", i - 6), consumo: null, valor: v, vencimento: null, pago_em: null })) as unknown as Conta[];
     const p = calcularPendencias({ imoveis: [im], unidades: [unid], contas, entregas: [], hoje: "2026-11-05", par });
     expect(p.find((x) => x.chave === "valor_conta_luz")).toMatchObject({ nivel: "critico", titulo: expect.stringContaining("Valor da conta") });
+  });
+});
+
+describe("totaisMensais", () => {
+  it("mês sem nenhuma conta do tipo é lacuna (null), não zero", () => {
+    const im = { id: "i1", situacao: "ativo", valor_aluguel: 0 } as Imovel;
+    const un = [{ id: "ua", tipo: "agua" }, { id: "ul", tipo: "luz" }] as Unidade[];
+    const cs = [
+      { unidade_id: "ua", referencia: "2026-07-01", valor: 10 },
+      { unidade_id: "ul", referencia: "2026-07-01", valor: 20 },
+      { unidade_id: "ul", referencia: "2026-08-01", valor: 30 },
+    ] as Conta[];
+    const m = totaisMensais([im], un, cs, "2026-08-01", 2);
+    expect(m.map((x) => [x.agua, x.luz])).toEqual([[10, 20], [null, 30]]);
   });
 });

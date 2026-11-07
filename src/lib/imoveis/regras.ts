@@ -344,7 +344,8 @@ export function semJustificadas(pendencias: Pendencia[], justificadas: { imovel_
 
 // ------------------------------------------------------------------ totais
 
-export type TotalMensal = { referencia: string; aluguel: number; agua: number; luz: number };
+/** `agua`/`luz` = null quando nenhuma conta daquele tipo foi lançada no mês (lacuna, não gasto zero). */
+export type TotalMensal = { referencia: string; aluguel: number; agua: number | null; luz: number | null };
 
 /** Gasto dos últimos `n` meses: aluguel dos imóveis não entregues na época (aproximação: situação atual) + contas lançadas. */
 export function totaisMensais(imoveis: Imovel[], unidades: Unidade[], contas: Conta[], ref: string, n = 12): TotalMensal[] {
@@ -352,7 +353,10 @@ export function totaisMensais(imoveis: Imovel[], unidades: Unidade[], contas: Co
   const aluguel = imoveis.filter((i) => i.situacao !== "entregue").reduce((a, i) => a + i.valor_aluguel, 0);
   return ultimosMeses(ref, n).map((r) => {
     const doMes = contas.filter((c) => c.referencia === r);
-    const soma = (t: TipoUnidade) => doMes.filter((c) => tipoDe.get(c.unidade_id) === t).reduce((a, c) => a + c.valor, 0);
+    const soma = (t: TipoUnidade) => {
+      const cs = doMes.filter((c) => tipoDe.get(c.unidade_id) === t);
+      return cs.length ? cs.reduce((a, c) => a + c.valor, 0) : null;
+    };
     return { referencia: r, aluguel, agua: soma("agua"), luz: soma("luz") };
   });
 }
