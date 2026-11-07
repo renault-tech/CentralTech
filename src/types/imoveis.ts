@@ -55,6 +55,8 @@ export type Imovel = {
   proprietario_contato: string | null;
   proprietario_conta: string | null;
   observacoes: string | null;
+  /** Dúvidas do cadastro (ex.: vindo da planilha); vira pendência até o imóvel ser marcado como revisado. */
+  revisar_motivo: string | null;
   criado_em: string;
   atualizado_em: string;
 };

@@ -34,6 +34,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
     proprietarioConta: imovel?.proprietario_conta ?? "",
     observacoes: imovel?.observacoes ?? "",
   });
+  const [revisado, setRevisado] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setV((x) => ({ ...x, [k]: e.target.value }));
@@ -65,6 +66,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
         proprietarioContato: v.proprietarioContato,
         proprietarioConta: v.proprietarioConta,
         observacoes: v.observacoes,
+        revisado,
       });
       if (!r.sucesso) return setErro(r.erro);
       router.replace(imovel ? voltarPara : `/imoveis/imoveis/${r.id}`);
@@ -134,6 +136,16 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
         <Campo rotulo="CPF ou CNPJ do proprietário" htmlFor="i-pd" dica="Aparece mascarado nas telas."><input id="i-pd" className={campo} value={v.proprietarioDocumento} onChange={set("proprietarioDocumento")} /></Campo>
         <Campo rotulo="Contato" htmlFor="i-pc"><input id="i-pc" className={campo} value={v.proprietarioContato} onChange={set("proprietarioContato")} /></Campo>
         <Campo rotulo="Conta para pagamento" htmlFor="i-pb" className="sm:col-span-2"><input id="i-pb" className={campo} value={v.proprietarioConta} onChange={set("proprietarioConta")} placeholder="Banco, agência e conta" /></Campo>
+        {imovel?.revisar_motivo && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+            <p className="font-medium">Cadastro para revisar</p>
+            <p className="mt-1 whitespace-pre-line">{imovel.revisar_motivo}</p>
+            <label className="mt-2 flex items-center gap-2">
+              <input type="checkbox" checked={revisado} onChange={(e) => setRevisado(e.target.checked)} />
+              Conferi e corrigi os dados: marcar como revisado ao salvar
+            </label>
+          </div>
+        )}
         <Campo rotulo="Observações" htmlFor="i-obs" className="sm:col-span-2"><textarea id="i-obs" rows={3} className={campo} value={v.observacoes} onChange={set("observacoes")} /></Campo>
       </fieldset>
 

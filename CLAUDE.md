@@ -1950,6 +1950,13 @@ tem `interno: true`.
   `hub.limites_requisicao`), então não depende de CORS nem da CSP do navegador. Sem coluna nova: o CEP fica dentro do texto do endereço
   (`cepDoEndereco` o recupera ao editar). Testado com `fetch` falso (fonte principal, reserva, não encontrado × indisponível, CEP inválido);
   **não testado contra as APIs reais** (sandbox sem internet): no primeiro uso, digitar um CEP de Cataguases e conferir.
+- **Carga inicial das planilhas (07/11/2026)**: feita por SQL direto em produção (não pela tela), a partir dos dois .xlsx reais, com `luz` antes de `água`
+  para o mesmo imóvel casar por nome/endereço específico: 245 imóveis (todos `vinculo = proprio`, aluguel 0), 333 unidades, 2.620 contas (`origem = planilha`,
+  total R$ 1.718.884,83, igual à planilha), secretaria nova SEDEGI. **`imoveis.imoveis.revisar_motivo`** (migration `20261107040000`) guarda as dúvidas do
+  cadastro, uma por linha; `calcularPendencias` gera a pendência `cadastro_revisar` ("Cadastro para revisar", atenção) enquanto o campo existir. No formulário do
+  imóvel aparece o aviso com a caixa "marcar como revisado" (`salvarImovel({revisado:true})` zera o campo). Motivos gerados: vínculo/contrato/aluguel não
+  informados (todos), endereço genérico (107), possível duplicidade água × luz (27 pares, mesmo número e rua/nome parecidos — **não foram unificados**), conta com
+  valor R$ 0,00, secretaria criada da aba. Reimportar pela tela continua sem sobrescrever mês já lançado.
 - **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado, ligar/mesclar imóveis duplicados depois de importar
   (a prévia sugere a ligação por nome/endereço; se o nome de água e luz diferir, nascem dois imóveis para o mesmo lugar), empenho e dotação
   (as planilhas trazem FICHA/EMPENHO/VALOR EMPENHO por secretaria, ainda não lidos), vencimento e pagamento das contas importadas (as planilhas não trazem).

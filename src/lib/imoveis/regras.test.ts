@@ -116,7 +116,7 @@ describe("calcularPendencias", () => {
   const imovel = (o: Partial<Imovel> = {}): Imovel => ({
     id: "i1", nome: "CRAS", endereco: "Rua A", secretaria_id: "s1", setor: null, finalidade: null, situacao: "ativo", vinculo: "alugado", contrato_numero: null,
     vigencia_inicio: null, vigencia_fim: "2030-01-01", valor_aluguel: 1000, dia_vencimento: 5, indice_reajuste: null, proximo_reajuste: null, imobiliaria_id: null,
-    proprietario_nome: null, proprietario_documento: null, proprietario_contato: null, proprietario_conta: null, observacoes: null, criado_em: "", atualizado_em: "", ...o,
+    proprietario_nome: null, proprietario_documento: null, proprietario_contato: null, proprietario_conta: null, observacoes: null, revisar_motivo: null, criado_em: "", atualizado_em: "", ...o,
   });
   const unid: Unidade = { id: "u1", imovel_id: "i1", tipo: "luz", numero: "UC 1", titular: null, ativa: true, criado_em: "", atualizado_em: "" };
   const conta = (referencia: string, consumo: number, o: Partial<Conta> = {}): Conta => ({
@@ -124,6 +124,12 @@ describe("calcularPendencias", () => {
   });
   const base = { unidades: [unid], entregas: [] as Entrega[], hoje: "2026-11-05", par };
 
+  it("imóvel com dúvida de cadastro vira pendência de revisão e some quando é marcado como revisado", () => {
+    const duvida = imovel({ revisar_motivo: "Endereço genérico.\nConfirmar o vínculo." });
+    const p = calcularPendencias({ ...base, imoveis: [duvida], contas: [] }).find((x) => x.chave === "cadastro_revisar");
+    expect(p).toMatchObject({ nivel: "atencao", titulo: "Cadastro para revisar", detalhe: "Endereço genérico. Confirmar o vínculo." });
+    expect(calcularPendencias({ ...base, imoveis: [imovel()], contas: [] }).some((x) => x.chave === "cadastro_revisar")).toBe(false);
+  });
   it("consumo acima do padrão vira pendência crítica", () => {
     const contas = [100, 100, 100, 100, 100, 100, 190].map((c, i) => conta(somarMeses("2026-11-01", i - 6), c));
     const p = calcularPendencias({ ...base, imoveis: [imovel()], contas });
