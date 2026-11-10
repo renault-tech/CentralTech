@@ -97,6 +97,22 @@ export async function salvarDatasExercicio(dados: z.input<typeof esquemaDatasExe
   return { sucesso: true };
 }
 
+/** Liga/desliga a correção de lançamentos (número e data) pelas secretarias, no exercício. */
+export async function salvarPermissaoLancamentos(dados: { ano: number; permitir: boolean }): Promise<Resultado> {
+  if (!Number.isInteger(dados.ano) || typeof dados.permitir !== "boolean") return { sucesso: false, erro: "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { data: linhas, error } = await emendas
+    .from("exercicios")
+    .update({ secretaria_edita_lancamentos: dados.permitir })
+    .eq("ano", dados.ano)
+    .select("ano");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o exercício não foi encontrado." };
+  revalidar();
+  return { sucesso: true };
+}
+
 const esquemaDadosPublicacao = z.object({
   ano: z.number().int().min(2020).max(2100),
   municipioNome: opcional,

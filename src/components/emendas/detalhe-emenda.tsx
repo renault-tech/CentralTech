@@ -138,6 +138,7 @@ export function DetalheEmendaCliente({
   unidades,
   auditoria,
   exclusoes,
+  podeCorrigirLancamento,
   nomesUsuarios,
   fases,
   pendencias,
@@ -158,6 +159,7 @@ export function DetalheEmendaCliente({
   beneficiarios: Beneficiario[];
   unidades: UnidadeOrcamentaria[];
   auditoria: { id: number; tabela: string; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
+  podeCorrigirLancamento: boolean;
   exclusoes: { em: string; usuario_id: string; justificativa: string; tipo: string }[];
   nomesUsuarios: Record<string, string>;
 }) {
@@ -335,7 +337,7 @@ export function DetalheEmendaCliente({
                       <th scope="col" className="px-3 py-2 font-medium">Documento</th>
                       <th scope="col" className="px-3 py-2 font-medium">Data</th>
                       <th scope="col" className="px-3 py-2 text-right font-medium">Valor</th>
-                      {gestor && <th scope="col" className="w-28 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
+                      {(gestor || podeCorrigirLancamento) && <th scope="col" className="w-28 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -344,6 +346,7 @@ export function DetalheEmendaCliente({
                         key={m.id}
                         movimento={m}
                         gestor={gestor}
+                        podeCorrigir={gestor || podeCorrigirLancamento}
                         nome={NOME_TIPO_MOV[m.tipo]}
                         aoCorrigir={(numero, data) => executar(() => corrigirMovimento({ id: m.id, emendaId: emenda.id, numero, data }))}
                         aoExcluir={(justificativa) => executar(() => excluirMovimento({ id: m.id, emendaId: emenda.id, justificativa }))}
@@ -923,6 +926,7 @@ function ResolverImpedimento({
 function LinhaMovimento({
   movimento,
   gestor,
+  podeCorrigir,
   nome,
   aoCorrigir,
   aoExcluir,
@@ -930,6 +934,7 @@ function LinhaMovimento({
   aoExcluir: (justificativa: string) => Promise<Resultado>;
   movimento: DetalheEmenda["movimentos"][number];
   gestor: boolean;
+  podeCorrigir: boolean;
   nome: string;
   aoCorrigir: (numero: string, data: string | null) => Promise<Resultado>;
 }) {
@@ -983,12 +988,12 @@ function LinhaMovimento({
       <td className="px-3 py-2.5 font-mono">{movimento.numero ?? <span className="font-sans text-amber-800">sem nº</span>}</td>
       <td className="px-3 py-2.5">{movimento.data ? dataBr(movimento.data) : <span className="text-amber-800">sem data</span>}</td>
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>
-      {gestor && (
+      {podeCorrigir && (
         <td className="whitespace-nowrap px-3 py-2.5 text-right">
           <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
             <Pencil className="h-4 w-4" aria-hidden />
           </button>
-          <button
+          {gestor && <button
             type="button"
             aria-label="Excluir lançamento"
             title="Excluir lançamento"
@@ -1004,7 +1009,7 @@ function LinhaMovimento({
             }}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
+          </button>}
         </td>
       )}
     </tr>

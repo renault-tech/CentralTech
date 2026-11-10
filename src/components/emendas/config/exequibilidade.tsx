@@ -6,7 +6,7 @@ import { Check, Trash2 } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
-import { registrarImpedimentosEmLote, removerParecer, salvarDadosPublicacao, salvarDatasExercicio, salvarParecer } from "@/lib/emendas/actions-config";
+import { registrarImpedimentosEmLote, removerParecer, salvarDadosPublicacao, salvarDatasExercicio, salvarParecer, salvarPermissaoLancamentos } from "@/lib/emendas/actions-config";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import type { Exercicio, ParecerExequibilidade, Secretaria } from "@/types/emendas";
 
@@ -99,6 +99,34 @@ export function EditorDatasExercicio({ exercicio }: { exercicio: Exercicio }) {
           </span>
         )}
       </div>
+      <Erro texto={erro} />
+    </Secao>
+  );
+}
+
+/** Permissão das secretarias para corrigir número e data de empenho, liquidação e pagamento. */
+export function EditorPermissaoLancamentos({ exercicio }: { exercicio: Exercicio }) {
+  const [permitir, setPermitir] = React.useState(exercicio.secretaria_edita_lancamentos);
+  const { erro, salvando, salvar } = useSalvar();
+  return (
+    <Secao
+      titulo={`Correção de lançamentos pelas secretarias — ${exercicio.ano}`}
+      apoio="Quando ligado, perfis de secretaria podem corrigir o número e a data de empenhos, liquidações e pagamentos das emendas que editam. A correção vai para a tela Aprovações e só vale depois que o gestor aprova."
+    >
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          className="h-4 w-4"
+          checked={permitir}
+          disabled={salvando}
+          onChange={(e) => {
+            const novo = e.target.checked;
+            setPermitir(novo);
+            void salvar(() => salvarPermissaoLancamentos({ ano: exercicio.ano, permitir: novo }));
+          }}
+        />
+        Permitir que as secretarias proponham correção de empenho, liquidação e pagamento
+      </label>
       <Erro texto={erro} />
     </Secao>
   );

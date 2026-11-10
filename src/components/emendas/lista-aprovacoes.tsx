@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { decidirPropostas } from "@/lib/emendas/actions-propostas";
 import type { PropostaListada } from "@/lib/emendas/dados";
-import { dataBr } from "@/lib/emendas/regras";
+import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 
 const BOTAO_PRIMARIO = "inline-flex h-9 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
@@ -40,14 +40,25 @@ function rotulo(p: PropostaListada): string {
   if (p.alvo === "execucao") return ROTULO_CAMPO[p.campo ?? ""] ?? p.campo ?? "Execução";
   if (p.alvo === "emenda_fases") return `Fase “${p.chave}”`;
   if (p.alvo === "emenda_checklist") return `Documento “${p.chave}”`;
+  if (p.alvo === "movimentos" && p.campo === "correcao") return "Correção de lançamento (número e data)";
+  if (p.alvo === "movimentos") return `Novo lançamento: ${NOME_MOV[p.chave ?? ""] ?? p.chave}`;
   return p.alvo;
 }
+const NOME_MOV: Record<string, string> = { empenho: "empenho", liquidacao: "liquidação", pagamento: "pagamento", anulacao: "anulação de empenho" };
 
 function mostrar(p: PropostaListada, v: unknown): string {
   if (v === null || v === undefined || v === "") return "—";
   if (p.campo === "processo_id" && v === p.valor_proposto && p.processo_proposto) return p.processo_proposto;
   if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}$/.test(v) ? dataBr(v) : v;
   const o = v as Record<string, string | null>;
+  if (p.alvo === "movimentos" && p.campo === "correcao") {
+    const m = v as { numero?: string | null; data?: string | null };
+    return [m.numero ? `nº ${m.numero}` : "sem nº", m.data ? dataBr(m.data) : "sem data"].join(" · ");
+  }
+  if (p.alvo === "movimentos") {
+    const m = v as { numero?: string | null; data?: string | null; valor?: number; observacao?: string | null };
+    return [m.numero ? `nº ${m.numero}` : null, m.data ? dataBr(m.data) : null, m.valor != null ? brl(m.valor) : null, m.observacao].filter(Boolean).join(" · ");
+  }
   if (p.alvo === "emenda_fases")
     return [SITUACAO[o.situacao ?? ""] ?? o.situacao, o.data ? dataBr(o.data) : null, o.documento, o.observacao].filter(Boolean).join(" · ");
   if (p.alvo === "emenda_checklist") return ESTADO[o.estado ?? ""] ?? String(o.estado);
