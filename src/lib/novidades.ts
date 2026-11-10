@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-10",
+    titulo: "Sino de avisos sempre visível",
+    descricao: "O painel de avisos e o aviso novo que aparece no canto abriam atrás dos cartões ou fora da tela. Agora ficam por cima de tudo, com fundo sólido.",
+  },
+  {
+    data: "2026-11-10",
     titulo: "Emendas: histórico vira registro completo (quem, quando e o quê)",
     descricao: "A aba Histórico da emenda agora lista também lançamentos financeiros, andamentos, impedimentos e anexos criados, alterados ou excluídos, com nome de quem fez, data e hora. Nas exclusões aparece a justificativa informada.",
   },
