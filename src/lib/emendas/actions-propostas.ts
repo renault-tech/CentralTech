@@ -53,6 +53,10 @@ async function valorAtualDe(emendas: Cliente, p: Linha): Promise<unknown> {
     const { data } = await emendas.from("emenda_checklist").select("estado").eq("emenda_id", p.emenda_id).eq("item_chave", p.chave).maybeSingle();
     return { estado: data?.estado ?? "pendente" };
   }
+  if (p.alvo === "movimentos" && p.campo === "correcao" && p.chave) {
+    const { data } = await emendas.from("movimentos_financeiros").select("numero,data").eq("id", p.chave).eq("emenda_id", p.emenda_id).maybeSingle();
+    return data ? { numero: data.numero ?? null, data: data.data ?? null } : undefined;
+  }
   return null;
 }
 
@@ -90,6 +94,13 @@ function validarProposta(p: Linha): string | null {
     const v = p.valor_proposto as { estado?: string } | null;
     return p.chave && CHAVE_OK.test(p.chave) && v && ESTADOS_CHECK.has(String(v.estado)) ? null : "Item inválido.";
   }
+  if (p.alvo === "movimentos" && p.campo === "correcao") {
+    const v = p.valor_proposto as { numero?: unknown; data?: unknown } | null;
+    if (!v || !p.chave || !UUID_OK.test(p.chave)) return "Correção inválida.";
+    if (v.data != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(v.data))) return "Data inválida.";
+    if (v.numero != null && String(v.numero).length > 40) return "Número longo demais.";
+    return null;
+  }
   if (p.alvo === "movimentos") {
     const v = p.valor_proposto as { tipo?: string; numero?: unknown; data?: unknown; valor?: unknown; observacao?: unknown } | null;
     if (!v || !["empenho", "liquidacao", "pagamento", "anulacao"].includes(String(v.tipo))) return "Lançamento inválido.";
@@ -125,6 +136,17 @@ async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<s
       conferido_por: conferido ? usuarioId : null, conferido_em: conferido ? agora : null,
     });
     return error ? error.message : null;
+  }
+  if (p.alvo === "movimentos" && p.campo === "correcao" && p.chave) {
+    const v = p.valor_proposto as { numero: string | null; data: string | null };
+    const { data: gravadas, error } = await emendas
+      .from("movimentos_financeiros")
+      .update({ numero: v.numero ?? null, data: v.data ?? null })
+      .eq("id", p.chave)
+      .eq("emenda_id", p.emenda_id)
+      .select("id");
+    if (error) return error.message;
+    return gravadas?.length ? null : "O lançamento não existe mais.";
   }
   if (p.alvo === "movimentos") {
     const v = p.valor_proposto as { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero: string | null; data: string | null; valor: number; observacao: string | null };

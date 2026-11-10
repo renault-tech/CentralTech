@@ -40,6 +40,7 @@ function rotulo(p: PropostaListada): string {
   if (p.alvo === "execucao") return ROTULO_CAMPO[p.campo ?? ""] ?? p.campo ?? "Execução";
   if (p.alvo === "emenda_fases") return `Fase “${p.chave}”`;
   if (p.alvo === "emenda_checklist") return `Documento “${p.chave}”`;
+  if (p.alvo === "movimentos" && p.campo === "correcao") return "Correção de lançamento (número e data)";
   if (p.alvo === "movimentos") return `Novo lançamento: ${NOME_MOV[p.chave ?? ""] ?? p.chave}`;
   return p.alvo;
 }
@@ -50,6 +51,10 @@ function mostrar(p: PropostaListada, v: unknown): string {
   if (p.campo === "processo_id" && v === p.valor_proposto && p.processo_proposto) return p.processo_proposto;
   if (typeof v === "string") return /^\d{4}-\d{2}-\d{2}$/.test(v) ? dataBr(v) : v;
   const o = v as Record<string, string | null>;
+  if (p.alvo === "movimentos" && p.campo === "correcao") {
+    const m = v as { numero?: string | null; data?: string | null };
+    return [m.numero ? `nº ${m.numero}` : "sem nº", m.data ? dataBr(m.data) : "sem data"].join(" · ");
+  }
   if (p.alvo === "movimentos") {
     const m = v as { numero?: string | null; data?: string | null; valor?: number; observacao?: string | null };
     return [m.numero ? `nº ${m.numero}` : null, m.data ? dataBr(m.data) : null, m.valor != null ? brl(m.valor) : null, m.observacao].filter(Boolean).join(" · ");

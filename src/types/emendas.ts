@@ -47,6 +47,7 @@ export type Exercicio = {
   municipio_nome: string | null;
   municipio_cnpj: string | null;
   unidade_parlamentar: string | null;
+  secretaria_edita_lancamentos: boolean;
 };
 
 export type Vereador = {

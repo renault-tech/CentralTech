@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-10",
+    titulo: "Emendas: secretarias podem propor correção de empenho e pagamento",
+    descricao: "Em Configurações › Exercício, o gestor liga ou desliga a opção. Ligada, a secretaria corrige número e data de empenhos, liquidações e pagamentos das emendas que edita, e a correção vai para Aprovações.",
+  },
+  {
+    data: "2026-11-10",
     titulo: "Emendas: lançamentos de secretaria passam por aprovação",
     descricao: "Empenho, liquidação e pagamento lançados por perfil de secretaria agora vão para a tela Aprovações e só valem depois que o gestor aprova. Gestor e administrador continuam lançando direto.",
   },

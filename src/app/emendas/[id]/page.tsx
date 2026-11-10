@@ -152,6 +152,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             unidades={unidades}
             auditoria={registros}
             exclusoes={listaExclusoes}
+            podeCorrigirLancamento={podeEditar && !!exercicio?.secretaria_edita_lancamentos}
             nomesUsuarios={nomesUsuarios}
             fases={calculo.fases}
             pendencias={calculo.pendencias}

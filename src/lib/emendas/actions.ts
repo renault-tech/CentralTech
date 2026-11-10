@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
-import { listarFasesCatalogo, listarItensChecklist, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
+import { listarFasesCatalogo, listarItensChecklist, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria } from "@/lib/emendas/dados";
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
 import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from "@/lib/emendas/compras";
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
@@ -512,9 +512,31 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   const a = esquemaCorrecaoMovimento.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   const ctx = await exigirAcesso();
-  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores corrigem movimentos já registrados." };
+  if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
 
   const emendas = await criarClienteEmendas();
+  if (!ehGestor(ctx.perfil)) {
+    // Secretaria: só se o exercício permitir, só nas emendas que ela edita, e a correção espera aprovação.
+    const { data: mov } = await emendas.from("movimentos_financeiros").select("id,numero,data,emenda_id").eq("id", a.data.id).eq("emenda_id", a.data.emendaId).maybeSingle();
+    const { data: em } = await emendas.from("v_emendas").select("ano,secretaria_id").eq("id", a.data.emendaId).maybeSingle();
+    if (!mov || !em) return { sucesso: false, erro: "Lançamento não encontrado." };
+    if (!podeEditarSecretaria(ctx, em.secretaria_id)) return { sucesso: false, erro: "Você não edita as emendas desta secretaria." };
+    const { data: ex } = await emendas.from("exercicios").select("secretaria_edita_lancamentos").eq("ano", em.ano).maybeSingle();
+    if (!ex?.secretaria_edita_lancamentos) return { sucesso: false, erro: "A correção de lançamentos pelas secretarias não está liberada nas configurações." };
+    if ((mov.numero ?? null) === (a.data.numero ?? null) && (mov.data ?? null) === (a.data.data ?? null)) return { sucesso: true };
+    const falha = await proporAlteracoes(a.data.emendaId, [
+      {
+        alvo: "movimentos",
+        chave: a.data.id,
+        campo: "correcao",
+        valorAtual: { numero: mov.numero ?? null, data: mov.data ?? null },
+        valorProposto: { numero: a.data.numero ?? null, data: a.data.data ?? null },
+      },
+    ]);
+    if (falha) return { sucesso: false, erro: falha };
+    revalidar(a.data.emendaId);
+    return { sucesso: true, aviso: "Correção enviada para aprovação do gestor." };
+  }
   // `.select("id")` para saber se alguma linha foi mesmo alterada: sem isso, uma atualização
   // que a RLS filtra devolve "sucesso" sem gravar nada.
   const { data: gravadas, error } = await emendas
