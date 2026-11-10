@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { Bell, X } from "lucide-react";
 
 import { COR_APP_AVISO, NOME_APP_AVISO, destinoDoAviso } from "@/lib/notificacoes/links";
@@ -33,6 +34,8 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
   const [aberto, setAberto] = React.useState(false);
   const caixa = React.useRef<HTMLDivElement>(null);
   const botao = React.useRef<HTMLButtonElement>(null);
+  const painel = React.useRef<HTMLDivElement>(null);
+  const [topo, setTopo] = React.useState(56);
 
   const total = Object.values(porApp).reduce((t, n) => t + (n ?? 0), 0);
   const compras = porApp.compras ?? 0;
@@ -40,7 +43,8 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
   React.useEffect(() => {
     if (!aberto) return;
     const fora = (e: MouseEvent) => {
-      if (caixa.current && !caixa.current.contains(e.target as Node)) setAberto(false);
+      const alvo = e.target as Node;
+      if (!caixa.current?.contains(alvo) && !painel.current?.contains(alvo)) setAberto(false);
     };
     const esc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -66,7 +70,10 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
       <button
         ref={botao}
         type="button"
-        onClick={() => setAberto((v) => !v)}
+        onClick={() => {
+          setTopo((botao.current?.getBoundingClientRect().bottom ?? 48) + 8);
+          setAberto((v) => !v);
+        }}
         className={CLASSE_ICONE_CABECALHO}
         aria-label={total > 0 ? `Avisos: ${total} não lido(s)` : "Avisos"}
         aria-expanded={aberto}
@@ -81,11 +88,13 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
         )}
       </button>
 
-      {aberto && (
+      {aberto && typeof document !== "undefined" && createPortal(
         <div
+          ref={painel}
           role="dialog"
           aria-label="Avisos"
-          className="tema-atual absolute inset-x-3 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-xl sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-[380px]"
+          style={{ top: topo, backgroundColor: "rgb(var(--surface))", backdropFilter: "none", WebkitBackdropFilter: "none" }}
+          className="tema-atual fixed inset-x-3 z-[100] overflow-hidden rounded-xl border border-slate-200 text-slate-800 shadow-xl sm:inset-x-auto sm:right-3 sm:w-[380px]"
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold text-cataguases-marinho">Avisos</p>
@@ -145,13 +154,15 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {novo && !aberto && (
+      {novo && !aberto && typeof document !== "undefined" && createPortal(
         <div
           role="status"
-          className="fixed bottom-4 right-4 z-50 flex w-[min(92vw,360px)] items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-2xl"
+          style={{ backgroundColor: "rgb(var(--surface))", backdropFilter: "none", WebkitBackdropFilter: "none" }}
+          className="tema-atual fixed bottom-4 right-4 z-[100] flex w-[min(92vw,360px)] items-start gap-3 rounded-xl border border-slate-200 p-3.5 text-slate-800 shadow-2xl"
         >
           <span className="mt-1 h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: COR_APP_AVISO[novo.app] }} aria-hidden />
           <button type="button" onClick={() => abrir(novo)} className="min-w-0 flex-1 text-left">
@@ -164,7 +175,8 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
           <button type="button" onClick={limparNovo} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-700" aria-label="Fechar aviso">
             <X className="h-4 w-4" aria-hidden />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
