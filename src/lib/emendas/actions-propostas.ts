@@ -32,7 +32,13 @@ type Linha = {
   autor: string | null;
 };
 
-const igual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+// O jsonb do banco devolve as chaves em outra ordem; compara pelo conteúdo, não pela ordem das chaves.
+function canonico(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(canonico);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => [k, canonico(x)]));
+  return v ?? null;
+}
+const igual = (a: unknown, b: unknown) => JSON.stringify(canonico(a)) === JSON.stringify(canonico(b));
 
 async function exigirGestor() {
   const ctx = await obterContextoEmendas();
