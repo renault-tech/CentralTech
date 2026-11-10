@@ -158,7 +158,7 @@ async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<s
     const v = p.valor_proposto as { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero: string | null; data: string | null; valor: number; observacao: string | null };
     const { error } = await emendas.from("movimentos_financeiros").insert({
       emenda_id: p.emenda_id, tipo: v.tipo, numero: v.numero ?? null, data: v.data ?? null, valor: v.valor, observacao: v.observacao ?? null,
-      usuario_id: p.autor ?? usuarioId,
+      usuario_id: usuarioId, // a política de insert exige usuario_id = quem grava (o gestor que aprovou); o autor fica na proposta
     });
     return error ? error.message : null;
   }
