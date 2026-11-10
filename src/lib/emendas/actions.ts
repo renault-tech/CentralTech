@@ -519,11 +519,21 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
 
 /** Exclui um lançamento financeiro (empenho, liquidação, pagamento…) lançado por engano. Só gestor;
  * a exclusão fica na auditoria (quem, quando e o que tinha). */
-export async function excluirMovimento(dados: { id: string; emendaId: string }): Promise<Resultado> {
+export async function excluirMovimento(dados: { id: string; emendaId: string; justificativa: string }): Promise<Resultado> {
   if (!z.uuid().safeParse(dados.id).success || !z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Lançamento inválido." };
+  const justificativa = (dados.justificativa ?? "").trim();
+  if (justificativa.length < 10) return { sucesso: false, erro: "Escreva a justificativa da exclusão (mínimo de 10 caracteres)." };
   const ctx = await exigirAcesso();
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores excluem lançamentos." };
   const emendas = await criarClienteEmendas();
+  const { data: mov } = await emendas.from("movimentos_financeiros").select("*").eq("id", dados.id).eq("emenda_id", dados.emendaId).maybeSingle();
+  const { data: em } = await emendas.from("emendas").select("numero,ano").eq("id", dados.emendaId).maybeSingle();
+  if (!mov || !em) return { sucesso: false, erro: "Lançamento não encontrado." };
+  const { error: erroJust } = await emendas.from("exclusoes_justificadas").insert({ tipo: "lancamento", emenda_id: dados.emendaId, emenda_numero: em.numero, ano: em.ano, detalhe: mov, justificativa, usuario_id: ctx.usuario.id });
+  if (erroJust) {
+    console.error("[excluirMovimento] justificativa", erroJust);
+    return { sucesso: false, erro: "Não foi possível registrar a justificativa; nada foi excluído." };
+  }
   const { data: apagadas, error } = await emendas.from("movimentos_financeiros").delete().eq("id", dados.id).eq("emenda_id", dados.emendaId).select("id");
   if (error) {
     console.error("[excluirMovimento]", error);
@@ -536,14 +546,21 @@ export async function excluirMovimento(dados: { id: string; emendaId: string }):
 
 /** Exclui a emenda inteira (lançamentos, fases, anexos, impedimentos…) — para cadastro feito por engano.
  * Só gestor; exige confirmar digitando o número. A auditoria guarda o registro apagado. */
-export async function excluirEmenda(dados: { emendaId: string; numeroConfirmado: number }): Promise<Resultado> {
+export async function excluirEmenda(dados: { emendaId: string; numeroConfirmado: number; justificativa: string }): Promise<Resultado> {
   if (!z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Emenda inválida." };
+  const justificativa = (dados.justificativa ?? "").trim();
+  if (justificativa.length < 10) return { sucesso: false, erro: "Escreva a justificativa da exclusão (mínimo de 10 caracteres)." };
   const ctx = await exigirAcesso();
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores excluem emendas." };
   const emendas = await criarClienteEmendas();
-  const { data: emenda } = await emendas.from("emendas").select("id,numero,ano").eq("id", dados.emendaId).maybeSingle();
+  const { data: emenda } = await emendas.from("emendas").select("id,numero,ano,objeto,valor,vereador_id").eq("id", dados.emendaId).maybeSingle();
   if (!emenda) return { sucesso: false, erro: "Emenda não encontrada." };
   if (emenda.numero !== dados.numeroConfirmado) return { sucesso: false, erro: "O número digitado não confere com o da emenda." };
+  const { error: erroJust } = await emendas.from("exclusoes_justificadas").insert({ tipo: "emenda", emenda_id: emenda.id, emenda_numero: emenda.numero, ano: emenda.ano, detalhe: { objeto: emenda.objeto, valor: emenda.valor }, justificativa, usuario_id: ctx.usuario.id });
+  if (erroJust) {
+    console.error("[excluirEmenda] justificativa", erroJust);
+    return { sucesso: false, erro: "Não foi possível registrar a justificativa; nada foi excluído." };
+  }
   // Anexos no armazenamento (os registros caem junto com a emenda; os arquivos não).
   const { data: docs } = await emendas.from("documentos").select("caminho").eq("emenda_id", dados.emendaId);
   if (docs?.length) {

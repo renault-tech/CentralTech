@@ -315,7 +315,7 @@ export function DetalheEmendaCliente({
                         gestor={gestor}
                         nome={NOME_TIPO_MOV[m.tipo]}
                         aoCorrigir={(numero, data) => executar(() => corrigirMovimento({ id: m.id, emendaId: emenda.id, numero, data }))}
-                        aoExcluir={() => executar(() => excluirMovimento({ id: m.id, emendaId: emenda.id }))}
+                        aoExcluir={(justificativa) => executar(() => excluirMovimento({ id: m.id, emendaId: emenda.id, justificativa }))}
                       />
                     ))}
                   </tbody>
@@ -430,11 +430,17 @@ export function DetalheEmendaCliente({
             type="button"
             className="text-xs text-slate-500 hover:text-red-700 hover:underline"
             onClick={async () => {
-              const digitado = window.prompt(
-                `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}, com todos os lançamentos, fases e anexos?\n\nSe só quer tirar a emenda da cota, use "Cancelar emenda".\n\nPara confirmar, digite o número da emenda:`
+              const motivo = window.prompt(
+                `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}, com todos os lançamentos, fases e anexos?\n\nSe só quer tirar a emenda da cota, use "Cancelar emenda".\n\nJustifique a exclusão (mínimo de 10 caracteres):`
               );
+              if (motivo === null) return;
+              if (motivo.trim().length < 10) {
+                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
+                return;
+              }
+              const digitado = window.prompt(`Para confirmar, digite o número da emenda (${emenda.numero}):`);
               if (digitado === null) return;
-              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado.trim()) }));
+              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado.trim()), justificativa: motivo.trim() }));
               if (r.sucesso) router.push("/emendas/lista");
             }}
           >
@@ -878,7 +884,7 @@ function LinhaMovimento({
   aoCorrigir,
   aoExcluir,
 }: {
-  aoExcluir: () => Promise<Resultado>;
+  aoExcluir: (justificativa: string) => Promise<Resultado>;
   movimento: DetalheEmenda["movimentos"][number];
   gestor: boolean;
   nome: string;
@@ -945,7 +951,13 @@ function LinhaMovimento({
             title="Excluir lançamento"
             className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
             onClick={() => {
-              if (window.confirm(`Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})? Esta ação não pode ser desfeita.`)) void aoExcluir();
+              const motivo = window.prompt(`Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})? Não pode ser desfeito.\n\nJustifique a exclusão (mínimo de 10 caracteres):`);
+              if (motivo === null) return;
+              if (motivo.trim().length < 10) {
+                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
+                return;
+              }
+              void aoExcluir(motivo.trim());
             }}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
