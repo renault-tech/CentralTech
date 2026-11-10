@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-10",
+    titulo: "Emendas: lançamentos de secretaria passam por aprovação",
+    descricao: "Empenho, liquidação e pagamento lançados por perfil de secretaria agora vão para a tela Aprovações e só valem depois que o gestor aprova. Gestor e administrador continuam lançando direto.",
+  },
+  {
+    data: "2026-11-10",
     titulo: "Sino de avisos sempre visível",
     descricao: "O painel de avisos e o aviso novo que aparece no canto abriam atrás dos cartões ou fora da tela. Agora ficam por cima de tudo, com fundo sólido.",
   },

@@ -284,6 +284,21 @@ export async function registrarMovimento(dados: z.input<typeof esquemaMovimento>
   if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
 
   const emendas = await criarClienteEmendas();
+  // Perfis de secretaria não lançam direto: o lançamento espera a aprovação do gestor.
+  if (!ehGestor(ctx.perfil)) {
+    const falha = await proporAlteracoes(a.data.emendaId, [
+      {
+        alvo: "movimentos",
+        chave: a.data.tipo,
+        campo: null,
+        valorAtual: null,
+        valorProposto: { tipo: a.data.tipo, numero: a.data.numero, data: a.data.data, valor: a.data.valor, observacao: a.data.observacao },
+      },
+    ]);
+    if (falha) return { sucesso: false, erro: falha };
+    revalidar(a.data.emendaId);
+    return { sucesso: true, aviso: "Lançamento enviado para aprovação do gestor. Ele só passa a valer depois de aprovado." };
+  }
   const { error } = await emendas.from("movimentos_financeiros").insert({
     emenda_id: a.data.emendaId,
     tipo: a.data.tipo,

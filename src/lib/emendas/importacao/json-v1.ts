@@ -21,7 +21,7 @@ export type ArquivoJson = { ano: number; emendas: EmendaJson[] };
 
 export type PropostaNova = {
   numero: number;
-  alvo: "execucao" | "emenda_fases" | "emenda_checklist";
+  alvo: "execucao" | "emenda_fases" | "emenda_checklist" | "movimentos";
   chave: string | null;
   campo: string | null;
   rotulo: string;
