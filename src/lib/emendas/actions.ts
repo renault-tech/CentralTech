@@ -517,6 +517,49 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   return { sucesso: true };
 }
 
+/** Exclui um lançamento financeiro (empenho, liquidação, pagamento…) lançado por engano. Só gestor;
+ * a exclusão fica na auditoria (quem, quando e o que tinha). */
+export async function excluirMovimento(dados: { id: string; emendaId: string }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.id).success || !z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Lançamento inválido." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores excluem lançamentos." };
+  const emendas = await criarClienteEmendas();
+  const { data: apagadas, error } = await emendas.from("movimentos_financeiros").delete().eq("id", dados.id).eq("emenda_id", dados.emendaId).select("id");
+  if (error) {
+    console.error("[excluirMovimento]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  if (!apagadas?.length) return { sucesso: false, erro: "Nada foi excluído: o lançamento não foi encontrado ou você não tem permissão." };
+  revalidar(dados.emendaId);
+  return { sucesso: true };
+}
+
+/** Exclui a emenda inteira (lançamentos, fases, anexos, impedimentos…) — para cadastro feito por engano.
+ * Só gestor; exige confirmar digitando o número. A auditoria guarda o registro apagado. */
+export async function excluirEmenda(dados: { emendaId: string; numeroConfirmado: number }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Emenda inválida." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores excluem emendas." };
+  const emendas = await criarClienteEmendas();
+  const { data: emenda } = await emendas.from("emendas").select("id,numero,ano").eq("id", dados.emendaId).maybeSingle();
+  if (!emenda) return { sucesso: false, erro: "Emenda não encontrada." };
+  if (emenda.numero !== dados.numeroConfirmado) return { sucesso: false, erro: "O número digitado não confere com o da emenda." };
+  // Anexos no armazenamento (os registros caem junto com a emenda; os arquivos não).
+  const { data: docs } = await emendas.from("documentos").select("caminho").eq("emenda_id", dados.emendaId);
+  if (docs?.length) {
+    const { error: erroArq } = await emendas.storage.from("emendas-documentos").remove(docs.map((d) => d.caminho));
+    if (erroArq) console.error("[excluirEmenda] storage", erroArq);
+  }
+  const { data: apagadas, error } = await emendas.from("emendas").delete().eq("id", dados.emendaId).select("id");
+  if (error) {
+    console.error("[excluirEmenda]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  if (!apagadas?.length) return { sucesso: false, erro: "Nada foi excluído: você não tem permissão para excluir esta emenda." };
+  revalidar();
+  return { sucesso: true };
+}
+
 const esquemaImpedimento = z.object({
   emendaId: z.uuid(),
   tipo: z.enum(["tecnico", "legal", "documentacao"]),
