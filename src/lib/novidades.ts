@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-10",
+    titulo: "Emendas: excluir pagamento atualiza a linha do tempo",
+    descricao: "Ao excluir o único empenho, liquidação ou pagamento de uma emenda, a etapa e a linha do tempo voltam ao que os lançamentos restantes comprovam, e o andamento correspondente sai do histórico. Antes a emenda continuava marcada como paga.",
+  },
+  {
+    data: "2026-11-10",
     titulo: "Emendas: excluir lançamento e excluir emenda",
     descricao:
       "Na aba Financeiro, o ícone de lixeira exclui um empenho, liquidação ou pagamento lançado por engano. No fim da tela da emenda, “Excluir emenda” apaga a emenda inteira (exige digitar o número para confirmar). Só gestores; é obrigatório justificar (mínimo de 10 caracteres) e a justificativa fica guardada junto com o registro de auditoria.",

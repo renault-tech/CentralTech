@@ -12,7 +12,7 @@ import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { etapaAoConcluir, tipoDaEmenda } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
-import { ehGestor, modalidadePorNatureza } from "@/lib/emendas/regras";
+import { ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
 /**
  * Ações do módulo Emendas. A permissão de verdade está no banco (RLS +
@@ -540,8 +540,25 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
     return { sucesso: false, erro: traduzir(error) };
   }
   if (!apagadas?.length) return { sucesso: false, erro: "Nada foi excluído: o lançamento não foi encontrado ou você não tem permissão." };
+
+  // A etapa da emenda é um cache do último andamento: sem isto a linha do tempo continuava "paga" depois de
+  // excluir o único pagamento. Se não sobrou nenhum lançamento daquele tipo, o andamento da etapa correspondente
+  // (lançado junto com ele) sai do histórico e a etapa volta ao que os lançamentos restantes sustentam.
+  let aviso: string | undefined;
+  const etapaDoTipo = etapaDoMovimento(mov.tipo);
+  if (etapaDoTipo) {
+    const { data: restantes } = await emendas.from("movimentos_financeiros").select("tipo").eq("emenda_id", dados.emendaId);
+    const tipos = new Set((restantes ?? []).map((r) => r.tipo as string));
+    if (!tipos.has(mov.tipo)) {
+      const { data: removidos } = await emendas.from("andamentos").delete().eq("emenda_id", dados.emendaId).eq("etapa", etapaDoTipo).select("id");
+      const { data: atual } = await emendas.from("emendas").select("etapa").eq("id", dados.emendaId).maybeSingle();
+      const nova = atual ? etapaAposExclusao(atual.etapa, tipos) : null;
+      if (nova) await emendas.from("emendas").update({ etapa: nova }).eq("id", dados.emendaId);
+      if (removidos?.length || nova) aviso = `Lançamento excluído. A etapa da emenda foi atualizada${removidos?.length ? " e o andamento correspondente saiu do histórico" : ""}.`;
+    }
+  }
   revalidar(dados.emendaId);
-  return { sucesso: true };
+  return aviso ? { sucesso: true, aviso } : { sucesso: true };
 }
 
 /** Exclui a emenda inteira (lançamentos, fases, anexos, impedimentos…) — para cadastro feito por engano.
