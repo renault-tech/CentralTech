@@ -293,3 +293,22 @@ describe("curvaPagamentos: pagamentos sem data", () => {
     expect(r.acumulado[11]).toBe(100);
   });
 });
+
+
+import { etapaAposExclusao, etapaDoMovimento, etapaMaisAltaDosMovimentos } from "@/lib/emendas/regras";
+describe("etapa × lançamentos", () => {
+  it("mapeia o tipo do lançamento para a etapa", () => {
+    expect(etapaDoMovimento("pagamento")).toBe("paga");
+    expect(etapaDoMovimento("anulacao")).toBeNull();
+  });
+  it("pega a etapa mais alta sustentada", () => {
+    expect(etapaMaisAltaDosMovimentos(["empenho", "liquidacao"])).toBe("liquidada");
+    expect(etapaMaisAltaDosMovimentos([])).toBeNull();
+  });
+  it("só sobe a etapa depois da exclusão, nunca mexe em etapa personalizada ou adiantada", () => {
+    expect(etapaAposExclusao("indicada", ["empenho"])).toBe("empenhada");
+    expect(etapaAposExclusao("empenhada", ["empenho"])).toBeNull();
+    expect(etapaAposExclusao("indicada", [])).toBeNull();
+    expect(etapaAposExclusao("prestacao_contas", ["empenho"])).toBeNull();
+  });
+});

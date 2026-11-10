@@ -534,3 +534,32 @@ export function combinaSituacaoFinanceira(
       return true;
   }
 }
+
+
+// ------------------------------------------------ etapa × lançamentos financeiros
+
+const ETAPA_DO_MOVIMENTO: Record<string, string> = { empenho: "empenhada", liquidacao: "liquidada", pagamento: "paga" };
+const POSTO: Record<string, number> = { indicada: 0, empenhada: 1, liquidada: 2, paga: 3 };
+
+/** Etapa financeira que o lançamento de um tipo sustenta (null para anulação e afins). */
+export function etapaDoMovimento(tipo: string): string | null {
+  return ETAPA_DO_MOVIMENTO[tipo] ?? null;
+}
+
+/** Etapa mais avançada sustentada pelos lançamentos que restaram (tipos presentes), ou null. */
+export function etapaMaisAltaDosMovimentos(tipos: Iterable<string>): string | null {
+  let melhor: string | null = null;
+  for (const t of tipos) {
+    const e = etapaDoMovimento(t);
+    if (e && (melhor === null || POSTO[e] > POSTO[melhor])) melhor = e;
+  }
+  return melhor;
+}
+
+/** Depois de excluir lançamentos: a etapa atual só sobe até o que os lançamentos restantes sustentam, e só quando está
+ * numa etapa financeira mais baixa (nunca mexe em etapas personalizadas nem em etapas já mais adiantadas). */
+export function etapaAposExclusao(atual: string, tiposRestantes: Iterable<string>): string | null {
+  const alvo = etapaMaisAltaDosMovimentos(tiposRestantes);
+  if (!alvo || POSTO[atual] === undefined) return null;
+  return POSTO[atual] < POSTO[alvo] ? alvo : null;
+}
