@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2, X } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   corrigirMovimento,
   definirCancelamento,
+  excluirEmenda,
+  excluirMovimento,
   linkDocumento,
   registrarAndamento,
   registrarDocumento,
@@ -128,6 +131,7 @@ export function DetalheEmendaCliente({
   nomesUsuarios: Record<string, string>;
 }) {
   const catalogo = useCatalogo();
+  const router = useRouter();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
   const [aba, setAba] = React.useState<Aba>(ABAS_VALIDAS.includes(abaInicial as Aba) ? (abaInicial as Aba) : "fases");
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
@@ -300,7 +304,7 @@ export function DetalheEmendaCliente({
                       <th scope="col" className="px-3 py-2 font-medium">Documento</th>
                       <th scope="col" className="px-3 py-2 font-medium">Data</th>
                       <th scope="col" className="px-3 py-2 text-right font-medium">Valor</th>
-                      {gestor && <th scope="col" className="w-24 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
+                      {gestor && <th scope="col" className="w-28 px-3 py-2"><span className="sr-only">Corrigir</span></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -311,6 +315,7 @@ export function DetalheEmendaCliente({
                         gestor={gestor}
                         nome={NOME_TIPO_MOV[m.tipo]}
                         aoCorrigir={(numero, data) => executar(() => corrigirMovimento({ id: m.id, emendaId: emenda.id, numero, data }))}
+                        aoExcluir={(justificativa) => executar(() => excluirMovimento({ id: m.id, emendaId: emenda.id, justificativa }))}
                       />
                     ))}
                   </tbody>
@@ -419,6 +424,27 @@ export function DetalheEmendaCliente({
             }}
           >
             {emenda.situacao === "cancelada" ? "Reativar emenda" : "Cancelar emenda"}
+          </button>
+          <span className="mx-2 text-xs text-slate-300" aria-hidden>·</span>
+          <button
+            type="button"
+            className="text-xs text-slate-500 hover:text-red-700 hover:underline"
+            onClick={async () => {
+              const motivo = window.prompt(
+                `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}, com todos os lançamentos, fases e anexos?\n\nSe só quer tirar a emenda da cota, use "Cancelar emenda".\n\nJustifique a exclusão (mínimo de 10 caracteres):`
+              );
+              if (motivo === null) return;
+              if (motivo.trim().length < 10) {
+                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
+                return;
+              }
+              const digitado = window.prompt(`Para confirmar, digite o número da emenda (${emenda.numero}):`);
+              if (digitado === null) return;
+              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado.trim()), justificativa: motivo.trim() }));
+              if (r.sucesso) router.push("/emendas/lista");
+            }}
+          >
+            Excluir emenda
           </button>
         </div>
       )}
@@ -856,7 +882,9 @@ function LinhaMovimento({
   gestor,
   nome,
   aoCorrigir,
+  aoExcluir,
 }: {
+  aoExcluir: (justificativa: string) => Promise<Resultado>;
   movimento: DetalheEmenda["movimentos"][number];
   gestor: boolean;
   nome: string;
@@ -913,9 +941,26 @@ function LinhaMovimento({
       <td className="px-3 py-2.5">{movimento.data ? dataBr(movimento.data) : <span className="text-amber-800">sem data</span>}</td>
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>
       {gestor && (
-        <td className="px-3 py-2.5 text-right">
+        <td className="whitespace-nowrap px-3 py-2.5 text-right">
           <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
             <Pencil className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Excluir lançamento"
+            title="Excluir lançamento"
+            className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
+            onClick={() => {
+              const motivo = window.prompt(`Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})? Não pode ser desfeito.\n\nJustifique a exclusão (mínimo de 10 caracteres):`);
+              if (motivo === null) return;
+              if (motivo.trim().length < 10) {
+                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
+                return;
+              }
+              void aoExcluir(motivo.trim());
+            }}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
           </button>
         </td>
       )}

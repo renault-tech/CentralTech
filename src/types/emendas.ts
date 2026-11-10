@@ -142,6 +142,18 @@ export type EmendaResumo = {
   impedimentos_abertos: number;
 };
 
+export type ExclusaoJustificada = {
+  id: string;
+  tipo: "lancamento" | "emenda";
+  emenda_id: string;
+  emenda_numero: number;
+  ano: number;
+  detalhe: Record<string, unknown>;
+  justificativa: string;
+  usuario_id: string;
+  em: string;
+};
+
 export type Andamento = {
   id: string;
   emenda_id: string;
@@ -375,6 +387,7 @@ export type DatabaseEmendas = {
       >;
       andamentos: Tabela<Andamento, "emenda_id" | "etapa", "id" | "criado_em">;
       movimentos_financeiros: Tabela<MovimentoFinanceiro, "emenda_id" | "tipo" | "valor", "id" | "criado_em">;
+      exclusoes_justificadas: Tabela<ExclusaoJustificada, "tipo" | "emenda_id" | "emenda_numero" | "ano" | "justificativa" | "detalhe" | "usuario_id", "id" | "em">;
       impedimentos: Tabela<Impedimento, "emenda_id" | "tipo" | "justificativa", "id" | "criado_em">;
       remanejamentos: Tabela<Remanejamento, "emenda_id" | "antes" | "depois", "id" | "criado_em">;
       execucao: Tabela<ExecucaoEmenda, "id", never>;

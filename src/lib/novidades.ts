@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-10",
+    titulo: "Emendas: excluir lançamento e excluir emenda",
+    descricao:
+      "Na aba Financeiro, o ícone de lixeira exclui um empenho, liquidação ou pagamento lançado por engano. No fim da tela da emenda, “Excluir emenda” apaga a emenda inteira (exige digitar o número para confirmar). Só gestores; é obrigatório justificar (mínimo de 10 caracteres) e a justificativa fica guardada junto com o registro de auditoria.",
+  },
+  {
     data: "2026-11-07",
     titulo: "Imóveis: dados das planilhas de água e luz já cadastrados",
     descricao:
