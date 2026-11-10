@@ -82,7 +82,36 @@ const ROTULO_CAMPO: Record<string, string> = {
   gestor_osc: "Gestor na entidade",
   gestor_pmc: "Gestor na Prefeitura",
   observacao: "Observação",
+  tipo: "Tipo",
+  data: "Data",
+  numero_documento: "Nº do documento",
+  documento: "Documento",
+  motivo: "Motivo",
 };
+
+const NOME_TABELA_LOG: Record<string, string> = {
+  movimentos_financeiros: "Lançamento",
+  andamentos: "Andamento",
+  impedimentos: "Impedimento",
+  documentos: "Anexo",
+  remanejamentos: "Remanejamento",
+};
+
+// Frase curta para uma linha criada ou excluída, a partir do que o registro guardava.
+function descreverRegistro(tabela: string, r: Record<string, unknown> | null, verbo: "registrado" | "excluído"): string {
+  const v = r ?? {};
+  const valor = v.valor != null && v.valor !== "" ? ` de ${brl(Number(v.valor))}` : "";
+  const data = typeof v.data === "string" && v.data ? ` (${dataBr(v.data)})` : "";
+  if (tabela === "execucao") return `Dados de parceria/execução ${verbo === "registrado" ? "registrados" : "apagados"}`;
+  if (tabela === "emendas") return verbo === "registrado" ? "Emenda cadastrada" : "Emenda apagada";
+  if (tabela === "movimentos_financeiros") {
+    const nome = NOME_TIPO_MOV[v.tipo as keyof typeof NOME_TIPO_MOV] ?? "Lançamento";
+    const doc = v.numero_documento ? ` nº ${String(v.numero_documento)}` : "";
+    return `${nome}${doc}${valor}${data} ${verbo}`;
+  }
+  if (tabela === "andamentos") return `Etapa “${String(v.etapa ?? "—")}”${data} ${verbo}`;
+  return `${NOME_TABELA_LOG[tabela] ?? tabela} ${verbo}`;
+}
 
 const NOME_TIPO_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação de empenho" } as const;
 const NOME_IMPEDIMENTO = { tecnico: "Técnico", legal: "Legal", documentacao: "Documentação da entidade" } as const;
@@ -108,6 +137,7 @@ export function DetalheEmendaCliente({
   beneficiarios,
   unidades,
   auditoria,
+  exclusoes,
   nomesUsuarios,
   fases,
   pendencias,
@@ -128,6 +158,7 @@ export function DetalheEmendaCliente({
   beneficiarios: Beneficiario[];
   unidades: UnidadeOrcamentaria[];
   auditoria: { id: number; tabela: string; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
+  exclusoes: { em: string; usuario_id: string; justificativa: string; tipo: string }[];
   nomesUsuarios: Record<string, string>;
 }) {
   const catalogo = useCatalogo();
@@ -371,7 +402,7 @@ export function DetalheEmendaCliente({
               ))}
               {gestor && auditoria.length > 0 && (
                 <div className="rounded-lg border border-slate-200 p-4">
-                  <strong className="text-sm text-cataguases-marinho">Registro de alterações do cadastro</strong>
+                  <strong className="text-sm text-cataguases-marinho">Registro de alterações (quem, quando e o quê)</strong>
                   <ul className="mt-2 flex flex-col gap-2 text-[13px]">
                     {auditoria.map((a) => {
                       const mudou = a.acao === "UPDATE" && a.antes && a.depois
@@ -383,14 +414,17 @@ export function DetalheEmendaCliente({
                       return (
                         <li key={a.id} className="border-t border-slate-100 pt-2 first:border-0 first:pt-0">
                           <span className="text-xs text-slate-500">
-                            {new Date(a.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} ·{" "}
-                            {(a.usuario_id && nomesUsuarios[a.usuario_id]) || "sistema"}
+                            {new Date(a.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "medium" })} ·{" "}
+                            <strong className="font-medium text-slate-700">{(a.usuario_id && nomesUsuarios[a.usuario_id]) || "sistema"}</strong>
                           </span>
                           <div>
+                            {a.acao !== "UPDATE" || a.tabela === "emendas" || a.tabela === "execucao" ? null : (
+                              <span className="mr-2 font-medium">{NOME_TABELA_LOG[a.tabela] ?? a.tabela}:</span>
+                            )}
                             {a.acao === "INSERT"
-                              ? a.tabela === "execucao" ? "Dados de parceria/execução registrados" : "Emenda cadastrada"
+                              ? descreverRegistro(a.tabela, a.depois, "registrado")
                               : a.acao === "DELETE"
-                                ? a.tabela === "execucao" ? "Dados de parceria/execução apagados" : "Emenda apagada"
+                                ? descreverRegistro(a.tabela, a.antes, "excluído")
                                 : mudou.map((k) => (
                                     <span key={k} className="mr-3 inline-block">
                                       {ROTULO_CAMPO[k] ?? k}: <span className="text-slate-500 line-through">{exibir(k, a.antes?.[k])}</span> →{" "}
@@ -398,6 +432,15 @@ export function DetalheEmendaCliente({
                                     </span>
                                   ))}
                           </div>
+                          {a.acao === "DELETE" &&
+                            exclusoes
+                              .filter((e) => e.usuario_id === a.usuario_id && Math.abs(new Date(e.em).getTime() - new Date(a.em).getTime()) < 10000)
+                              .slice(0, 1)
+                              .map((e) => (
+                                <p key={e.em} className="mt-0.5 text-slate-600">
+                                  Justificativa: {e.justificativa}
+                                </p>
+                              ))}
                         </li>
                       );
                     })}

@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-10",
+    titulo: "Emendas: histórico vira registro completo (quem, quando e o quê)",
+    descricao: "A aba Histórico da emenda agora lista também lançamentos financeiros, andamentos, impedimentos e anexos criados, alterados ou excluídos, com nome de quem fez, data e hora. Nas exclusões aparece a justificativa informada.",
+  },
+  {
+    data: "2026-11-10",
     titulo: "Emendas: excluir pagamento atualiza a linha do tempo",
     descricao: "Ao excluir o único empenho, liquidação ou pagamento de uma emenda, a etapa e a linha do tempo voltam ao que os lançamentos restantes comprovam, e o andamento correspondente sai do histórico. Antes a emenda continuava marcada como paga.",
   },

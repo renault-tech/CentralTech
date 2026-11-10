@@ -40,7 +40,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   // Tudo o que não depende do resultado do detalhe anda na mesma rodada
   // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria, vereadores] = await Promise.all([
+  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria, vereadores, exclusoes] = await Promise.all([
     obterDetalheEmenda(id),
     obterCatalogoEtapas(),
     listarBeneficiarios(),
@@ -49,10 +49,22 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     listarItensChecklist(),
     gestor
       ? criarClienteEmendas().then((c) =>
-          c.from("auditoria").select("*").in("tabela", ["emendas", "execucao"]).eq("registro_id", id).order("em", { ascending: false }).limit(50)
+          // Tudo o que mexeu nesta emenda: o cadastro (registro_id = emenda) e os registros filhos
+          // (lançamentos, andamentos, impedimentos, anexos, remanejamentos), que guardam a emenda no JSON.
+          c
+            .from("auditoria")
+            .select("*")
+            .or(`registro_id.eq.${id},antes->>emenda_id.eq.${id},depois->>emenda_id.eq.${id}`)
+            .order("em", { ascending: false })
+            .limit(300)
         )
       : Promise.resolve({ data: [] }),
     listarVereadores(),
+    gestor
+      ? criarClienteEmendas().then((c) =>
+          c.from("exclusoes_justificadas").select("em,usuario_id,justificativa,tipo").eq("emenda_id", id).order("em", { ascending: false })
+        )
+      : Promise.resolve({ data: [] }),
   ]);
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos, execucao } = detalhe;
@@ -80,7 +92,10 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   );
   const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const registros = auditoria.data ?? [];
-  const idsUsuarios = Array.from(new Set(registros.map((a) => a.usuario_id).filter((x): x is string => !!x)));
+  const listaExclusoes = exclusoes.data ?? [];
+  const idsUsuarios = Array.from(
+    new Set([...registros.map((a) => a.usuario_id), ...listaExclusoes.map((e) => e.usuario_id)].filter((x): x is string => !!x))
+  );
   const nomesUsuarios: Record<string, string> = {};
   if (idsUsuarios.length) {
     const hub = await criarClienteServidor();
@@ -136,6 +151,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             beneficiarios={beneficiarios}
             unidades={unidades}
             auditoria={registros}
+            exclusoes={listaExclusoes}
             nomesUsuarios={nomesUsuarios}
             fases={calculo.fases}
             pendencias={calculo.pendencias}
