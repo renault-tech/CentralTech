@@ -115,22 +115,12 @@ function menorData(movs: { tipo: string; data: string | null }[], tipo: string):
 
 type Dado = { data: string | null; documento?: string | null } | { aberta: true; observacao?: string } | null;
 
-/** Fases da execução direta que acompanham o processo do Compras ligado à emenda. */
+/** Fase única "processo de compra ou licitação" da execução direta: iniciado ou concluído, conforme o Compras. */
 function dadoCompras(f: FaseFluxo, c: ResumoCompras): Dado {
+  if (f.chave !== "processo") return null;
   const homologado = c.status === "concluido" || c.contratos > 0;
-  switch (f.chave) {
-    case "demanda":
-      return { data: c.criado_em?.slice(0, 10) ?? null, documento: c.numero };
-    case "precos":
-      return c.numero_licitacao || homologado ? { data: null, documento: c.numero } : { aberta: true, observacao: `Processo ${c.numero} no Compras` };
-    case "contratacao":
-      if (homologado) return { data: null, documento: c.numero_licitacao ?? c.numero };
-      return c.numero_licitacao ? { aberta: true, observacao: `Licitação ${c.numero_licitacao} em andamento` } : null;
-    case "instrumento":
-      return c.contratos > 0 ? { data: null, documento: c.contrato_numero ?? c.numero } : null;
-    default:
-      return null;
-  }
+  if (homologado) return { data: null, documento: c.numero_licitacao ?? c.numero };
+  return { aberta: true, observacao: `Processo ${c.numero_licitacao ?? c.numero} iniciado no Compras` };
 }
 
 /** Dado real que fecha a fase derivada; `null` = não há dado. */

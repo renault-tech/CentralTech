@@ -11,7 +11,7 @@ import { avancarEtapaPorLancamentos, avancarEtapaPorProcesso } from "@/lib/emend
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
 import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from "@/lib/emendas/compras";
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
-import { etapaAoConcluir, tipoDaEmenda } from "@/lib/emendas/fases";
+import { etapaAoConcluir, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
@@ -587,15 +587,29 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
   let aviso: string | undefined;
   const etapaDoTipo = etapaDoMovimento(mov.tipo);
   if (etapaDoTipo) {
-    const { data: restantes } = await emendas.from("movimentos_financeiros").select("tipo").eq("emenda_id", dados.emendaId);
-    const tipos = new Set((restantes ?? []).map((r) => r.tipo as string));
-    if (!tipos.has(mov.tipo)) {
+    const [{ data: restantes }, { data: dadosEmenda }] = await Promise.all([
+      emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", dados.emendaId),
+      emendas.from("emendas").select("valor,etapa").eq("id", dados.emendaId).maybeSingle(),
+    ]);
+    // A fase financeira só vale com o total lançado (empenho parcial não sustenta "empenhada"): considera
+    // "de pé" só o tipo cujo total ainda cobre o disponível, não apenas o que tem algum lançamento.
+    const t = totaisFinanceiros(restantes ?? []);
+    const valorEmenda = Number(dadosEmenda?.valor ?? 0);
+    const base = t.empenhado > 0 ? t.empenhado : valorEmenda;
+    const completos = new Set<string>();
+    if (t.empenhado > 0 && t.empenhado + 0.005 >= valorEmenda) completos.add("empenho");
+    if (t.liquidado > 0 && t.liquidado + 0.005 >= base) completos.add("liquidacao");
+    if (t.pago > 0 && t.pago + 0.005 >= base) completos.add("pagamento");
+    if (!completos.has(mov.tipo)) {
       const { data: removidos } = await emendas.from("andamentos").delete().eq("emenda_id", dados.emendaId).eq("etapa", etapaDoTipo).select("id");
       const { data: atual } = await emendas.from("emendas").select("etapa").eq("id", dados.emendaId).maybeSingle();
-      const nova = atual ? etapaAposExclusao(atual.etapa, tipos) : null;
+      const nova = atual ? etapaAposExclusao(atual.etapa, completos) : null;
       if (nova) await emendas.from("emendas").update({ etapa: nova }).eq("id", dados.emendaId);
       if (removidos?.length || nova) aviso = `Lançamento excluído. A etapa da emenda foi atualizada${removidos?.length ? " e o andamento correspondente saiu do histórico" : ""}.`;
     }
+  } else {
+    // Anulação excluída: o empenhado pode ter voltado a cobrir o total.
+    await avancarEtapaPorLancamentos(emendas, dados.emendaId);
   }
   revalidar(dados.emendaId);
   return aviso ? { sucesso: true, aviso } : { sucesso: true };

@@ -93,6 +93,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     (i) => i.tipo === tipo && i.ativo && (i.condicao !== "saude" || emenda.saude) && (i.condicao !== "consorcio" || /\.93\./.test(emenda.natureza_despesa ?? ""))
   );
   const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
+  const vinculo = <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />;
   const registros = auditoria.data ?? [];
   const listaExclusoes = exclusoes.data ?? [];
   const idsUsuarios = Array.from(
@@ -166,6 +167,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
                 : undefined
             }
             abaInicial={aba}
+            vinculo={tipo === "direta" ? vinculo : undefined}
           />
         </div>
         <aside className="flex flex-[1_1_300px] flex-col gap-4">
@@ -191,7 +193,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             <PainelParceria emendaId={emenda.id} modalidade={tipo === "direta" ? "direta" : "repasse"} execucao={execucao} podeEditar={podeEditar} />
           </div>
           <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} />
-          <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />
+          {tipo !== "direta" && vinculo}
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>
             <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-700">{emenda.descricao}</p>

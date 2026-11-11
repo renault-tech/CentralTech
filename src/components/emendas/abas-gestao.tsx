@@ -60,25 +60,10 @@ function hojeLocal() {
 export type AtalhosCompras = { processo: string | null; licitacao: string | null; contrato: string | null };
 
 const DICAS_FASE: Record<string, { texto: string; sugere: ("processo" | "licitacao" | "contrato")[] }> = {
-  demanda: {
+  processo: {
     texto:
-      "DFD, ETP e Termo de Referência são documentos DENTRO do processo do Compras: não têm numeração própria no sistema. Informe o nº do processo (ex.: 2026/0062); o vínculo é feito em “Processo no Compras”, ao lado.",
-    sugere: ["processo"],
-  },
-  precos: {
-    texto:
-      "A pesquisa de preços também fica no mesmo processo. Informe o nº do processo (ex.: 2026/0062) ou, se a pesquisa tiver protocolo ou mapa próprio, esse número.",
-    sugere: ["processo"],
-  },
-  contratacao: {
-    texto:
-      "É o processo de licitação, dispensa ou inexigibilidade. É o MESMO processo do Compras: ao seguir para o setor de Licitação ele ganha o 2º número (ex.: 136/2026). Informe o nº da licitação (o do setor de Compras, 2026/0062, fica nas fases anteriores).",
-    sugere: ["licitacao", "processo"],
-  },
-  instrumento: {
-    texto:
-      "Contrato, ata de registro de preços ou autorização de fornecimento. É o 3º número do mesmo processo, dado pelo setor de Contratos. Informe o nº do contrato/ata (sugerido do módulo Contratos do Compras).",
-    sugere: ["contrato", "licitacao"],
+      "Basta informar se o processo de compra ou licitação foi iniciado e se foi concluído; o andamento detalhado (cotação, edital, sessão…) fica no Compras. Ligando o processo acima, esta fase se preenche sozinha.",
+    sugere: ["processo", "licitacao", "contrato"],
   },
 };
 
