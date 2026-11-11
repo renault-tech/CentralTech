@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BookOpen, ChevronRight, Download, Eye, PlayCircle, RotateCcw, Search } from "lucide-react";
 
@@ -209,26 +210,34 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
 
       {/* ——— Herói ——— */}
       <header className="portal-heroi" data-tour="portal-heroi">
-        <div className="cabecalho-escuro tema-fixo mx-auto flex max-w-7xl items-center gap-3 px-4 pt-5 sm:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Brasao tamanho={36} />
-            <div className="min-w-0 leading-tight">
-              <p className="truncate text-[13px] font-semibold text-white">Prefeitura de Cataguases</p>
-              <p className="truncate text-[12px] text-white/60">Portal da Transparência</p>
+        <div aria-hidden className="portal-marca-dagua">
+          <Image src="/logo.png" alt="" fill sizes="600px" className="object-cover object-top" />
+        </div>
+        <div className="portal-barra-topo">
+          <div className="cabecalho-escuro tema-fixo mx-auto flex max-w-7xl items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-8 sm:py-4">
+            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+              <span className="portal-logo-moldura h-14 w-14 sm:h-[72px] sm:w-[72px]">
+                <Brasao tamanho={72} className="h-full w-full" />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <span aria-hidden className="mb-1.5 block h-[3px] w-8 rounded-full bg-[#E9A63B]" />
+                <p className="text-[17px] font-semibold tracking-tight text-white sm:text-[22px]">Prefeitura de Cataguases</p>
+                <p className="mt-0.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#B4C7E0] sm:text-[13px]">Portal da Transparência</p>
+              </div>
             </div>
+            <span className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white/85 ring-1 ring-white/10 md:inline-flex" title="Os dados se atualizam sozinhos, sem recarregar a página">
+              <span className="portal-pulso" aria-hidden /> Ao vivo · {hora(geradoAgora)}
+            </span>
+            <button type="button" onClick={() => setGuia(true)} className="portal-botao-vidro" data-tour="portal-ajuda">
+              <BookOpen className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Guia de uso</span>
+              <span className="sr-only sm:hidden">Guia de uso</span>
+            </button>
+            <AlternarTema />
           </div>
-          <span className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white/85 ring-1 ring-white/10 sm:inline-flex" title="Os dados se atualizam sozinhos, sem recarregar a página">
-            <span className="portal-pulso" aria-hidden /> Ao vivo · {hora(geradoAgora)}
-          </span>
-          <button type="button" onClick={() => setGuia(true)} className="portal-botao-vidro" data-tour="portal-ajuda">
-            <BookOpen className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Guia de uso</span>
-            <span className="sr-only sm:hidden">Guia de uso</span>
-          </button>
-          <AlternarTema />
         </div>
 
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-12 pt-12 sm:px-8 sm:pt-16 lg:grid-cols-[1.35fr_1fr] lg:items-end lg:pb-16">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-12 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[1.35fr_1fr] lg:items-end lg:pb-16">
           <div className="portal-revela">
             <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#F6D79C]">Emendas impositivas · {ano}</p>
             <h1 className="mt-3 max-w-2xl text-[clamp(1.75rem,4.2vw,3rem)] font-semibold leading-[1.06] tracking-[-0.035em] text-white">
