@@ -349,7 +349,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
           </div>
 
           <div className="portal-cartao p-6 lg:col-span-2">
-            <Cabecalho rotulo="Tipo de execução" titulo="Como o dinheiro chega" />
+            <Cabecalho rotulo="Tipo de execução" titulo="Forma de execução dos recursos" />
             <div className="portal-barra mt-5 h-3" role="img" aria-label="Divisão do valor por tipo de execução">
               {ORDEM_TIPOS.map((x) =>
                 gTipo[x].total > 0 ? <span key={x} style={{ flexGrow: gTipo[x].total, flexBasis: 0, background: `var(--t-${x})` }} {...dica(<p><strong>{TIPOS_EXECUCAO[x].nome}</strong> · {brl(gTipo[x].total)}</p>)} /> : null
@@ -399,7 +399,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         {/* ——— Vereadores + secretarias ——— */}
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="portal-cartao p-6" data-tour="portal-vereadores">
-            <Cabecalho rotulo="Por vereador" titulo="Quanto de cada indicação já foi pago" ajuda="Barras proporcionais ao valor indicado. Clique num nome para filtrar." />
+            <Cabecalho rotulo="Por vereador" titulo="Execução financeira por vereador" ajuda="Barras proporcionais ao valor indicado. Clique num nome para filtrar." />
             <div className="mt-4">
               <BarrasPorGrupo grupos={gVereador} selecionado={f.vereador} aoEscolher={(v) => mudar("vereador", v)} rotulo="Execução por vereador" limite={15} />
             </div>
