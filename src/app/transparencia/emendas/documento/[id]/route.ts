@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { TIPOS_DOCUMENTO_PUBLICO } from "@/lib/emendas/portal";
+import { anosDoPortal, TIPOS_DOCUMENTO_PUBLICO } from "@/lib/emendas/portal";
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 
@@ -20,8 +20,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const db = criarClienteAdminBruto().schema("emendas");
   const { data: doc } = await db.from("documentos").select("tipo,caminho,nome_arquivo,emenda_id").eq("id", id).maybeSingle();
   if (!doc || !(TIPOS_DOCUMENTO_PUBLICO as readonly string[]).includes(doc.tipo as string)) return NextResponse.json({ erro: "Documento não encontrado." }, { status: 404 });
-  const { data: emenda } = await db.from("emendas").select("situacao").eq("id", doc.emenda_id as string).maybeSingle();
-  if (!emenda || emenda.situacao === "cancelada") return NextResponse.json({ erro: "Documento não encontrado." }, { status: 404 });
+  const { data: emenda } = await db.from("emendas").select("situacao,ano").eq("id", doc.emenda_id as string).maybeSingle();
+  // Só de exercício já publicado no portal (a gestão revisa os alertas antes de publicar).
+  const publicados = emenda ? await anosDoPortal() : [];
+  if (!emenda || emenda.situacao === "cancelada" || !publicados.includes(emenda.ano as number)) return NextResponse.json({ erro: "Documento não encontrado." }, { status: 404 });
 
   const { data } = await criarClienteAdminBruto().storage.from("emendas-documentos").createSignedUrl(doc.caminho as string, 60, { download: false });
   if (!data?.signedUrl) return NextResponse.json({ erro: "Arquivo indisponível." }, { status: 404 });

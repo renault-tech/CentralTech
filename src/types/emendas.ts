@@ -48,6 +48,10 @@ export type Exercicio = {
   municipio_cnpj: string | null;
   unidade_parlamentar: string | null;
   secretaria_edita_lancamentos: boolean;
+  /** Portal público: o exercício só aparece depois de publicado por um gestor. */
+  portal_publicado_em: string | null;
+  portal_publicado_por: string | null;
+  portal_ciencia: Record<string, unknown> | null;
 };
 
 export type Vereador = {

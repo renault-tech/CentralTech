@@ -27,6 +27,8 @@ const ROTAS_PUBLICAS = [
   "/api/feedback",
   // Portal de transparência das emendas (Lei 12.527/LAI, LRF art. 48-A): sem login.
   "/transparencia/emendas",
+  // Boletim diário do portal (Vercel Cron, protegido por CRON_SECRET na própria rota).
+  "/api/transparencia/",
 ];
 
 /**

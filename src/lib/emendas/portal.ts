@@ -4,78 +4,26 @@ import { unstable_cache } from "next/cache";
 
 import { gndDaNatureza } from "@/lib/emendas/conformidade";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
+import { createHash } from "node:crypto";
+
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import type { TipoExecucao } from "@/types/emendas";
 
 /**
  * Dados do portal público de transparência. Rota SEM login: por isso a leitura é feita
- * só aqui, no servidor, com lista fechada de colunas — nada de `select *`, nada de dado
- * pessoal (CPF, dirigentes) nem texto livre de gestão (observações, gestores, descrição
- * completa). A conta bancária sai mascarada (últimos 4 dígitos). Cache de 5 minutos,
- * invalidado pela tag `portal-emendas` quando a gestão grava.
+ * só aqui, no servidor, com lista fechada de colunas — nada de `select *`, nada de CPF,
+ * endereço ou outro dado de pessoa física, nada de observação interna da gestão. Gestor
+ * responsável e banco/conta saem completos por exigência da IN TCE-MG 05/2025 (art. 7º,
+ * XIV e XVI; decisão do dono, 29/10/2026). Cache de 5 minutos, invalidado pela tag
+ * `portal-emendas` quando a gestão grava. Só aparecem exercícios PUBLICADOS por um gestor
+ * (`exercicios.portal_publicado_em`), depois da verificação de `/emendas/portal`.
  */
 import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 export { TAG_PORTAL };
 
-export type DocumentoPortal = { id: string; tipo: "plano_trabalho" | "relatorio_gestao" | "anuencia_sus"; rotulo: string; competencia: number | null; nome: string };
-export type MovimentoPortal = { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; data: string | null; valor: number; numero: string | null };
-
-/** Documentos que o portal publica por exigência da IN TCE-MG 05/2025 (art. 7º, IX, X e XVII). Nenhum outro anexo sai daqui. */
-export const TIPOS_DOCUMENTO_PUBLICO = ["plano_trabalho", "relatorio_gestao", "anuencia_sus"] as const;
-const ROTULO_DOC = { plano_trabalho: "Plano de trabalho", relatorio_gestao: "Relatório de gestão", anuencia_sus: "Anuência do SUS" } as const;
-
-export type LinhaPortal = {
-  numero: number;
-  ano: number;
-  vereador: string;
-  partido: string | null;
-  unidadeParlamentar: string | null;
-  leiLoa: string | null;
-  municipio: string | null;
-  municipioCnpj: string | null;
-  objeto: string;
-  descricao: string;
-  localidade: string | null;
-  valor: number;
-  saude: boolean;
-  tipo: TipoExecucao;
-  secretaria: string;
-  unidade: string;
-  funcional: string | null;
-  natureza: string | null;
-  gnd: string | null;
-  categoria: string | null;
-  beneficiario: string | null;
-  /** CNPJ do recebedor (beneficiário; na execução direta, o do Município). */
-  cnpj: string | null;
-  etapa: string;
-  situacao: "normal" | "impedida" | "cancelada";
-  empenhado: number;
-  liquidado: number;
-  pago: number;
-  ultimoPagamento: string | null;
-  /** Data(s) de disponibilização do recurso: empenhos, liquidações e pagamentos. */
-  movimentos: MovimentoPortal[];
-  termo: string | null;
-  processo: string | null;
-  contrato: string | null;
-  inicioPrevisto: string | null;
-  terminoPrevisto: string | null;
-  vigenciaInicio: string | null;
-  vigenciaFim: string | null;
-  extratoPublicadoEm: string | null;
-  /** Banco e conta da movimentação dos recursos (IN 05/2025, art. 7º, XVI): conta de pessoa jurídica, divulgada por exigência da norma. */
-  conta: string | null;
-  gestorPrefeitura: string | null;
-  gestorEntidade: string | null;
-  anuenciaSus: "sim" | "nao" | "nao_se_aplica" | null;
-  identificadorContabil: string | null;
-  fonteRecurso: string | null;
-  planoMetas: string | null;
-  planoOutrasFontes: number | null;
-  documentos: DocumentoPortal[];
-  impedimento: string | null;
-};
+export { TIPOS_DOCUMENTO_PUBLICO, ROTULO_DOC } from "@/lib/emendas/portal-tipos";
+export type { DocumentoPortal, MovimentoPortal, LinhaPortal } from "@/lib/emendas/portal-tipos";
+import { ROTULO_DOC, TIPOS_DOCUMENTO_PUBLICO, type DocumentoPortal, type LinhaPortal, type MovimentoPortal } from "@/lib/emendas/portal-tipos";
 
 async function carregar(ano: number): Promise<LinhaPortal[]> {
   const db = criarClienteAdminBruto().schema("emendas");
@@ -186,12 +134,69 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
   });
 }
 
-export const dadosDoPortal = unstable_cache(carregar, ["portal-emendas"], { revalidate: 300, tags: [TAG_PORTAL] });
+export type PacotePortal = { linhas: LinhaPortal[]; geradoEm: string; versao: string };
 
-export async function anosDoPortal(): Promise<number[]> {
+async function carregarPacote(ano: number): Promise<PacotePortal> {
+  const linhas = await carregar(ano);
+  const versao = createHash("sha1").update(JSON.stringify(linhas)).digest("hex").slice(0, 16);
+  return { linhas, geradoEm: new Date().toISOString(), versao };
+}
+
+/** Linhas + carimbo de quando foram lidas + "versão" (hash): o navegador compara a versão para se atualizar sozinho. */
+export const pacoteDoPortal = unstable_cache(carregarPacote, ["portal-emendas-pacote"], { revalidate: 300, tags: [TAG_PORTAL] });
+
+export async function dadosDoPortal(ano: number): Promise<LinhaPortal[]> {
+  return (await pacoteDoPortal(ano)).linhas;
+}
+
+/** Exercícios visíveis no portal: só os publicados (ou todos, para a prévia da gestão). */
+export async function anosDoPortal(opcoes?: { incluirNaoPublicados?: boolean }): Promise<number[]> {
   const db = criarClienteAdminBruto().schema("emendas");
-  const { data } = await db.from("exercicios").select("ano").order("ano", { ascending: false });
+  let q = db.from("exercicios").select("ano").order("ano", { ascending: false });
+  if (!opcoes?.incluirNaoPublicados) q = q.not("portal_publicado_em", "is", null);
+  const { data } = await q;
   return (data ?? []).map((x) => x.ano as number);
+}
+
+export type MetaPortal = {
+  ano: number;
+  cota: number;
+  saudeMinPct: number;
+  publicadoEm: string | null;
+  leiLoa: string | null;
+  dataLoa: string | null;
+  municipio: string | null;
+  municipioCnpj: string | null;
+  unidadeParlamentar: string | null;
+  vereadoresSemPartido: string[];
+};
+
+/** Dados do exercício que o portal e a verificação usam (cota, saúde, LOA, publicação). */
+export const metaDoPortal = unstable_cache(carregarMeta, ["portal-emendas-meta"], { revalidate: 300, tags: [TAG_PORTAL] });
+
+async function carregarMeta(ano: number): Promise<MetaPortal | null> {
+  const db = criarClienteAdminBruto().schema("emendas");
+  const [{ data: ex }, { data: vers }] = await Promise.all([
+    db
+      .from("exercicios")
+      .select("ano,cota_por_vereador,percentual_saude_min,portal_publicado_em,numero_lei_loa,data_aprovacao_loa,municipio_nome,municipio_cnpj,unidade_parlamentar")
+      .eq("ano", ano)
+      .maybeSingle(),
+    db.from("vereadores").select("nome,partido"),
+  ]);
+  if (!ex) return null;
+  return {
+    ano: ex.ano as number,
+    cota: Number(ex.cota_por_vereador),
+    saudeMinPct: Number(ex.percentual_saude_min),
+    publicadoEm: (ex.portal_publicado_em as string | null) ?? null,
+    leiLoa: (ex.numero_lei_loa as string | null) ?? null,
+    dataLoa: (ex.data_aprovacao_loa as string | null) ?? null,
+    municipio: (ex.municipio_nome as string | null) ?? null,
+    municipioCnpj: (ex.municipio_cnpj as string | null) ?? null,
+    unidadeParlamentar: (ex.unidade_parlamentar as string | null) ?? null,
+    vereadoresSemPartido: (vers ?? []).filter((v) => !String(v.partido ?? "").trim()).map((v) => v.nome as string),
+  };
 }
 
 /** CSV de dados abertos (UTF-8 com BOM, separador `;`, decimais com vírgula — abre direto no Excel brasileiro). */
