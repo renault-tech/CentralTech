@@ -5,7 +5,8 @@
  * Escopo: `.portal-raiz` — não depende das classes utilitárias que o estilo Apple da
  * plataforma reescreve (bg-white, slate-*), para o portal ficar igual em qualquer preferência.
  */
-.portal-raiz {
+.portal-raiz,
+.portal-dica {
   --p-fundo: #f5f5f7;
   --p-superficie: #ffffff;
   --p-superficie-2: #fafafc;
@@ -38,12 +39,15 @@
   --e-aguardando: #6e6e76;
   --e-impedida: #b4540a;
   color-scheme: light;
+}
+.portal-raiz {
   background: var(--p-fundo);
   color: var(--p-tinta);
   font-feature-settings: "ss01", "cv11";
   min-height: 100dvh;
 }
-html.dark .portal-raiz {
+html.dark .portal-raiz,
+html.dark .portal-dica {
   --p-fundo: #000000;
   --p-superficie: #111114;
   --p-superficie-2: #17171c;
