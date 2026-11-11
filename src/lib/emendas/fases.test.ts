@@ -109,10 +109,20 @@ describe("fases financeiras só fecham com o total", () => {
     const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 1000 }, { tipo: "anulacao", data: "2026-04-01", valor: 1000 }]);
     expect(por(r, "empenho").situacao).toBe("pendente");
   });
-  it("pagamento conclui quando cobre o empenhado", () => {
+  it("pagamento só conclui quando cobre o valor disponível da emenda", () => {
     const e = { tipo: "empenho", data: "2026-03-01", valor: 1000 };
-    expect(por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 300 }]), "repasse").situacao).toBe("em_andamento");
+    const parcial = por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 300 }]), "repasse");
+    expect(parcial).toMatchObject({ situacao: "em_andamento", parcial: true });
+    expect(parcial.resumo).toContain("Saldo a pagar");
     expect(por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 1000 }]), "repasse").situacao).toBe("concluida");
+  });
+  it("empenho parcial e pagamento parcial: as duas fases ficam parciais", () => {
+    const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }, { tipo: "pagamento", data: "2026-05-01", valor: 400 }]);
+    expect(por(r, "empenho")).toMatchObject({ situacao: "em_andamento", parcial: true });
+    expect(por(r, "repasse")).toMatchObject({ situacao: "em_andamento", parcial: true });
+  });
+  it("excluir o lançamento devolve a fase", () => {
+    expect(por(com([]), "empenho").situacao).toBe("pendente");
   });
 });
 

@@ -35,18 +35,45 @@ const ONDE_EDITAR: Record<string, string> = {
   extrato: "Bloco Parceria / execução",
 };
 
-function Marca({ situacao, presumida }: { situacao: SituacaoFase; presumida?: boolean }) {
-  if (situacao === "concluida")
-    return (
-      <span
-        className={cn("flex h-5 w-5 items-center justify-center rounded-full", presumida ? "border border-emerald-600 text-emerald-700" : "bg-emerald-600 text-white")}
-      >
+/** Bolinha da fase. Verde com V = concluída; amarela vazada com V = parcial (ainda há saldo);
+ * amarela vazada com ! = alerta; o resumo aparece ao passar o mouse. */
+function Marca({ f }: { f: FaseCalculada }) {
+  const resumo = [f.resumo, ...f.alertas.map((a) => `⚠ ${a}`)].join("\n");
+  const base = "flex h-5 w-5 items-center justify-center rounded-full";
+  let corpo: React.ReactNode;
+  if (f.alertas.length > 0)
+    corpo = (
+      <span className={cn(base, "border-2 border-amber-500 text-amber-600")}>
+        <span className="text-[11px] font-bold leading-none" aria-hidden>!</span>
+      </span>
+    );
+  else if (f.situacao === "concluida")
+    corpo = (
+      <span className={cn(base, f.origem === "presumida" ? "border border-emerald-600 text-emerald-700" : "bg-emerald-600 text-white")}>
         <Check className="h-3 w-3" aria-hidden />
       </span>
     );
-  if (situacao === "em_andamento") return <CircleDot className="h-5 w-5 text-amber-600" aria-hidden />;
-  if (situacao === "nao_se_aplica") return <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
-  return <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
+  else if (f.parcial)
+    corpo = (
+      <span className={cn(base, "border-2 border-amber-500 text-amber-600")}>
+        <Check className="h-3 w-3" aria-hidden />
+      </span>
+    );
+  else if (f.situacao === "em_andamento") corpo = <CircleDot className="h-5 w-5 text-amber-600" aria-hidden />;
+  else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
+  else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
+  return (
+    <span title={resumo} aria-label={resumo.replace(/\n/g, " ")} role="img" className="cursor-help">
+      {corpo}
+    </span>
+  );
+}
+
+/** Cor da linha que sai da fase: verde se concluída, amarela entre fases parciais, cinza no resto. */
+function corDaLinha(f: FaseCalculada, proxima: FaseCalculada | undefined, cor: string): string {
+  if (f.situacao === "concluida" && !f.parcial) return cor;
+  if ((f.parcial || f.alertas.length > 0) && proxima && (proxima.parcial || proxima.alertas.length > 0)) return "#F59E0B";
+  return "#E2E8F0";
 }
 
 function hojeLocal() {
@@ -91,14 +118,14 @@ export function AbaFases({
         return (
           <li key={f.fase.chave} className="grid grid-cols-[24px_1fr] gap-3">
             <span className="flex flex-col items-center" aria-hidden>
-              <Marca situacao={f.situacao} presumida={f.origem === "presumida"} />
-              {i < fases.length - 1 && <span className="min-h-5 w-0.5 flex-1" style={{ backgroundColor: f.situacao === "concluida" ? cor : "#E2E8F0" }} />}
+              <Marca f={f} />
+              {i < fases.length - 1 && <span className="min-h-5 w-0.5 flex-1" style={{ backgroundColor: corDaLinha(f, fases[i + 1], cor) }} />}
             </span>
             <div className="pb-4">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                 <strong className={cn("text-sm", f.situacao === "nao_se_aplica" ? "text-slate-500 line-through" : "text-cataguases-marinho")}>{f.fase.nome}</strong>
                 {DICAS_FASE[f.fase.chave] && <DicaAjuda rotulo={`Como preencher: ${f.fase.nome}`} texto={DICAS_FASE[f.fase.chave].texto} />}
-                <span className="text-xs text-slate-600">{NOME_SITUACAO[f.situacao]}</span>
+                <span className="text-xs text-slate-600">{f.parcial ? "Parcial" : NOME_SITUACAO[f.situacao]}</span>
                 {f.data && <span className="text-xs tabular-nums text-slate-600">{dataBr(f.data)}</span>}
                 {f.documento && <span className="font-mono text-xs text-slate-600">{f.documento}</span>}
                 {rotulo && <span className="text-xs italic text-slate-500">{rotulo}</span>}

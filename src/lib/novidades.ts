@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-11",
+    titulo: "Emendas: fases parciais, alertas e balão de resumo",
+    descricao: "Na linha do tempo da emenda, a bolinha verde com V é fase concluída; amarela vazada com V é parcial (ainda há saldo a empenhar, liquidar ou pagar); amarela vazada com ! é alerta. A linha entre fases parciais fica amarela e, ao passar o mouse, aparece o resumo da situação. Empenho, liquidação e pagamento acima do disponível são bloqueados, e o formulário mostra o saldo. Pagamento só fecha a fase quando cobre o valor da emenda.",
+  },
+  {
+    data: "2026-11-11",
     titulo: "Emendas: processo de compra em uma fase só, e o vínculo junto das fases",
     descricao: "Na execução direta, DFD, preços, licitação e contrato viraram uma fase única, \"Processo de compra ou licitação\", que mostra só se o processo foi iniciado ou concluído. O campo para vincular o processo do Compras agora fica no topo da aba Fases, sem rolar a tela, e mostra apenas número, situação e o link para o Compras. Excluir um lançamento parcial também acerta a etapa.",
   },
