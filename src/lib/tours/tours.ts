@@ -19,6 +19,8 @@ export type Tour = {
   /** Rota onde este tour roda. Vazio = disponível em qualquer tela. */
   rota: string;
   passos: PassoTour[];
+  /** Classe extra do balão (ex.: tema do portal público). */
+  classePopover?: string;
 };
 
 export const TOURS: Tour[] = [
@@ -111,6 +113,23 @@ export const TOURS: Tour[] = [
         descricao: "Cada secretaria deve ter uma NF por quinzena. Aqui aparecem as que ainda não mandaram a da quinzena anterior.",
         lado: "left",
       },
+    ],
+  },
+  {
+    id: "portal-emendas",
+    nome: "Portal das emendas",
+    descricao: "Como usar o portal público das emendas impositivas",
+    rota: "/transparencia/emendas",
+    classePopover: "portal-tour",
+    passos: [
+      { seletor: '[data-tour="portal-heroi"]', titulo: "Bem-vindo ao portal das emendas", descricao: "Aqui você acompanha, sem senha, cada real das emendas impositivas dos vereadores: quanto foi indicado, quanto já foi empenhado e quanto já foi pago.", lado: "bottom" },
+      { seletor: '[data-tour="portal-execucao"]', titulo: "Pago e pendente, num olhar", descricao: "A barra divide o valor em três partes: já pago, empenhado aguardando pagamento e ainda não empenhado. Passe o mouse para ver os valores exatos.", lado: "bottom" },
+      { seletor: '[data-tour="portal-filtros"]', titulo: "Filtros que mudam tudo", descricao: "Escolha o exercício, um vereador, uma secretaria, o tipo, a situação ou a área. Os números, gráficos e a lista se atualizam na hora — e o link da página guarda o filtro.", lado: "bottom" },
+      { seletor: '[data-tour="portal-vereadores"]', titulo: "Clique para filtrar", descricao: "Cada barra é um botão: clique num vereador ou numa secretaria para ver só as emendas dele. Clique de novo para voltar.", lado: "top" },
+      { seletor: '[data-tour="portal-curva"]', titulo: "Ritmo dos pagamentos", descricao: "Quanto foi pago mês a mês no ano, acumulado. Passe o mouse ao longo da curva.", lado: "top" },
+      { seletor: '[data-tour="portal-lista"]', titulo: "Cada emenda, em detalhe", descricao: "Ordene por valor ou pelo que falta pagar e toque numa emenda para ver tudo o que a IN TCE-MG 05/2025 manda divulgar, com as datas de cada empenho e pagamento.", lado: "top" },
+      { seletor: '[data-tour="portal-boletim"]', titulo: "Novidades no seu e-mail", descricao: "Cadastre-se para receber só o que mudar. O e-mail serve apenas para isso e pode ser cancelado quando quiser.", lado: "top" },
+      { seletor: '[data-tour="portal-ajuda"]', titulo: "Guia sempre à mão", descricao: "O guia explica cada termo e como ler os gráficos. Este tour pode ser repetido por aqui.", lado: "bottom" },
     ],
   },
 ];

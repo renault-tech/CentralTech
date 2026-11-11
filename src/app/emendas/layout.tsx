@@ -12,6 +12,8 @@ import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
+import { anosDoPortal, metaDoPortal, pacoteDoPortal } from "@/lib/emendas/portal";
+import { contarPorGravidade, verificarPortal } from "@/lib/emendas/portal-verificacao";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,14 @@ export const metadata = { title: "Emendas Impositivas · Central Cataguases" };
  * módulo; o que ela vê/edita lá dentro é decidido pela RLS do schema
  * `emendas` (permissão por secretaria).
  */
+/** Alertas críticos do que está (ou vai) ao ar no portal público, para o selo do menu. Leituras em cache. */
+async function criticosDoPortal(): Promise<number> {
+  const [ano] = await anosDoPortal({ incluirNaoPublicados: true });
+  if (!ano) return 0;
+  const [pacote, meta] = await Promise.all([pacoteDoPortal(ano), metaDoPortal(ano)]);
+  return meta ? contarPorGravidade(verificarPortal(pacote.linhas, meta)).critico : 0;
+}
+
 export default async function LayoutEmendas({ children }: { children: React.ReactNode }) {
   // O catálogo de fases não depende do contexto: as duas buscas andam juntas.
   const promessaCatalogo = medir("layout:catalogo", () => obterCatalogoEtapas());
@@ -53,7 +63,11 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   }
 
   const gestor = ehGestor(ctx.perfil);
-  const [catalogo, propostasPendentes] = await Promise.all([promessaCatalogo, contarPropostasPendentes().catch(() => 0)]);
+  const [catalogo, propostasPendentes, alertasPortal] = await Promise.all([
+    promessaCatalogo,
+    contarPropostasPendentes().catch(() => 0),
+    criticosDoPortal().catch(() => 0),
+  ]);
   const itens = [
     { href: "/emendas", rotulo: "Painel", exato: true },
     { href: "/emendas/lista", rotulo: "Emendas" },
@@ -64,7 +78,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/vereadores", rotulo: "Vereadores" },
     { href: "/emendas/secretarias", rotulo: "Secretarias" },
     ...(gestor ? [{ href: "/emendas/configuracoes", rotulo: "Configurações" }] : []),
-    { href: "/transparencia/emendas", rotulo: "Portal público", externo: true },
+    { href: "/emendas/portal", rotulo: "Portal público", selo: alertasPortal },
   ];
 
   return (

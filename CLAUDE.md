@@ -1626,6 +1626,35 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   de quem pede). Impressão pelo CSS de impressão existente; CSV com BOM, `;` e vírgula decimal. São dados de APOIO: o envio
   oficial ao TCE-MG segue o sistema deles (layout de importação do TCE não foi mapeado).
 
+## Emendas — Portal da Transparência refeito, publicação com verificação e boletim (11/11/2026)
+
+- **Publicação por exercício** (migration `20261111000000`): `exercicios.portal_publicado_em/_por/_ciencia`. `anosDoPortal()` só devolve
+  publicados (a rota de documento e os dados abertos também). Prévia para quem tem o módulo: `/transparencia/emendas?previa=1`.
+  **Depois do deploy o portal mostra "em preparação" até um gestor publicar** em `/emendas/portal`.
+- **Verificação** (`lib/emendas/portal-verificacao.ts`, pura e testada) roda sobre as MESMAS linhas que vão ao ar: crítico (CPF em texto
+  público, empenho > valor, pago > empenho, pagamento futuro, CNPJ com dígito errado, conta repetida — art. 6º —, cota excedida, relatório
+  de gestão vencido, emenda executada sem os itens do art. 7º — § 2º), atenção (cada item do art. 7º que falta) e informativo. Publicar com
+  crítico exige ciência marcada, registrada em `portal_ciencia` (`actions-portal.ts` refaz a verificação com `updateTag`). Selo do menu
+  "Portal público" = nº de críticos. **Regra nova de verificação = um `add(...)`/`item(...)` em `verificarPortal`.**
+- **Portal** (`components/transparencia/*`, `app/transparencia/portal.css` com variáveis próprias `--p-*`/`--s-*`/`--t-*`/`--e-*`, claro e
+  escuro escolhidos; o herói é sempre escuro): cálculos em `portal-agregados.ts` (puros); gráficos em SVG/HTML próprios, sem biblioteca;
+  cada gráfico-filtro é calculado sem o próprio filtro (mostra todas as opções). Filtros na URL (`replaceState`), `?emenda=N` abre o detalhe.
+  **Ao vivo**: `pacoteDoPortal` (cache com tag) devolve `versao` (hash); o navegador consulta `/transparencia/emendas/versao` a cada 30 s e
+  faz `router.refresh()` quando muda. Tour `portal-emendas` (tours.ts, `classePopover`), na 1ª visita.
+- **Boletim por e-mail**: `emendas.portal_assinantes` (só service_role; GRANT explícito necessário — tabela nova do schema `emendas` não
+  herda privilégio de service_role, achado nesta entrega) e `portal_boletim_estado` (fotografia do último envio). Confirmação dupla
+  (`actions-boletim.ts`, resposta sempre genérica, 5 pedidos/10 min por IP), página `/transparencia/emendas/boletim` (botão, nunca GET).
+  Envio: Vercel Cron diário 11h20 UTC → `/api/transparencia/boletim` com `CRON_SECRET`; primeira execução só fotografa. Teto de 280
+  e-mails por execução (Brevo gratuita = 300/dia). **Passos manuais**: `CRON_SECRET` na Vercel (sem ele a rota responde 503 e nada é
+  enviado); opcional `PORTAL_URL_BASE` (domínio oficial nos links do e-mail).
+- **Só o administrador da Central publica** (`ctx.usuario.admin_hub`, não o gestor do módulo): botão, `publicarPortal`/`retirarPortal` e, no
+  banco, o gatilho `emendas.so_admin_publica_portal` (migration `20261111010000`; testado em transação: gestor barrado, admin passa, gestor
+  continua editando os outros campos do exercício). Gestor vê alertas e prévia, mas não publica.
+- **Embutir no site da Prefeitura**: só por link (a CSP tem `frame-ancestors 'none'`). Para iframe, liberar o domínio da Prefeitura em
+  `next.config.mjs` só para `/transparencia/*`.
+- Verificado: `tsc`/`eslint`/`vitest`/`next build`; telas em Chromium 1440 e 390 px, claro e escuro, tour e guia, com dados simulados numa
+  rota temporária (removida). **Não testado contra o banco pelo app nem o envio real de e-mail** (sandbox sem `*.supabase.co`/Brevo).
+
 ## Limite de tentativas por IP no código (28/10/2026)
 
 O Firewall da Vercel não pôde ser configurado (a API do MCP responde "config não encontrada" e o editor do painel

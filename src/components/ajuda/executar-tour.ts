@@ -33,6 +33,7 @@ export function executarTour(tour: Tour, opcoes?: { aoFechar?: () => void }): bo
     stagePadding: 6,
     stageRadius: 10,
     smoothScroll: true,
+    popoverClass: tour.classePopover,
     steps: passos.map((p) => ({
       element: p.seletor,
       popover: { title: p.titulo, description: p.descricao, side: p.lado ?? "bottom" },

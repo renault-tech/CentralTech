@@ -96,7 +96,7 @@ export function BotaoAjuda() {
           )}
 
           <ul className="max-h-72 overflow-y-auto">
-            {TOURS.map((tour) => (
+            {TOURS.filter((t) => !t.rota.startsWith("/transparencia")).map((tour) => (
               <li key={tour.id}>
                 <button
                   type="button"

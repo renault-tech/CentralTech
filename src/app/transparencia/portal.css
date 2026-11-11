@@ -1,0 +1,412 @@
+/*
+ * Portal público das emendas — identidade da plataforma (marinho, dourado, violeta do módulo
+ * Emendas, Geist), em linguagem Apple: superfícies sólidas, hairlines, raios concêntricos,
+ * números grandes. Tudo por variável, com claro e escuro escolhidos (não invertidos).
+ * Escopo: `.portal-raiz` — não depende das classes utilitárias que o estilo Apple da
+ * plataforma reescreve (bg-white, slate-*), para o portal ficar igual em qualquer preferência.
+ */
+.portal-raiz {
+  --p-fundo: #f5f5f7;
+  --p-superficie: #ffffff;
+  --p-superficie-2: #fafafc;
+  --p-elevada: #ffffff;
+  --p-linha: rgba(17, 17, 26, 0.08);
+  --p-linha-forte: rgba(17, 17, 26, 0.14);
+  --p-tinta: #1d1d1f;
+  --p-tinta-2: #48484f;
+  --p-tinta-3: #6e6e76;
+  --p-acento: #6b4fbb;
+  --p-acento-texto: #5b3fa8;
+  --p-acento-suave: rgba(107, 79, 187, 0.1);
+  --p-marinho: #0c1d33;
+  --p-dourado: #e9a63b;
+  --p-sombra: 0 1px 2px rgba(12, 29, 51, 0.04), 0 8px 28px rgba(12, 29, 51, 0.06);
+  --p-sombra-alta: 0 24px 64px rgba(12, 29, 51, 0.18);
+  /* execução: um tom só, do mais escuro (pago) ao mais claro (falta empenhar) */
+  --s-pago: #4b2fa0;
+  --s-apagar: #9a85e0;
+  --s-aempenhar: #e4def5;
+  --s-aempenhar-borda: #cfc6ec;
+  /* tipos de execução (validados: claro e escuro) */
+  --t-direta: #0e74a6;
+  --t-osc: #b86a12;
+  --t-ente: #a8325e;
+  /* estados */
+  --e-paga: #1a7f37;
+  --e-parcial: #5b3fa8;
+  --e-empenhada: #0e74a6;
+  --e-aguardando: #6e6e76;
+  --e-impedida: #b4540a;
+  color-scheme: light;
+  background: var(--p-fundo);
+  color: var(--p-tinta);
+  font-feature-settings: "ss01", "cv11";
+  min-height: 100dvh;
+}
+html.dark .portal-raiz {
+  --p-fundo: #000000;
+  --p-superficie: #111114;
+  --p-superficie-2: #17171c;
+  --p-elevada: #1c1c22;
+  --p-linha: rgba(255, 255, 255, 0.09);
+  --p-linha-forte: rgba(255, 255, 255, 0.16);
+  --p-tinta: #f5f5f7;
+  --p-tinta-2: #c7c7cc;
+  --p-tinta-3: #9a9aa2;
+  --p-acento: #9f8cf0;
+  --p-acento-texto: #b9abf7;
+  --p-acento-suave: rgba(159, 140, 240, 0.14);
+  --p-sombra: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 28px rgba(0, 0, 0, 0.4);
+  --p-sombra-alta: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --s-pago: #a996f5;
+  --s-apagar: #6650bd;
+  --s-aempenhar: #2c2838;
+  --s-aempenhar-borda: #3d3750;
+  --t-direta: #3d9cc4;
+  --t-osc: #c9822f;
+  --t-ente: #d35c8a;
+  --e-paga: #3fbf66;
+  --e-parcial: #b9abf7;
+  --e-empenhada: #4fb0dc;
+  --e-aguardando: #9a9aa2;
+  --e-impedida: #f0a04b;
+  color-scheme: dark;
+}
+
+/* Fundo do <body> por trás (o estilo Apple da plataforma pinta manchas ali). */
+html:has(.portal-raiz) body {
+  background: #f5f5f7;
+}
+html.dark:has(.portal-raiz) body {
+  background: #000;
+}
+
+.portal-raiz ::selection {
+  background: var(--p-acento-suave);
+}
+
+/* ——— Herói (sempre escuro, nos dois temas) ——— */
+.portal-heroi {
+  /* o herói é sempre escuro: usa os tons de execução do tema escuro nos dois temas */
+  --s-pago: #b9a8ff;
+  --s-apagar: #7a63d6;
+  --s-aempenhar: rgba(255, 255, 255, 0.14);
+  --s-aempenhar-borda: rgba(255, 255, 255, 0.22);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #070f1c;
+  color: #f5f5f7;
+}
+.portal-heroi::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10% auto -10%;
+  height: 160%;
+  z-index: -1;
+  background:
+    radial-gradient(42% 38% at 18% 30%, rgba(107, 79, 187, 0.55), transparent 70%),
+    radial-gradient(30% 32% at 82% 18%, rgba(233, 166, 59, 0.28), transparent 70%),
+    radial-gradient(50% 50% at 60% 90%, rgba(14, 116, 166, 0.35), transparent 70%),
+    linear-gradient(180deg, #0c1d33 0%, #070f1c 100%);
+  filter: saturate(115%);
+  animation: portal-aurora 22s ease-in-out infinite alternate;
+}
+.portal-heroi::after {
+  /* grão fino: dá profundidade sem ruído visível */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes portal-aurora {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(-3%, 2%, 0) scale(1.06); }
+}
+.portal-numero-heroi {
+  font-size: clamp(2.75rem, 8vw, 5.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.portal-gradiente-texto {
+  background: linear-gradient(100deg, #ffffff 0%, #e6defc 45%, #f6d79c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ——— Blocos ——— */
+.portal-cartao {
+  background: var(--p-superficie);
+  border: 1px solid var(--p-linha);
+  border-radius: 24px;
+  box-shadow: var(--p-sombra);
+}
+.portal-rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--p-tinta-3);
+}
+.portal-titulo-secao {
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 650;
+  color: var(--p-tinta);
+}
+
+/* Barra de filtros em vidro, presa ao topo */
+.portal-filtros {
+  background: color-mix(in srgb, var(--p-fundo) 78%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--p-linha);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .portal-filtros { background: var(--p-fundo); }
+}
+
+.portal-campo {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--p-linha-forte);
+  background: var(--p-superficie);
+  color: var(--p-tinta);
+  padding: 0 34px 0 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  min-width: 0;
+}
+input.portal-campo {
+  background-image: none;
+  padding-right: 12px;
+}
+.portal-campo:focus-visible {
+  border-color: var(--p-acento);
+  box-shadow: 0 0 0 4px var(--p-acento-suave);
+}
+.portal-campo[data-ativo="1"] {
+  border-color: var(--p-acento);
+  background-color: var(--p-acento-suave);
+}
+
+.portal-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--p-tinta);
+  color: var(--p-fundo);
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform 0.1s ease-out, opacity 0.2s;
+}
+.portal-botao:hover { opacity: 0.9; }
+.portal-botao:active { transform: scale(0.98); }
+.portal-botao:disabled { opacity: 0.5; cursor: not-allowed; }
+.portal-botao-sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--p-acento-suave);
+  color: var(--p-acento-texto);
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 0.1s ease-out, background 0.2s;
+}
+.portal-botao-sec:hover { background: color-mix(in srgb, var(--p-acento) 18%, transparent); }
+.portal-botao-sec:active { transform: scale(0.98); }
+.portal-botao-vidro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: background 0.2s, transform 0.1s;
+}
+.portal-botao-vidro:hover { background: rgba(255, 255, 255, 0.18); }
+.portal-botao-vidro:active { transform: scale(0.98); }
+
+.portal-raiz :focus-visible {
+  outline: 2px solid var(--p-acento);
+  outline-offset: 2px;
+}
+.portal-heroi :focus-visible { outline-color: #f6d79c; }
+
+/* Barras de execução: 2px de folga entre partes, pontas arredondadas */
+.portal-barra {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.portal-barra > span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  transition: flex-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.portal-barra > span:first-child { border-radius: 999px 2px 2px 999px; }
+.portal-barra > span:last-child { border-radius: 2px 999px 999px 2px; }
+.portal-barra > span:only-child { border-radius: 999px; }
+.portal-seg-pago { background: var(--s-pago); }
+.portal-seg-apagar { background: var(--s-apagar); }
+.portal-seg-aempenhar { background: var(--s-aempenhar); box-shadow: inset 0 0 0 1px var(--s-aempenhar-borda); }
+
+.portal-linha-grafico {
+  border-radius: 14px;
+  transition: background 0.15s;
+}
+.portal-linha-grafico:hover,
+.portal-linha-grafico:focus-visible { background: var(--p-superficie-2); }
+.portal-linha-grafico[data-selecionado="1"] { background: var(--p-acento-suave); }
+.portal-linha-grafico[data-apagado="1"] { opacity: 0.38; }
+
+/* Dica flutuante */
+.portal-dica {
+  position: fixed;
+  z-index: 80;
+  pointer-events: none;
+  min-width: 180px;
+  max-width: 300px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--p-elevada);
+  color: var(--p-tinta);
+  border: 1px solid var(--p-linha);
+  box-shadow: var(--p-sombra-alta);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: portal-entra 0.12s ease-out;
+}
+
+/* Entrada orquestrada */
+.portal-revela {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: portal-sobe 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes portal-sobe { to { opacity: 1; transform: none; } }
+@keyframes portal-entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.portal-pulso {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #3fbf66;
+}
+.portal-pulso::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #3fbf66;
+  animation: portal-pulsa 2s ease-out infinite;
+}
+@keyframes portal-pulsa { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(3); opacity: 0; } }
+
+/* Painel lateral (detalhe da emenda / guia) */
+.portal-veu {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: portal-entra 0.2s ease-out;
+}
+.portal-folha {
+  position: fixed;
+  z-index: 71;
+  background: var(--p-superficie);
+  color: var(--p-tinta);
+  box-shadow: var(--p-sombra-alta);
+  display: flex;
+  flex-direction: column;
+  inset: auto 0 0 0;
+  max-height: 92dvh;
+  border-radius: 24px 24px 0 0;
+  animation: portal-folha-sobe 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (min-width: 768px) {
+  .portal-folha {
+    inset: 12px 12px 12px auto;
+    width: min(640px, calc(100vw - 24px));
+    max-height: none;
+    border-radius: 24px;
+    animation: portal-folha-lado 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+@keyframes portal-folha-sobe { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes portal-folha-lado { from { transform: translateX(105%); } to { transform: none; } }
+
+.portal-aviso {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 90;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--p-tinta);
+  color: var(--p-fundo);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--p-sombra-alta);
+  animation: portal-entra 0.25s ease-out;
+}
+
+/* driver.js dentro do portal: popover no tema do portal */
+.driver-popover.portal-tour {
+  border-radius: 18px;
+  padding: 18px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+.driver-popover.portal-tour .driver-popover-title { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.driver-popover.portal-tour .driver-popover-description { font-size: 14px; line-height: 1.5; color: #48484f; }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-raiz *,
+  .portal-raiz *::before,
+  .portal-raiz *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .portal-revela { opacity: 1; transform: none; }
+}
+
+@media print {
+  .portal-filtros, .portal-nao-imprime { display: none !important; }
+  .portal-heroi { background: #fff !important; color: #000 !important; }
+  .portal-heroi::before, .portal-heroi::after { display: none; }
+  .portal-gradiente-texto { color: #000; background: none; }
+}
