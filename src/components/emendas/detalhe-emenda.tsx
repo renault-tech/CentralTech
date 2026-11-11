@@ -23,7 +23,7 @@ import {
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import { tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
+import { tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
@@ -514,6 +514,10 @@ export function DetalheEmendaCliente({
       />
       <DialogoMovimento
         aberto={dialogo === "movimento"}
+        saldos={(() => {
+          const t = totaisFinanceiros(movimentos);
+          return { empenhar: Math.max(0, emenda.valor - t.empenhado), liquidar: Math.max(0, t.empenhado - t.liquidado), pagar: Math.max(0, t.empenhado - t.pago) };
+        })()}
         aoFechar={() => setDialogo(null)}
         aoSalvar={(d) => executar(() => registrarMovimento({ emendaId: emenda.id, ...d }))}
       />
@@ -702,10 +706,12 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
 
 function DialogoMovimento({
   aberto,
+  saldos,
   aoFechar,
   aoSalvar,
 }: {
   aberto: boolean;
+  saldos: { empenhar: number; liquidar: number; pagar: number };
   aoFechar: () => void;
   aoSalvar: (d: { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero?: string; data: string | null; valor: number }) => Promise<Resultado>;
 }) {
@@ -720,6 +726,10 @@ function DialogoMovimento({
         <DialogHeader>
           <DialogTitle>Lançar movimento financeiro</DialogTitle>
           <DialogDescription>Para pagamentos parciais, anulações ou complementos. O sistema não deixa o pago passar do empenhado.</DialogDescription>
+          <p className="mt-1 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            Disponível: <strong>{brl(saldos.empenhar)}</strong> para empenhar · <strong>{brl(saldos.liquidar)}</strong> para liquidar · <strong>{brl(saldos.pagar)}</strong> para pagar.
+            Valor acima disso é bloqueado.
+          </p>
           <BaseLegalLinha chave="empenho" className="mt-1" />
           <BaseLegalLinha chave="liquidacao" />
           <BaseLegalLinha chave="pagamento" />

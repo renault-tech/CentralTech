@@ -56,6 +56,12 @@ export type FaseCalculada = {
   data: string | null;
   documento: string | null;
   observacao: string | null;
+  /** Fase em andamento com saldo ainda por fazer (ex.: empenho menor que o valor disponível). */
+  parcial?: boolean;
+  /** Frase para o balão ao passar o mouse: o que está feito e o que falta. */
+  resumo: string;
+  /** Avisos ligados à fase (pendências); qualquer um troca a bolinha por "!". */
+  alertas: string[];
 };
 
 /** O que a emenda sabe do processo do Compras ligado a ela (só o necessário para a linha do tempo). */
@@ -113,15 +119,24 @@ function menorData(movs: { tipo: string; data: string | null }[], tipo: string):
   return achou ? (menor ?? "") : null; // "" = existe movimento, sem data informada
 }
 
-type Dado = { data: string | null; documento?: string | null } | { aberta: true; observacao?: string } | null;
+type Dado =
+  | { data: string | null; documento?: string | null; resumo?: string }
+  | { aberta: true; parcial?: boolean; observacao?: string; resumo?: string }
+  | null;
+
+const pct = (feito: number, meta: number) => `${Math.min(100, Math.round((feito / meta) * 100))}%`;
 
 /** Fase única "processo de compra ou licitação" da execução direta: iniciado ou concluído, conforme o Compras. */
 function dadoCompras(f: FaseFluxo, c: ResumoCompras): Dado {
   if (f.chave !== "processo") return null;
-  const homologado = c.status === "concluido" || c.contratos > 0;
-  if (homologado) return { data: null, documento: c.numero_licitacao ?? c.numero };
-  return { aberta: true, observacao: `Processo ${c.numero_licitacao ?? c.numero} iniciado no Compras` };
+  const numero = c.numero_licitacao ?? c.numero;
+  if (c.status === "concluido" || c.contratos > 0) {
+    return { data: null, documento: numero, resumo: `Processo ${numero} concluído no Compras${c.contrato_numero ? ` · contrato ${c.contrato_numero}` : ""}.` };
+  }
+  return { aberta: true, observacao: `Processo ${numero} iniciado no Compras`, resumo: `Processo ${numero} iniciado no Compras; ainda não concluído.` };
 }
+
+const NOME_FIN: Record<string, string> = { empenho: "empenhado", liquidacao: "liquidado", pagamento: "pago" };
 
 /** Dado real que fecha a fase derivada; `null` = não há dado. */
 function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
@@ -131,21 +146,29 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
       return { data: e.exercicio?.data_aprovacao_loa ?? null };
     case "parecer":
       if (e.parecer) return { data: e.parecer.data };
-      return e.emenda.impedimentos_abertos > 0 ? { aberta: true } : null;
+      return e.emenda.impedimentos_abertos > 0 ? { aberta: true, resumo: "Há impedimento aberto na análise de viabilidade." } : null;
     case "empenho":
     case "liquidacao":
     case "pagamento": {
-      const d = menorData(e.movimentos, MOV_POR_DERIVACAO[f.derivacao]);
+      const tipoMov = MOV_POR_DERIVACAO[f.derivacao];
+      const d = menorData(e.movimentos, tipoMov);
       if (d === null) return null;
-      // Só fecha a fase quando o total lançado cobre o que havia para empenhar/liquidar/pagar.
+      // Só fecha a fase quando o total lançado cobre o valor disponível da emenda; antes disso é parcial.
       const semValores = e.valorEmenda == null || !e.movimentos.every((m) => m.valor !== undefined && m.valor !== null);
       if (semValores) return { data: d || null };
       const t = totaisFinanceiros(e.movimentos);
       const feito = f.derivacao === "empenho" ? t.empenhado : f.derivacao === "liquidacao" ? t.liquidado : t.pago;
       if (feito <= 0) return null;
-      const meta = f.derivacao === "empenho" || t.empenhado <= 0 ? (e.valorEmenda as number) : t.empenhado;
-      if (feito + 0.005 >= meta) return { data: d || null };
-      return { aberta: true, observacao: `Parcial: ${brl(feito)} de ${brl(meta)}` };
+      const meta = e.valorEmenda as number;
+      const qtd = e.movimentos.filter((m) => m.tipo === tipoMov).length;
+      const nome = NOME_FIN[f.derivacao];
+      if (feito + 0.005 >= meta) return { data: d || null, resumo: `Total ${nome}: ${brl(feito)} de ${brl(meta)} (100%) em ${qtd} lançamento(s).` };
+      return {
+        aberta: true,
+        parcial: true,
+        observacao: `Parcial: ${brl(feito)} de ${brl(meta)}`,
+        resumo: `Parcial: ${nome} ${brl(feito)} de ${brl(meta)} (${pct(feito, meta)}). Saldo a ${f.derivacao === "pagamento" ? "pagar" : f.derivacao === "liquidacao" ? "liquidar" : "empenhar"}: ${brl(meta - feito)}.`,
+      };
     }
     case "termo":
       return e.execucao?.numero_termo ? { data: e.execucao.vigencia_inicio } : null;
@@ -154,6 +177,19 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
     default:
       return null;
   }
+}
+
+const dataCurta = (d: string | null) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.split("-").reverse().join("/") : null);
+
+function resumoPadrao(situacao: SituacaoFase, origem: OrigemFase, data: string | null, documento: string | null, obs: string | null): string {
+  if (situacao === "nao_se_aplica") return "Não se aplica a esta emenda.";
+  if (situacao === "pendente") return "Ainda não iniciada.";
+  const d = dataCurta(data);
+  if (situacao === "concluida") {
+    const base = origem === "presumida" ? "Concluída (presumida pela etapa atual da emenda)" : `Concluída${d ? ` em ${d}` : ""}`;
+    return `${base}${documento ? ` · ${documento}` : ""}.`;
+  }
+  return `Em andamento${d ? ` desde ${d}` : ""}${documento ? ` · ${documento}` : ""}${obs ? ` — ${obs}` : ""}.`;
 }
 
 export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
@@ -166,11 +202,20 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
     .sort((a, b) => a.ordem - b.ordem)
     .map((fase): FaseCalculada => {
       const manual = entrada.manuais.get(fase.chave);
-      const base = { fase, data: null, documento: null, observacao: null };
+      const base = { fase, data: null, documento: null, observacao: null, alertas: [] as string[] };
       const real = dadoDerivado(fase, entrada);
 
       if (real && "data" in real) {
-        return { ...base, situacao: "concluida", origem: "derivada", data: real.data, documento: real.documento ?? manual?.documento ?? null, observacao: manual?.observacao ?? null };
+        const documento = real.documento ?? manual?.documento ?? null;
+        return {
+          ...base,
+          situacao: "concluida",
+          origem: "derivada",
+          data: real.data,
+          documento,
+          observacao: manual?.observacao ?? null,
+          resumo: real.resumo ?? resumoPadrao("concluida", "derivada", real.data, documento, null),
+        };
       }
       if (manual) {
         return {
@@ -180,17 +225,27 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
           data: manual.data,
           documento: manual.documento,
           observacao: manual.observacao,
+          resumo: resumoPadrao(manual.situacao, "manual", manual.data, manual.documento, manual.observacao),
         };
       }
-      if (real && "aberta" in real) return { ...base, situacao: "em_andamento", origem: "derivada", observacao: real.observacao ?? null };
+      if (real && "aberta" in real) {
+        return {
+          ...base,
+          situacao: "em_andamento",
+          origem: "derivada",
+          observacao: real.observacao ?? null,
+          parcial: real.parcial,
+          resumo: real.resumo ?? resumoPadrao("em_andamento", "derivada", null, null, real.observacao ?? null),
+        };
+      }
 
       // Sem dado próprio: a etapa atual da emenda já passou por aqui?
       const posFase = posicaoNaTrilha(emenda.modalidade, fase.etapa, cat);
       const financeira = fase.derivacao === "empenho" || fase.derivacao === "liquidacao" || fase.derivacao === "pagamento";
       if (posFase >= 0 && posAtual >= 0 && (posFase < posAtual || (financeira && posFase === posAtual))) {
-        return { ...base, situacao: "concluida", origem: "presumida" };
+        return { ...base, situacao: "concluida", origem: "presumida", resumo: resumoPadrao("concluida", "presumida", null, null, null) };
       }
-      return { ...base, situacao: "pendente", origem: "nenhuma" };
+      return { ...base, situacao: "pendente", origem: "nenhuma", resumo: resumoPadrao("pendente", "nenhuma", null, null, null) };
     });
 }
 

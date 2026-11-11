@@ -20,7 +20,7 @@ export async function avancarEtapaPorLancamentos(emendas: Cliente, emendaId: str
     if (!em || em.situacao !== "normal") return;
     const t = totaisFinanceiros(movs ?? []);
     const valor = Number(em.valor);
-    const base = t.empenhado > 0 ? t.empenhado : valor;
+    const base = valor; // liquidar e pagar fecham a fase quando cobrem o valor disponível da emenda
     let tipo: "empenho" | "liquidacao" | "pagamento" | null = null;
     let texto = "";
     if (t.empenhado > 0 && t.empenhado + 0.005 >= valor) {

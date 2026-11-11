@@ -13,7 +13,7 @@ import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { etapaAoConcluir, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
-import { ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
+import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
 /**
  * Ações do módulo Emendas. A permissão de verdade está no banco (RLS +
@@ -269,6 +269,26 @@ export async function removerJustificativa(emendaId: string, regra: string): Pro
   return { sucesso: true };
 }
 
+/** Bloqueia lançamento acima do disponível: empenho até o valor da emenda; liquidação, pagamento e anulação até o empenhado. */
+async function conferirSaldo(emendas: Awaited<ReturnType<typeof criarClienteEmendas>>, emendaId: string, tipo: string, valor: number): Promise<string | null> {
+  const [{ data: em }, { data: movs }] = await Promise.all([
+    emendas.from("emendas").select("valor").eq("id", emendaId).maybeSingle(),
+    emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", emendaId),
+  ]);
+  if (!em) return null;
+  const t = totaisFinanceiros(movs ?? []);
+  const fmt = (v: number) => brl(Math.max(0, v));
+  if (tipo === "empenho" && valor > Number(em.valor) - t.empenhado + 0.005)
+    return `O empenho de ${brl(valor)} passa do disponível para empenhar (${fmt(Number(em.valor) - t.empenhado)}).`;
+  if (tipo === "liquidacao" && valor > t.empenhado - t.liquidado + 0.005)
+    return `A liquidação de ${brl(valor)} passa do disponível para liquidar (${fmt(t.empenhado - t.liquidado)} do empenhado).`;
+  if (tipo === "pagamento" && valor > t.empenhado - t.pago + 0.005)
+    return `O pagamento de ${brl(valor)} passa do disponível para pagar (${fmt(t.empenhado - t.pago)} do empenhado).`;
+  if (tipo === "anulacao" && valor > t.empenhado - t.pago + 0.005)
+    return `A anulação de ${brl(valor)} passa do que pode ser anulado (${fmt(t.empenhado - t.pago)}: empenhado menos o já pago).`;
+  return null;
+}
+
 const esquemaMovimento = z.object({
   emendaId: z.uuid(),
   tipo: z.enum(["empenho", "liquidacao", "pagamento", "anulacao"]),
@@ -285,6 +305,8 @@ export async function registrarMovimento(dados: z.input<typeof esquemaMovimento>
   if (!ctx) return { sucesso: false, erro: "Sem acesso ao módulo." };
 
   const emendas = await criarClienteEmendas();
+  const barrado = await conferirSaldo(emendas, a.data.emendaId, a.data.tipo, a.data.valor);
+  if (barrado) return { sucesso: false, erro: barrado };
   // Perfis de secretaria não lançam direto: o lançamento espera a aprovação do gestor.
   if (!ehGestor(ctx.perfil)) {
     const falha = await proporAlteracoes(a.data.emendaId, [
@@ -595,7 +617,7 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
     // "de pé" só o tipo cujo total ainda cobre o disponível, não apenas o que tem algum lançamento.
     const t = totaisFinanceiros(restantes ?? []);
     const valorEmenda = Number(dadosEmenda?.valor ?? 0);
-    const base = t.empenhado > 0 ? t.empenhado : valorEmenda;
+    const base = valorEmenda;
     const completos = new Set<string>();
     if (t.empenhado > 0 && t.empenhado + 0.005 >= valorEmenda) completos.add("empenho");
     if (t.liquidado > 0 && t.liquidado + 0.005 >= base) completos.add("liquidacao");

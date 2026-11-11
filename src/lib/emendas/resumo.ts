@@ -65,6 +65,34 @@ function agrupar<T>(itens: T[], chave: (t: T) => string): Map<string, T[]> {
   return m;
 }
 
+/** Pendência (sem as já justificadas) → fase que ela afeta, pela chave da regra. */
+const FASE_DA_REGRA: Record<string, { derivacao?: string; chave?: string }> = {
+  empenho_maior: { derivacao: "empenho" },
+  empenho_sem_data: { derivacao: "empenho" },
+  empenho_sem_numero: { derivacao: "empenho" },
+  liquidacao_sem_data: { derivacao: "liquidacao" },
+  pago_maior: { derivacao: "pagamento" },
+  pago_sem_empenho: { derivacao: "pagamento" },
+  pagamento_sem_data: { derivacao: "pagamento" },
+  paga_sem_pagamento: { derivacao: "pagamento" },
+  termo_sem_extrato: { derivacao: "extrato" },
+  sem_conta: { derivacao: "termo" },
+  vigencia: { derivacao: "termo" },
+  impedimento: { derivacao: "parecer" },
+  exequibilidade_vencida: { derivacao: "parecer" },
+};
+
+function anexarAlertas(fases: FaseCalculada[], pend: Pendencia[]) {
+  for (const p of pend) {
+    if (p.justificativa) continue;
+    const [regra, chave] = p.regra.split(":");
+    const alvo = regra === "data_fora_de_ordem" ? { chave } : FASE_DA_REGRA[regra];
+    if (!alvo) continue;
+    const f = fases.find((x) => (alvo.chave ? x.fase.chave === alvo.chave : x.fase.derivacao === alvo.derivacao));
+    if (f && !f.alertas.includes(p.titulo)) f.alertas.push(p.titulo);
+  }
+}
+
 export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
   const catalogo = e.catalogo ?? CATALOGO_PADRAO;
   const fasesPorTipo = agrupar(e.fasesCatalogo, (f) => f.tipo);
@@ -100,10 +128,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
       documentos: docs.get(emenda.id) ?? [],
       movimentos: movs.get(emenda.id) ?? [],
     });
-    saida.set(emenda.id, {
-      fases,
-      conformidade: itens,
-      pendencias: pendencias({
+    const pend = pendencias({
         emenda,
         fases,
         execucao,
@@ -117,7 +142,12 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
           contaRepetida: repetidas.has(emenda.id),
         },
         hoje: e.hoje,
-      }),
+      });
+    anexarAlertas(fases, pend);
+    saida.set(emenda.id, {
+      fases,
+      conformidade: itens,
+      pendencias: pend,
     });
   }
   return saida;
