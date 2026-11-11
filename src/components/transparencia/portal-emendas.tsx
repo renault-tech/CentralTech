@@ -313,7 +313,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         {/* ——— Situação + tipo ——— */}
         <section className="grid gap-6 lg:grid-cols-5">
           <div className="portal-cartao p-6 lg:col-span-3">
-            <Cabecalho rotulo="Situação" titulo="Em que pé está cada emenda" />
+            <Cabecalho rotulo="Andamento" titulo="Situação da execução de cada emenda" />
             <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
               {SITUACOES_PUBLICAS.map((s) => {
                 const d = tSituacao.porSituacao[s.chave];
