@@ -5,7 +5,8 @@
  * Escopo: `.portal-raiz` — não depende das classes utilitárias que o estilo Apple da
  * plataforma reescreve (bg-white, slate-*), para o portal ficar igual em qualquer preferência.
  */
-.portal-raiz {
+.portal-raiz,
+.portal-dica {
   --p-fundo: #f5f5f7;
   --p-superficie: #ffffff;
   --p-superficie-2: #fafafc;
@@ -38,12 +39,15 @@
   --e-aguardando: #6e6e76;
   --e-impedida: #b4540a;
   color-scheme: light;
+}
+.portal-raiz {
   background: var(--p-fundo);
   color: var(--p-tinta);
   font-feature-settings: "ss01", "cv11";
   min-height: 100dvh;
 }
-html.dark .portal-raiz {
+html.dark .portal-raiz,
+html.dark .portal-dica {
   --p-fundo: #000000;
   --p-superficie: #111114;
   --p-superficie-2: #17171c;
@@ -95,7 +99,7 @@ html.dark:has(.portal-raiz) body {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: #070f1c;
+  background: #0c1d33;
   color: #f5f5f7;
 }
 .portal-heroi::before {
@@ -104,12 +108,12 @@ html.dark:has(.portal-raiz) body {
   inset: -40% -10% auto -10%;
   height: 160%;
   z-index: -1;
+  /* azul-marinho da identidade da Prefeitura (mesmo degradê dos cabeçalhos da plataforma) */
   background:
-    radial-gradient(42% 38% at 18% 30%, rgba(107, 79, 187, 0.55), transparent 70%),
-    radial-gradient(30% 32% at 82% 18%, rgba(233, 166, 59, 0.28), transparent 70%),
-    radial-gradient(50% 50% at 60% 90%, rgba(14, 116, 166, 0.35), transparent 70%),
-    linear-gradient(180deg, #0c1d33 0%, #070f1c 100%);
-  filter: saturate(115%);
+    radial-gradient(44% 40% at 14% 24%, rgba(46, 107, 184, 0.42), transparent 70%),
+    radial-gradient(30% 32% at 86% 14%, rgba(233, 166, 59, 0.16), transparent 70%),
+    radial-gradient(50% 50% at 62% 96%, rgba(29, 79, 145, 0.42), transparent 70%),
+    linear-gradient(120deg, #0c1d33 0%, #132c4c 55%, #0e2440 100%);
   animation: portal-aurora 22s ease-in-out infinite alternate;
 }
 .portal-heroi::after {
@@ -121,19 +125,54 @@ html.dark:has(.portal-raiz) body {
   opacity: 0.07;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+/* Brasão em marca-d'água: medalhão recortado para esconder o texto da imagem (mesmo recurso do interior da plataforma). */
+.portal-marca-dagua {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 9999px;
+  opacity: 0.09;
+  right: -90px;
+  top: -70px;
+  width: 460px;
+  height: 460px;
+}
+@media (min-width: 1024px) {
+  .portal-marca-dagua { right: 3%; top: -40px; width: 600px; height: 600px; opacity: 0.08; }
+}
+.portal-marca-dagua img { transform-origin: top; transform: scale(1.5); }
+.portal-barra-topo {
+  background: rgba(7, 15, 28, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.portal-logo-moldura {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #0c1d33;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
 @keyframes portal-aurora {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   100% { transform: translate3d(-3%, 2%, 0) scale(1.06); }
 }
 .portal-numero-heroi {
-  font-size: clamp(2.75rem, 8vw, 5.75rem);
+  display: inline-block; /* a caixa acompanha o texto: o degradê do texto cobre todos os dígitos */
+  max-width: 100%;
+  padding-right: 0.08em; /* o espaçamento negativo faz o último dígito passar da caixa e o degradê o cortaria */
+  font-size: clamp(2.5rem, 7vw, 5rem);
   line-height: 0.95;
   letter-spacing: -0.045em;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 .portal-gradiente-texto {
-  background: linear-gradient(100deg, #ffffff 0%, #e6defc 45%, #f6d79c 100%);
+  background: linear-gradient(100deg, #ffffff 0%, #dbe7f8 48%, #f6d79c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -407,6 +446,7 @@ input.portal-campo {
 @media print {
   .portal-filtros, .portal-nao-imprime { display: none !important; }
   .portal-heroi { background: #fff !important; color: #000 !important; }
-  .portal-heroi::before, .portal-heroi::after { display: none; }
+  .portal-heroi::before, .portal-heroi::after, .portal-marca-dagua { display: none; }
+  .portal-barra-topo { background: none; border: 0; }
   .portal-gradiente-texto { color: #000; background: none; }
 }
