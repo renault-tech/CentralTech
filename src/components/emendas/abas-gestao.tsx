@@ -102,7 +102,7 @@ export function AbaFases({
     <ol className="flex flex-col">
       {fases.map((f, i) => {
         const manual = !f.fase.derivacao;
-        const rotulo = f.origem === "presumida" ? "presumida pela etapa atual" : f.origem === "derivada" ? "vem do cadastro" : null;
+        const rotulo = f.origem === "presumida" ? "presumida pela etapa atual" : f.origem === "derivada" ? (f.fase.derivacao ? "vem do cadastro" : "vem do processo no Compras") : null;
         return (
           <li key={f.fase.chave} className="grid grid-cols-[24px_1fr] gap-3">
             <span className="flex flex-col items-center" aria-hidden>

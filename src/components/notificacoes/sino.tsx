@@ -61,6 +61,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
 
   React.useEffect(() => {
     if (!novo) return;
+    window.dispatchEvent(new Event("aviso-novo")); // as telas se atualizam sozinhas (AtualizarSozinho)
     const t = setTimeout(limparNovo, 7000);
     return () => clearTimeout(t);
   }, [novo]);

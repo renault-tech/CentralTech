@@ -7,6 +7,7 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { listarFasesCatalogo, listarItensChecklist, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria } from "@/lib/emendas/dados";
+import { avancarEtapaPorLancamentos, avancarEtapaPorProcesso } from "@/lib/emendas/etapa-financeira";
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
 import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from "@/lib/emendas/compras";
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
@@ -312,6 +313,7 @@ export async function registrarMovimento(dados: z.input<typeof esquemaMovimento>
     console.error("[registrarMovimento]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
+  await avancarEtapaPorLancamentos(emendas, a.data.emendaId);
   revalidar(a.data.emendaId);
   return { sucesso: true };
 }
@@ -495,6 +497,7 @@ export async function vincularProcesso(emendaId: string, numero: string): Promis
     console.error("[vincularProcesso]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
+  if (processo) await avancarEtapaPorProcesso(emendas, emendaId);
   revalidar(emendaId);
   return { sucesso: true };
 }

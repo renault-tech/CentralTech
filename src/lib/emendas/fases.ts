@@ -7,7 +7,7 @@
  * parecer ter regredido enquanto a conferência não é feita.
  */
 
-import { CATALOGO_PADRAO, posicaoNaTrilha, type CatalogoEtapas } from "@/lib/emendas/regras";
+import { CATALOGO_PADRAO, brl, posicaoNaTrilha, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type {
   EmendaResumo,
   ExecucaoEmenda,
@@ -58,12 +58,42 @@ export type FaseCalculada = {
   observacao: string | null;
 };
 
+/** O que a emenda sabe do processo do Compras ligado a ela (só o necessário para a linha do tempo). */
+export type ResumoCompras = {
+  numero: string;
+  numero_licitacao: string | null;
+  status: string;
+  criado_em: string | null;
+  contratos: number;
+  contrato_numero: string | null;
+};
+
+export type TotaisFinanceiros = { empenhado: number; liquidado: number; pago: number };
+
+/** Empenhado já líquido de anulações; liquidado e pago somam os lançamentos. */
+export function totaisFinanceiros(movs: { tipo: string; valor?: number | string | null }[]): TotaisFinanceiros {
+  const t = { empenhado: 0, liquidado: 0, pago: 0 };
+  for (const m of movs) {
+    const v = Number(m.valor ?? 0);
+    if (!Number.isFinite(v)) continue;
+    if (m.tipo === "empenho") t.empenhado += v;
+    else if (m.tipo === "anulacao") t.empenhado -= v;
+    else if (m.tipo === "liquidacao") t.liquidado += v;
+    else if (m.tipo === "pagamento") t.pago += v;
+  }
+  return t;
+}
+
 export type EntradaFases = {
   emenda: Pick<EmendaResumo, "tipo_execucao" | "modalidade" | "etapa" | "impedimentos_abertos">;
   /** Fases do tipo da emenda (catálogo `fluxo_fases`). */
   fases: FaseFluxo[];
   manuais: Map<string, FaseEmenda>;
-  movimentos: { tipo: string; data: string | null }[];
+  movimentos: { tipo: string; data: string | null; valor?: number | string | null }[];
+  /** Valor da emenda: sem ele (ou sem valores nos lançamentos) qualquer lançamento fecha a fase financeira. */
+  valorEmenda?: number | null;
+  /** Processo do Compras ligado à emenda (execução direta). */
+  compras?: ResumoCompras | null;
   execucao: Pick<ExecucaoEmenda, "numero_termo" | "vigencia_inicio" | "data_publicacao_extrato"> | null;
   exercicio: Pick<Exercicio, "data_aprovacao_loa"> | null;
   parecer: { data: string } | null;
@@ -83,8 +113,29 @@ function menorData(movs: { tipo: string; data: string | null }[], tipo: string):
   return achou ? (menor ?? "") : null; // "" = existe movimento, sem data informada
 }
 
+type Dado = { data: string | null; documento?: string | null } | { aberta: true; observacao?: string } | null;
+
+/** Fases da execução direta que acompanham o processo do Compras ligado à emenda. */
+function dadoCompras(f: FaseFluxo, c: ResumoCompras): Dado {
+  const homologado = c.status === "concluido" || c.contratos > 0;
+  switch (f.chave) {
+    case "demanda":
+      return { data: c.criado_em?.slice(0, 10) ?? null, documento: c.numero };
+    case "precos":
+      return c.numero_licitacao || homologado ? { data: null, documento: c.numero } : { aberta: true, observacao: `Processo ${c.numero} no Compras` };
+    case "contratacao":
+      if (homologado) return { data: null, documento: c.numero_licitacao ?? c.numero };
+      return c.numero_licitacao ? { aberta: true, observacao: `Licitação ${c.numero_licitacao} em andamento` } : null;
+    case "instrumento":
+      return c.contratos > 0 ? { data: null, documento: c.contrato_numero ?? c.numero } : null;
+    default:
+      return null;
+  }
+}
+
 /** Dado real que fecha a fase derivada; `null` = não há dado. */
-function dadoDerivado(f: FaseFluxo, e: EntradaFases): { data: string | null } | { aberta: true } | null {
+function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
+  if (!f.derivacao && e.compras) return dadoCompras(f, e.compras);
   switch (f.derivacao) {
     case "loa":
       return { data: e.exercicio?.data_aprovacao_loa ?? null };
@@ -95,7 +146,16 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): { data: string | null } | 
     case "liquidacao":
     case "pagamento": {
       const d = menorData(e.movimentos, MOV_POR_DERIVACAO[f.derivacao]);
-      return d === null ? null : { data: d || null };
+      if (d === null) return null;
+      // Só fecha a fase quando o total lançado cobre o que havia para empenhar/liquidar/pagar.
+      const semValores = e.valorEmenda == null || !e.movimentos.every((m) => m.valor !== undefined && m.valor !== null);
+      if (semValores) return { data: d || null };
+      const t = totaisFinanceiros(e.movimentos);
+      const feito = f.derivacao === "empenho" ? t.empenhado : f.derivacao === "liquidacao" ? t.liquidado : t.pago;
+      if (feito <= 0) return null;
+      const meta = f.derivacao === "empenho" || t.empenhado <= 0 ? (e.valorEmenda as number) : t.empenhado;
+      if (feito + 0.005 >= meta) return { data: d || null };
+      return { aberta: true, observacao: `Parcial: ${brl(feito)} de ${brl(meta)}` };
     }
     case "termo":
       return e.execucao?.numero_termo ? { data: e.execucao.vigencia_inicio } : null;
@@ -120,7 +180,7 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
       const real = dadoDerivado(fase, entrada);
 
       if (real && "data" in real) {
-        return { ...base, situacao: "concluida", origem: "derivada", data: real.data, observacao: manual?.observacao ?? null };
+        return { ...base, situacao: "concluida", origem: "derivada", data: real.data, documento: real.documento ?? manual?.documento ?? null, observacao: manual?.observacao ?? null };
       }
       if (manual) {
         return {
@@ -132,7 +192,7 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
           observacao: manual.observacao,
         };
       }
-      if (real && "aberta" in real) return { ...base, situacao: "em_andamento", origem: "derivada" };
+      if (real && "aberta" in real) return { ...base, situacao: "em_andamento", origem: "derivada", observacao: real.observacao ?? null };
 
       // Sem dado próprio: a etapa atual da emenda já passou por aqui?
       const posFase = posicaoNaTrilha(emenda.modalidade, fase.etapa, cat);

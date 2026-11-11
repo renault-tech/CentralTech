@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
+import { resumoDoProcesso } from "@/lib/emendas/compras";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
 import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
@@ -77,6 +78,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     fasesCatalogo,
     manuais: detalhe.fasesManuais,
     movimentos,
+    compras: processoCompras && execucao?.processo_id ? new Map([[execucao.processo_id, resumoDoProcesso(processoCompras)]]) : undefined,
     execucoes: execucao ? [execucao] : [],
     exercicio,
     pareceres,
@@ -186,7 +188,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             </dl>
           </section>
           <div id="bloco-parceria">
-            <PainelParceria emendaId={emenda.id} modalidade={emenda.modalidade} execucao={execucao} podeEditar={podeEditar} />
+            <PainelParceria emendaId={emenda.id} modalidade={tipo === "direta" ? "direta" : "repasse"} execucao={execucao} podeEditar={podeEditar} />
           </div>
           <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} />
           <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />

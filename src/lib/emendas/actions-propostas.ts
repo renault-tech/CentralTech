@@ -9,6 +9,7 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { listarFasesCatalogo, listarItensChecklist, obterContextoEmendas } from "@/lib/emendas/dados";
 import { gerarPropostas, lerJsonV1, type PropostaNova } from "@/lib/emendas/importacao/json-v1";
+import { avancarEtapaPorLancamentos, avancarEtapaPorProcesso } from "@/lib/emendas/etapa-financeira";
 import { ehGestor } from "@/lib/emendas/regras";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import type { Resultado } from "@/lib/emendas/actions";
@@ -124,7 +125,9 @@ async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<s
   const agora = new Date().toISOString();
   if (p.alvo === "execucao" && p.campo) {
     const { error } = await emendas.from("execucao").upsert({ id: p.emenda_id, [p.campo]: p.valor_proposto, atualizado_em: agora, atualizado_por: usuarioId } as Partial<ExecucaoEmenda> & { id: string });
-    return error ? error.message : null;
+    if (error) return error.message;
+    if (p.campo === "processo_id" && p.valor_proposto) await avancarEtapaPorProcesso(emendas, p.emenda_id);
+    return null;
   }
   if (p.alvo === "emenda_fases" && p.chave) {
     const v = p.valor_proposto as Pick<FaseEmenda, "situacao" | "data" | "documento" | "observacao">;
@@ -160,7 +163,9 @@ async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<s
       emenda_id: p.emenda_id, tipo: v.tipo, numero: v.numero ?? null, data: v.data ?? null, valor: v.valor, observacao: v.observacao ?? null,
       usuario_id: usuarioId, // a política de insert exige usuario_id = quem grava (o gestor que aprovou); o autor fica na proposta
     });
-    return error ? error.message : null;
+    if (error) return error.message;
+    await avancarEtapaPorLancamentos(emendas, p.emenda_id);
+    return null;
   }
   return "Tipo de proposta não suportado.";
 }

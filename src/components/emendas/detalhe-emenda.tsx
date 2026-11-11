@@ -23,7 +23,7 @@ import {
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import type { FaseCalculada } from "@/lib/emendas/fases";
+import { tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
@@ -367,7 +367,7 @@ export function DetalheEmendaCliente({
           )}
 
           {aba === "documentos" && (
-            <Documentos emendaId={emenda.id} modalidade={emenda.modalidade} documentos={documentos} podeEditar={podeEditar} gestor={gestor} executar={executar} />
+            <Documentos emendaId={emenda.id} modalidade={tipoDaEmenda(emenda) === "direta" ? "direta" : "repasse"} documentos={documentos} podeEditar={podeEditar} gestor={gestor} executar={executar} />
           )}
 
           {aba === "historico" && (
