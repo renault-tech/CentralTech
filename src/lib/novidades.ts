@@ -13,6 +13,16 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-11",
+    titulo: "Emendas: processo de compra em uma fase só, e o vínculo junto das fases",
+    descricao: "Na execução direta, DFD, preços, licitação e contrato viraram uma fase única, \"Processo de compra ou licitação\", que mostra só se o processo foi iniciado ou concluído. O campo para vincular o processo do Compras agora fica no topo da aba Fases, sem rolar a tela, e mostra apenas número, situação e o link para o Compras. Excluir um lançamento parcial também acerta a etapa.",
+  },
+  {
+    data: "2026-11-11",
+    titulo: "Emendas: fases acompanham o Compras e os lançamentos; telas se atualizam sozinhas",
+    descricao: "Ao vincular o processo do Compras, as fases de demanda, preços, contratação e contrato da execução direta se preenchem sozinhas. Empenho, liquidação e pagamento só fecham a fase quando o total lançado cobre o valor disponível (parcial aparece em andamento). Painel de parceria e anexos agora seguem o tipo da emenda (direta, OSC ou ente). E todas as telas atualizam a cada 30 segundos e ao chegar um aviso, sem recarregar a página.",
+  },
+  {
     data: "2026-11-10",
     titulo: "Emendas: secretarias podem propor correção de empenho e pagamento",
     descricao: "Em Configurações › Exercício, o gestor liga ou desliga a opção. Ligada, a secretaria corrige número e data de empenhos, liquidações e pagamentos das emendas que edita, e a correção vai para Aprovações.",

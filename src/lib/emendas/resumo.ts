@@ -3,7 +3,7 @@
  * Pendências). Pura: quem carrega os dados é `calculos.ts`.
  */
 
-import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
+import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type FaseCalculada, type ResumoCompras } from "@/lib/emendas/fases";
 import { avaliarArt7, contasRepetidas, relatoriosDeGestao, type DocumentoResumo, type ItemConformidade } from "@/lib/emendas/conformidade";
 import { maiorGravidade, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
 import { CATALOGO_PADRAO, type CatalogoEtapas } from "@/lib/emendas/regras";
@@ -39,7 +39,9 @@ export type EntradaResumos = {
   emendas: EmendaResumo[];
   fasesCatalogo: FaseFluxo[];
   manuais: FaseEmenda[];
-  movimentos: { emenda_id: string; tipo: string; numero?: string | null; data: string | null }[];
+  movimentos: { emenda_id: string; tipo: string; numero?: string | null; data: string | null; valor?: number | string | null }[];
+  /** Resumo do processo do Compras de cada vínculo (processo_id → resumo). */
+  compras?: Map<string, ResumoCompras>;
   execucoes: ExecucaoEmenda[];
   exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade" | "numero_lei_loa" | "municipio_nome" | "municipio_cnpj" | "unidade_parlamentar"> | null;
   /** Partido por vereador (id → partido). */
@@ -83,6 +85,8 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
       fases: fasesPorTipo.get(tipoDaEmenda(emenda)) ?? [],
       manuais: mapaManuais(manuais.get(emenda.id) ?? []),
       movimentos: movs.get(emenda.id) ?? [],
+      valorEmenda: Number(emenda.valor),
+      compras: execucao?.processo_id ? (e.compras?.get(execucao.processo_id) ?? null) : null,
       execucao,
       exercicio: e.exercicio,
       parecer,

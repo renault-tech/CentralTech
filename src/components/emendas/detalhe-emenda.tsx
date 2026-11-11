@@ -23,7 +23,7 @@ import {
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import type { FaseCalculada } from "@/lib/emendas/fases";
+import { tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
@@ -139,6 +139,7 @@ export function DetalheEmendaCliente({
   auditoria,
   exclusoes,
   podeCorrigirLancamento,
+  vinculo,
   nomesUsuarios,
   fases,
   pendencias,
@@ -160,6 +161,8 @@ export function DetalheEmendaCliente({
   unidades: UnidadeOrcamentaria[];
   auditoria: { id: number; tabela: string; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null }[];
   podeCorrigirLancamento: boolean;
+  /** Vínculo com o processo do Compras (execução direta), mostrado junto das fases. */
+  vinculo?: React.ReactNode;
   exclusoes: { em: string; usuario_id: string; justificativa: string; tipo: string }[];
   nomesUsuarios: Record<string, string>;
 }) {
@@ -270,6 +273,7 @@ export function DetalheEmendaCliente({
         </div>
 
         <div className="p-5">
+          {aba === "fases" && vinculo && <div className="mb-4">{vinculo}</div>}
           {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
           {aba === "documentacao" && (
@@ -367,7 +371,7 @@ export function DetalheEmendaCliente({
           )}
 
           {aba === "documentos" && (
-            <Documentos emendaId={emenda.id} modalidade={emenda.modalidade} documentos={documentos} podeEditar={podeEditar} gestor={gestor} executar={executar} />
+            <Documentos emendaId={emenda.id} modalidade={tipoDaEmenda(emenda) === "direta" ? "direta" : "repasse"} documentos={documentos} podeEditar={podeEditar} gestor={gestor} executar={executar} />
           )}
 
           {aba === "historico" && (

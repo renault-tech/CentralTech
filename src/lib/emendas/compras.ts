@@ -106,3 +106,40 @@ export async function sugerirProcessos(texto: string, objetoEmenda: string): Pro
   const pontos = (o: string) => pistas.filter((w) => o.toLowerCase().includes(w)).length;
   return linhas.sort((a, b) => pontos(b.objeto) - pontos(a.objeto)).slice(0, 6);
 }
+
+/**
+ * Resumo mínimo de vários processos de uma vez (lista e painel de Emendas): número, status,
+ * criação e quantidade de contratos. Uma consulta por tabela, só para os ids que as emendas
+ * visíveis ao usuário já apontam.
+ */
+export async function resumirProcessos(ids: string[]): Promise<Map<string, import("@/lib/emendas/fases").ResumoCompras>> {
+  const mapa = new Map<string, import("@/lib/emendas/fases").ResumoCompras>();
+  const unicos = Array.from(new Set(ids.filter(Boolean)));
+  if (unicos.length === 0) return mapa;
+  const admin = criarClienteAdminBruto().schema("public");
+  const [procs, contratos] = await Promise.all([
+    admin.from("processos").select("id,numero,numero_licitacao,status,criado_em").in("id", unicos),
+    admin.from("contratos_vigentes").select("processo_id,numero").in("processo_id", unicos).is("excluido_em", null).order("criado_em"),
+  ]);
+  const porProcesso = new Map<string, string[]>();
+  for (const c of (contratos.data ?? []) as { processo_id: string; numero: string }[]) {
+    (porProcesso.get(c.processo_id) ?? porProcesso.set(c.processo_id, []).get(c.processo_id)!).push(c.numero);
+  }
+  for (const p of (procs.data ?? []) as { id: string; numero: string; numero_licitacao: string | null; status: string; criado_em: string | null }[]) {
+    const cs = porProcesso.get(p.id) ?? [];
+    mapa.set(p.id, { numero: p.numero, numero_licitacao: p.numero_licitacao ?? null, status: String(p.status ?? ""), criado_em: p.criado_em ?? null, contratos: cs.length, contrato_numero: cs[0] ?? null });
+  }
+  return mapa;
+}
+
+/** Converte o processo já carregado (detalhe da emenda) no resumo usado pela linha do tempo. */
+export function resumoDoProcesso(p: ProcessoCompras, criadoEm: string | null = null): import("@/lib/emendas/fases").ResumoCompras {
+  return {
+    numero: p.numero,
+    numero_licitacao: p.numero_licitacao,
+    status: p.status,
+    criado_em: criadoEm,
+    contratos: p.contratos.length,
+    contrato_numero: p.contratos[0]?.numero ?? p.contrato_vinculado ?? null,
+  };
+}

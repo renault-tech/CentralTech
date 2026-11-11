@@ -98,3 +98,38 @@ describe("tipoDaEmenda", () => {
     expect(tipoDaEmenda({ tipo_execucao: null, modalidade: "repasse" })).toBe("osc");
   });
 });
+
+describe("fases financeiras só fecham com o total", () => {
+  const com = (movimentos: EntradaFases["movimentos"]) => situacaoFases(base({ valorEmenda: 1000, movimentos }));
+  it("empenho parcial fica em andamento; o total conclui", () => {
+    expect(por(com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }]), "empenho")).toMatchObject({ situacao: "em_andamento", origem: "derivada" });
+    expect(por(com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }, { tipo: "empenho", data: "2026-03-05", valor: 600 }]), "empenho").situacao).toBe("concluida");
+  });
+  it("anulação desconta do empenhado", () => {
+    const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 1000 }, { tipo: "anulacao", data: "2026-04-01", valor: 1000 }]);
+    expect(por(r, "empenho").situacao).toBe("pendente");
+  });
+  it("pagamento conclui quando cobre o empenhado", () => {
+    const e = { tipo: "empenho", data: "2026-03-01", valor: 1000 };
+    expect(por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 300 }]), "repasse").situacao).toBe("em_andamento");
+    expect(por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 1000 }]), "repasse").situacao).toBe("concluida");
+  });
+});
+
+describe("fase única do processo de compra segue o Compras", () => {
+  const fases: FaseFluxo[] = [{ tipo: "direta", chave: "processo", nome: "processo", etapa: "processo_compra", referencia: null, derivacao: null, ordem: 30, ativa: true }];
+  const calc = (compras: EntradaFases["compras"]) =>
+    situacaoFases(base({ emenda: { tipo_execucao: "direta", modalidade: "direta", etapa: "indicada", impedimentos_abertos: 0 }, fases, compras }));
+  const proc = { numero: "2026/0062", numero_licitacao: null, status: "em_andamento", criado_em: "2026-03-02T10:00:00Z", contratos: 0, contrato_numero: null };
+  it("vincular o processo marca como iniciado", () => {
+    expect(por(calc(proc), "processo")).toMatchObject({ situacao: "em_andamento", origem: "derivada" });
+    expect(por(calc({ ...proc, numero_licitacao: "136/2026" }), "processo").observacao).toContain("136/2026");
+  });
+  it("homologado ou com contrato marca como concluído", () => {
+    expect(por(calc({ ...proc, status: "concluido" }), "processo")).toMatchObject({ situacao: "concluida", documento: "2026/0062" });
+    expect(por(calc({ ...proc, contratos: 1, contrato_numero: "55/2026" }), "processo").situacao).toBe("concluida");
+  });
+  it("sem vínculo nada é derivado", () => {
+    expect(por(calc(null), "processo").situacao).toBe("pendente");
+  });
+});
