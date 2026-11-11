@@ -60,7 +60,7 @@ export default async function PaginaPortalPublico({ searchParams }: { searchPara
       )}
       <PainelPortalPublico
         ano={exercicio.ano}
-        gestor={gestor}
+        podePublicar={ctx.usuario.admin_hub}
         publicadoEm={exercicio.portal_publicado_em}
         ciencia={exercicio.portal_ciencia}
         urlPublica={`${origem}/transparencia/emendas`}

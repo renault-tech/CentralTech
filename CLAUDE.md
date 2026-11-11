@@ -1647,6 +1647,9 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   Envio: Vercel Cron diário 11h20 UTC → `/api/transparencia/boletim` com `CRON_SECRET`; primeira execução só fotografa. Teto de 280
   e-mails por execução (Brevo gratuita = 300/dia). **Passos manuais**: `CRON_SECRET` na Vercel (sem ele a rota responde 503 e nada é
   enviado); opcional `PORTAL_URL_BASE` (domínio oficial nos links do e-mail).
+- **Só o administrador da Central publica** (`ctx.usuario.admin_hub`, não o gestor do módulo): botão, `publicarPortal`/`retirarPortal` e, no
+  banco, o gatilho `emendas.so_admin_publica_portal` (migration `20261111010000`; testado em transação: gestor barrado, admin passa, gestor
+  continua editando os outros campos do exercício). Gestor vê alertas e prévia, mas não publica.
 - **Embutir no site da Prefeitura**: só por link (a CSP tem `frame-ancestors 'none'`). Para iframe, liberar o domínio da Prefeitura em
   `next.config.mjs` só para `/transparencia/*`.
 - Verificado: `tsc`/`eslint`/`vitest`/`next build`; telas em Chromium 1440 e 390 px, claro e escuro, tour e guia, com dados simulados numa

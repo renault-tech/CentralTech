@@ -15,7 +15,7 @@ export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-11",
     titulo: "Emendas: novo Portal da Transparência e publicação com verificação",
-    descricao: "O portal público das emendas foi refeito: painel com o valor pago, empenhado e ainda não empenhado, gráficos por situação, tipo, vereador e secretaria e curva dos pagamentos, todos mudando com os filtros (também ao clicar nas barras), detalhe de cada emenda com os itens do art. 7º da IN TCE-MG 05/2025, guia de uso, tour guiado e boletim por e-mail com confirmação. Os dados se atualizam sozinhos, sem recarregar. Dentro do módulo, o item Portal público mostra os alertas antes de ir ao ar (críticos, de atenção e informativos, com o número de cada emenda) e o gestor decide quando publicar; o portal só exibe exercícios publicados.",
+    descricao: "O portal público das emendas foi refeito: painel com o valor pago, empenhado e ainda não empenhado, gráficos por situação, tipo, vereador e secretaria e curva dos pagamentos, todos mudando com os filtros (também ao clicar nas barras), detalhe de cada emenda com os itens do art. 7º da IN TCE-MG 05/2025, guia de uso, tour guiado e boletim por e-mail com confirmação. Os dados se atualizam sozinhos, sem recarregar. Dentro do módulo, o item Portal público mostra os alertas antes de ir ao ar (críticos, de atenção e informativos, com o número de cada emenda) e só o administrador da Central decide quando publicar; o portal só exibe exercícios publicados.",
   },
   {
     data: "2026-11-11",

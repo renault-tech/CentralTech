@@ -17,7 +17,7 @@ const ESTILO: Record<Gravidade, { nome: string; icone: typeof Info; classe: stri
 
 export function PainelPortalPublico({
   ano,
-  gestor,
+  podePublicar,
   publicadoEm,
   ciencia,
   urlPublica,
@@ -28,7 +28,7 @@ export function PainelPortalPublico({
   geradoEm,
 }: {
   ano: number;
-  gestor: boolean;
+  podePublicar: boolean;
   publicadoEm: string | null;
   ciencia: Record<string, unknown> | null;
   urlPublica: string;
@@ -111,7 +111,7 @@ export function PainelPortalPublico({
             })}
           </dl>
 
-          {gestor ? (
+          {podePublicar ? (
             <div className="mt-5 border-t border-slate-100 pt-4">
               {!publicado && n.critico > 0 && (
                 <label className="mb-3 flex items-start gap-2 text-sm text-slate-700">
@@ -149,7 +149,7 @@ export function PainelPortalPublico({
               )}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-600">Só gestores do módulo publicam ou retiram o portal do ar.</p>
+            <p className="mt-4 text-sm text-slate-600">Só o administrador da Central publica ou retira o portal do ar. Você pode conferir os alertas e a prévia.</p>
           )}
         </section>
 
