@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-11",
+    titulo: "Portal da Transparência: títulos em linguagem formal",
+    descricao: "Os títulos dos blocos do portal público das emendas passaram a usar linguagem institucional: \"Situação da execução de cada emenda\", \"Forma de execução dos recursos\" e \"Execução financeira por vereador\".",
+  },
+  {
+    data: "2026-11-11",
     titulo: "Portal da Transparência: cabeçalho com a identidade da Prefeitura",
     descricao: "O cabeçalho do portal público das emendas ganhou o azul-marinho da identidade da Prefeitura, o brasão e o nome em tamanho maior e enquadrados, e o brasão em marca-d'água discreta ao fundo, como no interior da plataforma. A caixinha de informações ao passar o mouse também ficou com fundo sólido, para ler melhor.",
   },
