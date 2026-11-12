@@ -170,14 +170,14 @@ export function FormularioEmenda({
             </Campo>
           )}
           {benef === "__novo" && (
-            <Campo rotulo={benefTipo === "pessoa_fisica" ? "Tipo e CPF (obrigatório)" : "Tipo e CNPJ (obrigatório)"}>
+            <Campo rotulo={benefTipo === "pessoa_fisica" ? "Tipo e CPF (obrigatório)" : benefTipo === "orgao_publico" ? "Tipo e CNPJ (opcional)" : "Tipo e CNPJ (obrigatório)"}>
               <div className="flex gap-2">
                 <select className={cn(CAMPO, "w-40")} value={benefTipo} onChange={(e) => setBenefTipo(e.target.value as typeof benefTipo)} aria-label="Tipo do beneficiário">
                   <option value="entidade">Entidade</option>
                   <option value="orgao_publico">Órgão público</option>
                   <option value="pessoa_fisica">Pessoa física</option>
                 </select>
-                <input required className={CAMPO} placeholder={benefTipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} />
+                <input required={benefTipo !== "orgao_publico"} className={CAMPO} placeholder={benefTipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} />
               </div>
             </Campo>
           )}

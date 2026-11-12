@@ -13,7 +13,7 @@ import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
-import { validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
+import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
@@ -897,8 +897,29 @@ export async function salvarEmenda(dados: z.input<typeof esquemaEmenda>): Promis
     console.error("[salvarEmenda]", resposta.error);
     return { sucesso: false, erro: traduzir(resposta.error) };
   }
+  await completarDadosDaDescricao(emendas, resposta.data.id, a.data.descricao, benef.id);
   revalidar(resposta.data.id);
   return { sucesso: true, id: resposta.data.id };
+}
+
+/** O texto da emenda já traz o CNPJ do recebedor e o endereço: preenche o que está vazio (nunca sobrescreve). */
+async function completarDadosDaDescricao(
+  emendas: Awaited<ReturnType<typeof criarClienteEmendas>>,
+  emendaId: string,
+  descricao: string,
+  beneficiarioId: string | null
+) {
+  try {
+    const { cnpj, localidade } = extrairDaDescricao(descricao);
+    if (cnpj && beneficiarioId) await emendas.from("beneficiarios").update({ cnpj }).eq("id", beneficiarioId).is("cnpj", null).is("cpf", null).neq("tipo", "pessoa_fisica");
+    if (localidade) {
+      const { data: x } = await emendas.from("execucao").select("localidade").eq("id", emendaId).maybeSingle();
+      if (!x) await emendas.from("execucao").insert({ id: emendaId, localidade });
+      else if (!x.localidade) await emendas.from("execucao").update({ localidade }).eq("id", emendaId);
+    }
+  } catch (e) {
+    console.error("[completarDadosDaDescricao]", e);
+  }
 }
 
 const esquemaRemanejamento = z.object({

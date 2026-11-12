@@ -12,3 +12,7 @@ alter table emendas.beneficiarios add constraint beneficiarios_tipo_check check 
 -- NOT VALID: as 97 linhas atuais ainda não têm CNPJ; passam a ser exigidas ao serem editadas.
 alter table emendas.beneficiarios add constraint beneficiarios_documento_obrigatorio
   check ((tipo = 'pessoa_fisica' and cpf ~ '^\d{3}\.\d{3}\.\d{3}-\d{2}$') or (tipo <> 'pessoa_fisica' and cnpj is not null)) not valid;
+-- Ajuste posterior (12/11/2026): CNPJ só é exigido de entidade; órgão público usa o CNPJ do Município.
+alter table emendas.beneficiarios drop constraint if exists beneficiarios_documento_obrigatorio;
+alter table emendas.beneficiarios add constraint beneficiarios_documento_obrigatorio
+  check (case tipo when 'pessoa_fisica' then cpf ~ '^\d{3}\.\d{3}\.\d{3}-\d{2}$' when 'entidade' then cnpj is not null else true end) not valid;

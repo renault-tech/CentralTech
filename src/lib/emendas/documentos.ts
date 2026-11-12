@@ -30,7 +30,24 @@ export function validarDocumento(tipo: TipoBeneficiario, bruto: string | null | 
     if (!cpfValido(d)) return { ok: false, erro: "CPF inválido (confira os dígitos)." };
     return { ok: true, cnpj: null, cpf: formatarCpf(d) };
   }
-  if (!d) return { ok: false, erro: "Entidade e órgão público precisam de CNPJ." };
+  if (!d && tipo === "orgao_publico") return { ok: true, cnpj: null, cpf: null }; // órgão da prefeitura: vale o CNPJ do Município
+  if (!d) return { ok: false, erro: "Entidade precisa de CNPJ." };
   if (!cnpjValido(d)) return { ok: false, erro: "CNPJ inválido (confira os dígitos)." };
   return { ok: true, cnpj: formatarCnpj(d), cpf: null };
+}
+
+/** Dados que o texto da emenda já traz e que não devem ser pedidos de novo em outro lugar. */
+export function extrairDaDescricao(descricao: string): { cnpj: string | null; localidade: string | null } {
+  const cnpjs = [...new Set((descricao.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g) ?? []).filter(cnpjValido))];
+  const m = descricao.match(/situad[oa]\s+(?:na|no|à|em|nesta|neste)\s+([\s\S]*)/i);
+  let localidade: string | null = null;
+  if (m) {
+    const t = m[1]
+      .replace(/\b(Dr|Dra|Av|Prof|Profa|Cel|Pe|Pça)\.\s/g, "$1§ ")
+      .replace(/((,|\s)\s*(cujo|cuja|conforme|a ser|para|com |que |onde|tendo|visando|objetivando|de forma|sendo|necess|destinad)|\.\s+[A-ZÁÉÍÓÚ])[\s\S]*$/, "")
+      .replace(/§/g, ".")
+      .replace(/^[\s.,;]+|[\s.,;]+$/g, "");
+    if (t.length >= 8 && t.length <= 110) localidade = t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  return { cnpj: cnpjs.length === 1 ? formatarCnpj(cnpjs[0].replace(/\D/g, "")) : null, localidade };
 }
