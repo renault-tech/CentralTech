@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: processo e contrato do Compras passam a valer como dado da emenda",
+    descricao: "Sete emendas da Saúde ganharam o número do processo que estava nas notas da planilha, e 10 emendas foram ligadas ao processo correspondente no Compras. Quando a emenda está ligada a um processo do Compras, o número do processo e do contrato aparece no portal público e deixa de ser cobrado como pendente. Ao digitar o número do processo na execução, o gestor passa a ter o vínculo feito sozinho quando só existe um processo com aquele número.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: dados que já estavam no texto da emenda passaram a preencher o cadastro",
     descricao: "O CNPJ de 53 entidades beneficiárias (conferido pelos dígitos verificadores) e o endereço/localidade de 164 emendas foram lidos do texto das próprias emendas e gravados nos cadastros, deixando de aparecer como pendentes. Ao salvar uma emenda nova ou editada, o sistema faz isso sozinho, sem sobrescrever o que já foi preenchido. Unidades da própria prefeitura (postos, escolas, obras) foram reclassificadas como órgão público e não exigem CNPJ próprio.",
   },

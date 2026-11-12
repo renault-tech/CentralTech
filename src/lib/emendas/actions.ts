@@ -460,19 +460,47 @@ async function gravarCamposExecucao(emendaId: string, campos: CamposExecucao, ro
 export async function salvarExecucao(dados: z.input<typeof esquemaExecucao>): Promise<Resultado> {
   const a = esquemaExecucao.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const r = await salvarExecucaoCampos(a.data);
+  if (r.sucesso && !r.aviso && a.data.processoLicitatorio) await ligarProcessoPeloTexto(a.data.emendaId, a.data.processoLicitatorio);
+  return r;
+}
+
+/** O número do processo escrito na execução já basta para ligar ao Compras: só gestor, só se achar um único processo e nunca troca um vínculo já feito. */
+async function ligarProcessoPeloTexto(emendaId: string, texto: string) {
+  try {
+    const ctx = await exigirAcesso();
+    if (!ctx || !ehGestor(ctx.perfil)) return;
+    const emendas = await criarClienteEmendas();
+    const { data: x } = await emendas.from("execucao").select("processo_id").eq("id", emendaId).maybeSingle();
+    if (x?.processo_id) return;
+    const achados = new Map<string, string>();
+    for (const t of new Set(texto.match(/\d{1,4}\/\d{4}/g) ?? [])) {
+      const p = await buscarProcessoPorNumero(t);
+      if (p) achados.set(p.id, p.id);
+    }
+    if (achados.size !== 1) return;
+    await emendas.from("execucao").update({ processo_id: [...achados.keys()][0], atualizado_em: new Date().toISOString(), atualizado_por: ctx.usuario.id }).eq("id", emendaId);
+    await avancarEtapaPorProcesso(emendas, emendaId);
+    revalidar(emendaId);
+  } catch (e) {
+    console.error("[ligarProcessoPeloTexto]", e);
+  }
+}
+
+async function salvarExecucaoCampos(a: z.output<typeof esquemaExecucao>): Promise<Resultado> {
   return gravarCamposExecucao(
-    a.data.emendaId,
+    a.emendaId,
     {
-      numero_termo: a.data.numeroTermo,
-      processo_licitatorio: a.data.processoLicitatorio,
-      data_envio_pagamento: a.data.dataEnvioPagamento,
-      vigencia_inicio: a.data.vigenciaInicio,
-      vigencia_fim: a.data.vigenciaFim,
-      data_publicacao_extrato: a.data.dataPublicacaoExtrato,
-      conta_bancaria: a.data.contaBancaria,
-      gestor_osc: a.data.gestorOsc,
-      gestor_pmc: a.data.gestorPmc,
-      observacao: a.data.observacao,
+      numero_termo: a.numeroTermo,
+      processo_licitatorio: a.processoLicitatorio,
+      data_envio_pagamento: a.dataEnvioPagamento,
+      vigencia_inicio: a.vigenciaInicio,
+      vigencia_fim: a.vigenciaFim,
+      data_publicacao_extrato: a.dataPublicacaoExtrato,
+      conta_bancaria: a.contaBancaria,
+      gestor_osc: a.gestorOsc,
+      gestor_pmc: a.gestorPmc,
+      observacao: a.observacao,
     },
     "salvarExecucao"
   );
