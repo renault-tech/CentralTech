@@ -51,6 +51,8 @@ export function FormularioEmenda({
   const [valor, setValor] = React.useState(emenda ? emenda.valor.toFixed(2).replace(".", ",") : "");
   const [benef, setBenef] = React.useState(emenda?.beneficiario_id ?? "");
   const [benefNovo, setBenefNovo] = React.useState("");
+  const [benefTipo, setBenefTipo] = React.useState<"entidade" | "orgao_publico" | "pessoa_fisica">("entidade");
+  const [benefDoc, setBenefDoc] = React.useState("");
   const [unidadeId, setUnidadeId] = React.useState(emenda?.unidade_id ?? "");
   const [saude, setSaude] = React.useState(emenda?.saude ?? false);
   const [funcional, setFuncional] = React.useState(emenda?.funcional_programatica ?? "");
@@ -95,6 +97,8 @@ export function FormularioEmenda({
       valor: v,
       beneficiarioId: benef && benef !== "__novo" ? benef : null,
       beneficiarioNovo: benef === "__novo" ? benefNovo : undefined,
+      beneficiarioTipo: benef === "__novo" ? benefTipo : undefined,
+      beneficiarioDoc: benef === "__novo" ? benefDoc : undefined,
       unidadeId,
       saude,
       funcional,
@@ -163,6 +167,18 @@ export function FormularioEmenda({
           {benef === "__novo" && (
             <Campo rotulo="Nome do novo beneficiário">
               <input required maxLength={200} className={CAMPO} value={benefNovo} onChange={(e) => setBenefNovo(e.target.value)} />
+            </Campo>
+          )}
+          {benef === "__novo" && (
+            <Campo rotulo={benefTipo === "pessoa_fisica" ? "Tipo e CPF (obrigatório)" : "Tipo e CNPJ (obrigatório)"}>
+              <div className="flex gap-2">
+                <select className={cn(CAMPO, "w-40")} value={benefTipo} onChange={(e) => setBenefTipo(e.target.value as typeof benefTipo)} aria-label="Tipo do beneficiário">
+                  <option value="entidade">Entidade</option>
+                  <option value="orgao_publico">Órgão público</option>
+                  <option value="pessoa_fisica">Pessoa física</option>
+                </select>
+                <input required className={CAMPO} placeholder={benefTipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} />
+              </div>
             </Campo>
           )}
           <Campo rotulo="Unidade orçamentária">

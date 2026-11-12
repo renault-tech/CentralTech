@@ -8,6 +8,7 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
 import { ehGestor } from "@/lib/emendas/regras";
+import { validarDocumento } from "@/lib/emendas/documentos";
 import { lerPlanilha, type LinhaImportacao } from "@/lib/emendas/importacao/planilha";
 import type { Resultado } from "@/lib/emendas/actions";
 
@@ -403,7 +404,7 @@ const esquemaVereador = z.object({
   id: z.uuid().optional(),
   numero: z.number().int().positive("Número inválido"),
   nome: z.string().trim().min(2, "Informe o nome").max(200),
-  partido: opcional,
+  partido: z.string().trim().min(2, "Informe o partido do vereador").max(40),
   ativo: z.boolean(),
 });
 
@@ -418,6 +419,44 @@ export async function salvarVereador(dados: z.input<typeof esquemaVereador>): Pr
     : await emendas.from("vereadores").insert(campos).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
   if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
+  revalidar();
+  return { sucesso: true };
+}
+
+const esquemaSubstituicao = z.object({
+  saiId: z.uuid(),
+  nome: z.string().trim().min(5, "Informe o nome completo do novo vereador").max(200),
+  partido: z.string().trim().min(2, "Informe o partido do novo vereador").max(40),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data da posse"),
+  motivo: z.string().trim().max(300).optional(),
+});
+
+/** Troca de vereador: o que sai fica inativo (as emendas dele continuam com ele) e o novo entra com
+ * número próprio, sem emendas. Sem transação entre as duas gravações: se a segunda falhar, a primeira é desfeita. */
+export async function substituirVereador(dados: z.input<typeof esquemaSubstituicao>): Promise<Resultado> {
+  const a = esquemaSubstituicao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const emendas = await criarClienteEmendas();
+  const { data: sai } = await emendas.from("vereadores").select("id, nome, ativo").eq("id", a.data.saiId).maybeSingle();
+  if (!sai) return { sucesso: false, erro: "Vereador não encontrado." };
+  if (!sai.ativo) return { sucesso: false, erro: "Este vereador já está inativo." };
+  const { data: maior } = await emendas.from("vereadores").select("numero").order("numero", { ascending: false }).limit(1);
+  const numero = (maior?.[0]?.numero ?? 0) + 1;
+  const { data: novo, error: e1 } = await emendas
+    .from("vereadores")
+    .insert({ numero, nome: a.data.nome, partido: a.data.partido, ativo: true, substitui_id: sai.id, inicio_exercicio: a.data.data })
+    .select("id");
+  if (e1 || !novo?.length) return { sucesso: false, erro: e1 ? traduzir(e1) : "Não foi possível cadastrar o novo vereador." };
+  const { data: lin, error: e2 } = await emendas
+    .from("vereadores")
+    .update({ ativo: false, fim_exercicio: a.data.data, motivo_saida: a.data.motivo || `Substituído por ${a.data.nome}` })
+    .eq("id", sai.id)
+    .select("id");
+  if (e2 || !lin?.length) {
+    await emendas.from("vereadores").delete().eq("id", novo[0].id);
+    return { sucesso: false, erro: e2 ? traduzir(e2) : "Não foi possível desativar o vereador que sai." };
+  }
   revalidar();
   return { sucesso: true };
 }
@@ -472,26 +511,20 @@ export async function salvarUnidade(dados: z.input<typeof esquemaUnidade>): Prom
 const esquemaBeneficiario = z.object({
   id: z.uuid(),
   nome: z.string().trim().min(2).max(200),
-  cnpj: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => {
-      const d = (v ?? "").replace(/\D/g, "");
-      return d.length === 14 ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}` : d ? "invalido" : null;
-    })
-    .refine((v) => v !== "invalido", "CNPJ precisa ter 14 dígitos"),
-  tipo: z.enum(["entidade", "orgao_publico"]),
+  documento: z.string().trim().max(30).optional(),
+  tipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]),
 });
 
 export async function salvarBeneficiario(dados: z.input<typeof esquemaBeneficiario>): Promise<Resultado> {
   const a = esquemaBeneficiario.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const doc = validarDocumento(a.data.tipo, a.data.documento);
+  if (!doc.ok) return { sucesso: false, erro: doc.erro };
   const emendas = await criarClienteEmendas();
   const { data: linhas, error } = await emendas
     .from("beneficiarios")
-    .update({ nome: a.data.nome, cnpj: a.data.cnpj, tipo: a.data.tipo })
+    .update({ nome: a.data.nome, cnpj: doc.cnpj, cpf: doc.cpf, tipo: a.data.tipo })
     .eq("id", a.data.id)
     .select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };

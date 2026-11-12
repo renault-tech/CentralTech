@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: substituição de vereador e cadastros com documento obrigatório",
+    descricao: "Em Configurações › Vereadores, \"Substituir\" tira o vereador do exercício (as emendas dele continuam no nome dele) e cadastra quem entra, sem emendas e com partido. Nomes completos atualizados. Não é mais possível salvar vereador sem partido, entidade ou órgão sem CNPJ válido, nem pessoa física sem CPF válido (o CPF nunca aparece no portal público).",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: sem liquidação como fase, conclusão protegida e andamento alinhado ao Financeiro",
     descricao: "Liquidação e recebimento deixaram de ser fases da execução. \"Concluída\" só pode ser marcada quando todas as outras fases estão completas (tela e servidor). Registrar andamento de empenho ou pagamento agora exige o valor e lança o movimento na aba Financeiro (com bloqueio por saldo e aprovação para secretarias); a etapa avança sozinha quando o total fecha. Na lista do Financeiro, empenho é azul, pagamento verde e anulação âmbar.",
   },
