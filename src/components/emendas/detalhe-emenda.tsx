@@ -9,6 +9,7 @@ import {
   corrigirMovimento,
   definirCancelamento,
   excluirEmenda,
+  excluirAndamento,
   excluirMovimento,
   linkDocumento,
   registrarAndamento,
@@ -318,6 +319,20 @@ export function DetalheEmendaCliente({
                     {a.observacao && <p className="mt-0.5 text-[13px] text-slate-600">{a.observacao}</p>}
                     <p className="mt-0.5 text-xs text-slate-500">
                       {a.usuario_nome ? `Registrado por ${a.usuario_nome}` : "Registro do sistema"} em {new Date(a.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                      {gestor && (
+                        <button
+                          type="button"
+                          className="ml-3 text-red-700 hover:underline"
+                          onClick={() => {
+                            const motivo = window.prompt(`Desfazer o andamento “${infoEtapa(a.etapa, catalogo).nome}” de ${dataBr(a.data)}? A etapa da emenda volta ao andamento anterior.\n\nJustifique (mínimo de 10 caracteres):`);
+                            if (motivo === null) return;
+                            if (motivo.trim().length < 10) return window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi desfeito.");
+                            void executar(() => excluirAndamento({ id: a.id, emendaId: emenda.id, justificativa: motivo.trim() }));
+                          }}
+                        >
+                          Desfazer
+                        </button>
+                      )}
                     </p>
                   </div>
                 </li>
