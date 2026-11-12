@@ -76,6 +76,18 @@ describe("verificação antes de publicar", () => {
     expect(a.find((x) => x.id === "localidade")?.gravidade).toBe("atencao");
     expect(a.find((x) => x.id === "sus")?.emendas).toEqual([1]);
   });
+  it("emenda ainda sem execução: itens do § 2º viram aviso informativo; emenda em execução continua em atenção", () => {
+    const futura = l({ numero: 7, empenhado: 0, liquidado: 0, pago: 0, movimentos: [], ultimoPagamento: null, documentos: [], gestorPrefeitura: null, gestorEntidade: null, conta: null, termo: null, extratoPublicadoEm: null });
+    const a = verificarPortal([futura], { ...meta, saudeMinPct: 0 }, "2026-11-11");
+    expect(a.find((x) => x.id === "plano")).toBeUndefined();
+    expect(a.find((x) => x.id === "plano:antes")).toMatchObject({ gravidade: "info", emendas: [7] });
+    expect(a.find((x) => x.id === "gestor:antes")?.emendas).toEqual([7]);
+    expect(a.find((x) => x.id === "executada_sem_publicidade")).toBeUndefined();
+    expect(contarPorGravidade(a).critico).toBe(0);
+    const emExecucao = verificarPortal([l({ numero: 8, documentos: [], gestorPrefeitura: null, gestorEntidade: null })], { ...meta, saudeMinPct: 0 }, "2026-11-11");
+    expect(emExecucao.find((x) => x.id === "plano")).toMatchObject({ gravidade: "atencao", emendas: [8] });
+    expect(emExecucao.find((x) => x.id === "plano:antes")).toBeUndefined();
+  });
   it("cota excedida, dados do exercício e relatório de gestão vencido", () => {
     const a = verificarPortal([base, l({ numero: 2, valor: 4500, pago: 0, empenhado: 0 })], { ...meta, leiLoa: null, municipio: null, vereadoresSemPartido: ["Ana"] }, "2027-07-01");
     const ids = a.map((x) => x.id);

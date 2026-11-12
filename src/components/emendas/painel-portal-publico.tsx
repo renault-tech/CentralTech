@@ -12,7 +12,7 @@ import { contarPorGravidade, type AlertaPortal, type Gravidade } from "@/lib/eme
 const ESTILO: Record<Gravidade, { nome: string; icone: typeof Info; classe: string; descricao: string }> = {
   critico: { nome: "Crítico", icone: AlertOctagon, classe: "border-red-200 bg-red-50 text-red-800", descricao: "Pode expor a Prefeitura ou os gestores. Resolva antes de publicar ou publique com ciência registrada." },
   atencao: { nome: "Atenção", icone: AlertTriangle, classe: "border-amber-200 bg-amber-50 text-amber-900", descricao: "Item exigido pela IN TCE-MG 05/2025 ainda não informado. O portal mostra \"Não informado\"." },
-  info: { nome: "Informativo", icone: Info, classe: "border-slate-200 bg-slate-50 text-slate-700", descricao: "Como o público vai ver; nada obrigatório a corrigir." },
+  info: { nome: "Informativo", icone: Info, classe: "border-slate-200 bg-slate-50 text-slate-700", descricao: "O que ainda será exigido antes de empenhar e como o público verá certos casos; nada em atraso." },
 };
 
 export function PainelPortalPublico({
