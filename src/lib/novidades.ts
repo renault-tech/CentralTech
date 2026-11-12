@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: \"Sem andamento\" volta a aparecer onde de fato não há nada",
+    descricao: "Corrigido um efeito da mudança anterior: a fase da LOA e o parecer da secretaria (que são do exercício, não da emenda) passaram a contar como andamento e escondiam o aviso. Agora só lançamentos, fases preenchidas, termo e processo contam. O partido do Ricardo Geraldo Dias (PV) foi registrado.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: autor afastado sinalizado e dados do Município no exercício",
     descricao: "As emendas de vereador fora do exercício (como as do Ricardo Geraldo Dias, cassado e substituído pelo Alex Leite de Freitas) agora mostram o selo \"Autor afastado\" na lista e no detalhe e geram uma pendência de acompanhamento enquanto não forem concluídas; a emenda continua no nome do autor original. O nome e o CNPJ da Prefeitura passaram a constar no exercício 2026. A finalidade e as metas do plano de trabalho de 206 emendas foram preenchidas a partir do texto de cada descrição, e podem ser editadas.",
   },
