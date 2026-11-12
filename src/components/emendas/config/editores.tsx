@@ -4,8 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Check, Pencil, Plus, X } from "lucide-react";
 
-import { salvarBeneficiario, salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador } from "@/lib/emendas/actions-config";
+import { salvarBeneficiario, salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador, substituirVereador } from "@/lib/emendas/actions-config";
 import type { Resultado } from "@/lib/emendas/actions";
+import { NOME_TIPO_BENEFICIARIO } from "@/lib/emendas/documentos";
 import { brl, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { Beneficiario, Exercicio, Secretaria, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
@@ -178,17 +179,29 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
 export function EditorVereadores({ vereadores }: { vereadores: Vereador[] }) {
   const [editando, setEditando] = React.useState<string | null>(null);
   return (
-    <Secao titulo="Vereadores" apoio="O número é o mesmo da planilha (“02 - Nome”). Vereador que saiu fica inativo — o histórico continua.">
+    <Secao titulo="Vereadores" apoio="O número é o mesmo da planilha (“02 - Nome”). Se um vereador for substituído, use “Substituir”: o que saiu fica inativo e as emendas dele continuam com ele; o novo entra sem emendas. Partido é obrigatório.">
       <ul className="flex flex-col divide-y divide-slate-100">
         {vereadores.map((v) =>
-          editando === v.id ? (
+          editando === `sub:${v.id}` ? (
+            <FormSubstituicao key={v.id} sai={v} aoFechar={() => setEditando(null)} />
+          ) : editando === v.id ? (
             <FormVereador key={v.id} vereador={v} aoFechar={() => setEditando(null)} />
           ) : (
             <li key={v.id} className={cn("flex items-center gap-3 py-2.5 text-[13px]", !v.ativo && "opacity-60")}>
               <span className="w-8 font-mono text-slate-500">{numeroVereador(v.numero)}</span>
               <span className="flex-1 font-medium text-cataguases-marinho">{v.nome}</span>
-              <span className="text-slate-500">{v.partido ?? ""}</span>
-              {!v.ativo && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">inativo</span>}
+              <span className={cn(v.partido ? "text-slate-500" : "text-amber-800")}>{v.partido ?? "sem partido"}</span>
+              {v.substitui_id && <span className="text-xs text-slate-500">substituiu {vereadores.find((x) => x.id === v.substitui_id)?.nome ?? "outro vereador"}</span>}
+              {!v.ativo && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs" title={v.motivo_saida ?? undefined}>
+                  inativo{v.fim_exercicio ? ` desde ${v.fim_exercicio.split("-").reverse().join("/")}` : ""}
+                </span>
+              )}
+              {v.ativo && (
+                <button type="button" className="text-xs text-slate-600 underline hover:text-cataguases-marinho" onClick={() => setEditando(`sub:${v.id}`)}>
+                  Substituir
+                </button>
+              )}
               <button type="button" aria-label={`Editar ${v.nome}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setEditando(v.id)}>
                 <Pencil className="h-4 w-4" />
               </button>
@@ -206,6 +219,34 @@ export function EditorVereadores({ vereadores }: { vereadores: Vereador[] }) {
   );
 }
 
+function FormSubstituicao({ sai, aoFechar }: { sai: Vereador; aoFechar: () => void }) {
+  const [nome, setNome] = React.useState("");
+  const [partido, setPartido] = React.useState("");
+  const [data, setData] = React.useState(new Date().toISOString().slice(0, 10));
+  const [motivo, setMotivo] = React.useState("");
+  const { erro, salvando, salvar } = useSalvar();
+  return (
+    <li className="rounded-lg bg-slate-50 p-3">
+      <p className="mb-2 text-[13px] text-slate-700">
+        <strong>{sai.nome}</strong> sai; as emendas dele continuam registradas no nome dele. Quem entra começa sem emendas.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input className={cn(CAMPO, "min-w-[220px] flex-1")} placeholder="Nome completo de quem entra" value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome do substituto" />
+        <input className={cn(CAMPO, "w-28")} placeholder="Partido" value={partido} onChange={(e) => setPartido(e.target.value)} aria-label="Partido" />
+        <input type="date" className={cn(CAMPO, "w-40")} value={data} onChange={(e) => setData(e.target.value)} aria-label="Data da posse" />
+        <input className={cn(CAMPO, "w-56")} placeholder="Motivo (opcional)" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo" />
+        <button type="button" disabled={salvando} className={BOTAO} onClick={() => void salvar(() => substituirVereador({ saiId: sai.id, nome, partido, data, motivo }), aoFechar)}>
+          Confirmar substituição
+        </button>
+        <button type="button" className="text-sm text-slate-600 hover:underline" onClick={aoFechar}>
+          Cancelar
+        </button>
+      </div>
+      <Erro texto={erro} />
+    </li>
+  );
+}
+
 function FormVereador({ vereador, proximo, aoFechar }: { vereador?: Vereador; proximo?: number; aoFechar: () => void }) {
   const [numero, setNumero] = React.useState(String(vereador?.numero ?? proximo ?? 1));
   const [nome, setNome] = React.useState(vereador?.nome ?? "");
@@ -217,7 +258,7 @@ function FormVereador({ vereador, proximo, aoFechar }: { vereador?: Vereador; pr
       <div className="flex flex-wrap items-center gap-2">
         <input className={cn(CAMPO, "w-16")} value={numero} onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))} aria-label="Número" />
         <input className={cn(CAMPO, "min-w-[220px] flex-1")} placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome" />
-        <input className={cn(CAMPO, "w-28")} placeholder="Partido" value={partido} onChange={(e) => setPartido(e.target.value)} aria-label="Partido" />
+        <input className={cn(CAMPO, "w-28")} placeholder="Partido (obrigatório)" value={partido} onChange={(e) => setPartido(e.target.value)} aria-label="Partido" required />
         <label className="flex items-center gap-1.5 text-[13px]">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativo
         </label>
@@ -365,9 +406,9 @@ export function EditorBeneficiarios({ beneficiarios, usos }: { beneficiarios: Be
   const [busca, setBusca] = React.useState("");
   const [editando, setEditando] = React.useState<string | null>(null);
   const q = busca.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const lista = beneficiarios.filter((b) => !q || b.nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q) || (b.cnpj ?? "").includes(busca));
+  const lista = beneficiarios.filter((b) => !q || b.nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q) || (b.cnpj ?? b.cpf ?? "").includes(busca));
   return (
-    <Secao titulo="Beneficiários" apoio="Entidades e órgãos que recebem as emendas. Completar o CNPJ ajuda na prestação de contas.">
+    <Secao titulo="Beneficiários" apoio="Entidades e órgãos que recebem as emendas. CNPJ (entidade e órgão) ou CPF (pessoa física) é obrigatório para salvar; o CPF nunca aparece no portal público.">
       <input type="search" className={cn(CAMPO, "mb-3 max-w-sm")} placeholder="Buscar por nome ou CNPJ" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar beneficiário" />
       <ul className="flex flex-col divide-y divide-slate-100">
         {lista.map((b) =>
@@ -376,8 +417,8 @@ export function EditorBeneficiarios({ beneficiarios, usos }: { beneficiarios: Be
           ) : (
             <li key={b.id} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
               <span className="min-w-[200px] flex-1 font-medium text-cataguases-marinho">{b.nome}</span>
-              <span className={cn("font-mono text-xs", b.cnpj ? "text-slate-600" : "text-amber-800")}>{b.cnpj ?? "sem CNPJ"}</span>
-              <span className="text-xs text-slate-500">{b.tipo === "entidade" ? "Entidade" : "Órgão público"}</span>
+              <span className={cn("font-mono text-xs", b.cnpj || b.cpf ? "text-slate-600" : "text-amber-800")}>{b.cnpj ?? (b.cpf ? mascararCpf(b.cpf) : b.tipo === "pessoa_fisica" ? "sem CPF" : "sem CNPJ")}</span>
+              <span className="text-xs text-slate-500">{NOME_TIPO_BENEFICIARIO[b.tipo]}</span>
               <span className="w-24 text-right text-xs text-slate-500">{usos[b.id] ?? 0} emenda(s)</span>
               <button type="button" aria-label={`Editar ${b.nome}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setEditando(b.id)}>
                 <Pencil className="h-4 w-4" />
@@ -391,21 +432,24 @@ export function EditorBeneficiarios({ beneficiarios, usos }: { beneficiarios: Be
   );
 }
 
+const mascararCpf = (c: string) => `***.${c.slice(4, 7)}.***-**`;
+
 function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiario; aoFechar: () => void }) {
   const [nome, setNome] = React.useState(beneficiario.nome);
-  const [cnpj, setCnpj] = React.useState(beneficiario.cnpj ?? "");
+  const [cnpj, setCnpj] = React.useState(beneficiario.cnpj ?? beneficiario.cpf ?? "");
   const [tipo, setTipo] = React.useState(beneficiario.tipo);
   const { erro, salvando, salvar } = useSalvar();
   return (
     <li className="py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <input className={cn(CAMPO, "min-w-[200px] flex-1")} value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome" />
-        <input className={cn(CAMPO, "w-44")} placeholder="00.000.000/0000-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} aria-label="CNPJ" />
+        <input className={cn(CAMPO, "w-44")} placeholder={tipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={cnpj} onChange={(e) => setCnpj(e.target.value)} aria-label={tipo === "pessoa_fisica" ? "CPF" : "CNPJ"} required />
         <select className={cn(CAMPO, "w-40")} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo">
           <option value="entidade">Entidade</option>
           <option value="orgao_publico">Órgão público</option>
+          <option value="pessoa_fisica">Pessoa física</option>
         </select>
-        <button type="button" disabled={salvando} className={BOTAO} onClick={() => void salvar(() => salvarBeneficiario({ id: beneficiario.id, nome, cnpj, tipo }), aoFechar)}>
+        <button type="button" disabled={salvando} className={BOTAO} onClick={() => void salvar(() => salvarBeneficiario({ id: beneficiario.id, nome, documento: cnpj, tipo }), aoFechar)}>
           Salvar
         </button>
         <button type="button" className="text-sm text-slate-600 hover:underline" onClick={aoFechar}>

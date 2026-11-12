@@ -61,6 +61,10 @@ export type Vereador = {
   partido: string | null;
   ativo: boolean;
   criado_em: string;
+  substitui_id: string | null;
+  inicio_exercicio: string | null;
+  fim_exercicio: string | null;
+  motivo_saida: string | null;
 };
 
 export type Secretaria = { id: string; nome: string; ordem: number; ativo: boolean };
@@ -77,7 +81,8 @@ export type Beneficiario = {
   id: string;
   nome: string;
   cnpj: string | null;
-  tipo: "entidade" | "orgao_publico";
+  cpf: string | null;
+  tipo: "entidade" | "orgao_publico" | "pessoa_fisica";
   criado_em: string;
 };
 
