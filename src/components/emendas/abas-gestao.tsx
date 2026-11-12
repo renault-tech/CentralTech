@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, CircleDashed, CircleDot, Minus } from "lucide-react";
+import { ChevronDown, CircleDashed, Minus } from "lucide-react";
 
-import { justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
+import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
 import type { FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
 import { MarcaEstado } from "@/components/emendas/ui";
@@ -42,9 +42,9 @@ function Marca({ f }: { f: FaseCalculada }) {
   const resumo = [f.resumo, ...f.alertas.map((a) => `⚠ ${a}`)].join("\n");
   let corpo: React.ReactNode;
   if (f.alertas.length > 0) corpo = <MarcaEstado estado="alerta" />;
-  else if (f.situacao === "concluida" && !f.parcial) corpo = <MarcaEstado estado="completo" presumida={f.origem === "presumida"} />;
+  else if (f.situacao === "concluida" && !f.parcial) corpo = <MarcaEstado estado="completo" />;
   else if (f.parcial) corpo = <MarcaEstado estado="parcial" />;
-  else if (f.situacao === "em_andamento") corpo = <CircleDot className="h-5 w-5 text-amber-600" aria-hidden />;
+  else if (f.situacao === "em_andamento") corpo = <MarcaEstado estado="parcial" />;
   else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
   else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
   return (
@@ -56,8 +56,10 @@ function Marca({ f }: { f: FaseCalculada }) {
 
 /** Cor da linha que sai da fase: verde se concluída, amarela entre fases parciais, cinza no resto. */
 function corDaLinha(f: FaseCalculada, proxima: FaseCalculada | undefined, cor: string): string {
-  if (f.situacao === "concluida" && !f.parcial) return cor;
-  if ((f.parcial || f.alertas.length > 0) && proxima && (proxima.parcial || proxima.alertas.length > 0)) return "#F59E0B";
+  const emAndamento = (x: FaseCalculada) => x.parcial || x.alertas.length > 0 || x.situacao === "em_andamento";
+  if (f.situacao === "concluida" && !f.parcial && f.alertas.length === 0) return cor;
+  // Amarela enquanto a fase está parcial/com alerta e a seguinte já andou; cinza quando a seguinte nem começou.
+  if (emAndamento(f) && proxima && (emAndamento(proxima) || proxima.situacao === "concluida")) return "#F59E0B";
   return "#E2E8F0";
 }
 
@@ -83,12 +85,14 @@ export function AbaFases({
   emendaId,
   fases,
   podeEditar,
+  gestor,
   cor,
   atalhos,
   executar,
 }: {
   emendaId: string;
   fases: FaseCalculada[];
+  gestor: boolean;
   podeEditar: boolean;
   cor: string;
   atalhos?: AtalhosCompras;
@@ -133,7 +137,7 @@ export function AbaFases({
                 </p>
               )}
               {manual && aberta === f.fase.chave && (
-                <EditorFase emendaId={emendaId} fase={f} atalhos={atalhos} executar={executar} aoFechar={() => setAberta(null)} />
+                <EditorFase emendaId={emendaId} fase={f} atalhos={atalhos} gestor={gestor} executar={executar} aoFechar={() => setAberta(null)} />
               )}
             </div>
           </li>
@@ -150,10 +154,12 @@ function EditorFase({
   emendaId,
   fase,
   atalhos,
+  gestor,
   executar,
   aoFechar,
 }: {
   emendaId: string;
+  gestor: boolean;
   fase: FaseCalculada;
   atalhos?: AtalhosCompras;
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
@@ -219,6 +225,26 @@ function EditorFase({
         Observação
         <textarea className={CAMPO} rows={2} value={observacao} maxLength={2000} onChange={(e) => setObservacao(e.target.value)} />
       </label>
+      {gestor && fase.origem !== "nenhuma" && fase.situacao !== "pendente" && (
+        <div className="sm:col-span-2">
+          <button
+            type="button"
+            disabled={pendente}
+            className="text-xs font-medium text-red-700 hover:underline disabled:opacity-50"
+            onClick={() => {
+              if (!window.confirm(`Voltar a fase “${fase.fase.nome}” para pendente? A data, o documento e a conclusão dela serão apagados.`)) return;
+              setErro(null);
+              iniciar(async () => {
+                const r = await executar(() => desfazerFase({ emendaId, chave: fase.fase.chave }));
+                if (r.sucesso) aoFechar();
+                else setErro(r.erro);
+              });
+            }}
+          >
+            Anular preenchimento e voltar a fase para pendente
+          </button>
+        </div>
+      )}
       {erro && (
         <p className="text-sm text-red-700 sm:col-span-2" role="alert">
           {erro}

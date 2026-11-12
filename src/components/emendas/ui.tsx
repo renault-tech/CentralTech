@@ -186,7 +186,7 @@ function estadoDaEtapa(fases: FaseCalculada[]): { estado: EstadoMarca; resumo: s
   if (alertas.length > 0) return { estado: "alerta", resumo, presumida: false };
   if (aplicaveis.length === 0) return { estado: "pendente", resumo: resumo || "Não se aplica.", presumida: false };
   const concluidas = aplicaveis.filter((f) => f.situacao === "concluida" && !f.parcial);
-  if (concluidas.length === aplicaveis.length) return { estado: "completo", resumo, presumida: aplicaveis.every((f) => f.origem === "presumida") };
+  if (concluidas.length === aplicaveis.length) return { estado: "completo", resumo, presumida: false };
   const andou = aplicaveis.some((f) => f.parcial || f.situacao === "em_andamento" || f.situacao === "concluida");
   return { estado: andou ? "parcial" : "pendente", resumo, presumida: false };
 }
