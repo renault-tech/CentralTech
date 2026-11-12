@@ -443,7 +443,7 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
     <li className="py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <input className={cn(CAMPO, "min-w-[200px] flex-1")} value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome" />
-        <input className={cn(CAMPO, "w-44")} placeholder={tipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={cnpj} onChange={(e) => setCnpj(e.target.value)} aria-label={tipo === "pessoa_fisica" ? "CPF" : "CNPJ"} required />
+        <input className={cn(CAMPO, "w-44")} placeholder={tipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={cnpj} onChange={(e) => setCnpj(e.target.value)} aria-label={tipo === "pessoa_fisica" ? "CPF" : "CNPJ"} required={tipo !== "orgao_publico"} />
         <select className={cn(CAMPO, "w-40")} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo">
           <option value="entidade">Entidade</option>
           <option value="orgao_publico">Órgão público</option>

@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: dados que já estavam no texto da emenda passaram a preencher o cadastro",
+    descricao: "O CNPJ de 53 entidades beneficiárias (conferido pelos dígitos verificadores) e o endereço/localidade de 164 emendas foram lidos do texto das próprias emendas e gravados nos cadastros, deixando de aparecer como pendentes. Ao salvar uma emenda nova ou editada, o sistema faz isso sozinho, sem sobrescrever o que já foi preenchido. Unidades da própria prefeitura (postos, escolas, obras) foram reclassificadas como órgão público e não exigem CNPJ próprio.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: desfazer um andamento registrado por engano",
     descricao: "Na aba Andamentos, o gestor ganhou o botão \"Desfazer\" em cada andamento (com justificativa obrigatória). A etapa da emenda volta ao andamento anterior e a exclusão fica registrada no Histórico com quem fez e o motivo.",
   },
