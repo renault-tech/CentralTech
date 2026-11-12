@@ -214,18 +214,36 @@ export function verificarPortal(linhas: LinhaPortal[], meta: MetaVerificacao, ho
   }
 
   // ——— Atenção: itens do art. 7º por emenda ———
-  const item = (id: string, titulo: string, base: string, fn: (l: LinhaPortal) => boolean, acao: string, detalhe = "O portal mostra \"não informado\" neste item.") =>
-    add({ id, gravidade: "atencao", titulo, detalhe, base, emendas: onde(fn), acao });
-  item("localidade", "Localidade beneficiada não informada", "IN TCE-MG 05/2025, art. 7º, VI", (l) => vazio(l.localidade), "Emenda › Transparência › Localidade.");
-  item("cronograma", "Cronograma (início e término) não informado", "IN TCE-MG 05/2025, art. 7º, VII", (l) => !l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim, "Emenda › Transparência › Cronograma.");
+  /**
+   * `antes: true` = o art. 7º, § 2º, exige o item ANTES da execução. Nas emendas já executadas a falta é atenção (já devia estar
+   * divulgado); nas ainda sem empenho ou pagamento vira aviso informativo ("a cumprir antes de empenhar"), sem acusar descumprimento.
+   */
+  const item = (
+    id: string, titulo: string, base: string, fn: (l: LinhaPortal) => boolean, acao: string,
+    detalhe = "O portal mostra \"não informado\" neste item.", opcoes?: { antes?: boolean }
+  ) => {
+    if (!opcoes?.antes) return add({ id, gravidade: "atencao", titulo, detalhe, base, emendas: onde(fn), acao });
+    add({ id, gravidade: "atencao", titulo, detalhe: "Emenda já em execução: o item devia estar divulgado antes do empenho (art. 7º, § 2º).", base, emendas: onde((l) => executada(l) && fn(l)), acao });
+    add({
+      id: `${id}:antes`,
+      gravidade: "info",
+      titulo: `A cumprir antes de empenhar: ${titulo.charAt(0).toLowerCase()}${titulo.slice(1)}`,
+      detalhe: "Emenda ainda sem empenho ou pagamento: o item passa a ser exigível antes da execução (art. 7º, § 2º). O portal mostra \"Será divulgado antes da execução\".",
+      base,
+      emendas: onde((l) => !executada(l) && fn(l)),
+      acao,
+    });
+  };
+  item("localidade", "Localidade beneficiada não informada", "IN TCE-MG 05/2025, art. 7º, VI", (l) => vazio(l.localidade), "Emenda › Transparência › Localidade.", undefined, { antes: true });
+  item("cronograma", "Cronograma (início e término) não informado", "IN TCE-MG 05/2025, art. 7º, VII", (l) => !l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim, "Emenda › Transparência › Cronograma.", undefined, { antes: true });
   item("termo", "Repasse sem número do termo", "IN TCE-MG 05/2025, art. 7º, VIII; Lei 13.019/2014, art. 42", (l) => repasse(l) && executada(l) && vazio(l.termo), "Emenda › Parceria › Termo.");
   item("processo", "Execução direta empenhada sem processo administrativo", "IN TCE-MG 05/2025, art. 7º, VIII", (l) => !repasse(l) && executada(l) && vazio(l.processo), "Emenda › vincular o processo do Compras.");
-  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && !l.documentos.some((d) => d.tipo === "plano_trabalho"), "Emenda › Anexos › Plano de trabalho (PDF).");
-  item("cnpj", "Repasse sem CNPJ do recebedor", "IN TCE-MG 05/2025, art. 7º, XI", (l) => repasse(l) && vazio(l.cnpj), "Configurações › Beneficiários.");
-  item("gestor", "Gestor responsável não informado", "IN TCE-MG 05/2025, art. 7º, XIV", (l) => vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade), "Emenda › Parceria/Transparência › Gestor.");
-  item("conta", "Repasse sem banco e conta", "IN TCE-MG 05/2025, art. 7º, XVI, e art. 6º", (l) => repasse(l) && vazio(l.conta), "Emenda › Parceria › Conta bancária.");
+  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && !l.documentos.some((d) => d.tipo === "plano_trabalho"), "Emenda › Anexos › Plano de trabalho (PDF).", undefined, { antes: true });
+  item("cnpj", "Repasse sem CNPJ do recebedor", "IN TCE-MG 05/2025, art. 7º, XI", (l) => repasse(l) && vazio(l.cnpj), "Configurações › Beneficiários.", undefined, { antes: true });
+  item("gestor", "Gestor responsável não informado", "IN TCE-MG 05/2025, art. 7º, XIV", (l) => vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade), "Emenda › Parceria/Transparência › Gestor.", undefined, { antes: true });
+  item("conta", "Repasse sem banco e conta", "IN TCE-MG 05/2025, art. 7º, XVI, e art. 6º", (l) => repasse(l) && vazio(l.conta), "Emenda › Parceria › Conta bancária.", undefined, { antes: true });
   item("conta_oficial", "Conta fora de banco oficial", "IN TCE-MG 05/2025, art. 6º (\"onde houver\")", (l) => bancoOficial(l.conta) === false, "Confirme com o jurídico se há agência de banco oficial no município.", "A IN pede instituição financeira oficial onde houver (Banco do Brasil, Caixa).");
-  item("sus", "Emenda de saúde sem anuência do SUS informada", "IN TCE-MG 05/2025, art. 7º, XVII; Recomendação MPC-MG 01/2025, art. 2º, § 3º", (l) => l.saude && !l.anuenciaSus, "Emenda › Transparência › Anuência do SUS.");
+  item("sus", "Emenda de saúde sem anuência do SUS informada", "IN TCE-MG 05/2025, art. 7º, XVII; Recomendação MPC-MG 01/2025, art. 2º, § 3º", (l) => l.saude && !l.anuenciaSus, "Emenda › Transparência › Anuência do SUS.", undefined, { antes: true });
   item("identificador", "Sem identificador contábil da emenda", "IN TCE-MG 05/2025, arts. 4º e 5º; Recomendação MPC-MG 01/2025, art. 2º, IX", (l) => executada(l) && vazio(l.identificadorContabil), "Emenda › Transparência › Identificador contábil (com a Contabilidade).", "Não aparece como \"não informado\" no portal, mas é exigido para a rastreabilidade.");
   item("pagamento_sem_data", "Pagamento sem data", "IN TCE-MG 05/2025, art. 7º, XIII", (l) => l.movimentos.some((m) => m.tipo === "pagamento" && !m.data) || (l.pago > TOL && !l.ultimoPagamento), "Emenda › Financeiro › data do pagamento.");
   item("extrato", "Termo sem extrato publicado", "Lei 13.019/2014, art. 38", (l) => repasse(l) && !vazio(l.termo) && !l.extratoPublicadoEm, "Emenda › Parceria › Extrato publicado em.", "A parceria só produz efeitos depois da publicação do extrato.");

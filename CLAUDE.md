@@ -1647,6 +1647,11 @@ Etapa 3 = portal público sem login + relatórios (norma aplicável a recurso mu
   Envio: Vercel Cron diário 11h20 UTC → `/api/transparencia/boletim` com `CRON_SECRET`; primeira execução só fotografa. Teto de 280
   e-mails por execução (Brevo gratuita = 300/dia). **Passos manuais**: `CRON_SECRET` na Vercel (sem ele a rota responde 503 e nada é
   enviado); opcional `PORTAL_URL_BASE` (domínio oficial nos links do e-mail).
+- **Exigibilidade por momento (art. 7º, § 2º)**: os itens do art. 7º só são devidos ANTES da execução. `item(..., { antes: true })` em
+  `verificarPortal` separa: emenda já executada (empenho ou pagamento) = atenção; ainda sem execução = informativo `id:antes` ("a cumprir antes
+  de empenhar"). No detalhe público, `Campo antes` troca "Não informado" por "Será divulgado antes da execução" nas emendas sem execução
+  (cronograma, gestor, termo, processo, contrato, extrato, conta, anuência do SUS, plano e metas). Localidade, partido, CNPJ do recebedor e
+  dados do exercício continuam "Não informado".
 - **Só o administrador da Central publica** (`ctx.usuario.admin_hub`, não o gestor do módulo): botão, `publicarPortal`/`retirarPortal` e, no
   banco, o gatilho `emendas.so_admin_publica_portal` (migration `20261111010000`; testado em transação: gestor barrado, admin passa, gestor
   continua editando os outros campos do exercício). Gestor vê alertas e prévia, mas não publica.

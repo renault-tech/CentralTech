@@ -13,7 +13,8 @@ import { SeloSituacao } from "./selos";
 const NOME_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação" } as const;
 const SUS = { sim: "Sim, houve anuência prévia do gestor do SUS", nao: "Não houve anuência prévia", nao_se_aplica: "Não se aplica" } as const;
 
-function Campo({ rotulo, valor, inciso, largo }: { rotulo: string; valor: React.ReactNode; inciso?: string; largo?: boolean }) {
+/** `antes`: emenda ainda sem empenho ou pagamento; o item só é exigível antes da execução (IN TCE-MG 05/2025, art. 7º, § 2º). */
+function Campo({ rotulo, valor, inciso, largo, antes }: { rotulo: string; valor: React.ReactNode; inciso?: string; largo?: boolean; antes?: boolean }) {
   const vazio = valor === null || valor === undefined || valor === "";
   return (
     <div className={largo ? "sm:col-span-2" : undefined}>
@@ -21,7 +22,7 @@ function Campo({ rotulo, valor, inciso, largo }: { rotulo: string; valor: React.
         {rotulo}
         {inciso && <span className="text-[10.5px] tracking-wide opacity-70">art. 7º, {inciso}</span>}
       </dt>
-      <dd className={`mt-0.5 text-[14.5px] leading-snug ${vazio ? "italic text-[var(--p-tinta-3)]" : "font-medium text-[var(--p-tinta)]"}`}>{vazio ? "Não informado" : valor}</dd>
+      <dd className={`mt-0.5 text-[14.5px] leading-snug ${vazio ? "italic text-[var(--p-tinta-3)]" : "font-medium text-[var(--p-tinta)]"}`}>{vazio ? (antes ? "Será divulgado antes da execução" : "Não informado") : valor}</dd>
     </div>
   );
 }
@@ -37,6 +38,7 @@ function Secao({ titulo, children }: { titulo: string; children: React.ReactNode
 
 export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c: string) => string }) {
   const p = partes(l);
+  const semExecucao = l.empenhado <= 0.004 && l.pago <= 0.004;
   const repasse = l.tipo !== "direta";
   const recebedor = l.beneficiario ?? (l.tipo === "direta" ? l.municipio : null);
   const cronograma =
@@ -81,10 +83,10 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
         {l.descricao && l.descricao !== l.objeto && <p className="mt-2 whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--p-tinta-2)]">{l.descricao}</p>}
         <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
           <Campo rotulo="Localidade beneficiada" inciso="VI" valor={l.localidade} />
-          <Campo rotulo="Cronograma previsto" inciso="VII" valor={cronograma} />
+          <Campo rotulo="Cronograma previsto" inciso="VII" valor={cronograma} antes={semExecucao} />
           <Campo rotulo="Fase atual" valor={nomeEtapa(l.etapa)} />
           <Campo rotulo="Área" valor={l.saude ? "Saúde (ações e serviços públicos de saúde)" : "Demais áreas"} />
-          {l.planoMetas && <Campo rotulo="Finalidade e metas (plano de trabalho)" inciso="IX" valor={<span className="whitespace-pre-line">{l.planoMetas}</span>} largo />}
+          {l.planoMetas && <Campo rotulo="Finalidade e metas (plano de trabalho)" inciso="IX" valor={<span className="whitespace-pre-line">{l.planoMetas}</span>} largo antes={semExecucao} />}
           {l.impedimento && <Campo rotulo="Impedimento" valor={l.impedimento} largo />}
         </dl>
       </Secao>
@@ -105,9 +107,9 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
           <Campo rotulo="Recebedor / beneficiário final" inciso="XI" valor={recebedor} />
           <Campo rotulo="CNPJ do recebedor" inciso="XI" valor={l.cnpj} />
           <Campo rotulo="Município" inciso="XII" valor={l.municipio ? `${l.municipio}${l.municipioCnpj ? ` · CNPJ ${l.municipioCnpj}` : ""}` : null} />
-          <Campo rotulo="Gestor responsável (Prefeitura)" inciso="XIV" valor={l.gestorPrefeitura} />
-          {repasse && <Campo rotulo="Gestor responsável (entidade)" inciso="XIV" valor={l.gestorEntidade} />}
-          {l.saude && <Campo rotulo="Anuência prévia do SUS" inciso="XVII" valor={l.anuenciaSus ? SUS[l.anuenciaSus] : null} largo />}
+          <Campo rotulo="Gestor responsável (Prefeitura)" inciso="XIV" valor={l.gestorPrefeitura} antes={semExecucao} />
+          {repasse && <Campo rotulo="Gestor responsável (entidade)" inciso="XIV" valor={l.gestorEntidade} antes={semExecucao} />}
+          {l.saude && <Campo rotulo="Anuência prévia do SUS" inciso="XVII" valor={l.anuenciaSus ? SUS[l.anuenciaSus] : null} largo antes={semExecucao} />}
         </dl>
       </Secao>
 
@@ -116,12 +118,12 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
           <Campo rotulo="Funcional programática" valor={l.funcional} />
           <Campo rotulo="Natureza da despesa" valor={l.natureza} />
           <Campo rotulo="Grupo de natureza (GND)" inciso="XV" valor={l.gnd ? `${l.gnd}${l.categoria ? ` · ${l.categoria}` : ""}` : null} />
-          <Campo rotulo="Fonte de recurso" valor={l.fonteRecurso} />
-          {repasse && <Campo rotulo="Termo / instrumento" inciso="VIII" valor={l.termo} />}
-          <Campo rotulo="Processo administrativo" inciso="VIII" valor={l.processo} />
-          {(l.contrato || !repasse) && <Campo rotulo="Contrato" inciso="VIII" valor={l.contrato} />}
-          {repasse && <Campo rotulo="Extrato publicado em" valor={l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null} />}
-          {repasse && <Campo rotulo="Banco e conta dos recursos" inciso="XVI" valor={l.conta} largo />}
+          <Campo rotulo="Fonte de recurso" valor={l.fonteRecurso} antes={semExecucao} />
+          {repasse && <Campo rotulo="Termo / instrumento" inciso="VIII" valor={l.termo} antes={semExecucao} />}
+          <Campo rotulo="Processo administrativo" inciso="VIII" valor={l.processo} antes={semExecucao} />
+          {(l.contrato || !repasse) && <Campo rotulo="Contrato" inciso="VIII" valor={l.contrato} antes={semExecucao} />}
+          {repasse && <Campo rotulo="Extrato publicado em" valor={l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null} antes={semExecucao} />}
+          {repasse && <Campo rotulo="Banco e conta dos recursos" inciso="XVI" valor={l.conta} largo antes={semExecucao} />}
           {l.planoOutrasFontes != null && l.planoOutrasFontes > 0 && <Campo rotulo="Outras fontes previstas no plano" inciso="IX" valor={brl(l.planoOutrasFontes)} />}
         </dl>
       </Secao>
@@ -156,7 +158,7 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
       <Secao titulo="Documentos">
         <ul className="flex flex-col gap-2">
           {repasse || planos.length ? (
-            <ItemDocumento rotulo="Plano de trabalho" inciso="IX" docs={planos} />
+            <ItemDocumento rotulo="Plano de trabalho" inciso="IX" docs={planos} vazio={semExecucao ? "Será anexado antes da execução (IN TCE-MG 05/2025, art. 7º, § 2º)." : undefined} />
           ) : null}
           <ItemDocumento rotulo="Relatório de gestão" inciso="X" docs={relatorios} vazio="Disponibilizado até 30 de junho do ano seguinte ao recebimento dos recursos." />
           {l.documentos.filter((d) => d.tipo === "anuencia_sus").length > 0 && <ItemDocumento rotulo="Anuência do SUS" inciso="XVII" docs={l.documentos.filter((d) => d.tipo === "anuencia_sus")} />}

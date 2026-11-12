@@ -13,6 +13,11 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-11",
+    titulo: "Portal da Transparência: itens que só valem antes da execução",
+    descricao: "Nas emendas ainda sem empenho ou pagamento, o portal público passou a mostrar \"Será divulgado antes da execução\" (em vez de \"Não informado\") para cronograma, gestor, termo, processo, contrato, extrato, banco e conta, anuência do SUS e plano de trabalho, conforme o art. 7º, § 2º, da IN TCE-MG 05/2025. Na tela de verificação, esses itens ficam como aviso informativo para as emendas sem execução e continuam como atenção para as já em execução.",
+  },
+  {
     data: "2026-11-12",
     titulo: "Portal da Transparência: brasão grande ao fundo do cabeçalho",
     descricao: "A marca-d'água do cabeçalho do portal público agora é o brasão em triângulo, grande e centralizado atrás dos dados, com folga acima e abaixo. No celular e no tablet ela também fica centralizada.",
