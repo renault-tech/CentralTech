@@ -211,7 +211,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
       {/* ——— Herói ——— */}
       <header className="portal-heroi" data-tour="portal-heroi">
         <div aria-hidden className="portal-marca-dagua">
-          <Image src="/logo.png" alt="" fill sizes="600px" className="object-cover object-top" />
+          <Image src="/logo.png" alt="" fill sizes="560px" className="object-cover" />
         </div>
         <div className="portal-barra-topo">
           <div className="cabecalho-escuro tema-fixo mx-auto flex max-w-7xl items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-8 sm:py-4">
