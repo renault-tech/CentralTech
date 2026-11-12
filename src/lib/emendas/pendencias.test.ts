@@ -26,6 +26,12 @@ describe("pendencias", () => {
     expect(pendencias(entrada({ hoje: "2026-05-01" })).find((x) => x.regra === "nao_iniciada")!.gravidade).toBe("baixa");
   });
 
+  it("empenho parcial já é andamento: some o aviso de 'sem andamento'", () => {
+    const movs = [{ emenda_id: "e1", tipo: "empenho", numero: "10", data: "2026-05-01" }];
+    expect(regras({ movimentos: movs, emenda: { ...emenda, empenhado: 300 } })).not.toContain("nao_iniciada");
+    expect(regras()).toContain("nao_iniciada");
+  });
+
   it("prazo de exequibilidade vencido sem parecer", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" } })).toContain("exequibilidade_vencida");
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" }, temParecer: true })).not.toContain("exequibilidade_vencida");
