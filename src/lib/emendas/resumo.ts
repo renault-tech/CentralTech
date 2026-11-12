@@ -46,6 +46,8 @@ export type EntradaResumos = {
   exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade" | "numero_lei_loa" | "municipio_nome" | "municipio_cnpj" | "unidade_parlamentar"> | null;
   /** Partido por vereador (id → partido). */
   partidos?: Map<string, string | null>;
+  /** Vereadores fora do exercício (id → saída), para sinalizar emendas que seguem em execução. */
+  afastados?: Map<string, { desde: string | null; motivo: string | null }>;
   documentos?: (DocumentoResumo & { emenda_id: string })[];
   pareceres: ParecerExequibilidade[];
   justificadas: PendenciaJustificada[];
@@ -134,6 +136,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
         execucao,
         exercicio: e.exercicio,
         temParecer: !!parecer,
+        vereadorAfastado: e.afastados?.get(emenda.vereador_id) ?? null,
         movimentos: movs.get(emenda.id) ?? [],
         justificadas: justificadas.get(emenda.id),
         conformidade: {

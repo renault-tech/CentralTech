@@ -59,6 +59,7 @@ export function TabelaEmendas({
   ano: number;
   anos: number[];
 }) {
+  const afastados = React.useMemo(() => new Map(vereadores.filter((v) => !v.ativo).map((v) => [v.id, v.motivo_saida ?? "Fora do exercício"])), [vereadores]);
   const catalogo = useCatalogo();
   const router = useRouter();
   const pathname = usePathname();
@@ -344,6 +345,14 @@ export function TabelaEmendas({
                 </td>
                 <td className="px-3.5 py-3">
                   {numeroVereador(r.vereador_numero)} · {r.vereador_nome}
+                  {afastados.get(r.vereador_id) && (
+                    <span
+                      className="ml-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900"
+                      title={afastados.get(r.vereador_id) ?? undefined}
+                    >
+                      Autor afastado
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-[420px] px-3.5 py-3">
                   <Link href={`/emendas/${r.id}`} className="font-medium text-cataguases-marinho hover:text-[#4C3494] hover:underline">

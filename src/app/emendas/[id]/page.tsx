@@ -86,6 +86,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     catalogo,
     documentos: detalhe.documentos.map((d) => ({ emenda_id: d.emenda_id, tipo: d.tipo, competencia: d.competencia ?? null })),
     partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
+    afastados: new Map(vereadores.filter((v) => !v.ativo).map((v) => [v.id, { desde: v.fim_exercicio, motivo: v.motivo_saida }])),
     hoje: new Date().toISOString().slice(0, 10),
   }).get(emenda.id)!;
   // Itens condicionais: Saúde (CNES, CMS…) só quando a emenda é de Saúde; consórcio só na natureza 93.
@@ -137,6 +138,11 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
               <Link href={`/emendas/vereadores/${emenda.vereador_id}?ano=${emenda.ano}`} className="text-cataguases-azul hover:underline">
                 {numeroVereador(emenda.vereador_numero)} · {emenda.vereador_nome}
               </Link>{" "}
+              {vereadores.find((v) => v.id === emenda.vereador_id && !v.ativo) && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900" title={vereadores.find((v) => v.id === emenda.vereador_id)?.motivo_saida ?? undefined}>
+                  Autor afastado
+                </span>
+              )}{" "}
               · {emenda.numero_vereador}ª emenda dele(a)
             </p>
           </div>

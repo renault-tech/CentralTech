@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: autor afastado sinalizado e dados do Município no exercício",
+    descricao: "As emendas de vereador fora do exercício (como as do Ricardo Geraldo Dias, cassado e substituído pelo Alex Leite de Freitas) agora mostram o selo \"Autor afastado\" na lista e no detalhe e geram uma pendência de acompanhamento enquanto não forem concluídas; a emenda continua no nome do autor original. O nome e o CNPJ da Prefeitura passaram a constar no exercício 2026. A finalidade e as metas do plano de trabalho de 206 emendas foram preenchidas a partir do texto de cada descrição, e podem ser editadas.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: pendências refletem o que de fato existe e somem sozinhas",
     descricao: "O aviso \"Sem andamento\" deixou de aparecer em emendas que já têm empenho, pagamento, fase concluída ou processo, mesmo quando a etapa guardada ainda estava em \"Indicada\". Seis emendas totalmente empenhadas tiveram a etapa corrigida para \"Empenhada\" e a 191 (sem lançamentos) voltou para \"Indicada\". Nome do Município e unidade parlamentar passaram a constar no exercício. As pendências são recalculadas a cada abertura da tela: ao corrigir o dado, a pendência desaparece sem dar baixa.",
   },
