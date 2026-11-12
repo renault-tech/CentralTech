@@ -216,8 +216,9 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         <div className="portal-barra-topo">
           <div className="cabecalho-escuro tema-fixo mx-auto flex max-w-7xl items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-8 sm:py-4">
             <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-              <span className="portal-logo-moldura h-14 w-14 sm:h-[72px] sm:w-[72px]">
-                <Brasao tamanho={72} className="h-full w-full" />
+              <span className="portal-logo-moldura relative h-14 w-14 sm:h-[76px] sm:w-[76px]">
+                {/* posição absoluta: a altura em % não vale dentro de grid e o brasão passava da moldura, cortando "PREFEITURA" */}
+                <Brasao tamanho={64} className="absolute inset-[5px] h-[calc(100%-10px)] w-[calc(100%-10px)] object-contain" />
               </span>
               <div className="min-w-0 leading-tight">
                 <span aria-hidden className="mb-1.5 block h-[3px] w-8 rounded-full bg-[#E9A63B]" />

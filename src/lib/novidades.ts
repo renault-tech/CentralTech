@@ -13,6 +13,11 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-12",
+    titulo: "Portal da Transparência: brasão inteiro no cabeçalho",
+    descricao: "A moldura do brasão no cabeçalho do portal público cortava a palavra \"Prefeitura\" da imagem. O brasão agora aparece completo, com margem interna e fundo no mesmo tom da imagem.",
+  },
+  {
     data: "2026-11-11",
     titulo: "Portal da Transparência: títulos em linguagem formal",
     descricao: "Os títulos dos blocos do portal público das emendas passaram a usar linguagem institucional: \"Situação da execução de cada emenda\", \"Forma de execução dos recursos\" e \"Execução financeira por vereador\".",

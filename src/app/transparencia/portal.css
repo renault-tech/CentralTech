@@ -154,7 +154,8 @@ html.dark:has(.portal-raiz) body {
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 18px;
-  background: #0c1d33;
+  /* aproxima o fundo em degradê da própria imagem do brasão (cantos medidos), para não aparecer um retângulo interno */
+  background: linear-gradient(45deg, #061529 0%, #0d2034 50%, #1e334c 100%);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 @keyframes portal-aurora {
