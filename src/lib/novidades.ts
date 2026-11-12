@@ -16,6 +16,9 @@ export const NOVIDADES: Novidade[] = [
     data: "2026-11-12",
     titulo: "Emendas: desfazer um andamento registrado por engano",
     descricao: "Na aba Andamentos, o gestor ganhou o botão \"Desfazer\" em cada andamento (com justificativa obrigatória). A etapa da emenda volta ao andamento anterior e a exclusão fica registrada no Histórico com quem fez e o motivo.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: substituição de vereador e cadastros com documento obrigatório",
     descricao: "Em Configurações › Vereadores, \"Substituir\" tira o vereador do exercício (as emendas dele continuam no nome dele) e cadastra quem entra, sem emendas e com partido. Nomes completos atualizados. Não é mais possível salvar vereador sem partido, entidade ou órgão sem CNPJ válido, nem pessoa física sem CPF válido (o CPF nunca aparece no portal público).",
   },
