@@ -133,15 +133,21 @@ html.dark:has(.portal-raiz) body {
   pointer-events: none;
   aspect-ratio: 949 / 1047;
   clip-path: polygon(50.7% 4.2%, 8.5% 68.5%, 93% 68.5%);
-  opacity: 0.12;
-  /* celular: centralizado atrás do texto, para aparecer inteiro */
+  opacity: 0.1;
+  /* MOCKUP — marca-d'água grande, centralizada, atrás dos dados. Celular: centralizada, mais larga que a tela. */
   left: 50%;
   transform: translateX(-50%);
-  top: 96px;
-  width: min(86vw, 380px);
+  top: 84px;
+  width: min(118vw, 560px);
 }
 @media (min-width: 1024px) {
-  .portal-marca-dagua { left: auto; transform: none; right: 3%; top: 88px; width: 560px; opacity: 0.11; }
+  /* Computador: a altura do triângulo vai do filete da barra do topo (116 px) até quase o pé do cabeçalho azul. O triângulo ocupa
+     de 4,2% a 68,5% da altura da imagem; `top` compensa os 4,2% para o ápice ficar em 116 px. */
+  .portal-marca-dagua {
+    width: auto;
+    height: calc((100% - 124px) / 0.643);
+    top: calc(116px - (100% - 124px) * 0.0653);
+  }
 }
 .portal-barra-topo {
   background: rgba(7, 15, 28, 0.35);
