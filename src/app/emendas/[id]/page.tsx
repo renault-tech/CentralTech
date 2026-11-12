@@ -142,7 +142,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           </div>
           <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
         </div>
-        <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} catalogo={catalogo} />
+        <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} fases={calculo.fases} catalogo={catalogo} />
       </section>
 
       <div className="flex flex-wrap items-start gap-5">

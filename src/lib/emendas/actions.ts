@@ -181,6 +181,31 @@ export async function salvarFase(dados: z.input<typeof esquemaFase>): Promise<Re
   return { sucesso: true };
 }
 
+/** Volta uma fase manual a "pendente" (preenchida por engano). Só gestor. Se a conclusão dela tinha avançado a etapa
+ * da emenda, o andamento que ela criou sai do histórico e a etapa volta ao que restou. */
+export async function desfazerFase(dados: { emendaId: string; chave: string }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.emendaId).success || !/^[a-z][a-z0-9_]{1,40}$/.test(dados.chave)) return { sucesso: false, erro: "Dados inválidos" };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores voltam uma fase para pendente." };
+  const emendas = await criarClienteEmendas();
+  const { data: emenda } = await emendas.from("v_emendas").select("id,modalidade,tipo_execucao").eq("id", dados.emendaId).maybeSingle();
+  if (!emenda) return { sucesso: false, erro: "Emenda não encontrada." };
+  const fase = (await listarFasesCatalogo()).find((f) => f.tipo === tipoDaEmenda(emenda) && f.chave === dados.chave);
+  if (!fase || fase.derivacao) return { sucesso: false, erro: "Esta fase vem de outro dado (lançamentos, termo, parecer…): corrija na origem." };
+  const { error } = await emendas.from("emenda_fases").upsert({
+    emenda_id: dados.emendaId, chave: dados.chave, situacao: "pendente", data: null, documento: null, observacao: null,
+    origem: "manual", atualizado_por: ctx.usuario.id, atualizado_em: new Date().toISOString(),
+  });
+  if (error) {
+    console.error("[desfazerFase]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  // O andamento criado ao concluir a fase (mesmo texto de salvarFase) sai; o gatilho recalcula a etapa.
+  const { data: removidos } = await emendas.from("andamentos").delete().eq("emenda_id", dados.emendaId).eq("etapa", fase.etapa).eq("observacao", `Fase "${fase.nome}" concluída`).select("id");
+  revalidar(dados.emendaId);
+  return { sucesso: true, aviso: removidos?.length ? "Fase voltou para pendente e a etapa da emenda foi recalculada." : "Fase voltou para pendente." };
+}
+
 const esquemaItemChecklist = z.object({
   emendaId: z.uuid(),
   itemChave: chave,

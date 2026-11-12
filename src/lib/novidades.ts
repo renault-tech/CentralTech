@@ -13,6 +13,16 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-12",
+    titulo: "Emendas: três símbolos de andamento e botão para anular uma fase",
+    descricao: "Bolinha verde com V = concluída (inclusive a presumida pela etapa atual); amarela vazada com V = parcial ou em andamento; triângulo amarelo vazado com ! = alerta; cinza tracejada = não iniciada. A linha fica amarela entre fases em andamento. Fases preenchidas por engano podem ser anuladas pelo gestor em Atualizar › \"Anular preenchimento e voltar a fase para pendente\" (a etapa da emenda é recalculada).",
+  },
+  {
+    data: "2026-11-12",
+    titulo: "Emendas: etapas no topo da emenda com bolinha verde, parcial e alerta",
+    descricao: "A linha de etapas no alto da emenda agora usa as mesmas regras da aba Fases: bolinha verde com V (concluída), amarela vazada com V (parcial, com saldo a empenhar, liquidar ou pagar), triângulo amarelo vazado com ! (alerta) e linha amarela entre etapas parciais. Ao passar o mouse aparece o resumo da situação.",
+  },
+  {
     data: "2026-11-11",
     titulo: "Portal da Transparência: itens que só valem antes da execução",
     descricao: "Nas emendas ainda sem empenho ou pagamento, o portal público passou a mostrar \"Será divulgado antes da execução\" (em vez de \"Não informado\") para cronograma, gestor, termo, processo, contrato, extrato, banco e conta, anuência do SUS e plano de trabalho, conforme o art. 7º, § 2º, da IN TCE-MG 05/2025. Na tela de verificação, esses itens ficam como aviso informativo para as emendas sem execução e continuam como atenção para as já em execução.",

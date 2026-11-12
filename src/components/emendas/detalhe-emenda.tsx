@@ -274,7 +274,7 @@ export function DetalheEmendaCliente({
 
         <div className="p-5">
           {aba === "fases" && vinculo && <div className="mb-4">{vinculo}</div>}
-          {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} cor={corTipo} atalhos={atalhos} executar={executar} />}
+          {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} gestor={gestor} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
           {aba === "documentacao" && (
             <AbaDocumentacao emendaId={emenda.id} itens={itensChecklist} registros={detalhe.checklist} podeEditar={podeEditar} executar={executar} />
