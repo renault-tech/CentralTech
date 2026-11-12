@@ -154,7 +154,7 @@ export type EmendaResumo = {
 
 export type ExclusaoJustificada = {
   id: string;
-  tipo: "lancamento" | "emenda";
+  tipo: "lancamento" | "emenda" | "andamento";
   emenda_id: string;
   emenda_numero: number;
   ano: number;

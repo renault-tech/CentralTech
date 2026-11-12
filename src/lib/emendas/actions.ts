@@ -692,6 +692,33 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
   return aviso ? { sucesso: true, aviso } : { sucesso: true };
 }
 
+/** Desfaz um andamento registrado por engano (ex.: "Concluída" sem estar). Só gestor, com justificativa; a etapa da
+ * emenda volta ao andamento anterior (o gatilho recalcula) e a exclusão fica registrada com quem fez e por quê. */
+export async function excluirAndamento(dados: { id: string; emendaId: string; justificativa: string }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.id).success || !z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Andamento inválido." };
+  const justificativa = (dados.justificativa ?? "").trim();
+  if (justificativa.length < 10) return { sucesso: false, erro: "Escreva a justificativa (mínimo de 10 caracteres)." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores desfazem andamentos." };
+  const emendas = await criarClienteEmendas();
+  const { data: and } = await emendas.from("andamentos").select("*").eq("id", dados.id).eq("emenda_id", dados.emendaId).maybeSingle();
+  const { data: em } = await emendas.from("emendas").select("numero,ano").eq("id", dados.emendaId).maybeSingle();
+  if (!and || !em) return { sucesso: false, erro: "Andamento não encontrado." };
+  const { error: erroJust } = await emendas.from("exclusoes_justificadas").insert({ tipo: "andamento", emenda_id: dados.emendaId, emenda_numero: em.numero, ano: em.ano, detalhe: and, justificativa, usuario_id: ctx.usuario.id });
+  if (erroJust) {
+    console.error("[excluirAndamento] justificativa", erroJust);
+    return { sucesso: false, erro: "Não foi possível registrar a justificativa; nada foi desfeito." };
+  }
+  const { data: apagados, error } = await emendas.from("andamentos").delete().eq("id", dados.id).eq("emenda_id", dados.emendaId).select("id");
+  if (error) {
+    console.error("[excluirAndamento]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  if (!apagados?.length) return { sucesso: false, erro: "Nada foi desfeito: o andamento não foi encontrado ou você não tem permissão." };
+  revalidar(dados.emendaId);
+  return { sucesso: true, aviso: "Andamento desfeito. A etapa da emenda voltou ao andamento anterior." };
+}
+
 /** Exclui a emenda inteira (lançamentos, fases, anexos, impedimentos…) — para cadastro feito por engano.
  * Só gestor; exige confirmar digitando o número. A auditoria guarda o registro apagado. */
 export async function excluirEmenda(dados: { emendaId: string; numeroConfirmado: number; justificativa: string }): Promise<Resultado> {
