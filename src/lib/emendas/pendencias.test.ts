@@ -26,6 +26,12 @@ describe("pendencias", () => {
     expect(pendencias(entrada({ hoje: "2026-05-01" })).find((x) => x.regra === "nao_iniciada")!.gravidade).toBe("baixa");
   });
 
+  it("fase da LOA concluída não conta como andamento da emenda", () => {
+    const loa = { fase: { chave: "loa", nome: "LOA", derivacao: "loa", etapa: "indicada" }, situacao: "concluida", origem: "derivada", data: "2025-12-23", documento: null, observacao: null, resumo: "", alertas: [] };
+    const fases = [loa] as unknown as EntradaPendencias["fases"];
+    expect(regras({ fases })).toContain("nao_iniciada");
+  });
+
   it("empenho parcial já é andamento: some o aviso de 'sem andamento'", () => {
     const movs = [{ emenda_id: "e1", tipo: "empenho", numero: "10", data: "2026-05-01" }];
     expect(regras({ movimentos: movs, emenda: { ...emenda, empenhado: 300 } })).not.toContain("nao_iniciada");

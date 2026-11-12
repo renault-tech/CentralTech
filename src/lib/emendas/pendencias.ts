@@ -156,7 +156,15 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     movsDaEmenda.length > 0 ||
     emenda.empenhado > 0 ||
     emenda.pago > 0 ||
-    e.fases.some((f) => f.fase.chave !== "indicada" && (f.situacao === "concluida" || f.parcial === true || f.situacao === "em_andamento"));
+    e.fases.some(
+      (f) =>
+        f.fase.chave !== "indicada" &&
+        // LOA e parecer são do exercício/da secretaria, não são andamento da emenda
+        f.fase.derivacao !== "loa" &&
+        f.fase.derivacao !== "parecer" &&
+        f.origem !== "presumida" &&
+        (f.situacao === "concluida" || f.parcial === true || f.situacao === "em_andamento")
+    );
   const jaIniciou = emenda.etapa !== "indicada" || temAtividade;
 
   if (tipo !== "direta" && execucao?.numero_termo && !execucao.data_publicacao_extrato) {
