@@ -11,7 +11,8 @@ import { avancarEtapaPorLancamentos, avancarEtapaPorProcesso } from "@/lib/emend
 import { proporAlteracoes } from "@/lib/emendas/actions-propostas";
 import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from "@/lib/emendas/compras";
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
-import { etapaAoConcluir, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
+import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
+import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
@@ -81,6 +82,29 @@ export async function registrarAndamento(dados: z.input<typeof esquemaAndamento>
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirAcesso())) return { sucesso: false, erro: "Sem acesso ao módulo." };
 
+  if (a.data.etapa === "liquidada") return { sucesso: false, erro: "A liquidação deixou de ser uma fase da execução." };
+
+  // Concluir a emenda só é possível com todas as outras fases completas.
+  if (a.data.etapa === "concluida") {
+    const fases = await calcularFasesDaEmenda(a.data.emendaId);
+    const motivo = fases ? motivoBloqueioConclusao(fases) : null;
+    if (motivo) return { sucesso: false, erro: motivo };
+  }
+
+  // Empenho e pagamento têm UM só lugar: a aba Financeiro. O andamento financeiro vira lançamento (com a mesma
+  // checagem de saldo e a mesma aprovação para perfis de secretaria) e a etapa sobe sozinha quando o total fecha.
+  if (a.data.etapa === "empenhada" || a.data.etapa === "paga") {
+    if (!a.data.valor) return { sucesso: false, erro: `Informe o valor ${a.data.etapa === "paga" ? "pago" : "empenhado"}: ele é lançado na aba Financeiro e a etapa só avança quando o total fecha.` };
+    return registrarMovimento({
+      emendaId: a.data.emendaId,
+      tipo: a.data.etapa === "paga" ? "pagamento" : "empenho",
+      numero: a.data.documento ?? undefined,
+      data: a.data.data,
+      valor: a.data.valor,
+      observacao: a.data.observacao ?? undefined,
+    });
+  }
+
   const emendas = await criarClienteEmendas();
   const { data: id, error } = await emendas.rpc("registrar_andamento", {
     p_emenda: a.data.emendaId,
@@ -88,7 +112,7 @@ export async function registrarAndamento(dados: z.input<typeof esquemaAndamento>
     p_data: a.data.data,
     p_documento: a.data.documento,
     p_observacao: a.data.observacao,
-    p_valor: a.data.valor ?? null,
+    p_valor: null,
   });
   if (error) {
     console.error("[registrarAndamento]", error);
@@ -128,6 +152,11 @@ export async function salvarFase(dados: z.input<typeof esquemaFase>): Promise<Re
   if (erroEmenda || !emenda) return { sucesso: false, erro: "Emenda não encontrada." };
   const fase = (await listarFasesCatalogo()).find((f) => f.tipo === tipoDaEmenda(emenda) && f.chave === a.data.chave);
   if (!fase || fase.derivacao) return { sucesso: false, erro: "Esta fase vem de outro dado e não é editada aqui." };
+  if (fase.etapa === "concluida" && a.data.situacao === "concluida") {
+    const calculadas = await calcularFasesDaEmenda(a.data.emendaId);
+    const motivo = calculadas ? motivoBloqueioConclusao(calculadas) : null;
+    if (motivo) return { sucesso: false, erro: motivo };
+  }
 
   if (!ehGestor(ctx.perfil)) {
     const { data: atual } = await emendas.from("emenda_fases").select("*").eq("emenda_id", a.data.emendaId).eq("chave", a.data.chave).maybeSingle();

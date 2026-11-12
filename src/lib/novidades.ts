@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Emendas: sem liquidação como fase, conclusão protegida e andamento alinhado ao Financeiro",
+    descricao: "Liquidação e recebimento deixaram de ser fases da execução. \"Concluída\" só pode ser marcada quando todas as outras fases estão completas (tela e servidor). Registrar andamento de empenho ou pagamento agora exige o valor e lança o movimento na aba Financeiro (com bloqueio por saldo e aprovação para secretarias); a etapa avança sozinha quando o total fecha. Na lista do Financeiro, empenho é azul, pagamento verde e anulação âmbar.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Emendas: três símbolos de andamento e botão para anular uma fase",
     descricao: "Bolinha verde com V = concluída (inclusive a presumida pela etapa atual); amarela vazada com V = parcial ou em andamento; triângulo amarelo vazado com ! = alerta; cinza tracejada = não iniciada. A linha fica amarela entre fases em andamento. Fases preenchidas por engano podem ser anuladas pelo gestor em Atualizar › \"Anular preenchimento e voltar a fase para pendente\" (a etapa da emenda é recalculada).",
   },

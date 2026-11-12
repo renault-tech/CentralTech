@@ -1,6 +1,8 @@
 import "server-only";
 
 import {
+  obterDetalheEmenda,
+  resolverExercicio,
   listarExecucoes,
   listarFasesCatalogo,
   listarFasesEJustificativas,
@@ -52,4 +54,35 @@ export async function calcularEmendasDoExercicio(
     partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
     hoje: new Date().toISOString().slice(0, 10),
   });
+}
+
+/** Fases calculadas de UMA emenda (para validar, no servidor, o que a tela só mostra). */
+export async function calcularFasesDaEmenda(emendaId: string) {
+  const detalhe = await obterDetalheEmenda(emendaId);
+  if (!detalhe) return null;
+  const { emenda, execucao } = detalhe;
+  const [fasesCatalogo, catalogo, { exercicio }, pareceres, vereadores] = await Promise.all([
+    listarFasesCatalogo(),
+    obterCatalogoEtapas(),
+    resolverExercicio(String(emenda.ano)),
+    listarPareceres(emenda.ano),
+    listarVereadores(),
+  ]);
+  const compras = execucao?.processo_id ? await resumirProcessos([execucao.processo_id]).catch(() => new Map()) : new Map();
+  const mapa = calcularEmendas({
+    emendas: [emenda],
+    fasesCatalogo,
+    manuais: detalhe.fasesManuais,
+    movimentos: detalhe.movimentos,
+    compras,
+    execucoes: execucao ? [execucao] : [],
+    exercicio,
+    pareceres,
+    justificadas: detalhe.justificadas,
+    catalogo,
+    documentos: detalhe.documentos.map((d) => ({ emenda_id: d.emenda_id, tipo: d.tipo, competencia: d.competencia ?? null })),
+    partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
+    hoje: new Date().toISOString().slice(0, 10),
+  });
+  return mapa.get(emenda.id)?.fases ?? null;
 }

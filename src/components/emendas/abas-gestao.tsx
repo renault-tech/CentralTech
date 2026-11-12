@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronDown, CircleDashed, Minus } from "lucide-react";
 
 import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
-import type { FaseCalculada } from "@/lib/emendas/fases";
+import { motivoBloqueioConclusao, type FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
 import { MarcaEstado } from "@/components/emendas/ui";
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
@@ -137,7 +137,7 @@ export function AbaFases({
                 </p>
               )}
               {manual && aberta === f.fase.chave && (
-                <EditorFase emendaId={emendaId} fase={f} atalhos={atalhos} gestor={gestor} executar={executar} aoFechar={() => setAberta(null)} />
+                <EditorFase emendaId={emendaId} fase={f} atalhos={atalhos} gestor={gestor} bloqueioConclusao={f.fase.etapa === "concluida" ? motivoBloqueioConclusao(fases) : null} executar={executar} aoFechar={() => setAberta(null)} />
               )}
             </div>
           </li>
@@ -155,17 +155,20 @@ function EditorFase({
   fase,
   atalhos,
   gestor,
+  bloqueioConclusao,
   executar,
   aoFechar,
 }: {
   emendaId: string;
   gestor: boolean;
+  /** Motivo pelo qual esta fase (Encerramento) ainda não pode ser concluída. */
+  bloqueioConclusao: string | null;
   fase: FaseCalculada;
   atalhos?: AtalhosCompras;
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
   aoFechar: () => void;
 }) {
-  const [situacao, setSituacao] = React.useState<SituacaoFase>(fase.origem === "manual" ? fase.situacao : "concluida");
+  const [situacao, setSituacao] = React.useState<SituacaoFase>(fase.origem === "manual" ? fase.situacao : bloqueioConclusao ? "em_andamento" : "concluida");
   const [data, setData] = React.useState(fase.data ?? (fase.situacao === "concluida" ? "" : hojeLocal()));
   const [documento, setDocumento] = React.useState(fase.documento ?? "");
   const [observacao, setObservacao] = React.useState(fase.observacao ?? "");
@@ -192,12 +195,14 @@ function EditorFase({
         Situação
         <select className={CAMPO} value={situacao} onChange={(e) => setSituacao(e.target.value as SituacaoFase)}>
           {(Object.keys(NOME_SITUACAO) as SituacaoFase[]).map((s) => (
-            <option key={s} value={s}>
+            <option key={s} value={s} disabled={s === "concluida" && !!bloqueioConclusao}>
               {NOME_SITUACAO[s]}
+              {s === "concluida" && bloqueioConclusao ? " — indisponível" : ""}
             </option>
           ))}
         </select>
       </label>
+      {bloqueioConclusao && <p className="text-xs text-slate-600 sm:col-span-2">{bloqueioConclusao}</p>}
       {informaData && (
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
           Data
