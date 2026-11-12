@@ -48,7 +48,7 @@ function Marca({ f }: { f: FaseCalculada }) {
   else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
   else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
   return (
-    <span title={resumo} aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-help">
+    <span title={resumo} aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-default">
       {corpo}
     </span>
   );
