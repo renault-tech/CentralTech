@@ -23,7 +23,7 @@ import {
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import { tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
+import { motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
@@ -112,6 +112,14 @@ function descreverRegistro(tabela: string, r: Record<string, unknown> | null, ve
   if (tabela === "andamentos") return `Etapa “${String(v.etapa ?? "—")}”${data} ${verbo}`;
   return `${NOME_TABELA_LOG[tabela] ?? tabela} ${verbo}`;
 }
+
+/** Cor de cada tipo de lançamento: empenho azul, pagamento verde, anulação âmbar (liquidação, só histórico, cinza). */
+const COR_TIPO_MOV: Record<string, string> = {
+  empenho: "bg-blue-50 text-blue-800",
+  pagamento: "bg-emerald-50 text-emerald-800",
+  anulacao: "bg-amber-50 text-amber-900",
+  liquidacao: "bg-slate-100 text-slate-700",
+};
 
 const NOME_TIPO_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação de empenho" } as const;
 const NOME_IMPEDIMENTO = { tecnico: "Técnico", legal: "Legal", documentacao: "Documentação da entidade" } as const;
@@ -501,6 +509,7 @@ export function DetalheEmendaCliente({
 
       {dialogo === "andamento" && (
       <DialogoAndamento
+        bloqueioConclusao={motivoBloqueioConclusao(fases)}
         aberto
         aoFechar={() => setDialogo(null)}
         emenda={emenda}
@@ -565,9 +574,12 @@ function DialogoAndamento({
   aberto,
   aoFechar,
   emenda,
+  bloqueioConclusao,
   aoSalvar,
 }: {
   aberto: boolean;
+  /** Motivo pelo qual "Concluída" ainda não pode ser marcada (null = pode). */
+  bloqueioConclusao: string | null;
   aoFechar: () => void;
   emenda: DetalheEmenda["emenda"];
   aoSalvar: (d: { etapa: EtapaEmenda & Exclude<EtapaEmenda, "indicada">; data: string; documento?: string; observacao?: string; valor?: number | null }) => Promise<Resultado>;
@@ -589,7 +601,8 @@ function DialogoAndamento({
   const [observacao, setObservacao] = React.useState("");
   const { enviando, erro, enviar } = useEnvio();
 
-  const financeira = etapa === "empenhada" || etapa === "liquidada" || etapa === "paga";
+  const financeira = etapa === "empenhada" || etapa === "paga";
+  const bloqueada = etapa === "concluida" && !!bloqueioConclusao;
 
   const rotuloDoc =
     etapa === "empenhada" ? "Nº do empenho" : etapa === "liquidada" ? "Nº da liquidação / nota fiscal" : etapa === "paga" ? "Nº da ordem de pagamento" : etapa === "plano_trabalho" ? "Termo / protocolo" : etapa === "processo_compra" ? "Nº do processo (Compras)" : "Documento de referência";
@@ -606,7 +619,10 @@ function DialogoAndamento({
           onSubmit={(e) => {
             e.preventDefault();
             void enviar(
-              () => aoSalvar({ etapa, data, documento, observacao, valor: financeira ? paraNumero(valor) : null }),
+              () => {
+                if (bloqueada) return Promise.resolve({ sucesso: false as const, erro: bloqueioConclusao as string });
+                return aoSalvar({ etapa, data, documento, observacao, valor: financeira ? paraNumero(valor) : null });
+              },
               aoFechar
             );
           }}
@@ -621,13 +637,15 @@ function DialogoAndamento({
               }}
             >
               {t.map((k) => (
-                <option key={k} value={k}>
+                <option key={k} value={k} disabled={k === "concluida" && !!bloqueioConclusao}>
                   {infoEtapa(k, catalogo).nome}
                   {k === emenda.etapa ? " (atual)" : ""}
+                  {k === "concluida" && bloqueioConclusao ? " — indisponível" : ""}
                 </option>
               ))}
             </select>
           </Campo>
+          {bloqueioConclusao && <p className="-mt-1 text-xs text-slate-600">{bloqueioConclusao}</p>}
           <div className="grid gap-3.5 sm:grid-cols-2">
             <Campo rotulo="Data">
               <input type="date" required className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} />
@@ -637,8 +655,8 @@ function DialogoAndamento({
             </Campo>
           </div>
           {financeira && (
-            <Campo rotulo="Valor desta etapa (R$)" dica="Lança o movimento financeiro junto. Deixe em branco para só registrar a etapa.">
-              <input inputMode="decimal" className={CAMPO} value={valor} onChange={(e) => setValor(e.target.value)} />
+            <Campo rotulo={etapa === "paga" ? "Valor pago (R$)" : "Valor empenhado (R$)"} dica="Obrigatório: é lançado na aba Financeiro, não pode passar do disponível, e a etapa só avança quando o total fecha.">
+              <input inputMode="decimal" required className={CAMPO} value={valor} onChange={(e) => setValor(e.target.value)} />
             </Campo>
           )}
           <Campo rotulo="Observação">
@@ -750,7 +768,7 @@ function DialogoMovimento({
           <div className="grid gap-3.5 sm:grid-cols-2">
             <Campo rotulo="Tipo">
               <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
-                {Object.entries(NOME_TIPO_MOV).map(([k, v]) => (
+                {Object.entries(NOME_TIPO_MOV).filter(([k]) => k !== "liquidacao").map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
@@ -998,7 +1016,9 @@ function LinhaMovimento({
   }
   return (
     <tr className="border-t border-slate-100">
-      <td className="px-3 py-2.5">{nome}</td>
+      <td className="px-3 py-2.5">
+        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-medium", COR_TIPO_MOV[movimento.tipo] ?? "bg-slate-100 text-slate-700")}>{nome}</span>
+      </td>
       <td className="px-3 py-2.5 font-mono">{movimento.numero ?? <span className="font-sans text-amber-800">sem nº</span>}</td>
       <td className="px-3 py-2.5">{movimento.data ? dataBr(movimento.data) : <span className="text-amber-800">sem data</span>}</td>
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>

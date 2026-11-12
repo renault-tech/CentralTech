@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { datasForaDeOrdem, faseAtual, progresso, situacaoFases, tipoDaEmenda, type EntradaFases } from "@/lib/emendas/fases";
+import { datasForaDeOrdem, faseAtual, motivoBloqueioConclusao, progresso, situacaoFases, tipoDaEmenda, type EntradaFases } from "@/lib/emendas/fases";
 import type { FaseEmenda, FaseFluxo } from "@/types/emendas";
 
 const f = (chave: string, etapa: string, ordem: number, derivacao: FaseFluxo["derivacao"] = null): FaseFluxo => ({
@@ -141,5 +141,19 @@ describe("fase única do processo de compra segue o Compras", () => {
   });
   it("sem vínculo nada é derivado", () => {
     expect(por(calc(null), "processo").situacao).toBe("pendente");
+  });
+});
+
+describe("conclusão só com todas as outras fases completas", () => {
+  const fase = (chave: string, etapa: string): FaseFluxo => ({ tipo: "osc", chave, nome: chave, etapa, referencia: null, derivacao: null, ordem: 10, ativa: true });
+  const calc = (manuais: Map<string, FaseEmenda>) =>
+    situacaoFases(base({ fases: [fase("plano", "plano_trabalho"), fase("conclusao", "concluida")], manuais }));
+  it("bloqueia enquanto houver fase pendente, parcial ou em andamento", () => {
+    expect(motivoBloqueioConclusao(calc(new Map()))).toContain("Faltam: plano");
+    expect(motivoBloqueioConclusao(calc(new Map([["plano", manual("plano", "em_andamento")]])))).not.toBeNull();
+  });
+  it("libera com tudo concluído ou não aplicável", () => {
+    expect(motivoBloqueioConclusao(calc(new Map([["plano", manual("plano", "concluida", "2026-03-01")]])))).toBeNull();
+    expect(motivoBloqueioConclusao(calc(new Map([["plano", manual("plano", "nao_se_aplica")]])))).toBeNull();
   });
 });

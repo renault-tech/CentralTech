@@ -249,6 +249,15 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
     });
 }
 
+/** "Concluída" só vale quando todas as outras fases aplicáveis estão completas (nem parciais, nem em andamento, nem pendentes).
+ * Devolve o motivo do bloqueio ou null quando pode concluir. */
+export function motivoBloqueioConclusao(fases: FaseCalculada[]): string | null {
+  const faltam = fases.filter((f) => f.fase.etapa !== "concluida" && f.situacao !== "nao_se_aplica" && !(f.situacao === "concluida" && !f.parcial));
+  if (faltam.length === 0) return null;
+  const nomes = faltam.slice(0, 3).map((f) => f.fase.nome).join(", ");
+  return `Só dá para concluir quando todas as outras fases estiverem completas. Faltam: ${nomes}${faltam.length > 3 ? ` e mais ${faltam.length - 3}` : ""}.`;
+}
+
 export function progresso(fases: FaseCalculada[]): { concluidas: number; total: number } {
   const aplicaveis = fases.filter((f) => f.situacao !== "nao_se_aplica");
   return { concluidas: aplicaveis.filter((f) => f.situacao === "concluida").length, total: aplicaveis.length };
