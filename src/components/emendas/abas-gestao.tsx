@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, CircleDashed, CircleDot, Minus } from "lucide-react";
+import { ChevronDown, CircleDashed, CircleDot, Minus } from "lucide-react";
 
 import { justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
 import type { FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
+import { MarcaEstado } from "@/components/emendas/ui";
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -36,34 +37,18 @@ const ONDE_EDITAR: Record<string, string> = {
 };
 
 /** Bolinha da fase. Verde com V = concluída; amarela vazada com V = parcial (ainda há saldo);
- * amarela vazada com ! = alerta; o resumo aparece ao passar o mouse. */
+ * triângulo amarelo vazado com ! = alerta; o resumo aparece ao passar o mouse. */
 function Marca({ f }: { f: FaseCalculada }) {
   const resumo = [f.resumo, ...f.alertas.map((a) => `⚠ ${a}`)].join("\n");
-  const base = "flex h-5 w-5 items-center justify-center rounded-full";
   let corpo: React.ReactNode;
-  if (f.alertas.length > 0)
-    corpo = (
-      <span className={cn(base, "border-2 border-amber-500 text-amber-600")}>
-        <span className="text-[11px] font-bold leading-none" aria-hidden>!</span>
-      </span>
-    );
-  else if (f.situacao === "concluida")
-    corpo = (
-      <span className={cn(base, f.origem === "presumida" ? "border border-emerald-600 text-emerald-700" : "bg-emerald-600 text-white")}>
-        <Check className="h-3 w-3" aria-hidden />
-      </span>
-    );
-  else if (f.parcial)
-    corpo = (
-      <span className={cn(base, "border-2 border-amber-500 text-amber-600")}>
-        <Check className="h-3 w-3" aria-hidden />
-      </span>
-    );
+  if (f.alertas.length > 0) corpo = <MarcaEstado estado="alerta" />;
+  else if (f.situacao === "concluida" && !f.parcial) corpo = <MarcaEstado estado="completo" presumida={f.origem === "presumida"} />;
+  else if (f.parcial) corpo = <MarcaEstado estado="parcial" />;
   else if (f.situacao === "em_andamento") corpo = <CircleDot className="h-5 w-5 text-amber-600" aria-hidden />;
   else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
   else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
   return (
-    <span title={resumo} aria-label={resumo.replace(/\n/g, " ")} role="img" className="cursor-help">
+    <span title={resumo} aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-help">
       {corpo}
     </span>
   );

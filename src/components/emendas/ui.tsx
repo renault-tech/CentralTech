@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Check, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { CATALOGO_PADRAO, infoEtapa, posicaoNaTrilha, trilha, type CatalogoEtapas } from "@/lib/emendas/regras";
+import type { FaseCalculada } from "@/lib/emendas/fases";
 import type { EtapaEmenda, Modalidade, SituacaoEmenda } from "@/types/emendas";
 
 /** Peças visuais do módulo Emendas, sem estado (servem a Server e Client
@@ -152,12 +154,51 @@ export function Vazio({ children }: { children: ReactNode }) {
   return <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">{children}</p>;
 }
 
-/** Linha de etapas do detalhe da emenda (stepper). */
+export type EstadoMarca = "completo" | "parcial" | "alerta" | "pendente";
+
+/** Bolinha de andamento: verde com V = concluído; amarela vazada com V = parcial (ainda há saldo);
+ * triângulo amarelo vazado com ! = alerta. */
+export function MarcaEstado({ estado, tamanho = 20, presumida }: { estado: EstadoMarca; tamanho?: 20 | 28; presumida?: boolean }) {
+  const lado = tamanho === 28 ? "h-7 w-7" : "h-5 w-5";
+  const icone = tamanho === 28 ? "h-4 w-4" : "h-3 w-3";
+  if (estado === "alerta") return <TriangleAlert className={cn(lado, "text-amber-500")} strokeWidth={2.2} aria-hidden />;
+  if (estado === "completo")
+    return (
+      <span className={cn("flex flex-none items-center justify-center rounded-full", lado, presumida ? "border-2 border-emerald-600 text-emerald-700" : "bg-emerald-600 text-white")}>
+        <Check className={icone} strokeWidth={3} aria-hidden />
+      </span>
+    );
+  if (estado === "parcial")
+    return (
+      <span className={cn("flex flex-none items-center justify-center rounded-full border-2 border-amber-500 text-amber-600", lado)}>
+        <Check className={icone} strokeWidth={3} aria-hidden />
+      </span>
+    );
+  return null;
+}
+
+/** Estado de uma etapa a partir das fases que pertencem a ela. */
+function estadoDaEtapa(fases: FaseCalculada[]): { estado: EstadoMarca; resumo: string; presumida: boolean } {
+  const aplicaveis = fases.filter((f) => f.situacao !== "nao_se_aplica");
+  const alertas = fases.flatMap((f) => f.alertas);
+  const linhas = fases.map((f) => `${f.fase.nome}: ${f.resumo}`);
+  const resumo = [...linhas, ...alertas.map((a) => `⚠ ${a}`)].join("\n");
+  if (alertas.length > 0) return { estado: "alerta", resumo, presumida: false };
+  if (aplicaveis.length === 0) return { estado: "pendente", resumo: resumo || "Não se aplica.", presumida: false };
+  const concluidas = aplicaveis.filter((f) => f.situacao === "concluida" && !f.parcial);
+  if (concluidas.length === aplicaveis.length) return { estado: "completo", resumo, presumida: aplicaveis.every((f) => f.origem === "presumida") };
+  const andou = aplicaveis.some((f) => f.parcial || f.situacao === "em_andamento" || f.situacao === "concluida");
+  return { estado: andou ? "parcial" : "pendente", resumo, presumida: false };
+}
+
+/** Linha de etapas do detalhe da emenda (stepper). Com `fases`, cada etapa mostra o estado das fases dela
+ * (completo, parcial ou alerta) e um resumo ao passar o mouse. */
 export function LinhaEtapas({
   modalidade,
   etapa,
   situacao,
   rotulos,
+  fases,
   catalogo = CATALOGO_PADRAO,
 }: {
   modalidade: Modalidade;
@@ -165,43 +206,55 @@ export function LinhaEtapas({
   situacao: SituacaoEmenda;
   /** Texto de apoio por etapa (data, nº do empenho…). */
   rotulos: Partial<Record<EtapaEmenda, string>>;
+  fases?: FaseCalculada[];
   catalogo?: CatalogoEtapas;
 }) {
   const t = trilha(modalidade, catalogo);
   const pos = posicaoNaTrilha(modalidade, etapa, catalogo);
   const travada = situacao === "impedida";
+  const itens = t.map((k, i) => {
+    const doGrupo = (fases ?? []).filter((f) => f.fase.etapa === k);
+    if (doGrupo.length > 0) return { k, ...estadoDaEtapa(doGrupo) };
+    return {
+      k,
+      estado: (i <= pos ? "completo" : "pendente") as EstadoMarca,
+      resumo: i <= pos ? `Etapa registrada${rotulos[k] ? `: ${rotulos[k]}` : ""}.` : "Ainda não iniciada.",
+      presumida: false,
+    };
+  });
+  const cor = (e: EstadoMarca) => e === "parcial" || e === "alerta";
   return (
     <ol aria-label="Etapas da emenda" className="grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] gap-y-3" data-tour="etapas-emenda">
-      {t.map((k, i) => {
-        const feito = i <= pos;
+      {itens.map((it, i) => {
         const atual = i === pos;
-        const proxima = i === pos + 1;
+        const proxima = i === pos + 1 && it.estado === "pendente";
+        const tooltip = `${infoEtapa(it.k, catalogo).nome}\n${it.resumo}`;
+        const proximo = itens[i + 1];
+        const linha = it.estado === "completo" ? "#059669" : cor(it.estado) && proximo && cor(proximo.estado) ? "#F59E0B" : "#E2E8F0";
         return (
-          <li key={k} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
+          <li key={it.k} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
             <div className="flex items-center">
-              <span
-                className={cn(
-                  "flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 text-xs font-semibold",
-                  feito
-                    ? atual
-                      ? "border-[#6B4FBB] bg-[#6B4FBB] text-white"
-                      : "border-[#563A9E] bg-[#563A9E] text-white"
-                    : proxima
-                      ? travada
-                        ? "border-amber-500 bg-white text-amber-700"
-                        : "border-[#6B4FBB] bg-white text-[#6B4FBB]"
-                      : "border-slate-300 bg-white text-slate-400"
+              <span title={tooltip} aria-label={tooltip.replace(/\n/g, " — ")} role="img" className="flex h-7 w-7 flex-none cursor-help items-center justify-center">
+                {it.estado === "pendente" ? (
+                  <span
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold",
+                      proxima ? (travada ? "border-amber-500 bg-white text-amber-700" : "border-[#6B4FBB] bg-white text-[#6B4FBB]") : "border-slate-300 bg-white text-slate-400"
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                ) : (
+                  <MarcaEstado estado={it.estado} tamanho={28} presumida={it.presumida} />
                 )}
-              >
-                {feito ? "✓" : i + 1}
               </span>
-              {i < t.length - 1 && <span className={cn("ml-1.5 h-[3px] flex-1 rounded", i < pos ? "bg-[#563A9E]" : "bg-slate-200")} />}
+              {i < itens.length - 1 && <span className="ml-1.5 h-[3px] flex-1 rounded" style={{ backgroundColor: linha }} />}
             </div>
-            <span className={cn("text-[13px]", atual ? "font-semibold text-cataguases-marinho" : feito || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
-              {infoEtapa(k, catalogo).nome}
+            <span className={cn("text-[13px]", atual ? "font-semibold text-cataguases-marinho" : it.estado !== "pendente" || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
+              {infoEtapa(it.k, catalogo).nome}
             </span>
             <span className="text-xs text-slate-500">
-              {rotulos[k] ?? (i < pos ? "sem registro" : proxima ? (travada ? "bloqueada" : "próxima") : "")}
+              {rotulos[it.k] ?? (it.estado === "parcial" ? "parcial" : it.estado === "alerta" ? "atenção" : i < pos ? "sem registro" : proxima ? (travada ? "bloqueada" : "próxima") : "")}
             </span>
           </li>
         );
