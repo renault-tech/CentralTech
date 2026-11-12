@@ -234,7 +234,7 @@ export function LinhaEtapas({
         return (
           <li key={it.k} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
             <div className="flex items-center">
-              <span title={tooltip} aria-label={tooltip.replace(/\n/g, " — ")} role="img" className="flex h-7 w-7 flex-none cursor-help items-center justify-center">
+              <span title={tooltip} aria-label={tooltip.replace(/\n/g, " — ")} role="img" className="flex h-7 w-7 flex-none cursor-default items-center justify-center">
                 {it.estado === "pendente" ? (
                   <span
                     className={cn(
