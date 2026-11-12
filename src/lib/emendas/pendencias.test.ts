@@ -32,6 +32,13 @@ describe("pendencias", () => {
     expect(regras()).toContain("nao_iniciada");
   });
 
+  it("autor fora do exercício sinaliza a emenda enquanto ela não for concluída", () => {
+    const af = { desde: "2026-11-12", motivo: "Mandato cassado." };
+    expect(regras({ vereadorAfastado: af })).toContain("vereador_afastado");
+    expect(regras({ vereadorAfastado: af, emenda: { ...emenda, etapa: "concluida" } })).not.toContain("vereador_afastado");
+    expect(regras()).not.toContain("vereador_afastado");
+  });
+
   it("prazo de exequibilidade vencido sem parecer", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" } })).toContain("exequibilidade_vencida");
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" }, temParecer: true })).not.toContain("exequibilidade_vencida");
