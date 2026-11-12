@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { resumirProcessos } from "@/lib/emendas/compras";
 import { gndDaNatureza } from "@/lib/emendas/conformidade";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { createHash } from "node:crypto";
@@ -54,7 +55,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       db
         .from("execucao")
         .select(
-          "id,numero_termo,processo_licitatorio,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,identificador_contabil,fonte_recurso"
+          "id,numero_termo,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,identificador_contabil,fonte_recurso"
         )
         .in("id", lote),
       db.from("impedimentos").select("emenda_id,tipo,resolvido_em").in("emenda_id", lote).is("resolvido_em", null),
@@ -73,6 +74,8 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       documentos.set(k, [...(documentos.get(k) ?? []), { id: r.id as string, tipo: t, rotulo: ROTULO_DOC[t], competencia: (r.competencia as number | null) ?? null, nome: r.nome_arquivo as string }]);
     }
   }
+  // Processo e contrato ligados ao Compras valem como o número do processo/contrato: não se pede de novo.
+  const compras = await resumirProcessos([...execucao.values()].map((r) => r.processo_id as string | null).filter((v): v is string => !!v)).catch(() => new Map());
 
   const NOME_IMPEDIMENTO: Record<string, string> = { tecnico: "Impedimento técnico", legal: "Impedimento legal", documentacao: "Documentação da entidade" };
   return emendas.map((e) => {
@@ -113,8 +116,8 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       ultimoPagamento: (e.ultimo_pagamento as string | null) ?? null,
       movimentos: movimentos.get(e.id as string) ?? [],
       termo: s(x?.numero_termo),
-      processo: s(x?.processo_licitatorio),
-      contrato: s(x?.numero_contrato),
+      processo: s(x?.processo_licitatorio) ?? (x?.processo_id ? (compras.get(x.processo_id as string)?.numero_licitacao ?? compras.get(x.processo_id as string)?.numero ?? null) : null),
+      contrato: s(x?.numero_contrato) ?? (x?.processo_id ? (compras.get(x.processo_id as string)?.contrato_numero ?? null) : null),
       inicioPrevisto: s(x?.inicio_previsto),
       terminoPrevisto: s(x?.termino_previsto),
       vigenciaInicio: s(x?.vigencia_inicio),
