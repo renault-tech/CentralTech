@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-12",
+    titulo: "Portal da Transparência: brasão grande ao fundo do cabeçalho",
+    descricao: "A marca-d'água do cabeçalho do portal público agora é o brasão em triângulo, grande e centralizado atrás dos dados, com folga acima e abaixo. No celular e no tablet ela também fica centralizada.",
+  },
+  {
+    data: "2026-11-12",
     titulo: "Portal da Transparência: marca-d'água no formato do brasão",
     descricao: "A marca-d'água do cabeçalho do portal público deixou de ser um círculo e passou a mostrar o brasão em formato de triângulo, discreto ao fundo. No celular e no tablet ela fica centralizada, para continuar visível em telas menores.",
   },
