@@ -826,6 +826,8 @@ function DialogoRemanejar({
 }) {
   const [benef, setBenef] = React.useState(emenda.beneficiario_id ?? "");
   const [benefNovo, setBenefNovo] = React.useState("");
+  const [benefTipo, setBenefTipo] = React.useState<"entidade" | "orgao_publico" | "pessoa_fisica">("entidade");
+  const [benefDoc, setBenefDoc] = React.useState("");
   const [unidade, setUnidade] = React.useState(emenda.unidade_id);
   const [natureza, setNatureza] = React.useState(emenda.natureza_despesa ?? "");
   const [funcional, setFuncional] = React.useState(emenda.funcional_programatica ?? "");
@@ -851,7 +853,7 @@ function DialogoRemanejar({
           onSubmit={(e) => {
             e.preventDefault();
             const novo: Record<string, unknown> = {};
-            if (benef === "__novo") novo.beneficiarioNovo = benefNovo;
+            if (benef === "__novo") Object.assign(novo, { beneficiarioNovo: benefNovo, beneficiarioTipo: benefTipo, beneficiarioDoc: benefDoc });
             else if (benef !== (emenda.beneficiario_id ?? "")) novo.beneficiario_id = benef || null;
             if (unidade !== emenda.unidade_id) novo.unidade_id = unidade;
             if (natureza && natureza !== emenda.natureza_despesa) novo.natureza_despesa = natureza;
@@ -873,8 +875,16 @@ function DialogoRemanejar({
               </select>
             </Campo>
             {benef === "__novo" ? (
-              <Campo rotulo="Nome do novo beneficiário">
-                <input className={CAMPO} required value={benefNovo} onChange={(e) => setBenefNovo(e.target.value)} />
+              <Campo rotulo="Novo beneficiário (nome, tipo e CNPJ/CPF obrigatórios)">
+                <input className={CAMPO} required value={benefNovo} onChange={(e) => setBenefNovo(e.target.value)} placeholder="Nome" />
+                <div className="mt-1 flex gap-2">
+                  <select className={CAMPO} value={benefTipo} onChange={(e) => setBenefTipo(e.target.value as typeof benefTipo)} aria-label="Tipo">
+                    <option value="entidade">Entidade</option>
+                    <option value="orgao_publico">Órgão público</option>
+                    <option value="pessoa_fisica">Pessoa física</option>
+                  </select>
+                  <input className={CAMPO} required value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} placeholder={benefTipo === "pessoa_fisica" ? "CPF" : "CNPJ"} />
+                </div>
               </Campo>
             ) : (
               <Campo rotulo="Unidade orçamentária">

@@ -13,6 +13,7 @@ import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
+import { validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
@@ -820,6 +821,8 @@ const esquemaEmenda = z.object({
   valor: z.number().positive("Informe um valor maior que zero"),
   beneficiarioId: z.uuid().nullable(),
   beneficiarioNovo: textoOpcional(200),
+  beneficiarioTipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]).optional(),
+  beneficiarioDoc: z.string().trim().max(30).optional(),
   unidadeId: z.uuid("Escolha a unidade orçamentária"),
   saude: z.boolean(),
   funcional: textoOpcional(40),
@@ -839,14 +842,19 @@ const esquemaEmenda = z.object({
 async function resolverBeneficiario(
   emendas: Awaited<ReturnType<typeof criarClienteEmendas>>,
   id: string | null,
-  novo: string | null
+  novo: string | null,
+  tipo?: TipoBeneficiario,
+  documento?: string
 ): Promise<{ id: string | null; erro?: string }> {
   if (!novo) return { id };
   const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", escaparLike(novo)).maybeSingle();
   if (existente) return { id: existente.id };
+  const t: TipoBeneficiario = tipo ?? (/^secretaria/i.test(novo) ? "orgao_publico" : "entidade");
+  const doc = validarDocumento(t, documento);
+  if (!doc.ok) return { id: null, erro: doc.erro };
   const { data, error } = await emendas
     .from("beneficiarios")
-    .insert({ nome: novo, tipo: /^secretaria/i.test(novo) ? "orgao_publico" : "entidade" })
+    .insert({ nome: novo, tipo: t, cnpj: doc.cnpj, cpf: doc.cpf })
     .select("id")
     .single();
   if (error) return { id: null, erro: traduzir(error) };
@@ -860,7 +868,7 @@ export async function salvarEmenda(dados: z.input<typeof esquemaEmenda>): Promis
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores cadastram e corrigem emendas." };
 
   const emendas = await criarClienteEmendas();
-  const benef = await resolverBeneficiario(emendas, a.data.beneficiarioId, a.data.beneficiarioNovo);
+  const benef = await resolverBeneficiario(emendas, a.data.beneficiarioId, a.data.beneficiarioNovo, a.data.beneficiarioTipo, a.data.beneficiarioDoc);
   if (benef.erro) return { sucesso: false, erro: benef.erro };
 
   const campos = {
@@ -903,6 +911,8 @@ const esquemaRemanejamento = z.object({
     valor: z.number().positive().optional(),
     beneficiario_id: z.uuid().nullable().optional(),
     beneficiarioNovo: textoOpcional(200),
+    beneficiarioTipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]).optional(),
+    beneficiarioDoc: z.string().trim().max(30).optional(),
     unidade_id: z.uuid().optional(),
     saude: z.boolean().optional(),
     funcional_programatica: z.string().trim().max(40).optional(),
@@ -919,9 +929,9 @@ export async function remanejarEmenda(dados: z.input<typeof esquemaRemanejamento
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores remanejam emendas." };
 
   const emendas = await criarClienteEmendas();
-  const { beneficiarioNovo, ...novo } = a.data.novo;
+  const { beneficiarioNovo, beneficiarioTipo, beneficiarioDoc, ...novo } = a.data.novo;
   if (beneficiarioNovo) {
-    const benef = await resolverBeneficiario(emendas, null, beneficiarioNovo);
+    const benef = await resolverBeneficiario(emendas, null, beneficiarioNovo, beneficiarioTipo, beneficiarioDoc);
     if (benef.erro) return { sucesso: false, erro: benef.erro };
     novo.beneficiario_id = benef.id;
   }
