@@ -9,6 +9,7 @@ import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
 import { buscarProcessoPorId } from "@/lib/emendas/compras";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
+import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { calcularEmendas } from "@/lib/emendas/resumo";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import {
@@ -198,7 +199,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           <div id="bloco-parceria">
             <PainelParceria emendaId={emenda.id} modalidade={tipo === "direta" ? "direta" : "repasse"} execucao={execucao} podeEditar={podeEditar} />
           </div>
-          <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} />
+          <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} identificadorDaDotacao={identificadorDaFicha(emenda.ficha)} />
           {tipo !== "direta" && vinculo}
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>

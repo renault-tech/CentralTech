@@ -28,7 +28,10 @@ export function PainelTransparencia({
   itens,
   saude,
   podeEditar,
+  identificadorDaDotacao,
 }: {
+  /** Identificador único tirado da dotação da emenda (ficha), usado quando não há outro informado. */
+  identificadorDaDotacao?: string | null;
   emendaId: string;
   execucao: ExecucaoEmenda | null;
   itens: ItemConformidade[];
@@ -75,7 +78,7 @@ export function PainelTransparencia({
           ["Finalidade e metas", execucao?.plano_metas],
           ["Outras fontes de recurso", execucao?.plano_outras_fontes != null ? `R$ ${emReais(execucao.plano_outras_fontes)}` : null],
           ...(saude ? [["Anuência do SUS", execucao?.anuencia_sus ? NOME_SUS[execucao.anuencia_sus] : null]] : []),
-          ["Identificador contábil", execucao?.identificador_contabil],
+          ["Identificador contábil", execucao?.identificador_contabil || (identificadorDaDotacao ? `${identificadorDaDotacao} (da dotação da emenda)` : null)],
           ["Fonte de recurso", execucao?.fonte_recurso],
         ].map(([k, v]) => (
           <div key={k as string}>

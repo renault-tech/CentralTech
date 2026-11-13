@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-13",
+    titulo: "Emendas: localidade, gestor e identificador contábil vindos de dados que já existiam",
+    descricao: "A localidade das 44 emendas que faltavam foi lida da descrição de cada uma (bairro, rua, distrito, unidade ou município). O gestor de 5 emendas de escola veio da planilha da Educação. E o identificador contábil deixou de ser cobrado: a dotação própria de cada emenda (ex.: 2.087.0201 - EP02) já o identifica e passa a valer no cadastro, no detalhe e no portal público.",
+  },
+  {
+    data: "2026-11-13",
     titulo: "Emendas: arredondamento de centavos, com o valor real preservado",
     descricao: "Diferenças de até R$ 1,00 entre o valor da emenda e o empenhado/pago deixam de manter a fase como parcial. O lançamento real não muda (o empenhado e o pago seguem iguais ao IPM, e é isso que o portal público mostra): grava-se um registro discreto de arredondamento, com o valor real na observação, que apenas faz a fase contar como completa. Na aba Financeiro, o gestor vê o registro em cinza, pode desfazê-lo a qualquer momento (\"Desfazer\") ou aplicá-lo em outra emenda (\"Arredondar centavos\"). Já aplicado em 10 emendas (18, 21, 31, 64, 68, 119, 161, 166, 188, 198). Diferenças maiores que R$ 1,00 (como R$ 12,37 na 57 e R$ 15,74 na 97) não são arredondadas.",
   },
