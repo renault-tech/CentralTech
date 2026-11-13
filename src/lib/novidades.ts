@@ -13,6 +13,11 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-14",
+    titulo: "Emendas: documentos exigidos por lei, com ficha e link para o original",
+    descricao: "A aba Documentação do detalhe da emenda agora lista só os documentos que a lei exige (termo de fomento, plano de trabalho, extrato publicado, anuência do SUS quando houver e relatório de gestão), com a base legal de cada um. Onde o arquivo existe, aparece o ícone do olho: abre a ficha com os dados principais, montados do próprio cadastro, e o botão \"Ver documento original\" abre só aquele arquivo no Drive da Prefeitura. Nenhum arquivo ocupa espaço no banco. No portal da transparência, a ficha de cada emenda ganhou a seção \"Documentos de publicação\", com a mesma ficha e o link do original. Só termo, plano, extrato, anuência e relatório de gestão vão a público; certidões, documentos pessoais e orçamentos ficam restritos, e CPF, RG e endereço de pessoa física foram retirados das cópias públicas. A lista antiga de itens de documentação saiu da tela (os dados continuam guardados).",
+  },
+  {
     data: "2026-11-13",
     titulo: "Emendas: o pagamento é medido contra o que foi empenhado",
     descricao: "A bolinha do pagamento fica verde e cheia quando tudo o que foi empenhado já foi pago, mesmo que o empenho ainda seja parcial em relação ao valor da emenda (que continua amarela). Exemplo: emenda 57, com R$ 86.903,96 empenhados e pagos de R$ 86.916,33. O pagamento só fica parcial quando falta pagar parte do empenhado. A aba Financeiro mostra \"A pagar (do empenhado)\" e o arredondamento de pagamento passou a ser contado sobre o empenhado.",

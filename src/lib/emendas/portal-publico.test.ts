@@ -13,7 +13,7 @@ const base: LinhaPortal = {
   movimentos: [{ tipo: "empenho", data: "2026-02-01", valor: 1000, numero: "55" }, { tipo: "pagamento", data: "2026-05-01", valor: 1000, numero: "9" }],
   termo: "9/2026", processo: "2026/0062", contrato: null, inicioPrevisto: "2026-02-01", terminoPrevisto: "2026-12-31", vigenciaInicio: null, vigenciaFim: null, extratoPublicadoEm: "2026-02-10",
   conta: "CAIXA AG 0108 CONTA 1234-5", gestorPrefeitura: "Fulano", gestorEntidade: "Beltrano", anuenciaSus: null, identificadorContabil: "EM-1", fonteRecurso: "1500",
-  planoMetas: null, planoOutrasFontes: null, documentos: [{ id: "d1", tipo: "plano_trabalho", rotulo: "Plano de trabalho", competencia: null, nome: "p.pdf" }], impedimento: null,
+  planoMetas: null, planoOutrasFontes: null, documentos: [{ id: "d1", tipo: "plano_trabalho", rotulo: "Plano de trabalho", competencia: null, nome: "p.pdf" }], docsDrive: [], impedimento: null,
 };
 const l = (o: Partial<LinhaPortal>): LinhaPortal => ({ ...base, ...o });
 const meta: MetaVerificacao = { ano: 2026, cota: 5000, saudeMinPct: 50, leiLoa: "Lei 1/2025", municipio: "Cataguases", municipioCnpj: "11.222.333/0001-81", unidadeParlamentar: "Câmara", vereadoresSemPartido: [] };

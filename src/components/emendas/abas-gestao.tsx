@@ -3,14 +3,16 @@
 import * as React from "react";
 import { ChevronDown, CircleDashed, Minus } from "lucide-react";
 
-import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, salvarItemChecklist, type Resultado } from "@/lib/emendas/actions";
+import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, type Resultado } from "@/lib/emendas/actions";
 import { motivoBloqueioConclusao, type FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
 import { MarcaEstado } from "@/components/emendas/ui";
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
-import type { ChecklistEmenda, EstadoChecklist, ItemChecklist, SituacaoFase } from "@/types/emendas";
+import { JanelaFicha } from "@/components/modulo/janela-ficha";
+import { montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
+import type { SituacaoFase } from "@/types/emendas";
 
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -267,80 +269,63 @@ function EditorFase({
   );
 }
 
-// -------------------------------------------------------------- checklist
+// ------------------------------------------------------ documentos (por lei)
 
-const NOME_ESTADO: Record<EstadoChecklist, string> = {
-  conferido: "Conferido",
-  presumido: "Presumido",
-  pendente: "Pendente",
-  nao_se_aplica: "Não se aplica",
-};
-
+/**
+ * Documentos que a LEI exige para a emenda (só os de parceria e publicação; execução direta não tem). O estado
+ * vem do Drive: se o arquivo está ligado à emenda, aparece "Disponível" com o olho (ficha) e o link do original;
+ * se não, "Pendente". Nada é marcado à mão, então a lista nunca discorda dos arquivos.
+ */
 export function AbaDocumentacao({
-  emendaId,
-  itens,
-  registros,
-  podeEditar,
-  executar,
+  exigidos,
+  docsDrive,
+  contexto,
+  tipoRotulo,
 }: {
-  emendaId: string;
-  itens: ItemChecklist[];
-  registros: ChecklistEmenda[];
-  podeEditar: boolean;
-  executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
+  exigidos: DocumentoExigido[];
+  docsDrive: DocumentoDrive[];
+  contexto: ContextoFicha;
+  tipoRotulo: string;
 }) {
-  const porChave = new Map(registros.map((r) => [r.item_chave, r]));
-  const aplicaveis = itens.filter((i) => porChave.get(i.chave)?.estado !== "nao_se_aplica");
-  const conferidos = aplicaveis.filter((i) => porChave.get(i.chave)?.estado === "conferido").length;
-  const [salvando, setSalvando] = React.useState<string | null>(null);
-
-  async function mudar(chave: string, estado: EstadoChecklist) {
-    setSalvando(chave);
-    await executar(() => salvarItemChecklist({ emendaId, itemChave: chave, estado, observacao: porChave.get(chave)?.observacao ?? "" }));
-    setSalvando(null);
+  if (exigidos.length === 0) {
+    return (
+      <p className="text-sm text-slate-600">
+        {tipoRotulo}: a lei não exige termo de fomento, plano de trabalho ou extrato para este tipo de execução. Os documentos próprios da compra ficam no processo ligado na aba Fases.
+      </p>
+    );
   }
-
+  const disponiveis = exigidos.filter((e) => docsDrive.some((d) => d.tipo === e.tipo)).length;
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-slate-600">
         <strong className="tabular-nums text-cataguases-marinho">
-          {conferidos}/{aplicaveis.length}
+          {disponiveis}/{exigidos.length}
         </strong>{" "}
-        documentos conferidos
-        {itens.length === 0 && " — nenhum item cadastrado para este tipo."}
+        documentos exigidos por lei disponíveis
       </p>
       <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
-        {itens.map((i) => {
-          const estado = porChave.get(i.chave)?.estado ?? "pendente";
+        {exigidos.map((e) => {
+          const docs = docsDrive.filter((d) => d.tipo === e.tipo);
           return (
-            <li key={i.chave} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-[#6B4FBB]"
-                aria-label={`${i.nome}: conferido`}
-                checked={estado === "conferido"}
-                disabled={!podeEditar || salvando === i.chave}
-                onChange={(e) => mudar(i.chave, e.target.checked ? "conferido" : "pendente")}
-              />
+            <li key={e.tipo} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3">
+              <span className="grid h-6 w-6 shrink-0 place-items-center">{docs.length ? <MarcaEstado estado="completo" /> : <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />}</span>
               <div className="min-w-0 flex-1">
-                <p className={cn("text-sm", estado === "nao_se_aplica" ? "text-slate-500 line-through" : "text-cataguases-marinho")}>{i.nome}</p>
-                {i.referencia_legal && <p className="text-xs text-slate-500">Base legal: {i.referencia_legal}</p>}
+                <p className="text-sm text-cataguases-marinho">{e.rotulo}</p>
+                <p className="text-xs text-slate-500">Base legal: {e.base}</p>
               </div>
-              {podeEditar ? (
-                <select
-                  className="h-8 rounded-md border border-slate-300 bg-white px-1.5 text-xs text-slate-700"
-                  aria-label={`Estado de ${i.nome}`}
-                  value={estado}
-                  disabled={salvando === i.chave}
-                  onChange={(e) => mudar(i.chave, e.target.value as EstadoChecklist)}
-                >
-                  {estado === "presumido" && <option value="presumido">{NOME_ESTADO.presumido}</option>}
-                  <option value="pendente">{NOME_ESTADO.pendente}</option>
-                  <option value="conferido">{NOME_ESTADO.conferido}</option>
-                  <option value="nao_se_aplica">{NOME_ESTADO.nao_se_aplica}</option>
-                </select>
+              {docs.length === 0 ? (
+                <span className="text-xs text-slate-600">Pendente</span>
               ) : (
-                <span className="text-xs text-slate-600">{NOME_ESTADO[estado]}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {docs.map((d) => (
+                    <div key={d.id} className="flex items-center gap-1.5">
+                      <JanelaFicha rotuloTipo={e.rotulo} ficha={montarFicha(d, contexto)} driveFileId={d.drive_file_id} versao={d.drive_versao} />
+                      <a href={urlOriginal(d.drive_file_id)} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#5B3FA8] hover:underline">
+                        Ver original
+                      </a>
+                    </div>
+                  ))}
+                </div>
               )}
             </li>
           );

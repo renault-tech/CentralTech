@@ -1,7 +1,10 @@
+import type { TipoDrive } from "@/lib/emendas/documentos-drive";
 import type { TipoExecucao } from "@/types/emendas";
 
 /** Tipos do portal público (sem `server-only`: usados também no navegador e nos testes). */
 export type DocumentoPortal = { id: string; tipo: "plano_trabalho" | "relatorio_gestao" | "anuencia_sus"; rotulo: string; competencia: number | null; nome: string };
+/** Documento de publicação guardado no Drive da Prefeitura: o portal mostra a ficha e um link para o original. */
+export type DocDrivePortal = { id: string; tipo: TipoDrive; titulo: string; fileId: string; versao: string | null };
 export type MovimentoPortal = { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; data: string | null; valor: number; numero: string | null };
 
 /** Documentos que o portal publica por exigência da IN TCE-MG 05/2025 (art. 7º, IX, X e XVII). Nenhum outro anexo sai daqui. */
@@ -58,6 +61,9 @@ export type LinhaPortal = {
   planoMetas: string | null;
   planoOutrasFontes: number | null;
   documentos: DocumentoPortal[];
+  /** Termo, plano, extrato, anuência e relatório no Drive (só os marcados como públicos). */
+  docsDrive: DocDrivePortal[];
+  anuenciaSusData?: string | null;
   impedimento: string | null;
 };
 
