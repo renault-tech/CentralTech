@@ -1997,3 +1997,48 @@ tem `interno: true`.
 - **Verificado**: `tsc`/`eslint`/`vitest`/`next build` limpos; componentes (gráficos, etapas, formulário de conta) conferidos em Chromium
   (1280 e 390 px, claro e escuro) numa página de teste temporária, removida. **Não testado ao vivo contra o banco** (sandbox sem acesso a
   `*.supabase.co`/`*.vercel.app`): o primeiro uso confirma as telas e o fluxo de acesso por perfil.
+
+## Emendas — escolhas feitas por Claude que podem ser revistas (12–13/11/2026)
+
+Registro de tudo que foi decidido sem confirmação explícita do dono, para reavaliar depois. Cada item diz o que foi feito e como desfazer.
+
+### Identificador contábil (art. 5º da IN TCE-MG 05/2025)
+- **Escolha**: o campo `ficha` (nova dotação, ex.: `2.087.0201 - EP02 - REPASSE …`) já é uma dotação própria por emenda. O código `2.087.0201 - EP02` (ação + subação do vereador + sequência) passou a valer como identificador contábil **por derivação** (`identificadorDaFicha`, em `conformidade.ts`): não é copiado para `execucao.identificador_contabil`, que continua vazio. Vale na conformidade, no detalhe (rótulo "da dotação da emenda") e no portal (`portal.ts`).
+- **Pode estar errado se**: a Contabilidade usar outro código (fonte de recurso, código único do plano de contas). O campo manual `identificador_contabil`/`fonte_recurso` continua prevalecendo se preenchido. **Para desfazer**: remover `identificadorDaFicha(...)` de `avaliarArt7` e `portal.ts`.
+- **A confirmar com a Contabilidade**: se "EP02" é de fato o identificador da emenda do vereador 02 e se serve como o "identificador único" da IN.
+
+### Arredondamento de centavos
+- **Limite de R$ 1,00** (escolha minha; nenhuma norma encontrada). Registro como lançamento de tipo `arredondamento_empenho`/`arredondamento_pagamento` (data = dia do registro), com o valor real na observação. Não altera `v_emendas` (empenhado/pago reais), nem o portal (filtra por tipo). Pesquisa jurídica não achou jurisprudência sobre arredondamento; princípio adotado: o empenho é o valor exato e o público vê o real. **Confirmar com o Controle Interno/TCE-MG.**
+- Aplicado em 10 emendas: 18, 21, 31, 64, 68 (empenho e pagamento), 119, 161, 166, 188, 198. Não arredondadas por passarem de R$ 1,00: 57 (R$ 12,37), 97 (R$ 15,74), 212 (R$ 8,16), 17 (R$ 1,47).
+- **Para desfazer**: botão "Desfazer" na aba Financeiro (ou `delete` dos lançamentos com `tipo like 'arredondamento%'`).
+
+### Lançamentos da planilha do IPM (13/11/2026) — emendas 57, 68, 97, 161, 206, 212
+- **Retenções** lançadas como `pagamento` (observação "Retenção"), porque o IPM soma retenção + valor pago.
+- **Nº do pagamento** gravado como o "nº/ano" do IPM (ex.: `4703/2026`); **não é a OP** (nas outras emendas o nº do pagamento guarda a OP).
+- **Liquidação não lançada** (deixou de ser fase). Empenhos 10834 e 10864 (emenda 212) removidos por "não existir no IPM" (justificativa em `exclusoes_justificadas`).
+- Os lançamentos do IPM foram gravados com `usuario_id` do dono da plataforma (521180be…), não de quem de fato conferiu.
+- Empenho 11662 (212) entrou "conforme IPM"; não constava na planilha da Fazenda.
+
+### Cadastros (vereadores e beneficiários)
+- **Alex Leite de Freitas** (PT) entrou como vereador **nº 16** (para não colidir com o nº 13 que as emendas do Ricardo usam), `substitui_id` = Ricardo. Não tem cota própria definida em 2026. **Willian**: gravado "Willian Jose Lourenço Jeronimo" (sem acentos, como na lista enviada).
+- **Ricardo Geraldo Dias**: inativo, motivo "Mandato cassado; substituído por Alex…", partido **PV** (informado pelo dono). Emendas 134–137 seguem no nome dele e ganham o selo "Autor afastado" + pendência `vereador_afastado` (media) até concluírem.
+- **CNPJ obrigatório só para entidade**; órgão público não exige (usa o CNPJ do Município); pessoa física (novo tipo, `cpf` nunca vai ao portal) exige CPF. Constraint `beneficiarios_documento_obrigatorio` criada **NOT VALID** (linhas antigas sem CNPJ não bloqueiam até serem editadas). A RPC de importação de planilha (`emendas.importar`) cria beneficiário sem CNPJ e **falhará** numa importação futura.
+- **CNPJs lidos das descrições** (53 entidades, conferidos pelos dígitos verificadores). Cataguarino tinha dois CNPJs no texto: gravado o que passa no dígito verificador (27.060.184/0001-31). Surdos: o texto trazia `63.308.723\0001-72` (barra invertida), corrigido para `/`.
+- **38 destinações da própria Prefeitura** (postos, escolas, CAPS, obras) estavam como "entidade" sem CNPJ e foram reclassificadas como `orgao_publico`. Cisum (consórcio) ficou como entidade sem CNPJ.
+- **Exercício 2026**: nome "Prefeitura Municipal de Cataguases", CNPJ 17.702.499/0001-81 (informado pelo dono); unidade parlamentar "Câmara Municipal de Cataguases" (sugestão do relatório de pendências, não confirmada).
+
+### Dados preenchidos a partir de texto
+- **Localidade (44 emendas)**: endereço/bairro/distrito lidos da descrição quando explícitos (57, 58, 70, 105, 132, 154, 185, 196, 55, 86, 212). **Inferências**: secretarias, Defesa Civil, Catrans e CISUM receberam "Município de Cataguases" (ou "Vias públicas do Município…"), e Laboratório/Sede de Serviços Urbanos receberam a unidade + Cataguases, porque o texto não traz endereço. Ao salvar uma emenda nova, `extrairDaDescricao` também preenche localidade e CNPJ (só se vazio).
+- **Finalidade e metas (206 emendas)**: texto "Finalidade: … Metas: …" montado da descrição por regra (+7 textos escritos à mão: 43, 55, 70, 86, 92, 93, 132). Quando a descrição não lista itens, a meta diz "conforme demanda a ser apresentada…, dentro do valor da emenda" (ou "a descrição não detalha itens ou quantidades"). É um preenchimento de apoio; **não substitui o plano de trabalho anexado**.
+- **Gestor** das emendas 3, 4, 53, 65, 128 = "Ricardo Almeida" (planilha da Educação, coluna "gestor responsável pela execução").
+- **Processo licitatório** de 8, 13, 39, 163, 172, 178, 202 (notas da planilha da Saúde) e vínculo automático com o Compras (8, 13, 39, 163, 178, 202, 75, 86, 107, 109). `salvarExecucao` passou a ligar sozinho ao Compras quando o texto tem um número que casa com um único processo (só gestor, nunca troca vínculo existente). O portal usa número de processo/contrato do Compras quando o campo próprio está vazio.
+
+### Regras de pendência/etapa
+- **"Sem andamento"** considera lançamentos, fases manuais/derivadas de dados reais, termo e processo; a fase da LOA e o parecer **não** contam como andamento.
+- **Etapa (cache)** corrigida por `update` direto (sem andamento correspondente): 23, 35, 49, 128, 134, 157 → Empenhada; 18, 31, 64, 119, 166, 188, 198 → Empenhada; 191 → Indicada. Emendas 57/68/97 seguem com etapa "Paga" mesmo com pagamento parcial (o cache não foi rebaixado).
+- **Valor** da emenda editável em Remanejar (com ato e motivo) e em Corrigir cadastro; **valor do lançamento** editável no lápis do Financeiro (secretaria → proposta). Reduzir empenho abaixo do já pago é barrado pelo banco.
+
+### Pendente de decisão do dono
+- Emenda 128: planilha da Educação indica pagamento em 19/06/2026 (NF 38522); não lançado. Emenda 148: troca de conta corrente pendente (não alterada). Emenda 91: pagamento em 27/07 anterior ao empenho de 30/07. Emenda 118: termo 033 × 034/2026.
+- Empenhos sem data (33 emendas) dependem das datas do IPM.
+- Cronograma previsto: não preenchido a partir de "calendário de 2026" (não é início/término de verdade).
