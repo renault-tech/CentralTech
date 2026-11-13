@@ -17,7 +17,7 @@ export type SituacaoEmenda = "normal" | "impedida" | "cancelada";
 export type PerfilEmendas = "gestor" | "admin_secretaria" | "operador" | "consulta";
 /** `admin` = admin do Hub (não existe em `emendas.usuarios`). */
 export type PerfilEfetivo = PerfilEmendas | "admin";
-export type TipoMovimento = "empenho" | "liquidacao" | "pagamento" | "anulacao";
+export type TipoMovimento = "empenho" | "liquidacao" | "pagamento" | "anulacao" | "arredondamento_empenho" | "arredondamento_pagamento";
 export type TipoImpedimento = "tecnico" | "legal" | "documentacao";
 export type TipoDocumento =
   | "plano_trabalho"

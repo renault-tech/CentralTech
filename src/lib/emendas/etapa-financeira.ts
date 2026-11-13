@@ -23,7 +23,7 @@ export async function avancarEtapaPorLancamentos(emendas: Cliente, emendaId: str
     const base = valor; // liquidar e pagar fecham a fase quando cobrem o valor disponível da emenda
     let tipo: "empenho" | "liquidacao" | "pagamento" | null = null;
     let texto = "";
-    if (t.empenhado > 0 && t.empenhado + 0.005 >= valor) {
+    if (t.empenhado > 0 && t.empenhado + t.arredEmpenho + 0.005 >= valor) {
       tipo = "empenho";
       texto = `Empenho total lançado (${brl(t.empenhado)})`;
     }
@@ -31,7 +31,7 @@ export async function avancarEtapaPorLancamentos(emendas: Cliente, emendaId: str
       tipo = "liquidacao";
       texto = `Liquidação total lançada (${brl(t.liquidado)})`;
     }
-    if (t.pago > 0 && t.pago + 0.005 >= base) {
+    if (t.pago > 0 && t.pago + t.arredPago + 0.005 >= base) {
       tipo = "pagamento";
       texto = `Pagamento total lançado (${brl(t.pago)})`;
     }

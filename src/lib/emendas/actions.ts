@@ -677,6 +677,57 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   return { sucesso: true };
 }
 
+/** Diferença de até R$ 1,00 entre o valor da emenda e o que consta no IPM pode ser arredondada: o lançamento real NÃO muda
+ * (empenhado e pago continuam os do IPM, e é o que o portal público mostra); grava-se um registro de arredondamento,
+ * com o valor real na observação, que só faz a fase contar como completa. Pode ser desfeito a qualquer momento. */
+export const LIMITE_ARREDONDAMENTO = 1;
+
+export async function arredondarCentavos(emendaId: string): Promise<Resultado> {
+  if (!z.uuid().safeParse(emendaId).success) return { sucesso: false, erro: "Emenda inválida." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores arredondam centavos." };
+  const emendas = await criarClienteEmendas();
+  const [{ data: em }, { data: movs }] = await Promise.all([
+    emendas.from("emendas").select("valor").eq("id", emendaId).maybeSingle(),
+    emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", emendaId),
+  ]);
+  if (!em) return { sucesso: false, erro: "Emenda não encontrada." };
+  const valor = Number(em.valor);
+  const t = totaisFinanceiros(movs ?? []);
+  const hoje = new Date().toISOString().slice(0, 10);
+  const novos: { tipo: "arredondamento_empenho" | "arredondamento_pagamento"; valor: number; observacao: string }[] = [];
+  const faltaEmp = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
+  if (t.empenhado > 0 && faltaEmp > 0.004 && faltaEmp <= LIMITE_ARREDONDAMENTO + 0.004)
+    novos.push({ tipo: "arredondamento_empenho", valor: faltaEmp, observacao: `Arredondado por ${brl(faltaEmp)}. Valor real empenhado: ${brl(t.empenhado)} (valor da emenda: ${brl(valor)}).` });
+  const empCobre = t.empenhado + t.arredEmpenho + faltaEmp * (novos.length ? 1 : 0);
+  const faltaPago = Math.round((valor - t.pago - t.arredPago) * 100) / 100;
+  if (t.pago > 0 && faltaPago > 0.004 && faltaPago <= LIMITE_ARREDONDAMENTO + 0.004 && empCobre + 0.005 >= valor)
+    novos.push({ tipo: "arredondamento_pagamento", valor: faltaPago, observacao: `Arredondado por ${brl(faltaPago)}. Valor real pago: ${brl(t.pago)} (valor da emenda: ${brl(valor)}).` });
+  if (novos.length === 0) return { sucesso: false, erro: `Não há diferença de até ${brl(LIMITE_ARREDONDAMENTO)} para arredondar nesta emenda (ou já está arredondada).` };
+  // importar: sem aviso de lançamento
+  const { error } = await emendas.from("movimentos_financeiros").insert(novos.map((n) => ({ emenda_id: emendaId, tipo: n.tipo, valor: n.valor, data: hoje, numero: null, observacao: n.observacao, usuario_id: ctx.usuario.id })));
+  if (error) {
+    console.error("[arredondarCentavos]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  await avancarEtapaPorLancamentos(emendas, emendaId);
+  revalidar(emendaId);
+  return { sucesso: true, aviso: `Arredondado por ${novos.map((n) => brl(n.valor)).join(" e ")}. O valor real continua registrado e o arredondamento pode ser desfeito.` };
+}
+
+/** Desfaz um arredondamento (sem justificativa: ele só afeta se a fase conta como completa; fica na auditoria). */
+export async function desfazerArredondamento(dados: { id: string; emendaId: string }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.id).success || !z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Registro inválido." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores desfazem arredondamentos." };
+  const emendas = await criarClienteEmendas();
+  const { data: apagados, error } = await emendas.from("movimentos_financeiros").delete().eq("id", dados.id).eq("emenda_id", dados.emendaId).in("tipo", ["arredondamento_empenho", "arredondamento_pagamento"]).select("id");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!apagados?.length) return { sucesso: false, erro: "Arredondamento não encontrado." };
+  revalidar(dados.emendaId);
+  return { sucesso: true, aviso: "Arredondamento desfeito: a fase volta a mostrar a diferença real." };
+}
+
 /** Exclui um lançamento financeiro (empenho, liquidação, pagamento…) lançado por engano. Só gestor;
  * a exclusão fica na auditoria (quem, quando e o que tinha). */
 export async function excluirMovimento(dados: { id: string; emendaId: string; justificativa: string }): Promise<Resultado> {
@@ -717,9 +768,9 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
     const valorEmenda = Number(dadosEmenda?.valor ?? 0);
     const base = valorEmenda;
     const completos = new Set<string>();
-    if (t.empenhado > 0 && t.empenhado + 0.005 >= valorEmenda) completos.add("empenho");
+    if (t.empenhado > 0 && t.empenhado + t.arredEmpenho + 0.005 >= valorEmenda) completos.add("empenho");
     if (t.liquidado > 0 && t.liquidado + 0.005 >= base) completos.add("liquidacao");
-    if (t.pago > 0 && t.pago + 0.005 >= base) completos.add("pagamento");
+    if (t.pago > 0 && t.pago + t.arredPago + 0.005 >= base) completos.add("pagamento");
     if (!completos.has(mov.tipo)) {
       const { data: removidos } = await emendas.from("andamentos").delete().eq("emenda_id", dados.emendaId).eq("etapa", etapaDoTipo).select("id");
       const { data: atual } = await emendas.from("emendas").select("etapa").eq("id", dados.emendaId).maybeSingle();

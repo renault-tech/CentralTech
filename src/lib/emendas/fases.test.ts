@@ -157,3 +157,19 @@ describe("conclusão só com todas as outras fases completas", () => {
     expect(motivoBloqueioConclusao(calc(new Map([["plano", manual("plano", "nao_se_aplica")]])))).toBeNull();
   });
 });
+
+describe("arredondamento de centavos", () => {
+  it("soma o arredondamento só para considerar a fase completa, sem mexer no valor real", async () => {
+    const { totaisFinanceiros } = await import("@/lib/emendas/fases");
+    const t = totaisFinanceiros([
+      { tipo: "empenho", valor: 43999.96 },
+      { tipo: "pagamento", valor: 43999.93 },
+      { tipo: "arredondamento_empenho", valor: 0.04 },
+      { tipo: "arredondamento_pagamento", valor: 0.07 },
+    ]);
+    expect(t.empenhado).toBeCloseTo(43999.96, 2);
+    expect(t.pago).toBeCloseTo(43999.93, 2);
+    expect(t.empenhado + t.arredEmpenho).toBeCloseTo(44000, 2);
+    expect(t.pago + t.arredPago).toBeCloseTo(44000, 2);
+  });
+});

@@ -59,7 +59,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
         )
         .in("id", lote),
       db.from("impedimentos").select("emenda_id,tipo,resolvido_em").in("emenda_id", lote).is("resolvido_em", null),
-      db.from("movimentos_financeiros").select("emenda_id,tipo,data,valor,numero").in("emenda_id", lote).order("data"),
+      db.from("movimentos_financeiros").select("emenda_id,tipo,data,valor,numero").in("emenda_id", lote).in("tipo", ["empenho", "liquidacao", "pagamento", "anulacao"]).order("data"),
       db.from("documentos").select("id,emenda_id,tipo,competencia,nome_arquivo").in("emenda_id", lote).in("tipo", [...TIPOS_DOCUMENTO_PUBLICO]).order("criado_em"),
     ]);
     for (const r of x.data ?? []) execucao.set(r.id as string, r as Record<string, string | number | null>);

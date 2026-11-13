@@ -74,11 +74,12 @@ export type ResumoCompras = {
   contrato_numero: string | null;
 };
 
-export type TotaisFinanceiros = { empenhado: number; liquidado: number; pago: number };
+/** `arredEmpenho`/`arredPago`: centavos arredondados (valor real fica em `empenhado`/`pago`); só entram no "cobre o total". */
+export type TotaisFinanceiros = { empenhado: number; liquidado: number; pago: number; arredEmpenho: number; arredPago: number };
 
 /** Empenhado já líquido de anulações; liquidado e pago somam os lançamentos. */
 export function totaisFinanceiros(movs: { tipo: string; valor?: number | string | null }[]): TotaisFinanceiros {
-  const t = { empenhado: 0, liquidado: 0, pago: 0 };
+  const t = { empenhado: 0, liquidado: 0, pago: 0, arredEmpenho: 0, arredPago: 0 };
   for (const m of movs) {
     const v = Number(m.valor ?? 0);
     if (!Number.isFinite(v)) continue;
@@ -86,6 +87,8 @@ export function totaisFinanceiros(movs: { tipo: string; valor?: number | string 
     else if (m.tipo === "anulacao") t.empenhado -= v;
     else if (m.tipo === "liquidacao") t.liquidado += v;
     else if (m.tipo === "pagamento") t.pago += v;
+    else if (m.tipo === "arredondamento_empenho") t.arredEmpenho += v;
+    else if (m.tipo === "arredondamento_pagamento") t.arredPago += v;
   }
   return t;
 }
@@ -159,10 +162,11 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
       const t = totaisFinanceiros(e.movimentos);
       const feito = f.derivacao === "empenho" ? t.empenhado : f.derivacao === "liquidacao" ? t.liquidado : t.pago;
       if (feito <= 0) return null;
+      const arred = f.derivacao === "empenho" ? t.arredEmpenho : f.derivacao === "pagamento" ? t.arredPago : 0;
       const meta = e.valorEmenda as number;
       const qtd = e.movimentos.filter((m) => m.tipo === tipoMov).length;
       const nome = NOME_FIN[f.derivacao];
-      if (feito + 0.005 >= meta) return { data: d || null, resumo: `Total ${nome}: ${brl(feito)} de ${brl(meta)} (100%) em ${qtd} lançamento(s).` };
+      if (feito + arred + 0.005 >= meta) return { data: d || null, resumo: `Total ${nome}: ${brl(feito)} de ${brl(meta)} em ${qtd} lançamento(s)${arred > 0 ? `, com arredondamento de ${brl(arred)}` : " (100%)"}.` };
       return {
         aberta: true,
         parcial: true,
