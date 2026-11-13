@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-13",
+    titulo: "Emendas: o pagamento é medido contra o que foi empenhado",
+    descricao: "A bolinha do pagamento fica verde e cheia quando tudo o que foi empenhado já foi pago, mesmo que o empenho ainda seja parcial em relação ao valor da emenda (que continua amarela). Exemplo: emenda 57, com R$ 86.903,96 empenhados e pagos de R$ 86.916,33. O pagamento só fica parcial quando falta pagar parte do empenhado. A aba Financeiro mostra \"A pagar (do empenhado)\" e o arredondamento de pagamento passou a ser contado sobre o empenhado.",
+  },
+  {
+    data: "2026-11-13",
     titulo: "Emendas: localidade, gestor e identificador contábil vindos de dados que já existiam",
     descricao: "A localidade das 44 emendas que faltavam foi lida da descrição de cada uma (bairro, rua, distrito, unidade ou município). O gestor de 5 emendas de escola veio da planilha da Educação. E o identificador contábil deixou de ser cobrado: a dotação própria de cada emenda (ex.: 2.087.0201 - EP02) já o identifica e passa a valer no cadastro, no detalhe e no portal público.",
   },

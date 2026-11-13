@@ -116,10 +116,16 @@ describe("fases financeiras só fecham com o total", () => {
     expect(parcial.resumo).toContain("Saldo a pagar");
     expect(por(com([e, { tipo: "pagamento", data: "2026-05-01", valor: 1000 }]), "repasse").situacao).toBe("concluida");
   });
-  it("empenho parcial e pagamento parcial: as duas fases ficam parciais", () => {
-    const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }, { tipo: "pagamento", data: "2026-05-01", valor: 400 }]);
+  it("empenho parcial e pagamento parcial (menos que o empenhado): as duas fases ficam parciais", () => {
+    const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }, { tipo: "pagamento", data: "2026-05-01", valor: 200 }]);
     expect(por(r, "empenho")).toMatchObject({ situacao: "em_andamento", parcial: true });
     expect(por(r, "repasse")).toMatchObject({ situacao: "em_andamento", parcial: true });
+  });
+  it("tudo o que foi empenhado e pago: pagamento completo, empenho segue parcial", () => {
+    const r = com([{ tipo: "empenho", data: "2026-03-01", valor: 400 }, { tipo: "pagamento", data: "2026-05-01", valor: 400 }]);
+    expect(por(r, "empenho")).toMatchObject({ situacao: "em_andamento", parcial: true });
+    expect(por(r, "repasse").situacao).toBe("concluida");
+    expect(por(r, "repasse").parcial).toBeFalsy();
   });
   it("excluir o lançamento devolve a fase", () => {
     expect(por(com([]), "empenho").situacao).toBe("pendente");
@@ -171,5 +177,14 @@ describe("arredondamento de centavos", () => {
     expect(t.pago).toBeCloseTo(43999.93, 2);
     expect(t.empenhado + t.arredEmpenho).toBeCloseTo(44000, 2);
     expect(t.pago + t.arredPago).toBeCloseTo(44000, 2);
+  });
+});
+
+describe("pagamento mede-se contra o empenhado", () => {
+  it("tudo o que foi empenhado e pago fecha a fase de pagamento, mesmo com empenho parcial", async () => {
+    const { totaisFinanceiros } = await import("@/lib/emendas/fases");
+    const t = totaisFinanceiros([{ tipo: "empenho", valor: 86903.96 }, { tipo: "pagamento", valor: 86903.96 }]);
+    expect(t.pago + 0.005 >= t.empenhado).toBe(true);
+    expect(t.empenhado + 0.005 >= 86916.33).toBe(false); // o empenho segue parcial
   });
 });

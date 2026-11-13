@@ -699,10 +699,10 @@ export async function arredondarCentavos(emendaId: string): Promise<Resultado> {
   const faltaEmp = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
   if (t.empenhado > 0 && faltaEmp > 0.004 && faltaEmp <= LIMITE_ARREDONDAMENTO + 0.004)
     novos.push({ tipo: "arredondamento_empenho", valor: faltaEmp, observacao: `Arredondado por ${brl(faltaEmp)}. Valor real empenhado: ${brl(t.empenhado)} (valor da emenda: ${brl(valor)}).` });
-  const empCobre = t.empenhado + t.arredEmpenho + faltaEmp * (novos.length ? 1 : 0);
-  const faltaPago = Math.round((valor - t.pago - t.arredPago) * 100) / 100;
-  if (t.pago > 0 && faltaPago > 0.004 && faltaPago <= LIMITE_ARREDONDAMENTO + 0.004 && empCobre + 0.005 >= valor)
-    novos.push({ tipo: "arredondamento_pagamento", valor: faltaPago, observacao: `Arredondado por ${brl(faltaPago)}. Valor real pago: ${brl(t.pago)} (valor da emenda: ${brl(valor)}).` });
+  // O pagamento é medido contra o que foi empenhado (valor real), não contra o valor da emenda.
+  const faltaPago = Math.round((t.empenhado - t.pago - t.arredPago) * 100) / 100;
+  if (t.pago > 0 && faltaPago > 0.004 && faltaPago <= LIMITE_ARREDONDAMENTO + 0.004)
+    novos.push({ tipo: "arredondamento_pagamento", valor: faltaPago, observacao: `Arredondado por ${brl(faltaPago)}. Valor real pago: ${brl(t.pago)} (empenhado: ${brl(t.empenhado)}).` });
   if (novos.length === 0) return { sucesso: false, erro: `Não há diferença de até ${brl(LIMITE_ARREDONDAMENTO)} para arredondar nesta emenda (ou já está arredondada).` };
   // importar: sem aviso de lançamento
   const { error } = await emendas.from("movimentos_financeiros").insert(novos.map((n) => ({ emenda_id: emendaId, tipo: n.tipo, valor: n.valor, data: hoje, numero: null, observacao: n.observacao, usuario_id: ctx.usuario.id })));
@@ -766,11 +766,11 @@ export async function excluirMovimento(dados: { id: string; emendaId: string; ju
     // "de pé" só o tipo cujo total ainda cobre o disponível, não apenas o que tem algum lançamento.
     const t = totaisFinanceiros(restantes ?? []);
     const valorEmenda = Number(dadosEmenda?.valor ?? 0);
-    const base = valorEmenda;
+    const base = t.empenhado; // liquidar/pagar fecham com o empenhado
     const completos = new Set<string>();
     if (t.empenhado > 0 && t.empenhado + t.arredEmpenho + 0.005 >= valorEmenda) completos.add("empenho");
-    if (t.liquidado > 0 && t.liquidado + 0.005 >= base) completos.add("liquidacao");
-    if (t.pago > 0 && t.pago + t.arredPago + 0.005 >= base) completos.add("pagamento");
+    if (t.liquidado > 0 && t.empenhado > 0 && t.liquidado + 0.005 >= base) completos.add("liquidacao");
+    if (t.pago > 0 && t.empenhado > 0 && t.pago + t.arredPago + 0.005 >= base) completos.add("pagamento");
     if (!completos.has(mov.tipo)) {
       const { data: removidos } = await emendas.from("andamentos").delete().eq("emenda_id", dados.emendaId).eq("etapa", etapaDoTipo).select("id");
       const { data: atual } = await emendas.from("emendas").select("etapa").eq("id", dados.emendaId).maybeSingle();
