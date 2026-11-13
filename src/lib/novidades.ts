@@ -13,6 +13,11 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-13",
+    titulo: "Emendas: valor da emenda pode ser alterado no Remanejar",
+    descricao: "O diálogo \"Remanejar\" agora tem o campo Valor (R$), junto com destinação, dotação e objeto. A mudança fica no histórico com ato e motivo. O sistema recusa valor abaixo do que já foi empenhado e valor que faça o vereador passar da cota. \"Corrigir cadastro\" continua permitindo ajustar o valor sem ato e motivo.",
+  },
+  {
     data: "2026-11-12",
     titulo: "Emendas: \"Sem andamento\" volta a aparecer onde de fato não há nada",
     descricao: "Corrigido um efeito da mudança anterior: a fase da LOA e o parecer da secretaria (que são do exercício, não da emenda) passaram a contar como andamento e escondiam o aviso. Agora só lançamentos, fases preenchidas, termo e processo contam. O partido do Ricardo Geraldo Dias (PV) foi registrado.",
