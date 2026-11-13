@@ -163,7 +163,10 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
       const feito = f.derivacao === "empenho" ? t.empenhado : f.derivacao === "liquidacao" ? t.liquidado : t.pago;
       if (feito <= 0) return null;
       const arred = f.derivacao === "empenho" ? t.arredEmpenho : f.derivacao === "pagamento" ? t.arredPago : 0;
-      const meta = e.valorEmenda as number;
+      // Empenho fecha com o valor da emenda; liquidação e pagamento fecham com o que foi EMPENHADO (paga-se o empenho,
+      // não a dotação): empenho parcial com tudo pago é pagamento completo.
+      const meta = f.derivacao === "empenho" ? (e.valorEmenda as number) : t.empenhado;
+      if (meta <= 0.005) return { aberta: true, parcial: true, observacao: "Sem empenho", resumo: `Há ${NOME_FIN[f.derivacao]} lançado(a) sem empenho registrado.` };
       const qtd = e.movimentos.filter((m) => m.tipo === tipoMov).length;
       const nome = NOME_FIN[f.derivacao];
       if (feito + arred + 0.005 >= meta) return { data: d || null, resumo: `Total ${nome}: ${brl(feito)} de ${brl(meta)} em ${qtd} lançamento(s)${arred > 0 ? `, com arredondamento de ${brl(arred)}` : " (100%)"}.` };
@@ -171,7 +174,7 @@ function dadoDerivado(f: FaseFluxo, e: EntradaFases): Dado {
         aberta: true,
         parcial: true,
         observacao: `Parcial: ${brl(feito)} de ${brl(meta)}`,
-        resumo: `Parcial: ${nome} ${brl(feito)} de ${brl(meta)} (${pct(feito, meta)}). Saldo a ${f.derivacao === "pagamento" ? "pagar" : f.derivacao === "liquidacao" ? "liquidar" : "empenhar"}: ${brl(meta - feito)}.`,
+        resumo: `Parcial: ${nome} ${brl(feito)} de ${brl(meta)} (${pct(feito, meta)}). Saldo a ${f.derivacao === "pagamento" ? "pagar do empenhado" : f.derivacao === "liquidacao" ? "liquidar do empenhado" : "empenhar"}: ${brl(meta - feito)}.`,
       };
     }
     case "termo":

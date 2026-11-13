@@ -206,8 +206,8 @@ export function DetalheEmendaCliente({
     const t = totaisFinanceiros(movimentos);
     const valor = emenda.valor;
     const fe = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
-    const fp = Math.round((valor - t.pago - t.arredPago) * 100) / 100;
-    return (t.empenhado > 0 && fe > 0.004 && fe <= 1.004) || (t.pago > 0 && fp > 0.004 && fp <= 1.004 && fe <= 1.004);
+    const fp = Math.round((t.empenhado - t.pago - t.arredPago) * 100) / 100;
+    return (t.empenhado > 0 && fe > 0.004 && fe <= 1.004) || (t.pago > 0 && fp > 0.004 && fp <= 1.004);
   })();
 
   async function executar(acao: () => Promise<Resultado>) {
@@ -359,7 +359,7 @@ export function DetalheEmendaCliente({
                   ["Empenhado", emenda.empenhado],
                   ["Liquidado", emenda.liquidado],
                   ["Pago", emenda.pago],
-                  ["Saldo a pagar", emenda.valor - emenda.pago],
+                  ["A pagar (do empenhado)", Math.max(0, emenda.empenhado - emenda.pago)],
                 ].map(([rotulo, v]) => (
                   <div key={rotulo as string} className="rounded-lg border border-slate-200 p-3">
                     <span className="text-xs text-slate-600">{rotulo}</span>

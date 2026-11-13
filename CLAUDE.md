@@ -2042,3 +2042,6 @@ Registro de tudo que foi decidido sem confirmação explícita do dono, para rea
 - Emenda 128: planilha da Educação indica pagamento em 19/06/2026 (NF 38522); não lançado. Emenda 148: troca de conta corrente pendente (não alterada). Emenda 91: pagamento em 27/07 anterior ao empenho de 30/07. Emenda 118: termo 033 × 034/2026.
 - Empenhos sem data (33 emendas) dependem das datas do IPM.
 - Cronograma previsto: não preenchido a partir de "calendário de 2026" (não é início/término de verdade).
+
+### Regra do pagamento (13/11/2026, a pedido do dono)
+- **Pagamento (e liquidação) fecham com o EMPENHADO, não com o valor da emenda** (`fases.ts`, `etapa-financeira.ts`, `actions.ts`). O empenho fecha com o valor da emenda. Assim, emenda 57 (empenhado e pago R$ 86.903,96 de R$ 86.916,33) tem pagamento verde cheio e empenho amarelo. Pagamento sem empenho lançado fica parcial ("Sem empenho"). O arredondamento de pagamento também é medido contra o empenhado (emenda 68: ajustado de R$ 0,07 para R$ 0,03). Aba Financeiro: "A pagar (do empenhado)".
