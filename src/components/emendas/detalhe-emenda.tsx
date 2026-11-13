@@ -833,6 +833,7 @@ function DialogoRemanejar({
   const [funcional, setFuncional] = React.useState(emenda.funcional_programatica ?? "");
   const [ficha, setFicha] = React.useState(emenda.ficha ?? "");
   const [objeto, setObjeto] = React.useState(emenda.objeto);
+  const [valor, setValor] = React.useState(emenda.valor.toFixed(2).replace(".", ","));
   const [saude, setSaude] = React.useState(emenda.saude);
   const [ato, setAto] = React.useState("");
   const [motivo, setMotivo] = React.useState("");
@@ -845,7 +846,7 @@ function DialogoRemanejar({
         <DialogHeader>
           <DialogTitle>Remanejar emenda nº {emenda.numero}</DialogTitle>
           <DialogDescription>
-            Muda a destinação/dotação mantendo o valor e o vereador. O antes e depois ficam no histórico; impedimentos abertos são resolvidos.
+            Muda destinação, dotação ou valor mantendo o vereador. O valor não pode ficar abaixo do já empenhado nem fazer o vereador passar da cota. O antes e depois ficam no histórico; impedimentos abertos são resolvidos.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -860,6 +861,9 @@ function DialogoRemanejar({
             if (funcional && funcional !== emenda.funcional_programatica) novo.funcional_programatica = funcional;
             if (ficha && ficha !== emenda.ficha) novo.ficha = ficha;
             if (objeto !== emenda.objeto) novo.objeto = objeto;
+            const novoValor = Number(valor.replace(/\./g, "").replace(",", "."));
+            if (!Number.isFinite(novoValor) || novoValor <= 0) return void enviar(async () => ({ sucesso: false, erro: "Informe um valor maior que zero." }), aoFechar);
+            if (Math.abs(novoValor - emenda.valor) > 0.004) novo.valor = Math.round(novoValor * 100) / 100;
             if (saude !== emenda.saude) novo.saude = saude;
             void enviar(() => aoSalvar({ ato, motivo, novo }), aoFechar);
           }}
@@ -914,9 +918,14 @@ function DialogoRemanejar({
           <Campo rotulo="Nova dotação (ficha)">
             <input className={CAMPO} value={ficha} onChange={(e) => setFicha(e.target.value)} />
           </Campo>
-          <Campo rotulo="Objeto (resumo)">
-            <input className={CAMPO} value={objeto} onChange={(e) => setObjeto(e.target.value)} />
-          </Campo>
+          <div className="grid gap-3.5 sm:grid-cols-[1fr_180px]">
+            <Campo rotulo="Objeto (resumo)">
+              <input className={CAMPO} value={objeto} onChange={(e) => setObjeto(e.target.value)} />
+            </Campo>
+            <Campo rotulo="Valor (R$)" dica={`Atual: ${brl(emenda.valor)}`}>
+              <input required inputMode="decimal" className={CAMPO} value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
+            </Campo>
+          </div>
           <label className="flex items-center gap-2 text-[13px] text-cataguases-marinho">
             <input type="checkbox" checked={saude} onChange={(e) => setSaude(e.target.checked)} className="h-4 w-4 accent-[#6B4FBB]" /> Conta para a Saúde
           </label>

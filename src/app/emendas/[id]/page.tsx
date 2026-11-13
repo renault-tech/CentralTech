@@ -207,7 +207,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           <section className="rounded-xl border border-slate-200 bg-white p-4 text-[13px] text-slate-600">
             <h2 className="mb-1.5 text-sm font-semibold text-cataguases-marinho">Quem pode mexer</h2>
             Registram a execução: gestores e a equipe de <strong className="text-cataguases-marinho">{emenda.secretaria_nome}</strong> com permissão de
-            edição. Valor, vereador e dotação só mudam por remanejamento, feito pelo gestor.
+            edição. Valor e dotação mudam por remanejamento (com ato e motivo) ou em “Corrigir cadastro”, feitos pelo gestor.
             <p className="mt-2 text-xs">{podeEditar ? "Você pode registrar andamentos nesta emenda." : "Você só visualiza esta emenda."}</p>
           </section>
         </aside>
