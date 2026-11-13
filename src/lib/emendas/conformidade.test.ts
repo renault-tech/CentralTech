@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { avaliarArt7, bancoOficial, chaveDaConta, contasRepetidas, faltas, gndDaNatureza, relatoriosDeGestao } from "@/lib/emendas/conformidade";
+import { avaliarArt7, bancoOficial, chaveDaConta, contasRepetidas, faltas, gndDaNatureza, identificadorDaFicha, relatoriosDeGestao } from "@/lib/emendas/conformidade";
 import type { EmendaResumo } from "@/types/emendas";
 
 const emenda = {
@@ -71,5 +71,13 @@ describe("relatório de gestão", () => {
   it("vence depois de 30/06 e some quando entregue", () => {
     expect(relatoriosDeGestao(pag, [], "2027-07-01")).toMatchObject([{ competencia: 2026, situacao: "vencido" }]);
     expect(relatoriosDeGestao(pag, [{ tipo: "relatorio_gestao", competencia: 2026 }], "2027-07-01")).toEqual([]);
+  });
+});
+
+describe("identificador contábil pela dotação", () => {
+  it("usa ação + subação do vereador da ficha da emenda", () => {
+    expect(identificadorDaFicha("2.087.0201 - EP02 - REPASSE HOSPITAL DE CATAGUASES - CUSTEIO")).toBe("2.087.0201 - EP02");
+    expect(identificadorDaFicha("sem padrão")).toBeNull();
+    expect(identificadorDaFicha(null)).toBeNull();
   });
 });

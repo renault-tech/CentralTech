@@ -3,7 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { resumirProcessos } from "@/lib/emendas/compras";
-import { gndDaNatureza } from "@/lib/emendas/conformidade";
+import { gndDaNatureza, identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { createHash } from "node:crypto";
 
@@ -31,7 +31,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
   const { data: emendas, error } = await db
     .from("v_emendas")
     .select(
-      "id,ano,numero,objeto,descricao,valor,saude,modalidade,tipo_execucao,etapa,situacao,vereador_nome,secretaria_nome,unidade_codigo,unidade_nome,funcional_programatica,natureza_despesa,beneficiario_nome,beneficiario_cnpj,empenhado,liquidado,pago,ultimo_pagamento"
+      "id,ano,numero,objeto,descricao,valor,saude,modalidade,tipo_execucao,etapa,situacao,vereador_nome,secretaria_nome,unidade_codigo,unidade_nome,funcional_programatica,ficha,natureza_despesa,beneficiario_nome,beneficiario_cnpj,empenhado,liquidado,pago,ultimo_pagamento"
     )
     .eq("ano", ano)
     .neq("situacao", "cancelada")
@@ -127,7 +127,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       gestorPrefeitura: s(x?.gestor_pmc),
       gestorEntidade: s(x?.gestor_osc),
       anuenciaSus: (x?.anuencia_sus as LinhaPortal["anuenciaSus"]) ?? null,
-      identificadorContabil: s(x?.identificador_contabil),
+      identificadorContabil: s(x?.identificador_contabil) ?? identificadorDaFicha(e.ficha as string | null),
       fonteRecurso: s(x?.fonte_recurso),
       planoMetas: s(x?.plano_metas),
       planoOutrasFontes: x?.plano_outras_fontes != null ? Number(x.plano_outras_fontes) : null,
