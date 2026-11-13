@@ -6,6 +6,8 @@ import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2, X } 
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  arredondarCentavos,
+  desfazerArredondamento,
   corrigirMovimento,
   definirCancelamento,
   excluirEmenda,
@@ -122,7 +124,7 @@ const COR_TIPO_MOV: Record<string, string> = {
   liquidacao: "bg-slate-100 text-slate-700",
 };
 
-const NOME_TIPO_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação de empenho" } as const;
+const NOME_TIPO_MOV = { empenho: "Empenho", liquidacao: "Liquidação", pagamento: "Pagamento", anulacao: "Anulação de empenho", arredondamento_empenho: "Arredondamento (empenho)", arredondamento_pagamento: "Arredondamento (pagamento)" } as const;
 const NOME_IMPEDIMENTO = { tecnico: "Técnico", legal: "Legal", documentacao: "Documentação da entidade" } as const;
 
 function hojeLocal() {
@@ -198,6 +200,15 @@ export function DetalheEmendaCliente({
     if (campo === "etapa") return infoEtapa(String(v), catalogo).nome;
     return String(v);
   };
+
+  // Há diferença de até R$ 1,00 (empenho ou pagamento) ainda sem arredondar?
+  const podeArredondar = (() => {
+    const t = totaisFinanceiros(movimentos);
+    const valor = emenda.valor;
+    const fe = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
+    const fp = Math.round((valor - t.pago - t.arredPago) * 100) / 100;
+    return (t.empenhado > 0 && fe > 0.004 && fe <= 1.004) || (t.pago > 0 && fp > 0.004 && fp <= 1.004 && fe <= 1.004);
+  })();
 
   async function executar(acao: () => Promise<Resultado>) {
     setErroGeral(null);
@@ -368,7 +379,18 @@ export function DetalheEmendaCliente({
                     </tr>
                   </thead>
                   <tbody>
-                    {movimentos.map((m) => (
+                    {movimentos.map((m) => m.tipo.startsWith("arredondamento") ? (
+                      <tr key={m.id} className="border-t border-slate-100 text-slate-500">
+                        <td className="px-3 py-1.5 text-xs italic">{NOME_TIPO_MOV[m.tipo]}</td>
+                        <td className="px-3 py-1.5 text-xs" colSpan={2} title={m.observacao ?? undefined}>{m.observacao ?? "Arredondamento de centavos"}</td>
+                        <td className="px-3 py-1.5 text-right text-xs tabular-nums">{brl(m.valor)}</td>
+                        {(gestor || podeCorrigirLancamento) && (
+                          <td className="px-3 py-1.5 text-right">
+                            {gestor && <button type="button" className="text-xs underline hover:text-slate-800" onClick={() => executar(() => desfazerArredondamento({ id: m.id, emendaId: emenda.id }))}>Desfazer</button>}
+                          </td>
+                        )}
+                      </tr>
+                    ) : (
                       <LinhaMovimento
                         key={m.id}
                         movimento={m}
@@ -384,10 +406,15 @@ export function DetalheEmendaCliente({
                 {movimentos.length === 0 && <p className="py-4 text-sm text-slate-500">Nenhum empenho, liquidação ou pagamento registrado ainda.</p>}
               </div>
               {podeEditar && (
-                <div>
+                <div className="flex flex-wrap items-center gap-2">
                   <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("movimento")}>
                     + Lançar movimento (parcial, anulação…)
                   </button>
+                  {gestor && podeArredondar && (
+                    <button type="button" className="text-xs text-slate-500 underline hover:text-slate-800" onClick={() => executar(() => arredondarCentavos(emenda.id))} title="Considera completa a fase com diferença de até R$ 1,00; o valor real continua registrado e pode ser desfeito">
+                      Arredondar centavos
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -783,7 +810,7 @@ function DialogoMovimento({
           <div className="grid gap-3.5 sm:grid-cols-2">
             <Campo rotulo="Tipo">
               <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
-                {Object.entries(NOME_TIPO_MOV).filter(([k]) => k !== "liquidacao").map(([k, v]) => (
+                {Object.entries(NOME_TIPO_MOV).filter(([k]) => k !== "liquidacao" && !k.startsWith("arredondamento")).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>

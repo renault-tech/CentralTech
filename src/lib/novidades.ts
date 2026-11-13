@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-13",
+    titulo: "Emendas: arredondamento de centavos, com o valor real preservado",
+    descricao: "Diferenças de até R$ 1,00 entre o valor da emenda e o empenhado/pago deixam de manter a fase como parcial. O lançamento real não muda (o empenhado e o pago seguem iguais ao IPM, e é isso que o portal público mostra): grava-se um registro discreto de arredondamento, com o valor real na observação, que apenas faz a fase contar como completa. Na aba Financeiro, o gestor vê o registro em cinza, pode desfazê-lo a qualquer momento (\"Desfazer\") ou aplicá-lo em outra emenda (\"Arredondar centavos\"). Já aplicado em 10 emendas (18, 21, 31, 64, 68, 119, 161, 166, 188, 198). Diferenças maiores que R$ 1,00 (como R$ 12,37 na 57 e R$ 15,74 na 97) não são arredondadas.",
+  },
+  {
+    data: "2026-11-13",
     titulo: "Emendas: valor de cada lançamento financeiro pode ser corrigido",
     descricao: "Na aba Financeiro, o lápis de cada empenho, liquidação, pagamento ou anulação agora também altera o valor (além do número e da data). Para uma emenda que no IPM tem vários empenhos: corrija o valor do lançamento existente e use \"Registrar\" para incluir os demais. O sistema confere o saldo (empenho até o valor da emenda; pagamento até o empenhado) e a fase da emenda é atualizada sozinha. Para secretarias com permissão, a correção de valor vai para aprovação do gestor.",
   },
