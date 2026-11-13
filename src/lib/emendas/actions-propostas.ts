@@ -61,8 +61,9 @@ async function valorAtualDe(emendas: Cliente, p: Linha): Promise<unknown> {
     return { estado: data?.estado ?? "pendente" };
   }
   if (p.alvo === "movimentos" && p.campo === "correcao" && p.chave) {
-    const { data } = await emendas.from("movimentos_financeiros").select("numero,data").eq("id", p.chave).eq("emenda_id", p.emenda_id).maybeSingle();
-    return data ? { numero: data.numero ?? null, data: data.data ?? null } : undefined;
+    const { data } = await emendas.from("movimentos_financeiros").select("numero,data,valor").eq("id", p.chave).eq("emenda_id", p.emenda_id).maybeSingle();
+    const comValor = !!p.valor_atual && typeof p.valor_atual === "object" && "valor" in (p.valor_atual as object);
+    return data ? { numero: data.numero ?? null, data: data.data ?? null, ...(comValor ? { valor: Number(data.valor) } : {}) } : undefined;
   }
   return null;
 }
@@ -102,8 +103,9 @@ function validarProposta(p: Linha): string | null {
     return p.chave && CHAVE_OK.test(p.chave) && v && ESTADOS_CHECK.has(String(v.estado)) ? null : "Item inválido.";
   }
   if (p.alvo === "movimentos" && p.campo === "correcao") {
-    const v = p.valor_proposto as { numero?: unknown; data?: unknown } | null;
+    const v = p.valor_proposto as { numero?: unknown; data?: unknown; valor?: unknown } | null;
     if (!v || !p.chave || !UUID_OK.test(p.chave)) return "Correção inválida.";
+    if (v.valor !== undefined && (typeof v.valor !== "number" || !(v.valor > 0))) return "Valor inválido.";
     if (v.data != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(v.data))) return "Data inválida.";
     if (v.numero != null && String(v.numero).length > 40) return "Número longo demais.";
     return null;
@@ -147,10 +149,10 @@ async function aplicar(emendas: Cliente, p: Linha, usuarioId: string): Promise<s
     return error ? error.message : null;
   }
   if (p.alvo === "movimentos" && p.campo === "correcao" && p.chave) {
-    const v = p.valor_proposto as { numero: string | null; data: string | null };
+    const v = p.valor_proposto as { numero: string | null; data: string | null; valor?: number };
     const { data: gravadas, error } = await emendas
       .from("movimentos_financeiros")
-      .update({ numero: v.numero ?? null, data: v.data ?? null })
+      .update({ numero: v.numero ?? null, data: v.data ?? null, ...(typeof v.valor === "number" ? { valor: Math.round(v.valor * 100) / 100 } : {}) })
       .eq("id", p.chave)
       .eq("emenda_id", p.emenda_id)
       .select("id");

@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-13",
+    titulo: "Emendas: valor de cada lançamento financeiro pode ser corrigido",
+    descricao: "Na aba Financeiro, o lápis de cada empenho, liquidação, pagamento ou anulação agora também altera o valor (além do número e da data). Para uma emenda que no IPM tem vários empenhos: corrija o valor do lançamento existente e use \"Registrar\" para incluir os demais. O sistema confere o saldo (empenho até o valor da emenda; pagamento até o empenhado) e a fase da emenda é atualizada sozinha. Para secretarias com permissão, a correção de valor vai para aprovação do gestor.",
+  },
+  {
+    data: "2026-11-13",
     titulo: "Emendas: valor da emenda pode ser alterado no Remanejar",
     descricao: "O diálogo \"Remanejar\" agora tem o campo Valor (R$), junto com destinação, dotação e objeto. A mudança fica no histórico com ato e motivo. O sistema recusa valor abaixo do que já foi empenhado e valor que faça o vereador passar da cota. \"Corrigir cadastro\" continua permitindo ajustar o valor sem ato e motivo.",
   },

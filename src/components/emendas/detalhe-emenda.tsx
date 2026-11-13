@@ -375,7 +375,7 @@ export function DetalheEmendaCliente({
                         gestor={gestor}
                         podeCorrigir={gestor || podeCorrigirLancamento}
                         nome={NOME_TIPO_MOV[m.tipo]}
-                        aoCorrigir={(numero, data) => executar(() => corrigirMovimento({ id: m.id, emendaId: emenda.id, numero, data }))}
+                        aoCorrigir={(numero, data, valor) => executar(() => corrigirMovimento({ id: m.id, emendaId: emenda.id, numero, data, valor }))}
                         aoExcluir={(justificativa) => executar(() => excluirMovimento({ id: m.id, emendaId: emenda.id, justificativa }))}
                       />
                     ))}
@@ -1002,9 +1002,10 @@ function LinhaMovimento({
   gestor: boolean;
   podeCorrigir: boolean;
   nome: string;
-  aoCorrigir: (numero: string, data: string | null) => Promise<Resultado>;
+  aoCorrigir: (numero: string, data: string | null, valor: number) => Promise<Resultado>;
 }) {
   const [editando, setEditando] = React.useState(false);
+  const [valorTexto, setValorTexto] = React.useState(movimento.valor.toFixed(2).replace(".", ","));
   const [numero, setNumero] = React.useState(movimento.numero ?? "");
   const [data, setData] = React.useState(movimento.data ?? "");
   const [salvando, setSalvando] = React.useState(false);
@@ -1015,13 +1016,19 @@ function LinhaMovimento({
     // Sempre parte do que está gravado agora (a linha pode ter sido atualizada depois da última edição).
     setNumero(movimento.numero ?? "");
     setData(movimento.data ?? "");
+    setValorTexto(Number(movimento.valor).toFixed(2).replace(".", ","));
     setErro(null);
     setEditando(true);
   }
   async function salvar() {
     setSalvando(true);
     setErro(null);
-    const r = await aoCorrigir(numero, data || null);
+    const v = Number(valorTexto.replace(/\./g, "").replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0) {
+      setSalvando(false);
+      return setErro("Informe um valor maior que zero.");
+    }
+    const r = await aoCorrigir(numero, data || null, Math.round(v * 100) / 100);
     setSalvando(false);
     if (r.sucesso) setEditando(false);
     else setErro(r.erro);
@@ -1033,7 +1040,7 @@ function LinhaMovimento({
         <td className="px-3 py-2 align-top">{nome}</td>
         <td className="px-3 py-2 align-top"><input className={CAMPO} value={numero} onChange={(e) => setNumero(e.target.value)} aria-label="Número do documento" placeholder="Nº do documento" disabled={salvando} /></td>
         <td className="px-3 py-2 align-top"><input type="date" className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} aria-label="Data" disabled={salvando} /></td>
-        <td className="px-3 py-2 text-right align-top tabular-nums">{brl(movimento.valor)}</td>
+        <td className="px-3 py-2 text-right align-top"><input inputMode="decimal" className={cn(CAMPO, "w-32 text-right tabular-nums")} value={valorTexto} onChange={(e) => setValorTexto(e.target.value)} aria-label="Valor" placeholder="0,00" disabled={salvando} /></td>
         <td className="px-3 py-2 align-top">
           <div className="flex items-center justify-end gap-1.5">
             <button type="button" aria-label="Salvar correção" title="Salvar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6B4FBB] text-white shadow-sm hover:bg-[#5B3FA8] disabled:opacity-50" onClick={salvar} disabled={salvando}>
@@ -1058,7 +1065,7 @@ function LinhaMovimento({
       <td className="px-3 py-2.5 text-right tabular-nums">{brl(movimento.valor)}</td>
       {podeCorrigir && (
         <td className="whitespace-nowrap px-3 py-2.5 text-right">
-          <button type="button" aria-label="Corrigir número ou data" title={faltando ? "Completar número/data" : "Corrigir"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
+          <button type="button" aria-label="Corrigir número, data ou valor" title={faltando ? "Completar número/data (ou corrigir o valor)" : "Corrigir número, data ou valor"} className={cn("rounded p-1.5 hover:bg-slate-100", faltando ? "text-amber-700" : "text-slate-500")} onClick={abrir}>
             <Pencil className="h-4 w-4" aria-hidden />
           </button>
           {gestor && <button

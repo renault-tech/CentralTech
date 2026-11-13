@@ -612,6 +612,8 @@ const esquemaCorrecaoMovimento = z.object({
   emendaId: z.uuid(),
   numero: textoOpcional(40),
   data: data.nullable(),
+  /** Novo valor do lançamento (ex.: o IPM mostra vários empenhos e a plataforma tinha um só). */
+  valor: z.number().positive("Informe um valor maior que zero").max(1_000_000_000).optional(),
 });
 
 /** Completar nº de empenho / data de pagamento que vieram faltando (ex.:
@@ -625,31 +627,43 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   const emendas = await criarClienteEmendas();
   if (!ehGestor(ctx.perfil)) {
     // Secretaria: só se o exercício permitir, só nas emendas que ela edita, e a correção espera aprovação.
-    const { data: mov } = await emendas.from("movimentos_financeiros").select("id,numero,data,emenda_id").eq("id", a.data.id).eq("emenda_id", a.data.emendaId).maybeSingle();
+    const { data: mov } = await emendas.from("movimentos_financeiros").select("id,numero,data,emenda_id,tipo,valor").eq("id", a.data.id).eq("emenda_id", a.data.emendaId).maybeSingle();
     const { data: em } = await emendas.from("v_emendas").select("ano,secretaria_id").eq("id", a.data.emendaId).maybeSingle();
     if (!mov || !em) return { sucesso: false, erro: "Lançamento não encontrado." };
     if (!podeEditarSecretaria(ctx, em.secretaria_id)) return { sucesso: false, erro: "Você não edita as emendas desta secretaria." };
     const { data: ex } = await emendas.from("exercicios").select("secretaria_edita_lancamentos").eq("ano", em.ano).maybeSingle();
     if (!ex?.secretaria_edita_lancamentos) return { sucesso: false, erro: "A correção de lançamentos pelas secretarias não está liberada nas configurações." };
-    if ((mov.numero ?? null) === (a.data.numero ?? null) && (mov.data ?? null) === (a.data.data ?? null)) return { sucesso: true };
+    const valorMuda = a.data.valor !== undefined && Math.abs(a.data.valor - Number(mov.valor)) > 0.004;
+    if ((mov.numero ?? null) === (a.data.numero ?? null) && (mov.data ?? null) === (a.data.data ?? null) && !valorMuda) return { sucesso: true };
+    if (valorMuda && a.data.valor! > Number(mov.valor)) {
+      const excesso = await conferirSaldo(emendas, a.data.emendaId, mov.tipo, a.data.valor! - Number(mov.valor));
+      if (excesso) return { sucesso: false, erro: excesso };
+    }
     const falha = await proporAlteracoes(a.data.emendaId, [
       {
         alvo: "movimentos",
         chave: a.data.id,
         campo: "correcao",
-        valorAtual: { numero: mov.numero ?? null, data: mov.data ?? null },
-        valorProposto: { numero: a.data.numero ?? null, data: a.data.data ?? null },
+        valorAtual: { numero: mov.numero ?? null, data: mov.data ?? null, ...(valorMuda ? { valor: Number(mov.valor) } : {}) },
+        valorProposto: { numero: a.data.numero ?? null, data: a.data.data ?? null, ...(valorMuda ? { valor: a.data.valor } : {}) },
       },
     ]);
     if (falha) return { sucesso: false, erro: falha };
     revalidar(a.data.emendaId);
     return { sucesso: true, aviso: "Correção enviada para aprovação do gestor." };
   }
+  const { data: atualMov } = await emendas.from("movimentos_financeiros").select("tipo,valor").eq("id", a.data.id).eq("emenda_id", a.data.emendaId).maybeSingle();
+  if (!atualMov) return { sucesso: false, erro: "Lançamento não encontrado." };
+  const valorMudou = a.data.valor !== undefined && Math.abs(a.data.valor - Number(atualMov.valor)) > 0.004;
+  if (valorMudou && a.data.valor! > Number(atualMov.valor)) {
+    const excesso = await conferirSaldo(emendas, a.data.emendaId, atualMov.tipo, a.data.valor! - Number(atualMov.valor));
+    if (excesso) return { sucesso: false, erro: excesso };
+  }
   // `.select("id")` para saber se alguma linha foi mesmo alterada: sem isso, uma atualização
   // que a RLS filtra devolve "sucesso" sem gravar nada.
   const { data: gravadas, error } = await emendas
     .from("movimentos_financeiros")
-    .update({ numero: a.data.numero, data: a.data.data })
+    .update({ numero: a.data.numero, data: a.data.data, ...(valorMudou ? { valor: Math.round(a.data.valor! * 100) / 100 } : {}) })
     .eq("id", a.data.id)
     .eq("emenda_id", a.data.emendaId)
     .select("id");
@@ -658,6 +672,7 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
     return { sucesso: false, erro: traduzir(error) };
   }
   if (!gravadas || gravadas.length === 0) return { sucesso: false, erro: "Nada foi gravado: o lançamento não foi encontrado ou você não tem permissão para alterá-lo." };
+  if (valorMudou) await avancarEtapaPorLancamentos(emendas, a.data.emendaId);
   revalidar(a.data.emendaId);
   return { sucesso: true };
 }
