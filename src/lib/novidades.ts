@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-14",
+    titulo: "Emendas: envio de anexos desativado",
+    descricao: "A aba Anexos saiu do detalhe da emenda e o envio de arquivos ao sistema foi bloqueado, para que nenhum documento ocupe o banco de dados. Os documentos ficam no Drive da Prefeitura e são ligados pela aba Documentação (cole o link do arquivo). Os anexos já enviados antes continuam guardados e o portal segue mostrando os que já eram públicos.",
+  },
+  {
+    data: "2026-11-14",
     titulo: "Emendas: cadastro de documentos do Drive pela própria tela",
     descricao: "Na aba Documentação da emenda, o gestor agora liga um documento colando o link do arquivo no Drive: escolhe o tipo (termo, plano de trabalho, extrato, anuência do SUS, relatório de gestão), cola o link e clica em Ligar. Só o endereço do arquivo é guardado; o olho com a ficha e o \"Ver documento original\" aparecem na hora. Links de pasta são recusados, e dá para remover o vínculo (o arquivo continua no Drive). Só os cinco tipos exigidos por lei vão ao portal da transparência.",
   },
