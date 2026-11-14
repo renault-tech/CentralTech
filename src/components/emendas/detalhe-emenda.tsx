@@ -271,7 +271,7 @@ export function DetalheEmendaCliente({
               ["pendencias", `Pendências${abertas(pendencias).length ? ` (${abertas(pendencias).length})` : ""}`],
               ["financeiro", "Financeiro"],
               ["andamentos", `Andamentos (${andamentos.length})`],
-              ["documentos", `Anexos (${documentos.length})`],
+              // Anexos desativados por ora (nada de arquivo no banco): documentos ficam no Drive, na aba Documentação.
               ["historico", `Histórico${remanejamentos.length ? ` (${remanejamentos.length})` : ""}`],
             ] as [Aba, string][]
           ).map(([chave, rotulo]) => (

@@ -23,6 +23,8 @@ import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNature
  * Nenhuma ação usa service_role.
  */
 
+const ANEXOS_ATIVOS = false;
+
 export type Resultado = { sucesso: true; id?: string; aviso?: string } | { sucesso: false; erro: string };
 
 function traduzir(erro: { message?: string; code?: string } | null | undefined): string {
@@ -1106,6 +1108,8 @@ const esquemaDocumento = z.object({
 /** Registra um anexo já enviado ao bucket `emendas-documentos` pelo
  * navegador (a policy de storage confere a permissão no envio). */
 export async function registrarDocumento(dados: z.input<typeof esquemaDocumento>): Promise<Resultado> {
+  // Anexos desativados por ora: documentos ficam no Drive (ver actions-drive.ts), nada de arquivo no banco.
+  if (!ANEXOS_ATIVOS) return { sucesso: false, erro: "O envio de anexos está desativado. Ligue o documento do Drive na aba Documentação." };
   const a = esquemaDocumento.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!a.data.caminho.startsWith(`${a.data.emendaId}/`)) return { sucesso: false, erro: "Caminho de arquivo inválido." };
