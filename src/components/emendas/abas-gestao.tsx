@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ChevronDown, CircleDashed, Minus } from "lucide-react";
 
+import { removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
 import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, type Resultado } from "@/lib/emendas/actions";
 import { motivoBloqueioConclusao, type FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
@@ -11,7 +12,7 @@ import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import { JanelaFicha } from "@/components/modulo/janela-ficha";
-import { montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
+import { ROTULO_DRIVE, TIPOS_DRIVE, montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
 import type { SituacaoFase } from "@/types/emendas";
 
 const CAMPO =
@@ -281,11 +282,17 @@ export function AbaDocumentacao({
   docsDrive,
   contexto,
   tipoRotulo,
+  emendaId,
+  gestor,
+  executar,
 }: {
   exigidos: DocumentoExigido[];
   docsDrive: DocumentoDrive[];
   contexto: ContextoFicha;
   tipoRotulo: string;
+  emendaId: string;
+  gestor: boolean;
+  executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
 }) {
   if (exigidos.length === 0) {
     return (
@@ -323,6 +330,17 @@ export function AbaDocumentacao({
                       <a href={urlOriginal(d.drive_file_id)} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#5B3FA8] hover:underline">
                         Ver original
                       </a>
+                      {gestor && (
+                        <button
+                          type="button"
+                          className="text-xs text-slate-500 hover:text-red-700 hover:underline"
+                          onClick={() => {
+                            if (window.confirm("Remover o vínculo com este documento? O arquivo continua no Drive.")) void executar(() => removerDocumentoDrive(d.id, emendaId));
+                          }}
+                        >
+                          Remover
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -331,7 +349,63 @@ export function AbaDocumentacao({
           );
         })}
       </ul>
+      {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={exigidos.map((e) => e.tipo)} executar={executar} />}
     </div>
+  );
+}
+
+/** Cola o link do arquivo no Drive; só o ID é guardado (o arquivo nunca vai para o banco). */
+function CadastroDocumentoDrive({
+  emendaId,
+  tipos,
+  executar,
+}: {
+  emendaId: string;
+  tipos: readonly (typeof TIPOS_DRIVE)[number][];
+  executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
+}) {
+  const [tipo, setTipo] = React.useState<(typeof TIPOS_DRIVE)[number]>(tipos[0] ?? "termo");
+  const [link, setLink] = React.useState("");
+  const [titulo, setTitulo] = React.useState("");
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [pendente, iniciar] = React.useTransition();
+
+  function cadastrar(ev: React.FormEvent) {
+    ev.preventDefault();
+    setErro(null);
+    iniciar(async () => {
+      const r = await executar(() => vincularDocumentoDrive({ emendaId, tipo, link, titulo }));
+      if (r.sucesso) {
+        setLink("");
+        setTitulo("");
+      } else setErro(r.erro);
+    });
+  }
+
+  return (
+    <form onSubmit={cadastrar} className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 p-3">
+      <p className="text-xs font-medium text-slate-600">Ligar documento do Drive</p>
+      <div className="flex flex-wrap gap-2">
+        <select value={tipo} onChange={(e) => setTipo(e.target.value as (typeof TIPOS_DRIVE)[number])} className={cn(CAMPO, "w-auto")} aria-label="Tipo de documento">
+          {TIPOS_DRIVE.map((t) => (
+            <option key={t} value={t}>
+              {ROTULO_DRIVE[t]}
+            </option>
+          ))}
+        </select>
+        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole o link do arquivo no Drive" className={cn(CAMPO, "min-w-[16rem] flex-1")} aria-label="Link do arquivo no Drive" />
+        <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Nome (opcional)" className={cn(CAMPO, "w-48")} aria-label="Nome do documento" />
+        <button type="submit" disabled={pendente || !link.trim()} className={BOTAO_PRIMARIO}>
+          {pendente ? "Ligando…" : "Ligar"}
+        </button>
+      </div>
+      {erro && (
+        <p role="alert" className="text-xs text-red-700">
+          {erro}
+        </p>
+      )}
+      <p className="text-xs text-slate-500">Só o endereço do arquivo é guardado. A ficha (o olho) é montada com os dados desta emenda; só termo, plano, extrato, anuência e relatório vão ao portal.</p>
+    </form>
   );
 }
 

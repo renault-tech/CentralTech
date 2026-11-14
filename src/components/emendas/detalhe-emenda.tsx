@@ -299,6 +299,9 @@ export function DetalheEmendaCliente({
             <AbaDocumentacao
               exigidos={documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: detalhe.execucao?.anuencia_sus ?? null })}
               docsDrive={detalhe.docsDrive}
+              emendaId={emenda.id}
+              gestor={gestor}
+              executar={executar}
               contexto={{
                 numero: emenda.numero,
                 valor: emenda.valor,

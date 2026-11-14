@@ -39,6 +39,18 @@ export function urlOriginal(driveFileId: string): string {
   return `https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/view`;
 }
 
+/**
+ * Aceita o link copiado do Drive (`/file/d/ID/view`, `open?id=ID`, `uc?id=ID`) ou o próprio ID e devolve só o ID.
+ * Links de PASTA (`/folders/…`) são recusados: o cadastro liga um arquivo, nunca a pasta inteira.
+ */
+export function extrairIdDrive(texto: string): string | null {
+  const t = texto.trim();
+  if (!t || /\/folders\//.test(t)) return null;
+  const m = /\/(?:file|document|spreadsheets|presentation)\/d\/([A-Za-z0-9_-]+)/.exec(t) ?? /[?&]id=([A-Za-z0-9_-]+)/.exec(t);
+  const id = m ? m[1] : /^[A-Za-z0-9_-]+$/.test(t) ? t : null;
+  return id && idDriveValido(id) ? id : null;
+}
+
 /** Só caracteres que o Drive usa em IDs; evita montar link com lixo. */
 export function idDriveValido(id: string): boolean {
   return /^[A-Za-z0-9_-]{20,80}$/.test(id);

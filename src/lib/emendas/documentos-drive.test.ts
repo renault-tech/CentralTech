@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TIPOS_DRIVE, TIPOS_DRIVE_PUBLICOS, documentosExigidos, idDriveValido, montarFicha, numeroDoOficio, urlOriginal, type ContextoFicha } from "./documentos-drive";
+import { TIPOS_DRIVE, TIPOS_DRIVE_PUBLICOS, documentosExigidos, extrairIdDrive, idDriveValido, montarFicha, numeroDoOficio, urlOriginal, type ContextoFicha } from "./documentos-drive";
 
 const ctx: ContextoFicha = {
   numero: 82,
@@ -82,5 +82,20 @@ describe("documentos do Drive", () => {
   it("ficha do plano mostra 'Nenhuma informada' sem outras fontes", () => {
     const f = montarFicha({ tipo: "plano_trabalho", titulo: "x" }, ctx);
     expect(f.campos.find((c) => c.rotulo === "Outras fontes de recurso")?.valor).toBe("Nenhuma informada");
+  });
+});
+
+describe("extrairIdDrive", () => {
+  const id = "1B32gyvWl5W2EUTxNuDpIiimmLwups7th";
+  it("lê link de arquivo, open?id e o próprio ID", () => {
+    expect(extrairIdDrive(`https://drive.google.com/file/d/${id}/view?usp=sharing`)).toBe(id);
+    expect(extrairIdDrive(`https://drive.google.com/open?id=${id}`)).toBe(id);
+    expect(extrairIdDrive(`  ${id} `)).toBe(id);
+  });
+  it("recusa pasta, texto solto e ID curto", () => {
+    expect(extrairIdDrive("https://drive.google.com/drive/folders/1qU5X18EmHo4eIiLyApF2Fnk5wjMHQHO-")).toBeNull();
+    expect(extrairIdDrive("meu documento")).toBeNull();
+    expect(extrairIdDrive("abc123")).toBeNull();
+    expect(extrairIdDrive("")).toBeNull();
   });
 });
