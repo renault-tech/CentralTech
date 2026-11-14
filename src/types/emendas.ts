@@ -375,6 +375,22 @@ export type Proposta = {
   motivo: string | null;
 };
 
+/** Link para um documento no Drive (`emendas.documentos_drive`); nenhum arquivo fica no banco. */
+export type DocumentoDriveRow = {
+  id: string;
+  emenda_id: string;
+  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao";
+  titulo: string;
+  drive_file_id: string;
+  drive_versao: string | null;
+  publico: boolean;
+  ficha: Record<string, unknown>;
+  conferido_em: string | null;
+  conferido_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -415,6 +431,7 @@ export type DatabaseEmendas = {
       importacoes: Tabela<Importacao, "formato" | "sha256", "id" | "criado_em">;
       propostas: Tabela<Proposta, "emenda_id" | "alvo" | "valor_proposto", "id" | "criado_em">;
       pendencias_justificadas: Tabela<PendenciaJustificada, "emenda_id" | "regra" | "assinatura" | "justificativa", never>;
+      documentos_drive: Tabela<DocumentoDriveRow, "emenda_id" | "tipo" | "titulo" | "drive_file_id", "id" | "criado_em" | "atualizado_em">;
     };
     Views: {
       v_emendas: { Row: EmendaResumo; Relationships: [] };

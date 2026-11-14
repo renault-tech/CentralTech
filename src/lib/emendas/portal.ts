@@ -23,8 +23,9 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 export { TAG_PORTAL };
 
 export { TIPOS_DOCUMENTO_PUBLICO, ROTULO_DOC } from "@/lib/emendas/portal-tipos";
-export type { DocumentoPortal, MovimentoPortal, LinhaPortal } from "@/lib/emendas/portal-tipos";
-import { ROTULO_DOC, TIPOS_DOCUMENTO_PUBLICO, type DocumentoPortal, type LinhaPortal, type MovimentoPortal } from "@/lib/emendas/portal-tipos";
+export type { DocumentoPortal, DocDrivePortal, MovimentoPortal, LinhaPortal } from "@/lib/emendas/portal-tipos";
+import { ROTULO_DOC, TIPOS_DOCUMENTO_PUBLICO, type DocDrivePortal, type DocumentoPortal, type LinhaPortal, type MovimentoPortal } from "@/lib/emendas/portal-tipos";
+import { TIPOS_DRIVE_PUBLICOS, idDriveValido } from "@/lib/emendas/documentos-drive";
 
 async function carregar(ano: number): Promise<LinhaPortal[]> {
   const db = criarClienteAdminBruto().schema("emendas");
@@ -49,19 +50,27 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
   const impedimentos = new Map<string, string>();
   const movimentos = new Map<string, MovimentoPortal[]>();
   const documentos = new Map<string, DocumentoPortal[]>();
+  const docsDrive = new Map<string, DocDrivePortal[]>();
   for (let i = 0; i < ids.length; i += 150) {
     const lote = ids.slice(i, i + 150);
-    const [x, imp, mov, doc] = await Promise.all([
+    const [x, imp, mov, doc, drv] = await Promise.all([
       db
         .from("execucao")
         .select(
-          "id,numero_termo,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,identificador_contabil,fonte_recurso"
+          "id,numero_termo,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,anuencia_sus_data,identificador_contabil,fonte_recurso"
         )
         .in("id", lote),
       db.from("impedimentos").select("emenda_id,tipo,resolvido_em").in("emenda_id", lote).is("resolvido_em", null),
       db.from("movimentos_financeiros").select("emenda_id,tipo,data,valor,numero").in("emenda_id", lote).in("tipo", ["empenho", "liquidacao", "pagamento", "anulacao"]).order("data"),
       db.from("documentos").select("id,emenda_id,tipo,competencia,nome_arquivo").in("emenda_id", lote).in("tipo", [...TIPOS_DOCUMENTO_PUBLICO]).order("criado_em"),
+      // Lista fechada de tipos e só o que a gestão marcou como público; certidão, RG etc. nunca estão nesta tabela como público.
+      db.from("documentos_drive").select("id,emenda_id,tipo,titulo,drive_file_id,drive_versao").in("emenda_id", lote).eq("publico", true).in("tipo", [...TIPOS_DRIVE_PUBLICOS]).order("titulo"),
     ]);
+    for (const r of drv.data ?? []) {
+      if (!idDriveValido(r.drive_file_id as string)) continue;
+      const k = r.emenda_id as string;
+      docsDrive.set(k, [...(docsDrive.get(k) ?? []), { id: r.id as string, tipo: r.tipo as DocDrivePortal["tipo"], titulo: r.titulo as string, fileId: r.drive_file_id as string, versao: (r.drive_versao as string | null) ?? null }]);
+    }
     for (const r of x.data ?? []) execucao.set(r.id as string, r as Record<string, string | number | null>);
     for (const r of imp.data ?? []) impedimentos.set(r.emenda_id as string, String(r.tipo));
     for (const r of mov.data ?? []) {
@@ -132,6 +141,8 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       planoMetas: s(x?.plano_metas),
       planoOutrasFontes: x?.plano_outras_fontes != null ? Number(x.plano_outras_fontes) : null,
       documentos: documentos.get(e.id as string) ?? [],
+      docsDrive: docsDrive.get(e.id as string) ?? [],
+      anuenciaSusData: s(x?.anuencia_sus_data),
       impedimento: imp ? NOME_IMPEDIMENTO[imp] ?? "Impedimento" : null,
     };
   });

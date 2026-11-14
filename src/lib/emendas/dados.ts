@@ -5,6 +5,7 @@ import { cache } from "react";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
+import type { DocumentoDrive } from "@/lib/emendas/documentos-drive";
 import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emendas/regras";
 import type {
   Andamento,
@@ -266,6 +267,8 @@ export type DetalheEmenda = {
   fasesManuais: FaseEmenda[];
   checklist: ChecklistEmenda[];
   justificadas: PendenciaJustificada[];
+  /** Links para os documentos no Drive (nenhum arquivo fica no banco). */
+  docsDrive: DocumentoDrive[];
 };
 
 export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | null> {
@@ -274,7 +277,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
   if (error) falhou("detalhe", error);
   if (!emenda) return null;
 
-  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas] = await Promise.all([
+  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas, docsDrive] = await Promise.all([
     emendas.from("andamentos").select("*").eq("emenda_id", id).order("data", { ascending: false }).order("criado_em", { ascending: false }),
     emendas.from("movimentos_financeiros").select("*").eq("emenda_id", id).order("criado_em"),
     emendas.from("impedimentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
@@ -284,6 +287,12 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     emendas.from("emenda_fases").select("*").eq("emenda_id", id),
     emendas.from("emenda_checklist").select("*").eq("emenda_id", id),
     emendas.from("pendencias_justificadas").select("*").eq("emenda_id", id),
+    emendas
+      .from("documentos_drive")
+      .select("id,tipo,titulo,drive_file_id,drive_versao,publico,conferido_em")
+      .eq("emenda_id", id)
+      .order("tipo")
+      .order("titulo"),
   ]);
   for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas]) {
     if (r.error) falhou("detalhe-filhos", r.error);
@@ -307,6 +316,8 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     fasesManuais: fasesManuais.data ?? [],
     checklist: checklist.data ?? [],
     justificadas: justificadas.data ?? [],
+    // Os links do Drive são acessório: se a leitura falhar, a emenda abre do mesmo jeito, sem eles.
+    docsDrive: ((docsDrive.error ? [] : docsDrive.data) ?? []) as DocumentoDrive[],
   };
 }
 

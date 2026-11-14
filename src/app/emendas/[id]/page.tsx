@@ -15,7 +15,6 @@ import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import {
   listarBeneficiarios,
   listarFasesCatalogo,
-  listarItensChecklist,
   listarPareceres,
   listarUnidades,
   listarVereadores,
@@ -42,13 +41,12 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   // Tudo o que não depende do resultado do detalhe anda na mesma rodada
   // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, itensChecklist, auditoria, vereadores, exclusoes] = await Promise.all([
+  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, auditoria, vereadores, exclusoes] = await Promise.all([
     obterDetalheEmenda(id),
     obterCatalogoEtapas(),
     listarBeneficiarios(),
     listarUnidades(),
     listarFasesCatalogo(),
-    listarItensChecklist(),
     gestor
       ? criarClienteEmendas().then((c) =>
           // Tudo o que mexeu nesta emenda: o cadastro (registro_id = emenda) e os registros filhos
@@ -90,10 +88,6 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
     afastados: new Map(vereadores.filter((v) => !v.ativo).map((v) => [v.id, { desde: v.fim_exercicio, motivo: v.motivo_saida }])),
     hoje: new Date().toISOString().slice(0, 10),
   }).get(emenda.id)!;
-  // Itens condicionais: Saúde (CNES, CMS…) só quando a emenda é de Saúde; consórcio só na natureza 93.
-  const itensDoTipo = itensChecklist.filter(
-    (i) => i.tipo === tipo && i.ativo && (i.condicao !== "saude" || emenda.saude) && (i.condicao !== "consorcio" || /\.93\./.test(emenda.natureza_despesa ?? ""))
-  );
   const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const vinculo = <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />;
   const registros = auditoria.data ?? [];
@@ -166,7 +160,6 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             nomesUsuarios={nomesUsuarios}
             fases={calculo.fases}
             pendencias={calculo.pendencias}
-            itensChecklist={itensDoTipo}
             corTipo={TIPOS_EXECUCAO[tipo].cor}
             atalhos={
               processoCompras

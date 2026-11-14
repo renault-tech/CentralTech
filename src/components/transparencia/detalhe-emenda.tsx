@@ -2,6 +2,8 @@
 
 import { Check, FileText, Minus } from "lucide-react";
 
+import { JanelaFicha } from "@/components/modulo/janela-ficha";
+import { ROTULO_DRIVE, montarFicha, urlOriginal } from "@/lib/emendas/documentos-drive";
 import { TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { partes, situacaoPublica } from "@/lib/emendas/portal-agregados";
 import type { LinhaPortal } from "@/lib/emendas/portal-tipos";
@@ -154,6 +156,26 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
           </ol>
         )}
       </Secao>
+
+      {l.docsDrive.length > 0 && (
+        <Secao titulo="Documentos de publicação">
+          <ul className="flex flex-col gap-2">
+            {l.docsDrive.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--p-linha)] p-3">
+                <FileText className="h-5 w-5 shrink-0 text-[var(--p-acento-texto)]" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold">{ROTULO_DRIVE[d.tipo]}</p>
+                  <p className="text-[12px] text-[var(--p-tinta-3)]">{montarFicha(d, l).titulo}</p>
+                </div>
+                <JanelaFicha rotuloTipo={ROTULO_DRIVE[d.tipo]} ficha={montarFicha(d, l)} driveFileId={d.fileId} versao={d.versao} rotuloBotao="Ver ficha" classeBotao="portal-botao-sec !min-h-9 !px-3 !text-[13px]" />
+                <a href={urlOriginal(d.fileId)} target="_blank" rel="noopener noreferrer" className="portal-botao-sec !min-h-9 !px-3 !text-[13px]">
+                  Ver original
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Secao>
+      )}
 
       <Secao titulo="Documentos">
         <ul className="flex flex-col gap-2">

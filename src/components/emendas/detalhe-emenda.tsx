@@ -26,13 +26,14 @@ import {
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
-import { motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
+import { documentosExigidos } from "@/lib/emendas/documentos-drive";
+import { TIPOS_EXECUCAO, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
-import type { Beneficiario, EtapaEmenda, ItemChecklist, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
+import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -154,14 +155,12 @@ export function DetalheEmendaCliente({
   nomesUsuarios,
   fases,
   pendencias,
-  itensChecklist,
   corTipo,
   atalhos,
   abaInicial,
 }: {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
-  itensChecklist: ItemChecklist[];
   corTipo: string;
   atalhos?: AtalhosCompras;
   abaInicial?: string;
@@ -297,7 +296,33 @@ export function DetalheEmendaCliente({
           {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} gestor={gestor} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
           {aba === "documentacao" && (
-            <AbaDocumentacao emendaId={emenda.id} itens={itensChecklist} registros={detalhe.checklist} podeEditar={podeEditar} executar={executar} />
+            <AbaDocumentacao
+              exigidos={documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: detalhe.execucao?.anuencia_sus ?? null })}
+              docsDrive={detalhe.docsDrive}
+              emendaId={emenda.id}
+              gestor={gestor}
+              executar={executar}
+              contexto={{
+                numero: emenda.numero,
+                valor: emenda.valor,
+                vereador: emenda.vereador_nome,
+                beneficiario: emenda.beneficiario_nome,
+                objeto: emenda.objeto,
+                termo: detalhe.execucao?.numero_termo ?? null,
+                vigenciaInicio: detalhe.execucao?.vigencia_inicio ?? null,
+                vigenciaFim: detalhe.execucao?.vigencia_fim ?? null,
+                extratoPublicadoEm: detalhe.execucao?.data_publicacao_extrato ?? null,
+                gestorPrefeitura: detalhe.execucao?.gestor_pmc ?? null,
+                conta: detalhe.execucao?.conta_bancaria ?? null,
+                anuenciaSus: detalhe.execucao?.anuencia_sus ?? null,
+                anuenciaSusData: detalhe.execucao?.anuencia_sus_data ?? null,
+                planoMetas: detalhe.execucao?.plano_metas ?? null,
+                inicioPrevisto: detalhe.execucao?.inicio_previsto ?? null,
+                terminoPrevisto: detalhe.execucao?.termino_previsto ?? null,
+                planoOutrasFontes: detalhe.execucao?.plano_outras_fontes ?? null,
+              }}
+              tipoRotulo={TIPOS_EXECUCAO[tipoDaEmenda(emenda)].nome}
+            />
           )}
 
           {aba === "pendencias" && (

@@ -680,7 +680,7 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
 /** Diferença de até R$ 1,00 entre o valor da emenda e o que consta no IPM pode ser arredondada: o lançamento real NÃO muda
  * (empenhado e pago continuam os do IPM, e é o que o portal público mostra); grava-se um registro de arredondamento,
  * com o valor real na observação, que só faz a fase contar como completa. Pode ser desfeito a qualquer momento. */
-export const LIMITE_ARREDONDAMENTO = 1;
+const LIMITE_ARREDONDAMENTO = 1;
 
 export async function arredondarCentavos(emendaId: string): Promise<Resultado> {
   if (!z.uuid().safeParse(emendaId).success) return { sucesso: false, erro: "Emenda inválida." };

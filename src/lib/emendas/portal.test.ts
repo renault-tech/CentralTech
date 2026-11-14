@@ -11,7 +11,7 @@ const linha = {
   movimentos: [{ tipo: "empenho" as const, data: "2026-02-01", valor: 1234.5, numero: "55" }],
   termo: "9/2026", processo: "2026/0062", contrato: null, inicioPrevisto: null, terminoPrevisto: null, vigenciaInicio: null, vigenciaFim: null, extratoPublicadoEm: null,
   conta: "CAIXA 0108 CONTA 1234-5", gestorPrefeitura: "Fulano de Tal", gestorEntidade: null, anuenciaSus: null, identificadorContabil: null, fonteRecurso: null,
-  planoMetas: null, planoOutrasFontes: null, documentos: [{ id: "d1", tipo: "plano_trabalho" as const, rotulo: "Plano de trabalho", competencia: null, nome: "plano.pdf" }], impedimento: null,
+  planoMetas: null, planoOutrasFontes: null, documentos: [{ id: "d1", tipo: "plano_trabalho" as const, rotulo: "Plano de trabalho", competencia: null, nome: "plano.pdf" }], docsDrive: [], impedimento: null,
 };
 
 describe("portal", () => {
