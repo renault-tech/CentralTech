@@ -136,7 +136,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       gestorPrefeitura: s(x?.gestor_pmc),
       gestorEntidade: s(x?.gestor_osc),
       anuenciaSus: (x?.anuencia_sus as LinhaPortal["anuenciaSus"]) ?? null,
-      identificadorContabil: s(x?.identificador_contabil) ?? identificadorDaFicha(e.ficha as string | null),
+      identificadorContabil: identificadorDaFicha(e.ficha as string | null, e.natureza_despesa as string | null) ?? s(x?.identificador_contabil),
       fonteRecurso: s(x?.fonte_recurso),
       planoMetas: s(x?.plano_metas),
       planoOutrasFontes: x?.plano_outras_fontes != null ? Number(x.plano_outras_fontes) : null,

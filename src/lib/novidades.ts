@@ -14,6 +14,11 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-16",
+    titulo: "Emendas: identificador contábil confirmado pela Contabilidade",
+    descricao: "O identificador contábil de cada emenda é a subação da dotação (ex.: 2.087.0201 - EP02) junto com o elemento de despesa (ex.: 43, da natureza 3.3.50.43). Só o código da subação se repete entre emendas; com o elemento, as 215 emendas de 2026 ficam únicas. O identificador é montado automaticamente a partir da dotação e da natureza (aparece assim na emenda, na conformidade, no portal e nas exportações), então não é preciso digitar nada e não há mais pendência por esse item.",
+  },
+  {
+    data: "2026-11-16",
     titulo: "Emendas: alerta de datas mais claro e sem a fase \"Enviada para pagamento\"",
     descricao: "O alerta de \"datas fora de ordem\" na linha do tempo agora mostra o motivo completo ao passar o mouse em qualquer etapa (não só no ícone). A regra também mudou: empenho antes da publicação do extrato deixou de ser apontado, porque é normal; passou a ser apontado o pagamento antes do extrato, que a Lei 13.019 (art. 38) não permite. A fase \"Enviada para pagamento\" saiu da linha do tempo (nenhuma emenda a usava como etapa); o campo \"Envio para pagamento\" também saiu da tela e da exportação (as datas já cadastradas continuam guardadas no banco).",
   },

@@ -97,11 +97,17 @@ export function planoEstaCompleto(i: EntradaConformidade): { ok: boolean; falta:
   return { ok: falta.length === 0, falta };
 }
 
-/** A dotação própria de cada emenda (campo "ficha", ex.: "2.087.0201 - EP02 - REPASSE …") já é o identificador contábil único
- * da emenda (ação + subação do vereador + sequência): não se pede de novo em outro campo. */
-export function identificadorDaFicha(ficha: string | null | undefined): string | null {
+/**
+ * Identificador contábil da emenda (confirmado pela Contabilidade): a subação da dotação (campo "ficha", ex.:
+ * "2.087.0201 - EP02 - REPASSE …") JUNTO com o elemento de despesa (último grupo da natureza, ex.: 3.3.50.43 → 43).
+ * Só o código da ficha se repete entre emendas (15 casos em 2026); com o elemento, cada emenda é única.
+ * Não se pede de novo em outro campo: o valor sai sempre destes dois dados.
+ */
+export function identificadorDaFicha(ficha: string | null | undefined, natureza?: string | null): string | null {
   const m = /^\s*(\d\.\d{3}\.\d{4})\s*-\s*(EP\d{2})\b/.exec(ficha ?? "");
-  return m ? `${m[1]} - ${m[2]}` : null;
+  if (!m) return null;
+  const elemento = /(\d{2})\s*$/.exec(natureza ?? "")?.[1];
+  return elemento ? `${m[1]} - ${m[2]} · elemento ${elemento}` : `${m[1]} - ${m[2]}`;
 }
 
 export function avaliarArt7(i: EntradaConformidade): ItemConformidade[] {

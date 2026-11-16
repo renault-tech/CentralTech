@@ -78,7 +78,7 @@ export function PainelTransparencia({
           ["Finalidade e metas", execucao?.plano_metas],
           ["Outras fontes de recurso", execucao?.plano_outras_fontes != null ? `R$ ${emReais(execucao.plano_outras_fontes)}` : null],
           ...(saude ? [["Anuência do SUS", execucao?.anuencia_sus ? NOME_SUS[execucao.anuencia_sus] : null]] : []),
-          ["Identificador contábil", execucao?.identificador_contabil || (identificadorDaDotacao ? `${identificadorDaDotacao} (da dotação da emenda)` : null)],
+          ["Identificador contábil", identificadorDaDotacao ? `${identificadorDaDotacao} (subação da dotação + elemento de despesa)` : execucao?.identificador_contabil || null],
           ["Fonte de recurso", execucao?.fonte_recurso],
         ].map(([k, v]) => (
           <div key={k as string}>

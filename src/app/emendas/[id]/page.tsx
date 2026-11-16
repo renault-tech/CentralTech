@@ -191,7 +191,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           <div id="bloco-parceria">
             <PainelParceria emendaId={emenda.id} modalidade={tipo === "direta" ? "direta" : "repasse"} execucao={execucao} podeEditar={podeEditar} />
           </div>
-          <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} identificadorDaDotacao={identificadorDaFicha(emenda.ficha)} />
+          <PainelTransparencia emendaId={emenda.id} execucao={execucao} itens={calculo.conformidade} saude={emenda.saude} podeEditar={podeEditar} identificadorDaDotacao={identificadorDaFicha(emenda.ficha, emenda.natureza_despesa)} />
           {tipo !== "direta" && vinculo}
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>
