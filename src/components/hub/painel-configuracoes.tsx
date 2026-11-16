@@ -5,7 +5,7 @@ import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
-import { definirAcesso, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso } from "@/lib/actions/configuracoes";
+import { definirAcesso, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso, removerUsuario } from "@/lib/actions/configuracoes";
 import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
@@ -135,7 +135,7 @@ export function PainelConfiguracoes({
       {/* Rolagem interna: a lista nunca empurra o resto da página — o
           cabeçalho da tabela fica fixo enquanto se rola. */}
       <div className="mt-1 max-h-[65vh] overflow-auto rounded-md border border-slate-100">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead className="sticky top-0 z-10 bg-white">
             <tr className="text-left text-[11px] text-slate-400">
               <th />
@@ -148,9 +148,9 @@ export function PainelConfiguracoes({
               <th colSpan={3} />
             </tr>
             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-              <th className="py-1.5 pr-3 font-medium">Usuário</th>
+              <th className="w-[30%] py-1.5 pr-2 font-medium">Usuário</th>
               {TODOS_MODULOS.map((m) => (
-                <th key={m.chave} className="px-2 py-1.5 text-center font-medium" title={m.nome}>
+                <th key={m.chave} className="px-0.5 py-1.5 text-center text-[10px] font-medium [overflow-wrap:anywhere]" title={m.nome}>
                   <span
                     className="inline-flex h-1.5 w-1.5 rounded-full align-middle"
                     style={{ backgroundColor: m.cor }}
@@ -159,9 +159,9 @@ export function PainelConfiguracoes({
                   {m.nomeCurto}
                 </th>
               ))}
-              <th className="px-2 py-1.5 text-center font-medium">Admin</th>
-              <th className="px-2 py-1.5 text-center font-medium">Ativo</th>
-              <th className="py-1.5 pl-2 font-medium" />
+              <th className="w-14 px-1 py-1.5 text-center font-medium">Admin</th>
+              <th className="w-16 px-1 py-1.5 text-center font-medium">Ativo</th>
+              <th className="w-[72px] py-1.5 pl-1 font-medium" />
             </tr>
           </thead>
           <tbody>
@@ -170,7 +170,7 @@ export function PainelConfiguracoes({
               return (
                 <React.Fragment key={u.id}>
                   <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-2 [overflow-wrap:anywhere]">
                       <p className="font-medium text-slate-800">{u.nome}</p>
                       <p className="text-xs text-slate-500">{u.email}</p>
                       {u.nuncaEntrou && <PrimeiroAcessoPendente usuarioId={u.id} linkInicial={u.linkPrimeiroAcesso} />}
@@ -181,7 +181,7 @@ export function PainelConfiguracoes({
                       // a tabela mostra isso (anel tracejado = acesso implícito de administrador).
                       const implicito = !liberado && u.adminHub;
                       return (
-                        <td key={m.chave} className="px-2 py-2 text-center">
+                        <td key={m.chave} className="px-0.5 py-2 text-center">
                           {implicito ? (
                             <span
                               className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-dashed"
@@ -211,7 +211,7 @@ export function PainelConfiguracoes({
                         </td>
                       );
                     })}
-                    <td className="px-2 py-2 text-center">
+                    <td className="px-1 py-2 text-center">
                       {u.adminHub ? (
                         <span
                           className="inline-flex items-center gap-1 rounded-full bg-[rgba(233,166,59,0.14)] px-2 py-0.5 text-[11px] font-medium text-[#9C6A17]"
@@ -226,7 +226,7 @@ export function PainelConfiguracoes({
                         </span>
                       )}
                     </td>
-                    <td className="px-2 py-2 text-center">
+                    <td className="px-1 py-2 text-center">
                       <span
                         className={
                           u.ativo
@@ -237,7 +237,7 @@ export function PainelConfiguracoes({
                         {u.ativo ? "Ativo" : "Inativo"}
                       </span>
                     </td>
-                    <td className="py-2 pl-2 text-right">
+                    <td className="py-2 pl-1 text-right">
                       <Button size="sm" variant="outline" onClick={() => alternarEdicao(u.id)}>
                         {aberto ? "Fechar" : "Editar"}
                       </Button>
@@ -327,6 +327,23 @@ function FormularioAcesso({
     }
     if (Object.keys(resultado.resultados).length > 0) {
       setResultados(resultado.resultados);
+      return;
+    }
+    onFechar();
+  }
+
+  async function remover() {
+    if (!usuario) return;
+    const ok = window.confirm(
+      `Remover ${usuario.nome}?\n\nTira o acesso a todos os módulos (inclusive Numera) e bloqueia o login. O histórico (processos, logs, documentos) é mantido com o nome. Dá para reativar depois, marcando Ativo e os módulos.`
+    );
+    if (!ok) return;
+    setPendente(true);
+    setErro(null);
+    const r = await removerUsuario({ usuarioId: usuario.id, email: usuario.email });
+    setPendente(false);
+    if (!r.sucesso) {
+      setErro(r.erro);
       return;
     }
     onFechar();
@@ -461,6 +478,17 @@ function FormularioAcesso({
         <Button size="sm" variant="ghost" onClick={onFechar}>
           Cancelar
         </Button>
+        {usuario && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-auto border-red-200 text-red-700 hover:bg-red-50"
+            disabled={pendente}
+            onClick={remover}
+          >
+            Remover usuário
+          </Button>
+        )}
       </div>
     </div>
   );

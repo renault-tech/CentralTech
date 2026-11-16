@@ -6,6 +6,7 @@ import { z } from "zod";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
+import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
 import {
   encontrarOuCriarConta,
@@ -112,6 +113,11 @@ export async function definirAcesso(dados: {
       sucesso: false,
       erro: "Não foi possível criar ou localizar a conta compartilhada (Compras/Requerimentos/Hub).",
     };
+  }
+
+  // Conta removida antes (login bloqueado): reativar aqui devolve o login.
+  if (ativo && usuarioId) {
+    await adminCompartilhado.auth.admin.updateUserById(usuarioId, { ban_duration: "none" });
   }
 
   const linkCompartilhado = conta.criadaAgora ? await linkPrimeiroAcessoDaConta(conta.id) : undefined;
@@ -231,4 +237,61 @@ export async function enviarLinkPrimeiroAcessoPorEmail(
     return { sucesso: false, erro: "Não foi possível enviar o e-mail agora. Copie o link e envie à pessoa." };
   }
   return { sucesso: true, link, email: conta.user.email };
+}
+
+/**
+ * "Remover usuário": tira o acesso a TODOS os módulos e bloqueia o login, mantendo o histórico
+ * (processos, logs, documentos) — apagar a conta quebraria a auditoria. Reversível: marcar Ativo e
+ * os módulos de novo em `definirAcesso` desbloqueia o login.
+ *  1) `hub.definir_acesso` (módulos = [], inativo): zera os cartões e desativa Compras/Requerimentos;
+ *  2) Numera (projeto separado): `approved = false` na conta de mesmo e-mail;
+ *  3) conta compartilhada: login bloqueado (ban) — cobre Emendas, Frotas, Imóveis e o próprio Hub.
+ */
+export async function removerUsuario(dados: {
+  usuarioId: string;
+  email: string;
+}): Promise<{ sucesso: true; avisos: string[] } | { sucesso: false; erro: string }> {
+  const analise = z.object({ usuarioId: z.uuid(), email: z.email() }).safeParse(dados);
+  if (!analise.success) return { sucesso: false, erro: "Dados inválidos" };
+
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão para remover usuários." };
+  if (atual.id === analise.data.usuarioId) {
+    return { sucesso: false, erro: "Você não pode remover o seu próprio acesso." };
+  }
+
+  const { usuarioId, email } = analise.data;
+  const avisos: string[] = [];
+
+  const { data: alvo } = await criarClienteAdmin().from("usuarios").select("nome").eq("id", usuarioId).maybeSingle();
+
+  const hub = await criarClienteServidor();
+  const { error } = await hub.rpc("definir_acesso", {
+    p_email: email,
+    p_nome: alvo?.nome ?? email,
+    p_admin_hub: false,
+    p_modulos: [],
+    p_ativo: false,
+  });
+  if (error) {
+    console.error("[removerUsuario] hub.definir_acesso:", error);
+    return { sucesso: false, erro: traduzirErro(error.message) };
+  }
+
+  try {
+    const numera = criarClienteNumeraAdmin();
+    const { error: erroNumera } = await numera.from("users").update({ approved: false }).ilike("email", email);
+    if (erroNumera) avisos.push("Numera: não foi possível desativar a conta.");
+  } catch {
+    avisos.push("Numera: chave de administrador não configurada; a conta de lá continua ativa.");
+  }
+
+  const { error: erroBan } = await criarClienteAdminBruto().auth.admin.updateUserById(usuarioId, {
+    ban_duration: "876000h",
+  });
+  if (erroBan) avisos.push("Login da conta compartilhada não foi bloqueado.");
+
+  revalidatePath("/configuracoes");
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true, avisos };
 }
