@@ -57,7 +57,6 @@ export const ASSUNTO_DA_REGRA: Record<string, { area: (typeof AREAS_PENDENCIA)[n
   tipo_incoerente: { area: "Cadastro", nome: "Tipo incoerente com a natureza" },
   objeto_generico: { area: "Cadastro", nome: "Objeto pouco descritivo" },
   sem_beneficiario: { area: "Cadastro", nome: "Sem beneficiário" },
-  vereador_afastado: { area: "Execução", nome: "Autor fora do exercício" },
 };
 
 export type EntradaPendencias = {
@@ -70,7 +69,6 @@ export type EntradaPendencias = {
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   /** Autor da emenda fora do exercício (cassado, licenciado, substituído): a emenda segue com ele. */
-  vereadorAfastado?: { desde: string | null; motivo: string | null } | null;
   justificadas?: PendenciaJustificada[];
   /** Movimentos financeiros da emenda (para achar lançamentos sem data ou sem número). */
   movimentos?: { emenda_id: string; tipo: string; numero?: string | null; data: string | null }[];
@@ -91,18 +89,6 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     out.push({ ...p, assinatura: p.assinatura ?? p.detalhe });
 
   if (emenda.situacao === "cancelada") return [];
-
-  if (e.vereadorAfastado && emenda.etapa !== "concluida") {
-    const v = e.vereadorAfastado;
-    add({
-      regra: "vereador_afastado",
-      gravidade: "media",
-      titulo: "Autor da emenda fora do exercício",
-      detalhe: `${emenda.vereador_nome} não está mais no exercício${v.desde ? ` (desde ${dataBr(v.desde)})` : ""}${v.motivo ? `: ${v.motivo}` : ""} A emenda continua registrada no nome dele e segue em execução; acompanhar até a conclusão.`,
-      assinatura: `vereador_afastado|${emenda.vereador_id}|${v.desde ?? ""}`,
-      aba: "fases",
-    });
-  }
 
   if (emenda.situacao === "impedida" || emenda.impedimentos_abertos > 0) {
     add({

@@ -52,7 +52,6 @@ export async function calcularEmendasDoExercicio(
     catalogo,
     documentos,
     partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
-    afastados: new Map(vereadores.filter((v) => !v.ativo).map((v) => [v.id, { desde: v.fim_exercicio, motivo: v.motivo_saida }])),
     hoje: new Date().toISOString().slice(0, 10),
   });
 }
@@ -86,7 +85,6 @@ export async function calcularFasesDaEmenda(emendaId: string) {
       ...detalhe.docsDrive.map((d) => ({ emenda_id: emenda.id, tipo: d.tipo as string, competencia: null as number | null })),
     ],
     partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
-    afastados: new Map(vereadores.filter((v) => !v.ativo).map((v) => [v.id, { desde: v.fim_exercicio, motivo: v.motivo_saida }])),
     hoje: new Date().toISOString().slice(0, 10),
   });
   return mapa.get(emenda.id)?.fases ?? null;
