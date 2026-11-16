@@ -77,6 +77,7 @@ describe("relatório de gestão", () => {
 describe("identificador contábil pela dotação", () => {
   it("usa ação + subação do vereador da ficha da emenda", () => {
     expect(identificadorDaFicha("2.087.0201 - EP02 - REPASSE HOSPITAL DE CATAGUASES - CUSTEIO")).toBe("2.087.0201 - EP02");
+    expect(identificadorDaFicha("2.087.0201 - EP02 - REPASSE", "3.3.50.43")).toBe("2.087.0201 - EP02 · elemento 43");
     expect(identificadorDaFicha("sem padrão")).toBeNull();
     expect(identificadorDaFicha(null)).toBeNull();
   });
