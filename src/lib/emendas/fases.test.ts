@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { datasForaDeOrdem, faseAtual, motivoBloqueioConclusao, progresso, situacaoFases, tipoDaEmenda, type EntradaFases } from "@/lib/emendas/fases";
+import { type FaseCalculada, datasForaDeOrdem, faseAtual, motivoBloqueioConclusao, progresso, situacaoFases, tipoDaEmenda, type EntradaFases } from "@/lib/emendas/fases";
 import type { FaseEmenda, FaseFluxo } from "@/types/emendas";
 
 const f = (chave: string, etapa: string, ordem: number, derivacao: FaseFluxo["derivacao"] = null): FaseFluxo => ({
@@ -88,6 +88,21 @@ describe("datasForaDeOrdem", () => {
     const fora = datasForaDeOrdem(r);
     expect(fora).toHaveLength(1);
     expect(fora[0][1].fase.chave).toBe("empenho");
+  });
+});
+
+describe("datasForaDeOrdem e o extrato", () => {
+  const fase = (chave: string, derivacao: string | null, data: string) =>
+    ({ fase: { chave, nome: chave, derivacao }, situacao: "concluida", data, origem: "dado" }) as unknown as FaseCalculada;
+  it("empenho antes do extrato é normal", () => {
+    const f = [fase("termo", "termo", "2026-03-20"), fase("extrato", "extrato", "2026-03-29"), fase("empenho", "empenho", "2026-03-20")];
+    expect(datasForaDeOrdem(f)).toHaveLength(0);
+  });
+  it("repasse antes do extrato é apontado, uma vez só", () => {
+    const f = [fase("extrato", "extrato", "2026-03-29"), fase("empenho", "empenho", "2026-03-20"), fase("repasse", "pagamento", "2026-03-26")];
+    const fora = datasForaDeOrdem(f);
+    expect(fora).toHaveLength(1);
+    expect(fora[0][1].fase.chave).toBe("repasse");
   });
 });
 

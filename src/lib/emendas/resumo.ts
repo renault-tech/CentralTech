@@ -91,7 +91,9 @@ function anexarAlertas(fases: FaseCalculada[], pend: Pendencia[]) {
     const alvo = regra === "data_fora_de_ordem" ? { chave } : FASE_DA_REGRA[regra];
     if (!alvo) continue;
     const f = fases.find((x) => (alvo.chave ? x.fase.chave === alvo.chave : x.fase.derivacao === alvo.derivacao));
-    if (f && !f.alertas.includes(p.titulo)) f.alertas.push(p.titulo);
+    // O motivo completo vai junto: quem passa o mouse na linha do tempo precisa ver o porquê, não só o título.
+    const texto = p.detalhe ? `${p.titulo}: ${p.detalhe}` : p.titulo;
+    if (f && !f.alertas.includes(texto)) f.alertas.push(texto);
   }
 }
 

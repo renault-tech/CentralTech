@@ -232,7 +232,7 @@ export function LinhaEtapas({
         const proximo = itens[i + 1];
         const linha = it.estado === "completo" ? "#059669" : cor(it.estado) && proximo && cor(proximo.estado) ? "#F59E0B" : "#E2E8F0";
         return (
-          <li key={it.k} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
+          <li key={it.k} title={tooltip} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
             <div className="flex items-center">
               <span title={tooltip} aria-label={tooltip.replace(/\n/g, " — ")} role="img" className="flex h-7 w-7 flex-none cursor-default items-center justify-center">
                 {it.estado === "pendente" ? (
