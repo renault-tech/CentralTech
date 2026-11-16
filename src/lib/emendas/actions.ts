@@ -408,7 +408,6 @@ const esquemaExecucao = z
     emendaId: z.uuid(),
     numeroTermo: textoOpcional(40),
     processoLicitatorio: textoOpcional(200),
-    dataEnvioPagamento: dataOpcional,
     vigenciaInicio: dataOpcional,
     vigenciaFim: dataOpcional,
     dataPublicacaoExtrato: dataOpcional,
@@ -495,7 +494,6 @@ async function salvarExecucaoCampos(a: z.output<typeof esquemaExecucao>): Promis
     {
       numero_termo: a.numeroTermo,
       processo_licitatorio: a.processoLicitatorio,
-      data_envio_pagamento: a.dataEnvioPagamento,
       vigencia_inicio: a.vigenciaInicio,
       vigencia_fim: a.vigenciaFim,
       data_publicacao_extrato: a.dataPublicacaoExtrato,

@@ -228,10 +228,10 @@ describe("fluxo de fases editável", () => {
 
   it("o catálogo padrão reproduz as trilhas de origem", () => {
     expect(trilha("repasse")).toEqual([
-      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "envio_pagamento", "paga",
+      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "paga",
       "prestacao_contas", "concluida",
     ]);
-    expect(trilha("direta")).toEqual(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "envio_pagamento", "paga", "concluida"]);
+    expect(trilha("direta")).toEqual(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]);
   });
 });
 

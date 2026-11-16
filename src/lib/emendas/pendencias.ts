@@ -237,7 +237,9 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       regra: `data_fora_de_ordem:${depois.fase.chave}`,
       gravidade: "media",
       titulo: "Datas fora de ordem",
-      detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).`,
+      detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).${
+        antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação." : ""
+      }`,
       aba: "fases",
     });
   }

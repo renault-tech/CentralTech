@@ -275,14 +275,23 @@ export function faseAtual(fases: FaseCalculada[]): FaseCalculada | null {
   return fases.find((f) => f.situacao !== "nao_se_aplica" && f.situacao !== "concluida") ?? null;
 }
 
-/** Datas informadas que andam para trás em relação à ordem do fluxo. */
+/**
+ * Datas informadas que andam para trás em relação à ordem do fluxo.
+ * Exceção deliberada: o empenho pode anteceder a publicação do extrato (empenha-se na assinatura). O que a lei
+ * proíbe é o REPASSE antes do extrato (Lei 13.019/2014, art. 38: o termo só produz efeitos depois de publicado),
+ * então o extrato sai da sequência e é comparado só com o repasse.
+ */
 export function datasForaDeOrdem(fases: FaseCalculada[]): [FaseCalculada, FaseCalculada][] {
   const comData = fases.filter((f) => f.situacao === "concluida" && f.data && f.origem !== "presumida");
   const out: [FaseCalculada, FaseCalculada][] = [];
-  for (let i = 1; i < comData.length; i++) {
-    const anterior = comData[i - 1];
-    if ((comData[i].data as string) < (anterior.data as string)) out.push([anterior, comData[i]]);
+  const sequencia = comData.filter((f) => f.fase.derivacao !== "extrato");
+  for (let i = 1; i < sequencia.length; i++) {
+    const anterior = sequencia[i - 1];
+    if ((sequencia[i].data as string) < (anterior.data as string)) out.push([anterior, sequencia[i]]);
   }
+  const extrato = comData.find((f) => f.fase.derivacao === "extrato");
+  const repasse = comData.find((f) => f.fase.derivacao === "pagamento");
+  if (extrato && repasse && (repasse.data as string) < (extrato.data as string) && !out.some(([, d]) => d === repasse)) out.push([extrato, repasse]);
   return out;
 }
 

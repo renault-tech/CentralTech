@@ -54,10 +54,10 @@ export const CATALOGO_PADRAO: CatalogoEtapas = {
   etapas: Object.fromEntries(ETAPAS.map((e) => [e.chave, e])),
   fluxos: {
     repasse: itens([
-      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "envio_pagamento", "paga",
+      "indicada", "analise", "plano_trabalho", "termo_parceria", "empenhada", "liquidada", "paga",
       "prestacao_contas", "concluida",
     ]),
-    direta: itens(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "envio_pagamento", "paga", "concluida"]),
+    direta: itens(["indicada", "analise", "processo_compra", "empenhada", "liquidada", "paga", "concluida"]),
   },
 };
 

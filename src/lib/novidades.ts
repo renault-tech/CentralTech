@@ -13,6 +13,11 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-16",
+    titulo: "Emendas: alerta de datas mais claro e sem a fase \"Enviada para pagamento\"",
+    descricao: "O alerta de \"datas fora de ordem\" na linha do tempo agora mostra o motivo completo ao passar o mouse em qualquer etapa (não só no ícone). A regra também mudou: empenho antes da publicação do extrato deixou de ser apontado, porque é normal; passou a ser apontado o pagamento antes do extrato, que a Lei 13.019 (art. 38) não permite. A fase \"Enviada para pagamento\" saiu da linha do tempo (nenhuma emenda a usava como etapa); o campo \"Envio para pagamento\" também saiu da tela e da exportação (as datas já cadastradas continuam guardadas no banco).",
+  },
+  {
     data: "2026-11-14",
     titulo: "Emendas: envio de anexos desativado",
     descricao: "A aba Anexos saiu do detalhe da emenda e o envio de arquivos ao sistema foi bloqueado, para que nenhum documento ocupe o banco de dados. Os documentos ficam no Drive da Prefeitura e são ligados pela aba Documentação (cole o link do arquivo). Os anexos já enviados antes continuam guardados e o portal segue mostrando os que já eram públicos.",
