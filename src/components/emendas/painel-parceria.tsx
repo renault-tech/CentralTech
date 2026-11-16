@@ -13,7 +13,6 @@ import type { ExecucaoEmenda, Modalidade } from "@/types/emendas";
 type Campos = {
   numeroTermo: string;
   processoLicitatorio: string;
-  dataEnvioPagamento: string;
   vigenciaInicio: string;
   vigenciaFim: string;
   dataPublicacaoExtrato: string;
@@ -32,7 +31,6 @@ function paraCampos(x: ExecucaoEmenda | null): Campos {
   return {
     numeroTermo: x?.numero_termo ?? "",
     processoLicitatorio: x?.processo_licitatorio ?? "",
-    dataEnvioPagamento: x?.data_envio_pagamento ?? "",
     vigenciaInicio: x?.vigencia_inicio ?? "",
     vigenciaFim: x?.vigencia_fim ?? "",
     dataPublicacaoExtrato: x?.data_publicacao_extrato ?? "",
@@ -73,14 +71,12 @@ export function PainelParceria({
           execucao?.vigencia_inicio || execucao?.vigencia_fim ? `${dataBr(execucao?.vigencia_inicio)} a ${dataBr(execucao?.vigencia_fim)}` : null,
         ],
         ["Publicação do extrato", execucao?.data_publicacao_extrato ? dataBr(execucao.data_publicacao_extrato) : null],
-        ["Envio para pagamento", execucao?.data_envio_pagamento ? dataBr(execucao.data_envio_pagamento) : null],
         ["Conta bancária da entidade", execucao?.conta_bancaria ?? null],
         ["Gestor da parceria na entidade", execucao?.gestor_osc ?? null],
         ["Gestor da parceria na Prefeitura", execucao?.gestor_pmc ?? null],
       ]
     : [
         ["Processo licitatório", execucao?.processo_licitatorio ?? null],
-        ["Envio para pagamento", execucao?.data_envio_pagamento ? dataBr(execucao.data_envio_pagamento) : null],
         ["Gestor na Prefeitura", execucao?.gestor_pmc ?? null],
       ];
 
@@ -222,10 +218,6 @@ function DialogoParceria({
                 <input className={CAMPO} maxLength={200} {...campo("processoLicitatorio")} />
               </label>
             )}
-            <label className={rotulo}>
-              Envio para pagamento
-              <input type="date" className={CAMPO} {...campo("dataEnvioPagamento")} />
-            </label>
             <label className={rotulo}>
               Gestor na Prefeitura
               <input className={CAMPO} maxLength={200} {...campo("gestorPmc")} />

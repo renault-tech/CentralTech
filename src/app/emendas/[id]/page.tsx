@@ -109,7 +109,6 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   if (emenda.ultimo_pagamento) rotulos.paga = `em ${dataBr(emenda.ultimo_pagamento)}`;
   // Fases acompanhadas pela planilha de cumprimento: o dado vem do bloco de parceria.
   if (execucao?.numero_termo && !rotulos.termo_parceria) rotulos.termo_parceria = `nº ${execucao.numero_termo}`;
-  if (execucao?.data_envio_pagamento && !rotulos.envio_pagamento) rotulos.envio_pagamento = `em ${dataBr(execucao.data_envio_pagamento)}`;
 
   return (
     <div className="flex flex-col gap-5">
