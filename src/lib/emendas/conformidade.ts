@@ -142,7 +142,7 @@ export function avaliarArt7(i: EntradaConformidade): ItemConformidade[] {
       tipo === "direta" ? "informar o gestor na Prefeitura" : "informar o gestor na Prefeitura e na entidade"),
     item("XV", "GND", "Grupo de Natureza de Despesa (art. 7º, XV)", gndDaNatureza(e.natureza_despesa) !== null, "informar a natureza da despesa"),
     item("XVI", "Banco e conta", "Instituição bancária e número da conta (art. 7º, XVI)", preenchido(x?.conta_bancaria), "informar banco, agência e conta específica", tipo !== "direta"),
-    item("XVII", "Anuência do SUS", "Anuência prévia do gestor do SUS, quando for o caso (art. 7º, XVII)", !!x?.anuencia_sus, "informar se houve anuência do SUS", e.saude),
+    item("XVII", "Anuência do SUS", "Anuência prévia do gestor do SUS, quando for o caso (art. 7º, XVII)", !!x?.anuencia_sus || i.documentos.some((d) => d.tipo === "anuencia_sus"), "informar se houve anuência do SUS", e.saude),
     item("art5", "Identificador contábil", "Fonte de recurso ou código único da emenda (art. 5º)", preenchido(x?.identificador_contabil) || preenchido(x?.fonte_recurso) || !!identificadorDaFicha(e.ficha), "informar o identificador/fonte de recurso da Contabilidade", iniciou),
   ];
 }
