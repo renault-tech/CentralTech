@@ -303,7 +303,23 @@ export async function aprovarNumera(
       .from("users")
       .select("id, email, username")
       .ilike("name", escaparLike(pessoa.nome.trim()));
-    if (porNome && porNome.length > 0) {
+    // Exceção segura: UMA única conta de mesmo nome, e ela está inativa (approved=false — ninguém a
+    // usa; típico de conta removida ou cadastro antigo parado). Adota essa conta em vez de travar:
+    // passa a valer o e-mail do Hub (login e cadastro) e ela é reativada pelas regras abaixo.
+    const unicaInativa =
+      porNome && porNome.length === 1
+        ? await numeraAdmin.from("users").select("id, approved").eq("id", porNome[0].id).maybeSingle()
+        : null;
+    if (porNome && porNome.length === 1 && unicaInativa?.data && unicaInativa.data.approved === false) {
+      const { error: erroEmail } = await numeraAdmin.auth.admin.updateUserById(porNome[0].id, {
+        email: pessoa.email,
+        email_confirm: true,
+      });
+      if (erroEmail) {
+        return { sucesso: false, mensagem: `Conta antiga encontrada, mas não foi possível trocar o e-mail: ${erroEmail.message}` };
+      }
+      userId = porNome[0].id;
+    } else if (porNome && porNome.length > 0) {
       const emails = porNome.map((u) => u.email || u.username).join(", ");
       return {
         sucesso: false,
@@ -311,12 +327,14 @@ export async function aprovarNumera(
       };
     }
 
-    const conta = await encontrarOuCriarConta(numeraAdmin, pessoa.email, pessoa.nome);
-    if (!conta) {
-      return { sucesso: false, mensagem: "Não foi possível criar a conta no projeto do Numera." };
+    if (!userId) {
+      const conta = await encontrarOuCriarConta(numeraAdmin, pessoa.email, pessoa.nome);
+      if (!conta) {
+        return { sucesso: false, mensagem: "Não foi possível criar a conta no projeto do Numera." };
+      }
+      userId = conta.id;
+      criadaAgora = conta.criadaAgora;
     }
-    userId = conta.id;
-    criadaAgora = conta.criadaAgora;
   }
 
   const camposComuns: Record<string, unknown> = {
