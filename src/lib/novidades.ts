@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-16",
+    titulo: "Emendas de vereador afastado seguem normais",
+    descricao:
+      "A emenda de um vereador que saiu do exercício continua válida e sem alerta próprio: a situação do vereador aparece só no cadastro dele.",
+  },
+  {
+    data: "2026-11-16",
     titulo: "Emendas: documentos do Drive passam a contar nas pendências",
     descricao:
       "Plano de trabalho, anuência do SUS e relatório de gestão ligados no Drive agora valem como entregues na conformidade e nas pendências das emendas.",
