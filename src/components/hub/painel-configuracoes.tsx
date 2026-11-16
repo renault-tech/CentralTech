@@ -46,6 +46,7 @@ export function PainelConfiguracoes({
   const [editandoId, setEditandoId] = React.useState<string | null>(null);
   const [criandoNovo, setCriandoNovo] = React.useState(abrirNovo);
   const [busca, setBusca] = React.useState("");
+  const [mostrarInativos, setMostrarInativos] = React.useState(false);
 
   // Busca por nome, e-mail, módulo liberado ("compras", "numera"...) ou
   // "admin"/"inativo" — sem acento nem caixa, para achar "Júnia" digitando
@@ -53,8 +54,10 @@ export function PainelConfiguracoes({
   // contas), então não há por que ir ao servidor a cada tecla.
   const itens = React.useMemo(() => {
     const termo = normalizar(busca.trim());
-    if (!termo) return usuarios;
-    return usuarios.filter((u) => {
+    // Removidos/inativos ficam fora da lista até pedir para mostrá-los (ou buscar por "inativo").
+    const base = mostrarInativos || termo.includes("inativo") ? usuarios : usuarios.filter((u) => u.ativo);
+    if (!termo) return base;
+    return base.filter((u) => {
       const alvo = normalizar(
         [
           u.nome,
@@ -66,7 +69,7 @@ export function PainelConfiguracoes({
       );
       return termo.split(/\s+/).every((parte) => alvo.includes(parte));
     });
-  }, [usuarios, busca]);
+  }, [usuarios, busca, mostrarInativos]);
 
   const catalogos = { setoresCompras, secretariasRequerimentos, documentosNumera, secretariasEmendas, secretariasImoveis };
   const colunas = 3 + TODOS_MODULOS.length; // Usuário, Admin, Ativo, Ações + 1 por módulo
@@ -126,11 +129,16 @@ export function PainelConfiguracoes({
         </div>
       )}
 
-      <p className="mt-3 text-xs text-slate-400" aria-live="polite">
-        {busca.trim()
-          ? `${itens.length} de ${usuarios.length} usuários`
-          : `${usuarios.length} usuários`}
-      </p>
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+        <p aria-live="polite">
+          {busca.trim() ? `${itens.length} encontrados` : `${itens.length} usuários`}
+          {!mostrarInativos && usuarios.some((u) => !u.ativo) ? ` · ${usuarios.filter((u) => !u.ativo).length} inativos ocultos` : ""}
+        </p>
+        <label className="flex items-center gap-1.5 text-slate-500">
+          <input type="checkbox" checked={mostrarInativos} onChange={(e) => setMostrarInativos(e.target.checked)} />
+          Mostrar inativos/removidos
+        </label>
+      </div>
 
       {/* Rolagem interna: a lista nunca empurra o resto da página — o
           cabeçalho da tabela fica fixo enquanto se rola. */}
@@ -138,7 +146,7 @@ export function PainelConfiguracoes({
         <table className="w-full table-fixed text-sm">
           <thead className="sticky top-0 z-10 bg-white">
             <tr className="text-left text-[11px] text-slate-400">
-              <th />
+              <th className="w-0 p-0" />
               <th
                 colSpan={TODOS_MODULOS.length}
                 className="border-b border-slate-100 pb-1 text-center font-medium uppercase tracking-wide"
@@ -148,7 +156,7 @@ export function PainelConfiguracoes({
               <th colSpan={3} />
             </tr>
             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-              <th className="w-[30%] py-1.5 pr-2 font-medium">Usuário</th>
+              <th className="w-0 p-0" aria-label="Usuário" />
               {TODOS_MODULOS.map((m) => (
                 <th key={m.chave} className="px-0.5 py-1.5 text-center text-[10px] font-medium [overflow-wrap:anywhere]" title={m.nome}>
                   <span
@@ -169,12 +177,16 @@ export function PainelConfiguracoes({
               const aberto = editandoId === u.id;
               return (
                 <React.Fragment key={u.id}>
-                  <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                    <td className="py-2 pr-2 [overflow-wrap:anywhere]">
-                      <p className="font-medium text-slate-800">{u.nome}</p>
-                      <p className="text-xs text-slate-500">{u.email}</p>
+                  <tr className="hover:bg-slate-50/60">
+                    <td colSpan={colunas} className="px-1 pb-0.5 pt-2.5 [overflow-wrap:anywhere]">
+                      <p className="text-sm font-medium text-slate-800">
+                        {u.nome} <span className="text-xs font-normal text-slate-500">· {u.email}</span>
+                      </p>
                       {u.nuncaEntrou && <PrimeiroAcessoPendente usuarioId={u.id} linkInicial={u.linkPrimeiroAcesso} />}
                     </td>
+                  </tr>
+                  <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                    <td className="w-0 p-0" aria-hidden />
                     {TODOS_MODULOS.map((m) => {
                       const liberado = u.modulos.includes(m.chave);
                       // Administrador do Hub tem acesso pleno a todos os módulos, marcado ou não:
