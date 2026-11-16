@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-16",
+    titulo: "Emendas: documentos do Drive passam a contar nas pendências",
+    descricao:
+      "Plano de trabalho, anuência do SUS e relatório de gestão ligados no Drive agora valem como entregues na conformidade e nas pendências das emendas.",
+  },
+  {
+    data: "2026-11-16",
     titulo: "Emendas: identificador contábil confirmado pela Contabilidade",
     descricao: "O identificador contábil de cada emenda é a subação da dotação (ex.: 2.087.0201 - EP02) junto com o elemento de despesa (ex.: 43, da natureza 3.3.50.43). Só o código da subação se repete entre emendas; com o elemento, as 215 emendas de 2026 ficam únicas. O identificador é montado automaticamente a partir da dotação e da natureza (aparece assim na emenda, na conformidade, no portal e nas exportações), então não é preciso digitar nada e não há mais pendência por esse item.",
   },

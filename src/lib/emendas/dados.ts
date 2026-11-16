@@ -230,9 +230,15 @@ export async function listarDocumentosResumo(idsEmendas: string[]): Promise<{ em
   const emendas = await criarClienteEmendas();
   const lotes = await Promise.all(
     lotesDe(idsEmendas, 150).map(async (lote) => {
-      const { data, error } = await emendas.from("documentos").select("emenda_id,tipo,competencia").in("emenda_id", lote);
+      const [{ data, error }, drive] = await Promise.all([
+        emendas.from("documentos").select("emenda_id,tipo,competencia").in("emenda_id", lote),
+        // Os documentos ligados no Drive contam como entregues (o arquivo em si nunca fica no banco).
+        emendas.from("documentos_drive").select("emenda_id,tipo").in("emenda_id", lote),
+      ]);
       if (error) falhou("documentos", error);
-      return (data ?? []).map((x) => ({ emenda_id: x.emenda_id as string, tipo: x.tipo as string, competencia: (x.competencia as number | null) ?? null }));
+      const antigos = (data ?? []).map((x) => ({ emenda_id: x.emenda_id as string, tipo: x.tipo as string, competencia: (x.competencia as number | null) ?? null }));
+      const doDrive = (drive.error ? [] : drive.data ?? []).map((x) => ({ emenda_id: x.emenda_id as string, tipo: x.tipo as string, competencia: null as number | null }));
+      return [...antigos, ...doDrive];
     })
   );
   return lotes.flat();
