@@ -23,7 +23,20 @@ export type ItemNav = {
  * (`--modulo` / `--modulo-texto`, definidas no layout). `acao` é o botão principal à direita
  * (ex.: "Nova emenda"). Alvos de toque de 44 px no celular.
  */
-export function NavModulo({ itens, rotuloAria, tour, acao }: { itens: ItemNav[]; rotuloAria: string; tour?: string; acao?: ReactNode }) {
+export function NavModulo({
+  itens,
+  rotuloAria,
+  tour,
+  acao,
+  ocultarAcaoEm,
+}: {
+  itens: ItemNav[];
+  rotuloAria: string;
+  tour?: string;
+  acao?: ReactNode;
+  /** Prefixo de rota onde a ação sai da faixa (a própria tela a mostra junto do título). */
+  ocultarAcaoEm?: string;
+}) {
   const pathname = usePathname();
 
   return (
@@ -70,7 +83,7 @@ export function NavModulo({ itens, rotuloAria, tour, acao }: { itens: ItemNav[];
             );
           })}
         </nav>
-        {acao && <div className="my-1.5 print:hidden">{acao}</div>}
+        {acao && !(ocultarAcaoEm && pathname.startsWith(ocultarAcaoEm)) && <div className="my-1.5 print:hidden">{acao}</div>}
       </div>
     </div>
   );
