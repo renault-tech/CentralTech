@@ -31,6 +31,7 @@ import { TIPOS_EXECUCAO, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiro
 import { abertas, type Pendencia } from "@/lib/emendas/pendencias";
 import { NOME_MODALIDADE, brl, dataBr, infoEtapa, modalidadePorNatureza, proximasEtapas, trilha } from "@/lib/emendas/regras";
 import { criarClienteNavegador } from "@/lib/supabase/client";
+import { CATEGORIAS, INFO_CATEGORIA, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
 import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
@@ -879,7 +880,8 @@ function DialogoRemanejar({
 }) {
   const [benef, setBenef] = React.useState(emenda.beneficiario_id ?? "");
   const [benefNovo, setBenefNovo] = React.useState("");
-  const [benefTipo, setBenefTipo] = React.useState<"entidade" | "orgao_publico" | "pessoa_fisica">("entidade");
+  const [benefCategoria, setBenefCategoria] = React.useState<CategoriaBeneficiario>("osc");
+  const benefTipo = tipoDaCategoria(benefCategoria);
   const [benefDoc, setBenefDoc] = React.useState("");
   const [unidade, setUnidade] = React.useState(emenda.unidade_id);
   const [natureza, setNatureza] = React.useState(emenda.natureza_despesa ?? "");
@@ -907,7 +909,7 @@ function DialogoRemanejar({
           onSubmit={(e) => {
             e.preventDefault();
             const novo: Record<string, unknown> = {};
-            if (benef === "__novo") Object.assign(novo, { beneficiarioNovo: benefNovo, beneficiarioTipo: benefTipo, beneficiarioDoc: benefDoc });
+            if (benef === "__novo") Object.assign(novo, { beneficiarioNovo: benefNovo, beneficiarioTipo: benefTipo, beneficiarioCategoria: benefCategoria, beneficiarioDoc: benefDoc });
             else if (benef !== (emenda.beneficiario_id ?? "")) novo.beneficiario_id = benef || null;
             if (unidade !== emenda.unidade_id) novo.unidade_id = unidade;
             if (natureza && natureza !== emenda.natureza_despesa) novo.natureza_despesa = natureza;
@@ -932,13 +934,15 @@ function DialogoRemanejar({
               </select>
             </Campo>
             {benef === "__novo" ? (
-              <Campo rotulo="Novo beneficiário (nome, tipo e CNPJ/CPF obrigatórios)">
+              <Campo rotulo="Novo beneficiário (nome, categoria e CNPJ/CPF obrigatórios)">
                 <input className={CAMPO} required value={benefNovo} onChange={(e) => setBenefNovo(e.target.value)} placeholder="Nome" />
                 <div className="mt-1 flex gap-2">
-                  <select className={CAMPO} value={benefTipo} onChange={(e) => setBenefTipo(e.target.value as typeof benefTipo)} aria-label="Tipo">
-                    <option value="entidade">Entidade</option>
-                    <option value="orgao_publico">Órgão público</option>
-                    <option value="pessoa_fisica">Pessoa física</option>
+                  <select className={CAMPO} value={benefCategoria} onChange={(e) => setBenefCategoria(e.target.value as CategoriaBeneficiario)} aria-label="Categoria">
+                    {CATEGORIAS.map((c) => (
+                      <option key={c} value={c}>
+                        {INFO_CATEGORIA[c].nome}
+                      </option>
+                    ))}
                   </select>
                   <input className={CAMPO} required value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} placeholder={benefTipo === "pessoa_fisica" ? "CPF" : "CNPJ"} />
                 </div>

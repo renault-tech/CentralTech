@@ -1,4 +1,4 @@
-import { EditorBeneficiarios } from "@/components/emendas/config/editores";
+import { EditorBeneficiarios } from "@/components/emendas/config/editor-beneficiarios";
 import { listarBeneficiarios } from "@/lib/emendas/dados";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 

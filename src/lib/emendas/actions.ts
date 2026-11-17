@@ -14,6 +14,7 @@ import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
+import { CATEGORIAS, categoriaPorTipoENome, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
 import { brl, ehGestor, etapaAposExclusao, etapaDoMovimento, modalidadePorNatureza } from "@/lib/emendas/regras";
 
@@ -919,6 +920,7 @@ const esquemaEmenda = z.object({
   beneficiarioId: z.uuid().nullable(),
   beneficiarioNovo: textoOpcional(200),
   beneficiarioTipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]).optional(),
+  beneficiarioCategoria: z.enum(CATEGORIAS).optional(),
   beneficiarioDoc: z.string().trim().max(30).optional(),
   unidadeId: z.uuid("Escolha a unidade orçamentária"),
   saude: z.boolean(),
@@ -941,17 +943,20 @@ async function resolverBeneficiario(
   id: string | null,
   novo: string | null,
   tipo?: TipoBeneficiario,
-  documento?: string
+  documento?: string,
+  categoria?: CategoriaBeneficiario
 ): Promise<{ id: string | null; erro?: string }> {
   if (!novo) return { id };
   const { data: existente } = await emendas.from("beneficiarios").select("id").ilike("nome", escaparLike(novo)).maybeSingle();
   if (existente) return { id: existente.id };
-  const t: TipoBeneficiario = tipo ?? (/^secretaria/i.test(novo) ? "orgao_publico" : "entidade");
+  // A categoria manda; sem ela, deduz do tipo e do nome (o tipo só valida o documento).
+  const t: TipoBeneficiario = categoria ? tipoDaCategoria(categoria) : (tipo ?? (/^secretaria/i.test(novo) ? "orgao_publico" : "entidade"));
+  const cat: CategoriaBeneficiario = categoria ?? categoriaPorTipoENome(t, novo);
   const doc = validarDocumento(t, documento);
   if (!doc.ok) return { id: null, erro: doc.erro };
   const { data, error } = await emendas
     .from("beneficiarios")
-    .insert({ nome: novo, tipo: t, cnpj: doc.cnpj, cpf: doc.cpf })
+    .insert({ nome: novo, tipo: t, categoria: cat, cnpj: doc.cnpj, cpf: doc.cpf })
     .select("id")
     .single();
   if (error) return { id: null, erro: traduzir(error) };
@@ -965,7 +970,7 @@ export async function salvarEmenda(dados: z.input<typeof esquemaEmenda>): Promis
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores cadastram e corrigem emendas." };
 
   const emendas = await criarClienteEmendas();
-  const benef = await resolverBeneficiario(emendas, a.data.beneficiarioId, a.data.beneficiarioNovo, a.data.beneficiarioTipo, a.data.beneficiarioDoc);
+  const benef = await resolverBeneficiario(emendas, a.data.beneficiarioId, a.data.beneficiarioNovo, a.data.beneficiarioTipo, a.data.beneficiarioDoc, a.data.beneficiarioCategoria);
   if (benef.erro) return { sucesso: false, erro: benef.erro };
 
   const campos = {
@@ -995,8 +1000,21 @@ export async function salvarEmenda(dados: z.input<typeof esquemaEmenda>): Promis
     return { sucesso: false, erro: traduzir(resposta.error) };
   }
   await completarDadosDaDescricao(emendas, resposta.data.id, a.data.descricao, benef.id);
+  if (!a.data.id) await aplicarSugestaoDaCategoria(emendas, resposta.data.id, benef.id);
   revalidar(resposta.data.id);
   return { sucesso: true, id: resposta.data.id };
+}
+
+/** Emenda nova: a categoria do beneficiário sugere o instrumento (consórcio e ente público → convênio). Só sugere: a tela de Parceria muda depois. */
+async function aplicarSugestaoDaCategoria(emendas: Awaited<ReturnType<typeof criarClienteEmendas>>, emendaId: string, beneficiarioId: string | null) {
+  try {
+    if (!beneficiarioId) return;
+    const { data: b } = await emendas.from("beneficiarios").select("categoria").eq("id", beneficiarioId).maybeSingle();
+    const sugestao = sugestaoDaCategoria(ehCategoria(b?.categoria) ? b.categoria : null);
+    if (sugestao.instrumento === "convenio") await emendas.from("execucao").upsert({ id: emendaId, instrumento: "convenio" });
+  } catch (e) {
+    console.error("[aplicarSugestaoDaCategoria]", e);
+  }
 }
 
 /** O texto da emenda já traz o CNPJ do recebedor e o endereço: preenche o que está vazio (nunca sobrescreve). */
@@ -1030,6 +1048,7 @@ const esquemaRemanejamento = z.object({
     beneficiario_id: z.uuid().nullable().optional(),
     beneficiarioNovo: textoOpcional(200),
     beneficiarioTipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]).optional(),
+    beneficiarioCategoria: z.enum(CATEGORIAS).optional(),
     beneficiarioDoc: z.string().trim().max(30).optional(),
     unidade_id: z.uuid().optional(),
     saude: z.boolean().optional(),
@@ -1047,9 +1066,9 @@ export async function remanejarEmenda(dados: z.input<typeof esquemaRemanejamento
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores remanejam emendas." };
 
   const emendas = await criarClienteEmendas();
-  const { beneficiarioNovo, beneficiarioTipo, beneficiarioDoc, ...novo } = a.data.novo;
+  const { beneficiarioNovo, beneficiarioTipo, beneficiarioCategoria, beneficiarioDoc, ...novo } = a.data.novo;
   if (beneficiarioNovo) {
-    const benef = await resolverBeneficiario(emendas, null, beneficiarioNovo, beneficiarioTipo, beneficiarioDoc);
+    const benef = await resolverBeneficiario(emendas, null, beneficiarioNovo, beneficiarioTipo, beneficiarioDoc, beneficiarioCategoria);
     if (benef.erro) return { sucesso: false, erro: benef.erro };
     novo.beneficiario_id = benef.id;
   }

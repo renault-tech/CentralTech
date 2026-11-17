@@ -4,12 +4,11 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Check, Pencil, Plus, X } from "lucide-react";
 
-import { salvarBeneficiario, salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador, substituirVereador } from "@/lib/emendas/actions-config";
+import { salvarExercicio, salvarSecretaria, salvarUnidade, salvarVereador, substituirVereador } from "@/lib/emendas/actions-config";
 import type { Resultado } from "@/lib/emendas/actions";
-import { NOME_TIPO_BENEFICIARIO } from "@/lib/emendas/documentos";
 import { brl, numeroVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
-import type { Beneficiario, Exercicio, Secretaria, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
+import type { Exercicio, Secretaria, UnidadeOrcamentaria, Vereador } from "@/types/emendas";
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -402,61 +401,3 @@ function FormUnidade({ unidade, secretarias, aoFechar }: { unidade?: UnidadeOrca
 
 // ------------------------------------------------------------- beneficiários
 
-export function EditorBeneficiarios({ beneficiarios, usos }: { beneficiarios: Beneficiario[]; usos: Record<string, number> }) {
-  const [busca, setBusca] = React.useState("");
-  const [editando, setEditando] = React.useState<string | null>(null);
-  const q = busca.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const lista = beneficiarios.filter((b) => !q || b.nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q) || (b.cnpj ?? b.cpf ?? "").includes(busca));
-  return (
-    <Secao titulo="Beneficiários" apoio="Entidades e órgãos que recebem as emendas. CNPJ (entidade e órgão) ou CPF (pessoa física) é obrigatório para salvar; o CPF nunca aparece no portal público.">
-      <input type="search" className={cn(CAMPO, "mb-3 max-w-sm")} placeholder="Buscar por nome ou CNPJ" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar beneficiário" />
-      <ul className="flex flex-col divide-y divide-slate-100">
-        {lista.map((b) =>
-          editando === b.id ? (
-            <FormBeneficiario key={b.id} beneficiario={b} aoFechar={() => setEditando(null)} />
-          ) : (
-            <li key={b.id} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
-              <span className="min-w-[200px] flex-1 font-medium text-cataguases-marinho">{b.nome}</span>
-              <span className={cn("font-mono text-xs", b.cnpj || b.cpf ? "text-slate-600" : "text-amber-800")}>{b.cnpj ?? (b.cpf ? mascararCpf(b.cpf) : b.tipo === "pessoa_fisica" ? "sem CPF" : "sem CNPJ")}</span>
-              <span className="text-xs text-slate-500">{NOME_TIPO_BENEFICIARIO[b.tipo]}</span>
-              <span className="w-24 text-right text-xs text-slate-500">{usos[b.id] ?? 0} emenda(s)</span>
-              <button type="button" aria-label={`Editar ${b.nome}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setEditando(b.id)}>
-                <Pencil className="h-4 w-4" />
-              </button>
-            </li>
-          )
-        )}
-      </ul>
-      {lista.length === 0 && <p className="text-sm text-slate-500">Nenhum beneficiário encontrado.</p>}
-    </Secao>
-  );
-}
-
-const mascararCpf = (c: string) => `***.${c.slice(4, 7)}.***-**`;
-
-function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiario; aoFechar: () => void }) {
-  const [nome, setNome] = React.useState(beneficiario.nome);
-  const [cnpj, setCnpj] = React.useState(beneficiario.cnpj ?? beneficiario.cpf ?? "");
-  const [tipo, setTipo] = React.useState(beneficiario.tipo);
-  const { erro, salvando, salvar } = useSalvar();
-  return (
-    <li className="py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <input className={cn(CAMPO, "min-w-[200px] flex-1")} value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome" />
-        <input className={cn(CAMPO, "w-44")} placeholder={tipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={cnpj} onChange={(e) => setCnpj(e.target.value)} aria-label={tipo === "pessoa_fisica" ? "CPF" : "CNPJ"} required={tipo !== "orgao_publico"} />
-        <select className={cn(CAMPO, "w-40")} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} aria-label="Tipo">
-          <option value="entidade">Entidade</option>
-          <option value="orgao_publico">Órgão público</option>
-          <option value="pessoa_fisica">Pessoa física</option>
-        </select>
-        <button type="button" disabled={salvando} className={BOTAO} onClick={() => void salvar(() => salvarBeneficiario({ id: beneficiario.id, nome, documento: cnpj, tipo }), aoFechar)}>
-          Salvar
-        </button>
-        <button type="button" className="text-sm text-slate-600 hover:underline" onClick={aoFechar}>
-          Cancelar
-        </button>
-      </div>
-      <Erro texto={erro} />
-    </li>
-  );
-}

@@ -6,6 +6,7 @@
  */
 
 import { baseDaPendencia } from "@/lib/emendas/base-legal";
+import { conflitoInstrumento } from "@/lib/emendas/categorias";
 import { bancoOficial, faltas, type ItemConformidade, type SituacaoRelatorio } from "@/lib/emendas/conformidade";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
@@ -48,6 +49,7 @@ export const ASSUNTO_DA_REGRA: Record<string, { area: (typeof AREAS_PENDENCIA)[n
   data_fora_de_ordem: { area: "Prazos e vigência", nome: "Datas fora de ordem" },
   relatorio_gestao: { area: "Prazos e vigência", nome: "Relatório de gestão" },
   nao_iniciada: { area: "Execução", nome: "Sem andamento" },
+  instrumento_incompativel: { area: "Cadastro", nome: "Instrumento incompatível com o beneficiário" },
   impedimento: { area: "Execução", nome: "Impedimento em aberto" },
   termo_sem_extrato: { area: "Publicidade e conta", nome: "Termo sem extrato publicado" },
   publicidade_incompleta: { area: "Publicidade e conta", nome: "Publicidade incompleta" },
@@ -133,6 +135,19 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
           ? "Marcada como execução direta, mas a natureza é de transferência (grupo 50): confirmar o tipo ou a dotação."
           : "Marcada como repasse a OSC, mas a natureza é de aplicação direta (grupo 90): confirmar o tipo ou a dotação.",
       aba: "fases",
+    });
+  }
+
+  // Categoria do beneficiário × instrumento: só sinaliza (ex.: consórcio com termo de fomento do MROSC).
+  const conflito = tipo !== "direta" ? conflitoInstrumento(emenda.beneficiario_categoria, execucao?.instrumento) : null;
+  if (conflito) {
+    add({
+      regra: "instrumento_incompativel",
+      gravidade: "media",
+      titulo: "Instrumento incompatível com o beneficiário",
+      detalhe: conflito,
+      assinatura: `instrumento|${emenda.beneficiario_categoria}|${execucao?.instrumento ?? "termo_fomento"}`,
+      aba: "execucao",
     });
   }
 

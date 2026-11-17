@@ -46,6 +46,8 @@ export type LinhaPortal = {
   termo: string | null;
   /** Termo de fomento (padrão) ou convênio / contrato de rateio. */
   instrumento?: "termo_fomento" | "convenio";
+  /** Origem do beneficiário (OSC, consórcio, hospital SUS…); só o rótulo vai ao portal. */
+  categoriaBeneficiario?: "osc" | "saude_sus" | "consorcio" | "ente_publico" | "orgao_municipal" | "pessoa_fisica" | null;
   processo: string | null;
   contrato: string | null;
   inicioPrevisto: string | null;

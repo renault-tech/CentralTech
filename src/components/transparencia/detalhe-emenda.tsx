@@ -1,5 +1,6 @@
 "use client";
 
+import { INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import { Check, FileText, Minus } from "lucide-react";
 
 import { JanelaFicha } from "@/components/modulo/janela-ficha";
@@ -121,10 +122,11 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
           <Campo rotulo="Natureza da despesa" valor={l.natureza} />
           <Campo rotulo="Grupo de natureza (GND)" inciso="XV" valor={l.gnd ? `${l.gnd}${l.categoria ? ` · ${l.categoria}` : ""}` : null} />
           <Campo rotulo="Fonte de recurso" valor={l.fonteRecurso} antes={semExecucao} />
-          {repasse && <Campo rotulo="Termo / instrumento" inciso="VIII" valor={l.termo} antes={semExecucao} />}
+          {l.categoriaBeneficiario && <Campo rotulo="Natureza do beneficiário" valor={INFO_CATEGORIA[l.categoriaBeneficiario].nome} />}
+          {repasse && <Campo rotulo={l.instrumento === "convenio" ? "Convênio / contrato de rateio" : "Termo / instrumento"} inciso="VIII" valor={l.termo} antes={semExecucao} />}
           <Campo rotulo="Processo administrativo" inciso="VIII" valor={l.processo} antes={semExecucao} />
           {(l.contrato || !repasse) && <Campo rotulo="Contrato" inciso="VIII" valor={l.contrato} antes={semExecucao} />}
-          {repasse && <Campo rotulo="Extrato publicado em" valor={l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null} antes={semExecucao} />}
+          {repasse && <Campo rotulo={l.instrumento === "convenio" ? "Publicado em" : "Extrato publicado em"} valor={l.extratoPublicadoEm ? dataBr(l.extratoPublicadoEm) : null} antes={semExecucao} />}
           {repasse && <Campo rotulo="Banco e conta dos recursos" inciso="XVI" valor={l.conta} largo antes={semExecucao} />}
           {l.planoOutrasFontes != null && l.planoOutrasFontes > 0 && <Campo rotulo="Outras fontes previstas no plano" inciso="IX" valor={brl(l.planoOutrasFontes)} />}
         </dl>

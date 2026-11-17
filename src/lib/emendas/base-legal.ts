@@ -77,6 +77,10 @@ export const BASES: Record<string, BaseLegal> = {
     citacao: "Lei 13.019/2014, art. 69",
     resumo: "A entidade presta contas ao fim da vigência, no prazo definido no termo (até 90 dias, conforme o termo).",
   },
+  instrumento_parceria: {
+    citacao: "Lei 13.019/2014, art. 2º, I; Lei 11.107/2005, art. 8º",
+    resumo: "O termo de fomento e o de colaboração são para organização da sociedade civil (MROSC). Consórcio público e outros entes se relacionam com o Município por convênio ou contrato de rateio.",
+  },
   convenio_publicacao: {
     citacao: "IN TCE-MG 05/2025, art. 7º, VIII",
     resumo: "O convênio (contrato de rateio) é um instrumento que deve ser divulgado com o número e o processo administrativo; não se aplica o extrato do termo de fomento (Lei 13.019/2014, art. 38).",
@@ -109,6 +113,7 @@ export const BASE_DA_PENDENCIA: Record<string, keyof typeof BASES> = {
   empenho_maior: "empenho",
   pago_maior: "pagamento",
   tipo_incoerente: "natureza_despesa",
+  instrumento_incompativel: "instrumento_parceria",
   termo_sem_extrato: "termo_extrato",
   sem_conta: "conta_parceria",
   vigencia: "prestacao_contas",

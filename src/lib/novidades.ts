@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-17",
+    titulo: "Emendas: categoria do beneficiário, cadastro de novo beneficiário e leitura de documento",
+    descricao:
+      "Em Configurações › Beneficiários agora dá para cadastrar um beneficiário novo (botão \"Novo beneficiário\") e escolher a categoria: organização da sociedade civil, hospital ou instituição do SUS, consórcio público, outro ente público, órgão da Prefeitura ou pessoa física. A categoria sugere o tipo de execução e o instrumento da emenda (consórcio e ente público → convênio) e aparece na lista, no detalhe, no filtro das emendas, no relatório por beneficiário e no portal público. Ao cadastrar, dá para importar os dados de um PDF (cartão do CNPJ, estatuto, plano de trabalho): a plataforma só lê o texto para preencher o formulário e não guarda o arquivo. Também foram incluídos endereço, e-mail, telefone e representante (uso interno) e um alerta quando o instrumento não combina com a categoria.",
+  },
+  {
+    data: "2026-11-17",
     titulo: "Emendas: instrumento da parceria (convênio / contrato de rateio) para entes e consórcios",
     descricao:
       "Em Parceria e execução, as emendas de entes e consórcios ganharam o campo \"Instrumento da parceria\": termo de fomento (padrão) ou convênio (contrato de rateio com consórcio público). No convênio, deixam de ser cobrados o termo de fomento, o plano de trabalho e o extrato do art. 38 da Lei 13.019; passam a ser exigidos o próprio convênio (novo tipo de anexo \"Convênio / contrato de rateio\") e a sua publicação. A fase do plano de trabalho fica como \"não se aplica\" e os alertas citam o fundamento certo. As 3 emendas do Cisum (93, 126 e 162) já estão marcadas como convênio.",
