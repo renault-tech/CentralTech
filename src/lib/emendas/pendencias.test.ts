@@ -62,6 +62,22 @@ describe("pendencias", () => {
     expect(termo.find((p) => p.regra === "vigencia")!.detalhe).toMatch(/art\. 69/);
   });
 
+  it("categoria do beneficiário × instrumento: consórcio com termo de fomento é sinalizado, convênio não", () => {
+    const consorcio = { ...emenda, tipo_execucao: "ente" as const, beneficiario_categoria: "consorcio" as const };
+    const exec = (instrumento: "termo_fomento" | "convenio") => ({ numero_termo: null, vigencia_fim: null, data_publicacao_extrato: null, conta_bancaria: null, instrumento });
+    const ps = pendencias(entrada({ emenda: consorcio, execucao: exec("termo_fomento") }));
+    const p = ps.find((x) => x.regra === "instrumento_incompativel")!;
+    expect(p.gravidade).toBe("media");
+    expect(p.detalhe).toMatch(/não é organização da sociedade civil/);
+    expect(p.base).toMatch(/13\.019/);
+    expect(regras({ emenda: consorcio, execucao: exec("convenio") })).not.toContain("instrumento_incompativel");
+    // sem execução gravada vale o padrão (termo de fomento) e o alerta aparece
+    expect(regras({ emenda: consorcio })).toContain("instrumento_incompativel");
+    // OSC com termo de fomento e execução direta não disparam
+    expect(regras({ emenda: { ...emenda, beneficiario_categoria: "osc" } })).not.toContain("instrumento_incompativel");
+    expect(regras({ emenda: { ...consorcio, tipo_execucao: "direta", modalidade: "direta" } })).not.toContain("instrumento_incompativel");
+  });
+
   it("termo sem extrato e sem conta (só OSC/ente)", () => {
     const execucao = { numero_termo: "9/2026", vigencia_fim: null, data_publicacao_extrato: null, conta_bancaria: null };
     expect(regras({ execucao })).toEqual(expect.arrayContaining(["termo_sem_extrato", "sem_conta"]));

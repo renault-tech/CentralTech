@@ -9,6 +9,7 @@ import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
 import { ehGestor } from "@/lib/emendas/regras";
 import { validarDocumento } from "@/lib/emendas/documentos";
+import { CATEGORIAS, tipoDaCategoria } from "@/lib/emendas/categorias";
 import { lerPlanilha, type LinhaImportacao } from "@/lib/emendas/importacao/planilha";
 import type { Resultado } from "@/lib/emendas/actions";
 
@@ -508,29 +509,74 @@ export async function salvarUnidade(dados: z.input<typeof esquemaUnidade>): Prom
 
 // ------------------------------------------------------------- beneficiários
 
+const textoCurto = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => (v ? v : null));
+
 const esquemaBeneficiario = z.object({
-  id: z.uuid(),
-  nome: z.string().trim().min(2).max(200),
+  /** Sem id = cadastro novo. */
+  id: z.uuid().optional(),
+  nome: z.string().trim().min(2, "Informe o nome").max(200),
   documento: z.string().trim().max(30).optional(),
-  tipo: z.enum(["entidade", "orgao_publico", "pessoa_fisica"]),
+  categoria: z.enum(CATEGORIAS),
+  endereco: textoCurto(300),
+  email: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .transform((v) => (v ? v.toLowerCase() : null))
+    .refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "E-mail inválido"),
+  telefone: textoCurto(30),
+  representante: textoCurto(120),
 });
 
+/**
+ * Cria ou atualiza um beneficiário. A categoria (origem) define o tipo do cadastro (CNPJ ou CPF) e SUGERE o tipo de execução e o
+ * instrumento das emendas; não trava nada. Os contatos são internos (nunca vão ao portal público).
+ */
 export async function salvarBeneficiario(dados: z.input<typeof esquemaBeneficiario>): Promise<Resultado> {
   const a = esquemaBeneficiario.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
-  const doc = validarDocumento(a.data.tipo, a.data.documento);
+  const tipo = tipoDaCategoria(a.data.categoria);
+  const doc = validarDocumento(tipo, a.data.documento);
   if (!doc.ok) return { sucesso: false, erro: doc.erro };
   const emendas = await criarClienteEmendas();
-  const { data: linhas, error } = await emendas
-    .from("beneficiarios")
-    .update({ nome: a.data.nome, cnpj: doc.cnpj, cpf: doc.cpf, tipo: a.data.tipo })
-    .eq("id", a.data.id)
-    .select("id");
+
+  const documento = doc.cnpj ?? doc.cpf;
+  if (documento) {
+    const { data: igual } = await emendas.from("beneficiarios").select("id,nome").or(`cnpj.eq.${documento},cpf.eq.${documento}`).limit(2);
+    const outro = (igual ?? []).find((x) => x.id !== a.data.id);
+    if (outro) return { sucesso: false, erro: `Já existe um beneficiário com este documento: ${outro.nome}.` };
+  }
+
+  const campos = {
+    nome: a.data.nome,
+    cnpj: doc.cnpj,
+    cpf: doc.cpf,
+    tipo,
+    categoria: a.data.categoria,
+    endereco: a.data.endereco,
+    email: a.data.email,
+    telefone: a.data.telefone,
+    representante: a.data.representante,
+  };
+  if (!a.data.id) {
+    const { data, error } = await emendas.from("beneficiarios").insert(campos).select("id").single();
+    if (error) return { sucesso: false, erro: /beneficiarios_nome_unico|duplicate/i.test(error.message ?? "") ? "Já existe um beneficiário com este nome." : traduzir(error) };
+    revalidar();
+    return { sucesso: true, id: data.id };
+  }
+  const { data: linhas, error } = await emendas.from("beneficiarios").update(campos).eq("id", a.data.id).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
   if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o registro não foi encontrado ou você não tem permissão para alterá-lo." };
   revalidar();
-  return { sucesso: true };
+  return { sucesso: true, id: a.data.id };
 }
 
 // ------------------------------------------------------------- permissões

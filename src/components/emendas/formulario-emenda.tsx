@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { salvarEmenda } from "@/lib/emendas/actions";
+import { CATEGORIAS, INFO_CATEGORIA, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_MODALIDADE, brl, cumpreSaude, modalidadePorNatureza, numeroVereador, pct } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,8 @@ export function FormularioEmenda({
   const [valor, setValor] = React.useState(emenda ? emenda.valor.toFixed(2).replace(".", ",") : "");
   const [benef, setBenef] = React.useState(emenda?.beneficiario_id ?? "");
   const [benefNovo, setBenefNovo] = React.useState("");
-  const [benefTipo, setBenefTipo] = React.useState<"entidade" | "orgao_publico" | "pessoa_fisica">("entidade");
+  const [benefCategoria, setBenefCategoria] = React.useState<CategoriaBeneficiario>("osc");
+  const benefTipo = tipoDaCategoria(benefCategoria);
   const [benefDoc, setBenefDoc] = React.useState("");
   const [unidadeId, setUnidadeId] = React.useState(emenda?.unidade_id ?? "");
   const [saude, setSaude] = React.useState(emenda?.saude ?? false);
@@ -64,9 +66,13 @@ export function FormularioEmenda({
   const [enviando, setEnviando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
 
+  const categoriaEscolhida: CategoriaBeneficiario | null = benef === "__novo" ? benefCategoria : (beneficiarios.find((b) => b.id === benef)?.categoria ?? null);
+  const sugestao = sugestaoDaCategoria(categoriaEscolhida);
+
   const modalidadeAuto = modalidadePorNatureza(natureza);
   const modalidade = modalidadeAuto ?? modalidadeManual;
-  const tipoExecucao: TipoExecucao = tipoManual || (modalidade === "direta" ? "direta" : "osc");
+  // A categoria do beneficiário sugere o tipo de execução até a pessoa escolher o seu.
+  const tipoExecucao: TipoExecucao = tipoManual || sugestao.tipoExecucao || (modalidade === "direta" ? "direta" : "osc");
   const v = paraNumero(valor) ?? 0;
   const doVereador = emendasDoAno.filter((e) => e.vereador_id === vereadorId && e.id !== emenda?.id && e.situacao !== "cancelada");
   const usado = doVereador.reduce((t, e) => t + e.valor, 0);
@@ -98,6 +104,7 @@ export function FormularioEmenda({
       beneficiarioId: benef && benef !== "__novo" ? benef : null,
       beneficiarioNovo: benef === "__novo" ? benefNovo : undefined,
       beneficiarioTipo: benef === "__novo" ? benefTipo : undefined,
+      beneficiarioCategoria: benef === "__novo" ? benefCategoria : undefined,
       beneficiarioDoc: benef === "__novo" ? benefDoc : undefined,
       unidadeId,
       saude,
@@ -170,12 +177,14 @@ export function FormularioEmenda({
             </Campo>
           )}
           {benef === "__novo" && (
-            <Campo rotulo={benefTipo === "pessoa_fisica" ? "Tipo e CPF (obrigatório)" : benefTipo === "orgao_publico" ? "Tipo e CNPJ (opcional)" : "Tipo e CNPJ (obrigatório)"}>
+            <Campo rotulo={benefTipo === "pessoa_fisica" ? "Categoria e CPF (obrigatório)" : benefTipo === "orgao_publico" ? "Categoria e CNPJ (opcional)" : "Categoria e CNPJ (obrigatório)"}>
               <div className="flex gap-2">
-                <select className={cn(CAMPO, "w-40")} value={benefTipo} onChange={(e) => setBenefTipo(e.target.value as typeof benefTipo)} aria-label="Tipo do beneficiário">
-                  <option value="entidade">Entidade</option>
-                  <option value="orgao_publico">Órgão público</option>
-                  <option value="pessoa_fisica">Pessoa física</option>
+                <select className={cn(CAMPO, "w-56")} value={benefCategoria} onChange={(e) => setBenefCategoria(e.target.value as CategoriaBeneficiario)} aria-label="Categoria do beneficiário">
+                  {CATEGORIAS.map((c) => (
+                    <option key={c} value={c}>
+                      {INFO_CATEGORIA[c].nome}
+                    </option>
+                  ))}
                 </select>
                 <input required={benefTipo !== "orgao_publico"} className={CAMPO} placeholder={benefTipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={benefDoc} onChange={(e) => setBenefDoc(e.target.value)} />
               </div>
@@ -211,8 +220,21 @@ export function FormularioEmenda({
               </select>
             </Campo>
           )}
-          <Campo rotulo="Tipo de execução" dica="Define as fases e o checklist de documentos da emenda.">
-            <select className={CAMPO} value={tipoExecucao} onChange={(e) => setTipoManual(e.target.value as TipoExecucao)}>
+          <Campo
+            rotulo="Tipo de execução"
+            dica={
+              sugestao.tipoExecucao && categoriaEscolhida
+                ? tipoExecucao === sugestao.tipoExecucao
+                  ? `Sugerido pela categoria do beneficiário (${INFO_CATEGORIA[categoriaEscolhida].nome}).`
+                  : `A categoria do beneficiário (${INFO_CATEGORIA[categoriaEscolhida].nome}) sugere “${TIPOS_EXECUCAO[sugestao.tipoExecucao].nome}”. Mantido o que você escolheu.`
+                : "Define as fases e o checklist de documentos da emenda."
+            }
+          >
+            <select
+              className={CAMPO}
+              value={tipoExecucao}
+              onChange={(e) => setTipoManual(e.target.value as TipoExecucao)}
+            >
               {ORDEM_TIPOS.map((t) => (
                 <option key={t} value={t}>
                   {TIPOS_EXECUCAO[t].nome}

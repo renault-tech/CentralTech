@@ -1,3 +1,4 @@
+import { ehCategoria } from "@/lib/emendas/categorias";
 import "server-only";
 
 import { unstable_cache } from "next/cache";
@@ -32,7 +33,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
   const { data: emendas, error } = await db
     .from("v_emendas")
     .select(
-      "id,ano,numero,objeto,descricao,valor,saude,modalidade,tipo_execucao,etapa,situacao,vereador_nome,secretaria_nome,unidade_codigo,unidade_nome,funcional_programatica,ficha,natureza_despesa,beneficiario_nome,beneficiario_cnpj,empenhado,liquidado,pago,ultimo_pagamento"
+      "id,ano,numero,objeto,descricao,valor,saude,modalidade,tipo_execucao,etapa,situacao,vereador_nome,secretaria_nome,unidade_codigo,unidade_nome,funcional_programatica,ficha,natureza_despesa,beneficiario_nome,beneficiario_cnpj,beneficiario_categoria,empenhado,liquidado,pago,ultimo_pagamento"
     )
     .eq("ano", ano)
     .neq("situacao", "cancelada")
@@ -116,6 +117,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       gnd: g ? `GND ${g.gnd} — ${g.nome}` : null,
       categoria: g?.categoria === "corrente" ? "Despesa corrente" : g?.categoria === "capital" ? "Despesa de capital" : null,
       beneficiario: (e.beneficiario_nome as string | null) ?? null,
+      categoriaBeneficiario: ehCategoria(e.beneficiario_categoria) ? e.beneficiario_categoria : null,
       cnpj: tipo === "direta" && !e.beneficiario_cnpj ? municipioCnpj : ((e.beneficiario_cnpj as string | null) ?? null),
       etapa: e.etapa as string,
       situacao: e.situacao as LinhaPortal["situacao"],

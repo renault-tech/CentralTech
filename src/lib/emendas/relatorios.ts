@@ -1,3 +1,4 @@
+import { INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import type { ExecucaoEmenda, EmendaResumo, Impedimento } from "@/types/emendas";
 
 /** Relatórios de prestação de contas (dados de apoio; o envio oficial segue o sistema do TCE-MG — IN 05/2025). */
@@ -34,9 +35,9 @@ export function relatorioPorSecretaria(rs: EmendaResumo[]): Tabela {
 export function relatorioPorBeneficiario(rs: EmendaResumo[]): Tabela {
   return {
     titulo: "Recursos por beneficiário",
-    colunas: ["Beneficiário", "CNPJ", "Emendas", "Indicado", "Pago"],
-    monetarias: [3, 4],
-    linhas: agrupar(rs, (r) => r.beneficiario_nome ?? "(sem beneficiário)").map(([nome, l]) => [nome, l[0].beneficiario_cnpj ?? "", l.length, soma(l, (r) => r.valor), soma(l, (r) => r.pago)]),
+    colunas: ["Beneficiário", "Categoria", "CNPJ", "Emendas", "Indicado", "Pago"],
+    monetarias: [4, 5],
+    linhas: agrupar(rs, (r) => r.beneficiario_nome ?? "(sem beneficiário)").map(([nome, l]) => [nome, l[0].beneficiario_categoria ? INFO_CATEGORIA[l[0].beneficiario_categoria].nome : "", l[0].beneficiario_cnpj ?? "", l.length, soma(l, (r) => r.valor), soma(l, (r) => r.pago)]),
   };
 }
 

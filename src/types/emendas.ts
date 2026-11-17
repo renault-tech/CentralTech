@@ -83,6 +83,12 @@ export type Beneficiario = {
   cnpj: string | null;
   cpf: string | null;
   tipo: "entidade" | "orgao_publico" | "pessoa_fisica";
+  /** Origem do beneficiário: sugere tipo de execução e instrumento da emenda. */
+  categoria: "osc" | "saude_sus" | "consorcio" | "ente_publico" | "orgao_municipal" | "pessoa_fisica";
+  endereco: string | null;
+  email: string | null;
+  telefone: string | null;
+  representante: string | null;
   criado_em: string;
 };
 
@@ -139,6 +145,8 @@ export type EmendaResumo = {
   beneficiario_id: string | null;
   beneficiario_nome: string | null;
   beneficiario_cnpj: string | null;
+  /** Categoria do beneficiário (vem da view v_emendas). */
+  beneficiario_categoria?: "osc" | "saude_sus" | "consorcio" | "ente_publico" | "orgao_municipal" | "pessoa_fisica" | null;
   unidade_id: string;
   unidade_codigo: string;
   unidade_nome: string;

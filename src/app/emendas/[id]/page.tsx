@@ -1,3 +1,5 @@
+import { CategoriaSelo } from "@/components/emendas/categoria-selo";
+import { INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -119,6 +121,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               <span className="rounded-md bg-violet-50 px-2 py-0.5 font-mono font-medium text-violet-900">Emenda nº {emenda.numero}</span>
               <TipoSelo tipo={tipo} />
+              <CategoriaSelo categoria={emenda.beneficiario_categoria} />
               <Chip tom="azul">{NOME_MODALIDADE[emenda.modalidade]}</Chip>
               {emenda.saude && <Chip tom="saude">Saúde</Chip>}
               {emenda.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
@@ -173,7 +176,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
                 ["Nova dotação (ficha)", emenda.ficha],
                 ["Unidade orçamentária", `${emenda.unidade_codigo} ${emenda.unidade_nome}`],
                 ["Secretaria responsável", emenda.secretaria_nome],
-                ["Beneficiário", emenda.beneficiario_nome ? `${emenda.beneficiario_nome}${emenda.beneficiario_cnpj ? ` · CNPJ ${emenda.beneficiario_cnpj}` : ""}` : null],
+                ["Beneficiário", emenda.beneficiario_nome ? `${emenda.beneficiario_nome}${emenda.beneficiario_cnpj ? ` · CNPJ ${emenda.beneficiario_cnpj}` : ""}${emenda.beneficiario_categoria ? ` · ${INFO_CATEGORIA[emenda.beneficiario_categoria].nome}` : ""}` : null],
               ].map(([k, v]) => (
                 <div key={k as string}>
                   <dt className="text-xs text-slate-500">{k}</dt>

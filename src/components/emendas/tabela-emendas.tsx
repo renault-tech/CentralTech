@@ -7,7 +7,9 @@ import { X } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
+import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
@@ -76,6 +78,7 @@ export function TabelaEmendas({
     situacao: params.get("situacao") ?? "",
     fin: params.get("fin") ?? "",
     sd: params.get("sd") ?? "",
+    cat: params.get("cat") ?? "",
     rem: params.get("rem") ?? "",
     pe: params.get("pe") ?? "",
     ordem: params.get("ordem") ?? "numero",
@@ -94,6 +97,7 @@ export function TabelaEmendas({
       (!f.pe || (resumos[r.id]?.regras ?? []).includes(f.pe)) &&
       (!f.fin || combinaSituacaoFinanceira(f.fin, r)) &&
       (!f.sd || (f.sd === "1" ? r.saude : !r.saude)) &&
+      (!f.cat || r.beneficiario_categoria === f.cat) &&
       (!f.rem || (f.rem === "1" ? r.remanejada : !r.remanejada)) &&
       (!f.v || r.vereador_id === f.v) &&
       (!f.s || r.secretaria_id === f.s) &&
@@ -130,7 +134,7 @@ export function TabelaEmendas({
   const pago = filtradas.reduce((t, r) => t + r.pago, 0);
 
   const exportar = new URLSearchParams({ ano: String(ano) });
-  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t", "fin", "sd", "rem"] as const) {
+  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t", "fin", "sd", "rem", "cat"] as const) {
     const v = params.get(k);
     if (v) exportar.set(k, v);
   }
@@ -265,6 +269,17 @@ export function TabelaEmendas({
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          Categoria do beneficiário
+          <select className={ESTILO_CAMPO} value={f.cat} onChange={(e) => definir({ cat: e.target.value })}>
+            <option value="">Todas</option>
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>
+                {INFO_CATEGORIA[c].nome} ({emendas.filter((r) => r.beneficiario_categoria === c).length})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
           Saúde
           <select className={ESTILO_CAMPO} value={f.sd} onChange={(e) => definir({ sd: e.target.value })}>
             <option value="">Todas</option>
@@ -351,6 +366,7 @@ export function TabelaEmendas({
                   </Link>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
                     {r.beneficiario_nome && <span>{r.beneficiario_nome}</span>}
+                    <CategoriaSelo categoria={r.beneficiario_categoria} />
                     {r.saude && <Chip tom="saude">Saúde</Chip>}
                     <TipoSelo tipo={tipoDaEmenda(r)} />
                     {r.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
