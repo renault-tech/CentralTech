@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-17",
+    titulo: "Emendas: painel de Pendências com gráficos",
+    descricao:
+      "A tela de Pendências ganhou uma visão geral no topo: quantas pendências existem, quantas são altas, quantas emendas e quanto dinheiro elas envolvem, com gráficos por gravidade, área, assunto, secretaria e tipo de execução, e a lista de documentos que ainda faltam (termo, plano, extrato e anuência do SUS). Clique numa barra para filtrar a lista; os filtros também mudam os gráficos. Em Exportar há o Excel com os totais e a lista, e o PDF para imprimir o painel.",
+  },
+  {
     data: "2026-11-16",
     titulo: "Emendas de vereador afastado seguem normais",
     descricao:
