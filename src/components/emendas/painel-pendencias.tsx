@@ -267,7 +267,7 @@ export function PainelPendencias({
 
       <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x">
         <div className={celula}>
-          <dt className="text-[11px] font-medium text-slate-600">Pendências abertas</dt>
+          <dt className="text-xs font-medium text-slate-600">Pendências abertas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className="whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl">{ind.pendencias}</span>
             <span className="text-xs tabular-nums" style={{ color: alta > 0 ? COR.alta : undefined }}>
@@ -276,7 +276,7 @@ export function PainelPendencias({
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-[11px] font-medium text-slate-600">Emendas afetadas</dt>
+          <dt className="text-xs font-medium text-slate-600">Emendas afetadas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className="whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl">{ind.emendasAfetadas}</span>
             <span className="text-xs tabular-nums text-slate-600">
@@ -285,14 +285,14 @@ export function PainelPendencias({
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-[11px] font-medium text-slate-600">Valor das emendas afetadas</dt>
+          <dt className="text-xs font-medium text-slate-600">Valor das emendas afetadas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className="whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl">{brlCurto(ind.valorAfetado)}</span>
             <span className="text-xs tabular-nums text-slate-600">de {brlCurto(ind.valorNoRecorte)}</span>
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-[11px] font-medium text-slate-600">Documentos faltando</dt>
+          <dt className="text-xs font-medium text-slate-600">Documentos faltando</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className="whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl">{totalDocs}</span>
             <span className="text-xs tabular-nums text-slate-600">em {emendasSemDoc} emendas</span>
@@ -301,7 +301,19 @@ export function PainelPendencias({
       </dl>
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 border-b border-slate-200 px-2 print:border-0">
-        <div role="tablist" aria-label="Dimensão do gráfico" className="flex flex-wrap">
+        <div
+          role="tablist"
+          aria-label="Dimensão do gráfico"
+          className="flex flex-wrap"
+          onKeyDown={(e) => {
+            const i = VISOES.findIndex((v) => v.chave === visao);
+            const novo = e.key === "ArrowRight" ? (i + 1) % VISOES.length : e.key === "ArrowLeft" ? (i - 1 + VISOES.length) % VISOES.length : e.key === "Home" ? 0 : e.key === "End" ? VISOES.length - 1 : -1;
+            if (novo < 0) return;
+            e.preventDefault();
+            setVisao(VISOES[novo].chave);
+            document.getElementById(`aba-pend-${VISOES[novo].chave}`)?.focus();
+          }}
+        >
           {VISOES.map((v) => {
             const ativa = v.chave === visao;
             const filtrada = v.param && f[v.param];
@@ -310,7 +322,10 @@ export function PainelPendencias({
                 key={v.chave}
                 type="button"
                 role="tab"
+                id={`aba-pend-${v.chave}`}
                 aria-selected={ativa}
+                aria-controls="painel-pend-corpo"
+                tabIndex={ativa ? 0 : -1}
                 onClick={() => setVisao(v.chave)}
                 className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
                   ativa ? "text-cataguases-marinho" : "text-slate-600 hover:text-cataguases-marinho"
@@ -330,7 +345,7 @@ export function PainelPendencias({
               type="button"
               aria-pressed={medida === m}
               onClick={() => setMedida(m)}
-              className={`min-h-8 rounded-md px-2.5 font-medium transition-colors motion-reduce:transition-none ${medida === m ? "bg-white text-cataguases-marinho shadow-sm" : "text-slate-600"}`}
+              className={`min-h-11 rounded-md px-3 font-medium sm:min-h-8 sm:px-2.5 transition-colors motion-reduce:transition-none ${medida === m ? "bg-white text-cataguases-marinho shadow-sm" : "text-slate-600"}`}
             >
               {rotulo}
             </button>
@@ -338,7 +353,7 @@ export function PainelPendencias({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[212px_1fr]">
+      <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid lg:grid-cols-[212px_1fr]">
         <div className="flex items-center justify-center p-3 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
           <Pizza fatias={fatias} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
         </div>
@@ -406,7 +421,7 @@ export function PainelPendencias({
             );
           })}
           {visao === "documentos" && itens.length > 0 && (
-            <li className="px-4 pb-1 pt-1.5 text-[11px] text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
+            <li className="px-4 pb-1 pt-1.5 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
           )}
         </ul>
       </div>

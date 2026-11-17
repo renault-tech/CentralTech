@@ -17,7 +17,7 @@ export type { LinhaPendencia };
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
 const ESTILO_CAMPO =
-  "h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
+  "h-11 rounded-lg border border-slate-300 sm:h-9 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 const POR_PAGINA = 40;
 
 export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { linhas: LinhaPendencia[]; docs: LinhaDocFaltando[]; emendas: EmendaPainel[]; secretarias: { id: string; nome: string }[]; ano: number }) {
@@ -110,7 +110,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         }}
       />
       {totalJustificadas > 0 && (
-        <label className="flex h-9 items-center gap-1.5 text-[13px] text-slate-700">
+        <label className="flex h-11 items-center gap-1.5 text-[13px] text-slate-700 sm:h-9">
           <input type="checkbox" className="h-4 w-4 accent-[#6B4FBB]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
           Justificadas ({totalJustificadas})
         </label>
@@ -122,7 +122,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
             setBusca("");
             definir({ t: "", g: "", s: "", r: "", a: "", j: "", q: "" });
           }}
-          className="h-9 rounded-lg px-2.5 text-[13px] font-medium text-[#5B3FA8] hover:bg-violet-50"
+          className="h-11 rounded-lg px-2.5 text-[13px] font-medium text-[#5B3FA8] hover:bg-violet-50 sm:h-9"
         >
           Limpar
         </button>
@@ -186,7 +186,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         {filtradas.length === 0 && <li className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Nenhuma pendência com esses filtros.</li>}
       </ul>
       {filtradas.length > limite && (
-        <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="mx-auto h-9 print:hidden rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
+        <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="mx-auto h-11 rounded-lg print:hidden sm:h-9 border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
           Mostrar mais {POR_PAGINA}
         </button>
       )}
