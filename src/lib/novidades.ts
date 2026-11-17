@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-17",
+    titulo: "Emendas: painel de Pendências mais compacto, com gráfico de pizza",
+    descricao:
+      "O painel de Pendências agora cabe numa caixa só, com os filtros, os números principais e, logo abaixo, abas para ver as pendências por área, gravidade, assunto, secretaria, tipo ou documentos faltando, em gráfico de pizza e em lista. Dá para alternar entre quantidade e valor em R$. Clicar numa fatia ou numa linha filtra a lista, que agora aparece logo abaixo, sem precisar rolar a tela.",
+  },
+  {
+    data: "2026-11-17",
     titulo: "Emendas: painel de Pendências com gráficos",
     descricao:
       "A tela de Pendências ganhou uma visão geral no topo: quantas pendências existem, quantas são altas, quantas emendas e quanto dinheiro elas envolvem, com gráficos por gravidade, área, assunto, secretaria e tipo de execução, e a lista de documentos que ainda faltam (termo, plano, extrato e anuência do SUS). Clique numa barra para filtrar a lista; os filtros também mudam os gráficos. Em Exportar há o Excel com os totais e a lista, e o PDF para imprimir o painel.",

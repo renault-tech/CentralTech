@@ -6,7 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
-import { AREAS_PENDENCIA, NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
+import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelPendencias } from "@/components/emendas/painel-pendencias";
 import { areaDaLinha, chaveRegra, filtrarPendencias, lerFiltros, nomeDaRegra, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
@@ -16,7 +17,7 @@ export type { LinhaPendencia };
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
 const ESTILO_CAMPO =
-  "h-[38px] rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
+  "h-11 rounded-lg border border-slate-300 sm:h-9 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 const POR_PAGINA = 40;
 
 export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { linhas: LinhaPendencia[]; docs: LinhaDocFaltando[]; emendas: EmendaPainel[]; secretarias: { id: string; nome: string }[]; ano: number }) {
@@ -40,7 +41,6 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
     for (const l of base) m.set(fn(l), (m.get(fn(l)) ?? 0) + 1);
     return m;
   };
-  const porArea = contagem(areaDe);
   const porRegra = contagem(chaveRegra);
   const nomeRegra = (r: string) => {
     const l = linhas.find((x) => chaveRegra(x) === r);
@@ -56,85 +56,90 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
     if (busca.trim()) p.set("q", busca.trim());
     return p.toString();
   })();
-  const porGravidade = (g: Gravidade) => filtradas.filter((l) => l.gravidade === g).length;
+
+  const temFiltro = !!(f.t || f.g || f.s || f.r || f.a || f.j || busca.trim());
+  const campo = `${ESTILO_CAMPO} min-w-0 max-w-full`;
+
+  const controles = (
+    <div className="flex flex-wrap items-center gap-2">
+      <select aria-label="Tipo de execução" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[150px]`} value={f.t} onChange={(e) => definir({ t: e.target.value })}>
+        <option value="">Todos os tipos</option>
+        {ORDEM_TIPOS.map((t) => (
+          <option key={t} value={t}>
+            {TIPOS_EXECUCAO[t].nome}
+          </option>
+        ))}
+      </select>
+      <select aria-label="Gravidade" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[170px]`} value={f.g} onChange={(e) => definir({ g: e.target.value })}>
+        <option value="">Todas as gravidades</option>
+        {(["alta", "media", "baixa"] as const).map((g) => (
+          <option key={g} value={g}>
+            {NOME_GRAVIDADE[g]}
+          </option>
+        ))}
+      </select>
+      <select aria-label="Secretaria" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[180px]`} value={f.s} onChange={(e) => definir({ s: e.target.value })}>
+        <option value="">Todas as secretarias</option>
+        {secretarias.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.nome}
+          </option>
+        ))}
+      </select>
+      <select aria-label="Assunto" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[200px]`} value={f.r} onChange={(e) => definir({ r: e.target.value })}>
+        <option value="">Todos os assuntos</option>
+        {regras.map((r) => (
+          <option key={r} value={r}>
+            {nomeRegra(r)} ({porRegra.get(r) ?? 0})
+          </option>
+        ))}
+      </select>
+      <input
+        type="search"
+        aria-label="Buscar"
+        value={busca}
+        placeholder="Buscar nº, objeto…"
+        className={`${campo} max-sm:min-w-0 max-sm:flex-1 sm:w-40`}
+        onChange={(e) => {
+          setBusca(e.target.value);
+          setLimite(POR_PAGINA);
+          // o filtro local é imediato; só a gravação na URL espera uma pausa na digitação
+          const texto = e.target.value.trim();
+          if (pausaUrl.current) clearTimeout(pausaUrl.current);
+          pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
+        }}
+      />
+      {totalJustificadas > 0 && (
+        <label className="flex h-11 items-center gap-1.5 text-[13px] text-slate-700 sm:h-9">
+          <input type="checkbox" className="h-4 w-4 accent-[#6B4FBB]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
+          Justificadas ({totalJustificadas})
+        </label>
+      )}
+      {temFiltro && (
+        <button
+          type="button"
+          onClick={() => {
+            setBusca("");
+            definir({ t: "", g: "", s: "", r: "", a: "", j: "", q: "" });
+          }}
+          className="h-11 rounded-lg px-2.5 text-[13px] font-medium text-[#5B3FA8] hover:bg-violet-50 sm:h-9"
+        >
+          Limpar
+        </button>
+      )}
+      <div className="ml-auto">
+        <MenuExportar
+          opcoes={[
+            { rotulo: "Excel (.xlsx)", detalhe: "Totais por corte e a lista, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}` },
+            { rotulo: "PDF (imprimir)", detalhe: "Só o painel, com os filtros atuais", imprimir: true },
+          ]}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 print:hidden">
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Tipo
-          <select className={ESTILO_CAMPO} value={f.t} onChange={(e) => definir({ t: e.target.value })}>
-            <option value="">Todos</option>
-            {ORDEM_TIPOS.map((t) => (
-              <option key={t} value={t}>
-                {TIPOS_EXECUCAO[t].nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Gravidade
-          <select className={ESTILO_CAMPO} value={f.g} onChange={(e) => definir({ g: e.target.value })}>
-            <option value="">Todas</option>
-            {(["alta", "media", "baixa"] as const).map((g) => (
-              <option key={g} value={g}>
-                {NOME_GRAVIDADE[g]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Secretaria
-          <select className={ESTILO_CAMPO} value={f.s} onChange={(e) => definir({ s: e.target.value })}>
-            <option value="">Todas</option>
-            {secretarias.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Assunto
-          <select className={ESTILO_CAMPO} value={f.r} onChange={(e) => definir({ r: e.target.value })}>
-            <option value="">Todos</option>
-            {regras.map((r) => (
-              <option key={r} value={r}>
-                {nomeRegra(r)} ({porRegra.get(r) ?? 0})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600 sm:max-w-[220px]">
-          Buscar
-          <input
-            type="search"
-            value={busca}
-            placeholder="Nº, objeto ou secretaria"
-            className={ESTILO_CAMPO}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setLimite(POR_PAGINA);
-              // o filtro local é imediato; só a gravação na URL espera uma pausa na digitação
-              const texto = e.target.value.trim();
-              if (pausaUrl.current) clearTimeout(pausaUrl.current);
-              pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
-            }}
-          />
-        </label>
-        {totalJustificadas > 0 && (
-          <label className="flex h-[38px] items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" className="h-4 w-4 accent-[#6B4FBB]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
-            Mostrar justificadas ({totalJustificadas})
-          </label>
-        )}
-        <p className="ml-auto text-sm text-slate-600">
-          <strong className="tabular-nums text-cataguases-marinho">{filtradas.length}</strong> pendências ·{" "}
-          <span style={{ color: COR.alta }}>{porGravidade("alta")} altas</span> · <span style={{ color: COR.media }}>{porGravidade("media")} médias</span> ·{" "}
-          {porGravidade("baixa")} baixas
-        </p>
-      </div>
-
+    <div className="flex flex-col gap-3">
       <PainelPendencias
         linhas={linhas}
         docs={docs}
@@ -143,23 +148,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         filtros={{ ...f, q: busca }}
         definir={definir}
         ano={ano}
-        consulta={consultaExcel}
+        controles={controles}
       />
-
-      <div role="group" aria-label="Filtrar por área" className="flex flex-wrap gap-2 print:hidden">
-        {[{ nome: "", rotulo: "Todas as áreas", n: base.length }, ...AREAS_PENDENCIA.map((a) => ({ nome: a as string, rotulo: a as string, n: porArea.get(a) ?? 0 }))].map((a) => (
-          <button
-            key={a.nome || "todas"}
-            type="button"
-            aria-pressed={f.a === a.nome}
-            onClick={() => definir({ a: a.nome, r: "" })}
-            className={`inline-flex h-[34px] items-center gap-2 rounded-full border px-3 text-[13px] ${f.a === a.nome ? "border-cataguases-marinho bg-cataguases-marinho text-white" : "border-slate-300 bg-white text-cataguases-marinho hover:bg-slate-50"}`}
-          >
-            {a.rotulo}
-            <span className="font-semibold tabular-nums">{a.n}</span>
-          </button>
-        ))}
-      </div>
 
       <ul className="flex flex-col gap-2 print:hidden">
         {filtradas.slice(0, limite).map((l) => (
@@ -196,7 +186,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         {filtradas.length === 0 && <li className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Nenhuma pendência com esses filtros.</li>}
       </ul>
       {filtradas.length > limite && (
-        <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="mx-auto h-9 print:hidden rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
+        <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="mx-auto h-11 rounded-lg print:hidden sm:h-9 border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
           Mostrar mais {POR_PAGINA}
         </button>
       )}
