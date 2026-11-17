@@ -5,6 +5,7 @@
 
 import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type FaseCalculada, type ResumoCompras } from "@/lib/emendas/fases";
 import { avaliarArt7, contasRepetidas, relatoriosDeGestao, type DocumentoResumo, type ItemConformidade } from "@/lib/emendas/conformidade";
+import { documentosExigidos } from "@/lib/emendas/documentos-drive";
 import { maiorGravidade, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
 import { CATALOGO_PADRAO, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type {
@@ -22,6 +23,8 @@ export type CalculoEmenda = {
   pendencias: Pendencia[];
   /** Itens da IN TCE-MG 05/2025 (art. 7º e art. 5º) avaliados para a emenda. */
   conformidade: ItemConformidade[];
+  /** Documentos exigidos por lei ainda não ligados no Drive (relatório de gestão fica de fora: tem prazo próprio). */
+  documentosFaltando: { tipo: string; rotulo: string }[];
 };
 
 /** O que a lista precisa por linha (vai para o navegador, então enxuto). */
@@ -147,10 +150,15 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
         hoje: e.hoje,
       });
     anexarAlertas(fases, pend);
+    const entregues = new Set((docs.get(emenda.id) ?? []).map((d) => d.tipo));
+    const documentosFaltando = documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: execucao?.anuencia_sus ?? null })
+      .filter((d) => d.tipo !== "relatorio_gestao" && !entregues.has(d.tipo))
+      .map((d) => ({ tipo: d.tipo as string, rotulo: d.rotulo }));
     saida.set(emenda.id, {
       fases,
       conformidade: itens,
       pendencias: pend,
+      documentosFaltando,
     });
   }
   return saida;
