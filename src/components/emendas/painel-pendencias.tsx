@@ -89,7 +89,7 @@ function Pizza({
   const corta = (t: string) => (t.length > 17 ? `${t.slice(0, 16)}…` : t);
 
   return (
-    <svg viewBox="0 0 100 100" className="h-[156px] w-[156px] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
+    <svg viewBox="0 0 100 100" className="h-[196px] w-[196px] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
       {total === 0 ? (
         <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
       ) : (
@@ -250,7 +250,7 @@ export function PainelPendencias({
     assunto: f.r ? nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r }) : undefined,
   });
 
-  const celula = "min-w-0 px-4 py-2.5";
+  const celula = "min-w-0 px-5 py-3.5";
   return (
     <section aria-label="Visão geral das pendências" className="rounded-xl border border-slate-200 bg-white">
       {/* proporção de gravidade da seleção atual, como um fio no topo da caixa */}
@@ -353,12 +353,12 @@ export function PainelPendencias({
         </div>
       </div>
 
-      <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid lg:grid-cols-[212px_1fr]">
-        <div className="flex items-center justify-center p-3 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
+      <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid lg:grid-cols-[280px_1fr]">
+        <div className="flex items-center justify-center p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
           <Pizza fatias={fatias} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
         </div>
 
-        <ul className="max-h-60 overflow-y-auto overscroll-contain py-1 lg:max-h-[212px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -385,26 +385,24 @@ export function PainelPendencias({
                         return n;
                       });
                   }}
-                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_minmax(44px,auto)] items-center gap-x-2.5 px-4 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
+                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] sm:grid-cols-[10px_minmax(0,11rem)_minmax(0,1fr)_auto_40px] items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
                   <span className="truncate text-[13px] text-cataguases-marinho">{i.rotulo}</span>
-                  <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
+                  <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
                     {param && medida === "n" ? (
                       (["alta", "media", "baixa"] as const).map((g) => <span key={g} style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
                     ) : (
                       <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                     )}
                   </span>
-                  <span className="whitespace-nowrap text-right text-[13px] tabular-nums text-cataguases-marinho">
-                    <strong className="font-semibold">{medida === "valor" ? brlCurto(v) : v}</strong>
-                    <span className="sr-only"> ({total ? pct(v / total, 0) : "0%"})</span>
-                  </span>
+                  <span className="whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
+                  <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                 </button>
                 {i.emendas && aberto && (
-                  <p className="flex flex-wrap gap-1.5 px-4 pb-2 pl-[38px] print:hidden">
+                  <p className="flex flex-wrap gap-1.5 px-6 pb-2 pl-[46px] print:hidden">
                     {i.emendas.map((e) => (
                       <Link
                         key={e.emendaId}
@@ -421,7 +419,7 @@ export function PainelPendencias({
             );
           })}
           {visao === "documentos" && itens.length > 0 && (
-            <li className="px-4 pb-1 pt-1.5 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
+            <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
           )}
         </ul>
       </div>

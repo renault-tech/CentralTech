@@ -88,6 +88,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
         itens={itens}
         rotuloAria="Seções do módulo Emendas"
         tour="nav-emendas"
+        ocultarAcaoEm="/emendas/pendencias"
         acao={
           gestor && (
             <Link href="/emendas/nova" className={CLASSE_BOTAO}>

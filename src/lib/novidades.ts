@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-17",
+    titulo: "Emendas: painel de Pendências com gráfico maior e mais equilibrado",
+    descricao:
+      "O gráfico de pizza ficou maior e a lista ao lado agora mostra uma barra proporcional e a porcentagem de cada item, com mais espaço entre os blocos. O botão \"Nova emenda\" passou para a linha do título da tela de Pendências, acima do Exportar.",
+  },
+  {
+    data: "2026-11-17",
     titulo: "Emendas: painel de Pendências mais compacto, com gráfico de pizza",
     descricao:
       "O painel de Pendências agora cabe numa caixa só, com os filtros, os números principais e, logo abaixo, abas para ver as pendências por área, gravidade, assunto, secretaria, tipo ou documentos faltando, em gráfico de pizza e em lista. Dá para alternar entre quantidade e valor em R$. Clicar numa fatia ou numa linha filtra a lista, que agora aparece logo abaixo, sem precisar rolar a tela.",
