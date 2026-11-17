@@ -297,7 +297,7 @@ export function DetalheEmendaCliente({
 
           {aba === "documentacao" && (
             <AbaDocumentacao
-              exigidos={documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: detalhe.execucao?.anuencia_sus ?? null })}
+              exigidos={documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: detalhe.execucao?.anuencia_sus ?? null, instrumento: detalhe.execucao?.instrumento ?? null })}
               docsDrive={detalhe.docsDrive}
               emendaId={emenda.id}
               gestor={gestor}
@@ -309,6 +309,7 @@ export function DetalheEmendaCliente({
                 beneficiario: emenda.beneficiario_nome,
                 objeto: emenda.objeto,
                 termo: detalhe.execucao?.numero_termo ?? null,
+                instrumento: detalhe.execucao?.instrumento ?? null,
                 vigenciaInicio: detalhe.execucao?.vigencia_inicio ?? null,
                 vigenciaFim: detalhe.execucao?.vigencia_fim ?? null,
                 extratoPublicadoEm: detalhe.execucao?.data_publicacao_extrato ?? null,

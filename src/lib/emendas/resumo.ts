@@ -151,7 +151,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
       });
     anexarAlertas(fases, pend);
     const entregues = new Set((docs.get(emenda.id) ?? []).map((d) => d.tipo));
-    const documentosFaltando = documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: execucao?.anuencia_sus ?? null })
+    const documentosFaltando = documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: execucao?.anuencia_sus ?? null, instrumento: execucao?.instrumento ?? null })
       .filter((d) => d.tipo !== "relatorio_gestao" && !entregues.has(d.tipo))
       .map((d) => ({ tipo: d.tipo as string, rotulo: d.rotulo }));
     saida.set(emenda.id, {

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-17",
+    titulo: "Emendas: instrumento da parceria (convênio / contrato de rateio) para entes e consórcios",
+    descricao:
+      "Em Parceria e execução, as emendas de entes e consórcios ganharam o campo \"Instrumento da parceria\": termo de fomento (padrão) ou convênio (contrato de rateio com consórcio público). No convênio, deixam de ser cobrados o termo de fomento, o plano de trabalho e o extrato do art. 38 da Lei 13.019; passam a ser exigidos o próprio convênio (novo tipo de anexo \"Convênio / contrato de rateio\") e a sua publicação. A fase do plano de trabalho fica como \"não se aplica\" e os alertas citam o fundamento certo. As 3 emendas do Cisum (93, 126 e 162) já estão marcadas como convênio.",
+  },
+  {
+    data: "2026-11-17",
     titulo: "Emendas: painel de Pendências com gráfico maior e mais equilibrado",
     descricao:
       "O gráfico de pizza ficou maior e a lista ao lado agora mostra uma barra proporcional e a porcentagem de cada item, com mais espaço entre os blocos. O botão \"Nova emenda\" passou para a linha do título da tela de Pendências, acima do Exportar.",

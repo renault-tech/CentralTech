@@ -218,6 +218,8 @@ export type Remanejamento = {
 export type ExecucaoEmenda = {
   id: string;
   numero_termo: string | null;
+  /** Instrumento da parceria: termo de fomento/colaboração (MROSC) ou convênio (ex.: contrato de rateio). */
+  instrumento: "termo_fomento" | "convenio";
   processo_licitatorio: string | null;
   processo_id: string | null;
   numero_contrato: string | null;
@@ -379,7 +381,7 @@ export type Proposta = {
 export type DocumentoDriveRow = {
   id: string;
   emenda_id: string;
-  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao";
+  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio";
   titulo: string;
   drive_file_id: string;
   drive_versao: string | null;

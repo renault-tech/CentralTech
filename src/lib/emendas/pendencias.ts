@@ -65,7 +65,7 @@ export type EntradaPendencias = {
   execucao: Pick<
     ExecucaoEmenda,
     "numero_termo" | "vigencia_fim" | "data_publicacao_extrato" | "conta_bancaria"
-  > | null;
+  > & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   /** Autor da emenda fora do exercício (cassado, licenciado, substituído): a emenda segue com ele. */
@@ -84,6 +84,8 @@ const diasEntre = (a: string, b: string) => Math.round((Date.parse(b.slice(0, 10
 export function pendencias(e: EntradaPendencias): Pendencia[] {
   const { emenda, execucao } = e;
   const tipo = tipoDaEmenda(emenda);
+  // Convênio (contrato de rateio): não é parceria do MROSC, então os fundamentos da Lei 13.019 não se aplicam.
+  const convenio = execucao?.instrumento === "convenio";
   const out: Pendencia[] = [];
   const add = (p: Omit<Pendencia, "assinatura"> & { assinatura?: string }) =>
     out.push({ ...p, assinatura: p.assinatura ?? p.detalhe });
@@ -157,8 +159,10 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     add({
       regra: "termo_sem_extrato",
       gravidade: "media",
-      titulo: "Termo assinado sem extrato publicado",
-      detalhe: `Termo ${execucao.numero_termo} sem data de publicação do extrato (Lei 13.019, art. 38).`,
+      titulo: convenio ? "Convênio assinado sem publicação" : "Termo assinado sem extrato publicado",
+      detalhe: convenio
+        ? `Convênio ${execucao.numero_termo} sem data de publicação (publicidade do instrumento, IN TCE-MG 05/2025, art. 7º, VIII).`
+        : `Termo ${execucao.numero_termo} sem data de publicação do extrato (Lei 13.019, art. 38).`,
       aba: "execucao",
     });
   }
@@ -168,7 +172,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       regra: "sem_conta",
       gravidade: "media",
       titulo: "Parceria sem conta bancária específica",
-      detalhe: "Informar a conta específica da parceria (Lei 13.019, art. 51; IN TCE-MG 05/2025, art. 6º).",
+      detalhe: convenio ? "Informar a conta específica da transferência (IN TCE-MG 05/2025, art. 6º)." : "Informar a conta específica da parceria (Lei 13.019, art. 51; IN TCE-MG 05/2025, art. 6º).",
       aba: "execucao",
     });
   }
@@ -177,7 +181,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
   if (vig?.alerta && !concluiuTudo) {
     const venceu = (execucao?.vigencia_fim ?? "") < e.hoje;
     const depoisDeVencer = venceu && execucao?.vigencia_fim ? diasEntre(execucao.vigencia_fim, e.hoje) : 0;
-    const prestacao = tipo !== "direta" && venceu && emenda.etapa !== "prestacao_contas";
+    const prestacao = tipo !== "direta" && !convenio && venceu && emenda.etapa !== "prestacao_contas";
     add({
       regra: "vigencia",
       gravidade: venceu ? (prestacao && depoisDeVencer > 90 ? "alta" : "media") : "baixa",
@@ -357,7 +361,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
   return out
     .map((p) => {
       const j = justificadas.get(p.regra);
-      const comBase = { ...p, base: baseDaPendencia(p.regra) };
+      const comBase = { ...p, base: baseDaPendencia(p.regra, execucao?.instrumento) };
       return j && j.assinatura === p.assinatura ? { ...comBase, justificativa: j.justificativa, justificadaEm: j.em } : comBase;
     })
     .sort((a, b) => ORDEM_GRAVIDADE[a.gravidade] - ORDEM_GRAVIDADE[b.gravidade]);

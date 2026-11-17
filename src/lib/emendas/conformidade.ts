@@ -90,9 +90,11 @@ export function contasRepetidas(execucoes: Pick<ExecucaoEmenda, "id" | "conta_ba
 export function planoEstaCompleto(i: EntradaConformidade): { ok: boolean; falta: string[] } {
   const falta: string[] = [];
   const tipo = tipoDaEmenda(i.emenda);
-  const temDoc = i.documentos.some((d) => d.tipo === "plano_trabalho");
+  const convenio = i.execucao?.instrumento === "convenio";
+  // Convênio (contrato de rateio): o próprio instrumento cumpre o papel do plano (objeto, valor, prazo); metas ainda se descrevem.
+  const temDoc = i.documentos.some((d) => d.tipo === "plano_trabalho" || (convenio && d.tipo === "convenio"));
   const temProcesso = !!(i.execucao?.processo_id || preenchido(i.execucao?.processo_licitatorio));
-  if (!temDoc && !(tipo === "direta" && temProcesso)) falta.push(tipo === "direta" ? "anexar o plano de trabalho (ou vincular o processo com o termo de referência)" : "anexar o plano de trabalho");
+  if (!temDoc && !(tipo === "direta" && temProcesso)) falta.push(tipo === "direta" ? "anexar o plano de trabalho (ou vincular o processo com o termo de referência)" : convenio ? "anexar o convênio / contrato de rateio" : "anexar o plano de trabalho");
   if (!preenchido(i.execucao?.plano_metas)) falta.push("descrever finalidade e metas");
   return { ok: falta.length === 0, falta };
 }

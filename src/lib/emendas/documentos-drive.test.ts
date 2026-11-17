@@ -39,7 +39,7 @@ describe("documentos do Drive", () => {
   it("o portal nunca publica certidão, RG ou documento interno", () => {
     expect(TIPOS_DRIVE_PUBLICOS).not.toContain("jornal_edicao" as never);
     for (const t of TIPOS_DRIVE_PUBLICOS) expect(TIPOS_DRIVE).toContain(t);
-    expect(TIPOS_DRIVE_PUBLICOS.every((t) => ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao"].includes(t))).toBe(true);
+    expect(TIPOS_DRIVE_PUBLICOS.every((t) => ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "convenio"].includes(t))).toBe(true);
   });
 
   it("extrai o número do ofício do nome do arquivo", () => {
@@ -54,6 +54,28 @@ describe("documentos do Drive", () => {
     expect(documentosExigidos("osc", { saude: true, anuenciaSus: "nao_se_aplica" }).map((d) => d.tipo)).not.toContain("anuencia_sus");
     expect(documentosExigidos("osc", { saude: false, anuenciaSus: "sim" }).map((d) => d.tipo)).toContain("anuencia_sus");
     for (const d of documentosExigidos("osc", { saude: true, anuenciaSus: null })) expect(d.base.length).toBeGreaterThan(5);
+  });
+
+  it("convênio (contrato de rateio) exige o instrumento e a publicação, sem termo nem plano do MROSC", () => {
+    const tipos = (i?: "termo_fomento" | "convenio", saude = false) => documentosExigidos("ente", { saude, anuenciaSus: null, instrumento: i }).map((d) => d.tipo);
+    expect(tipos("convenio")).toEqual(["convenio", "extrato", "relatorio_gestao"]);
+    expect(tipos("convenio")).not.toContain("termo");
+    expect(tipos("convenio")).not.toContain("plano_trabalho");
+    expect(tipos("convenio", true)).toContain("anuencia_sus");
+    expect(tipos("termo_fomento")).toEqual(["termo", "plano_trabalho", "extrato", "relatorio_gestao"]);
+    expect(tipos(undefined)).toEqual(tipos("termo_fomento"));
+    for (const d of documentosExigidos("ente", { saude: false, anuenciaSus: null, instrumento: "convenio" })) expect(d.base).not.toMatch(/13\.019/);
+  });
+
+  it("a ficha do convênio e da sua publicação não cita a Lei 13.019", () => {
+    const c = { ...ctx, instrumento: "convenio" as const };
+    const f = montarFicha({ tipo: "convenio", titulo: "E093 - CONVENIO - rateio.pdf" }, c);
+    expect(f.titulo).toMatch(/Convênio/);
+    expect(f.base).not.toMatch(/13\.019/);
+    const e = montarFicha({ tipo: "extrato", titulo: "E093 - EXTRATO.pdf" }, c);
+    expect(e.titulo).toMatch(/Publicação do convênio/);
+    expect(e.base).not.toMatch(/13\.019/);
+    expect(montarFicha({ tipo: "extrato", titulo: "x" }, ctx).base).toMatch(/13\.019/);
   });
 
   it("monta a ficha do termo a partir do cadastro", () => {

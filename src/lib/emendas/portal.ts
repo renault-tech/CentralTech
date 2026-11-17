@@ -57,7 +57,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       db
         .from("execucao")
         .select(
-          "id,numero_termo,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,anuencia_sus_data,identificador_contabil,fonte_recurso"
+          "id,numero_termo,instrumento,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,anuencia_sus_data,identificador_contabil,fonte_recurso"
         )
         .in("id", lote),
       db.from("impedimentos").select("emenda_id,tipo,resolvido_em").in("emenda_id", lote).is("resolvido_em", null),
@@ -125,6 +125,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       ultimoPagamento: (e.ultimo_pagamento as string | null) ?? null,
       movimentos: movimentos.get(e.id as string) ?? [],
       termo: s(x?.numero_termo),
+      instrumento: x?.instrumento === "convenio" ? "convenio" : "termo_fomento",
       processo: s(x?.processo_licitatorio) ?? (x?.processo_id ? (compras.get(x.processo_id as string)?.numero_licitacao ?? compras.get(x.processo_id as string)?.numero ?? null) : null),
       contrato: s(x?.numero_contrato) ?? (x?.processo_id ? (compras.get(x.processo_id as string)?.contrato_numero ?? null) : null),
       inicioPrevisto: s(x?.inicio_previsto),
