@@ -67,7 +67,7 @@ export function itensFaltando(l: LinhaPortal): string[] {
   if (!l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim) f.push("cronograma (VII)");
   if (repasse(l) && vazio(l.termo)) f.push("termo/instrumento (VIII)");
   if (!repasse(l) && executada(l) && vazio(l.processo)) f.push("processo administrativo (VIII)");
-  if (repasse(l) && !l.documentos.some((d) => d.tipo === "plano_trabalho")) f.push("plano de trabalho (IX)");
+  if (repasse(l) && l.instrumento !== "convenio" && !l.documentos.some((d) => d.tipo === "plano_trabalho")) f.push("plano de trabalho (IX)");
   if (repasse(l) && vazio(l.cnpj)) f.push("CNPJ do recebedor (XI)");
   if (vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade)) f.push("gestor responsável (XIV)");
   if (repasse(l) && vazio(l.conta)) f.push("banco e conta (XVI)");
@@ -238,7 +238,7 @@ export function verificarPortal(linhas: LinhaPortal[], meta: MetaVerificacao, ho
   item("cronograma", "Cronograma (início e término) não informado", "IN TCE-MG 05/2025, art. 7º, VII", (l) => !l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim, "Emenda › Transparência › Cronograma.", undefined, { antes: true });
   item("termo", "Repasse sem número do termo", "IN TCE-MG 05/2025, art. 7º, VIII; Lei 13.019/2014, art. 42", (l) => repasse(l) && executada(l) && vazio(l.termo), "Emenda › Parceria › Termo.");
   item("processo", "Execução direta empenhada sem processo administrativo", "IN TCE-MG 05/2025, art. 7º, VIII", (l) => !repasse(l) && executada(l) && vazio(l.processo), "Emenda › vincular o processo do Compras.");
-  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && !l.documentos.some((d) => d.tipo === "plano_trabalho"), "Emenda › Anexos › Plano de trabalho (PDF).", undefined, { antes: true });
+  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && l.instrumento !== "convenio" && !l.documentos.some((d) => d.tipo === "plano_trabalho"), "Emenda › Anexos › Plano de trabalho (PDF).", undefined, { antes: true });
   item("cnpj", "Repasse sem CNPJ do recebedor", "IN TCE-MG 05/2025, art. 7º, XI", (l) => repasse(l) && vazio(l.cnpj), "Configurações › Beneficiários.", undefined, { antes: true });
   item("gestor", "Gestor responsável não informado", "IN TCE-MG 05/2025, art. 7º, XIV", (l) => vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade), "Emenda › Parceria/Transparência › Gestor.", undefined, { antes: true });
   item("conta", "Repasse sem banco e conta", "IN TCE-MG 05/2025, art. 7º, XVI, e art. 6º", (l) => repasse(l) && vazio(l.conta), "Emenda › Parceria › Conta bancária.", undefined, { antes: true });
@@ -246,7 +246,7 @@ export function verificarPortal(linhas: LinhaPortal[], meta: MetaVerificacao, ho
   item("sus", "Emenda de saúde sem anuência do SUS informada", "IN TCE-MG 05/2025, art. 7º, XVII; Recomendação MPC-MG 01/2025, art. 2º, § 3º", (l) => l.saude && !l.anuenciaSus, "Emenda › Transparência › Anuência do SUS.", undefined, { antes: true });
   item("identificador", "Sem identificador contábil da emenda", "IN TCE-MG 05/2025, arts. 4º e 5º; Recomendação MPC-MG 01/2025, art. 2º, IX", (l) => executada(l) && vazio(l.identificadorContabil), "Emenda › Transparência › Identificador contábil (com a Contabilidade).", "Não aparece como \"não informado\" no portal, mas é exigido para a rastreabilidade.");
   item("pagamento_sem_data", "Pagamento sem data", "IN TCE-MG 05/2025, art. 7º, XIII", (l) => l.movimentos.some((m) => m.tipo === "pagamento" && !m.data) || (l.pago > TOL && !l.ultimoPagamento), "Emenda › Financeiro › data do pagamento.");
-  item("extrato", "Termo sem extrato publicado", "Lei 13.019/2014, art. 38", (l) => repasse(l) && !vazio(l.termo) && !l.extratoPublicadoEm, "Emenda › Parceria › Extrato publicado em.", "A parceria só produz efeitos depois da publicação do extrato.");
+  item("extrato", "Termo sem extrato publicado", "Lei 13.019/2014, art. 38", (l) => repasse(l) && l.instrumento !== "convenio" && !vazio(l.termo) && !l.extratoPublicadoEm, "Emenda › Parceria › Extrato publicado em.", "A parceria só produz efeitos depois da publicação do extrato.");
   item("vigencia", "Vigência do termo encerrada com valor a pagar", "Lei 13.019/2014, arts. 55 e 69", (l) => repasse(l) && !!l.vigenciaFim && l.vigenciaFim < hoje && l.pago < l.valor - TOL && l.situacao !== "impedida", "Emenda › Parceria: prorrogue a vigência ou registre o encerramento.", "O público veria parceria vencida com recurso ainda não pago.");
   item("objeto", "Objeto pouco descritivo", "IN TCE-MG 05/2025, art. 7º, III", (l) => l.objeto.trim().length < 15 || /^(diversos|aquisi[cç][aã]o|manuten[cç][aã]o|apoio)\.?$/i.test(l.objeto.trim()), "Emenda › Dados: descreva a ação e a finalidade.");
 

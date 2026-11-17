@@ -76,6 +76,22 @@ describe("situacaoFases", () => {
   });
 });
 
+describe("convênio (contrato de rateio)", () => {
+  const execucao = (instrumento: "termo_fomento" | "convenio") => ({ numero_termo: "9/2026", vigencia_inicio: "2026-05-01", data_publicacao_extrato: null, instrumento });
+  it("a fase do plano de trabalho não se aplica e o instrumento ganha o nome certo", () => {
+    const r = situacaoFases(base({ execucao: execucao("convenio") }));
+    expect(por(r, "plano").situacao).toBe("nao_se_aplica");
+    expect(por(r, "termo").fase.nome).toMatch(/Convênio/);
+    expect(por(r, "termo").situacao).toBe("concluida");
+    expect(progresso(r).total).toBe(FASES.length - 1);
+  });
+  it("termo de fomento continua com plano de trabalho", () => {
+    const r = situacaoFases(base({ execucao: execucao("termo_fomento") }));
+    expect(por(r, "plano").situacao).toBe("pendente");
+    expect(por(r, "termo").fase.nome).toBe("termo");
+  });
+});
+
 describe("datasForaDeOrdem", () => {
   it("aponta a fase cuja data é anterior à da fase que a precede", () => {
     const r = situacaoFases(

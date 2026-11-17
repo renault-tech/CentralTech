@@ -407,6 +407,7 @@ const esquemaExecucao = z
   .object({
     emendaId: z.uuid(),
     numeroTermo: textoOpcional(40),
+    instrumento: z.enum(["termo_fomento", "convenio"]).optional(),
     processoLicitatorio: textoOpcional(200),
     vigenciaInicio: dataOpcional,
     vigenciaFim: dataOpcional,
@@ -493,6 +494,8 @@ async function salvarExecucaoCampos(a: z.output<typeof esquemaExecucao>): Promis
     a.emendaId,
     {
       numero_termo: a.numeroTermo,
+      // só grava o instrumento quando a tela o enviou (nunca volta um convênio para termo de fomento por omissão)
+      ...(a.instrumento ? { instrumento: a.instrumento } : {}),
       processo_licitatorio: a.processoLicitatorio,
       vigencia_inicio: a.vigenciaInicio,
       vigencia_fim: a.vigenciaFim,

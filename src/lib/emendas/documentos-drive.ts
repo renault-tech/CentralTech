@@ -9,11 +9,11 @@ import { brl, dataBr } from "@/lib/emendas/regras";
  * Arquivo puro (sem `server-only`): usado nas telas internas, no portal e nos testes.
  */
 
-export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "jornal_edicao"] as const;
+export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "jornal_edicao", "convenio"] as const;
 export type TipoDrive = (typeof TIPOS_DRIVE)[number];
 
 /** Só estes tipos podem aparecer no portal sem login. Certidões, RG, orçamentos e demais anexos nunca entram. */
-export const TIPOS_DRIVE_PUBLICOS: readonly TipoDrive[] = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao"];
+export const TIPOS_DRIVE_PUBLICOS: readonly TipoDrive[] = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "convenio"];
 
 export const ROTULO_DRIVE: Record<TipoDrive, string> = {
   termo: "Termo de fomento",
@@ -22,7 +22,17 @@ export const ROTULO_DRIVE: Record<TipoDrive, string> = {
   anuencia_sus: "Anuência do SUS",
   relatorio_gestao: "Relatório de gestão",
   jornal_edicao: "Edição do Jornal Oficial",
+  convenio: "Convênio / contrato de rateio",
 };
+
+/** Instrumento da parceria: termo de fomento/colaboração (MROSC) ou convênio (ex.: contrato de rateio com consórcio público). */
+export type Instrumento = "termo_fomento" | "convenio";
+export const ROTULO_INSTRUMENTO: Record<Instrumento, string> = {
+  termo_fomento: "Termo de fomento ou de colaboração",
+  convenio: "Convênio (contrato de rateio)",
+};
+/** Nome curto do instrumento nos rótulos de campos e de fases. */
+export const NOME_CURTO_INSTRUMENTO: Record<Instrumento, string> = { termo_fomento: "termo", convenio: "convênio" };
 
 export type DocumentoDrive = {
   id: string;
@@ -64,6 +74,8 @@ const EXIGIDOS = {
   extrato: { tipo: "extrato", rotulo: ROTULO_DRIVE.extrato, base: "Lei 13.019/2014, art. 38" },
   relatorio_gestao: { tipo: "relatorio_gestao", rotulo: ROTULO_DRIVE.relatorio_gestao, base: "IN TCE-MG 05/2025, art. 7º, X" },
   anuencia_sus: { tipo: "anuencia_sus", rotulo: ROTULO_DRIVE.anuencia_sus, base: "IN TCE-MG 05/2025, art. 7º, XVII" },
+  convenio: { tipo: "convenio", rotulo: ROTULO_DRIVE.convenio, base: "Lei 11.107/2005, art. 8º · IN TCE-MG 05/2025, art. 7º, VIII" },
+  extrato_convenio: { tipo: "extrato", rotulo: ROTULO_DRIVE.extrato, base: "IN TCE-MG 05/2025, art. 7º, VIII (publicidade do instrumento)" },
 } as const satisfies Record<string, DocumentoExigido>;
 
 /**
@@ -73,10 +85,15 @@ const EXIGIDOS = {
  */
 export function documentosExigidos(
   tipoExecucao: "direta" | "osc" | "ente",
-  opcoes: { saude: boolean; anuenciaSus: "sim" | "nao" | "nao_se_aplica" | null }
+  opcoes: { saude: boolean; anuenciaSus: "sim" | "nao" | "nao_se_aplica" | null; instrumento?: Instrumento | null }
 ): DocumentoExigido[] {
   if (tipoExecucao === "direta") return [];
-  const lista: DocumentoExigido[] = [EXIGIDOS.termo, EXIGIDOS.plano_trabalho, EXIGIDOS.extrato, EXIGIDOS.relatorio_gestao];
+  // Convênio (contrato de rateio com consórcio): não é parceria do MROSC, então não há termo de fomento, plano de
+  // trabalho nem extrato do art. 38 da Lei 13.019; exige-se o próprio convênio, a publicação e o relatório de gestão.
+  const lista: DocumentoExigido[] =
+    opcoes.instrumento === "convenio"
+      ? [EXIGIDOS.convenio, EXIGIDOS.extrato_convenio, EXIGIDOS.relatorio_gestao]
+      : [EXIGIDOS.termo, EXIGIDOS.plano_trabalho, EXIGIDOS.extrato, EXIGIDOS.relatorio_gestao];
   if ((opcoes.saude || opcoes.anuenciaSus === "sim") && opcoes.anuenciaSus !== "nao_se_aplica") lista.push(EXIGIDOS.anuencia_sus);
   return lista;
 }
@@ -99,6 +116,7 @@ export type ContextoFicha = {
   inicioPrevisto: string | null;
   terminoPrevisto: string | null;
   planoOutrasFontes: number | null;
+  instrumento?: Instrumento | null;
 };
 
 export type CampoFicha = { rotulo: string; valor: string | null; largo?: boolean };
@@ -148,7 +166,35 @@ export function montarFicha(doc: Pick<DocumentoDrive, "tipo" | "titulo">, c: Con
           { rotulo: "Anuência do SUS", valor: c.anuenciaSus ? SUS[c.anuenciaSus] : null },
         ],
       };
+    case "convenio":
+      return {
+        titulo: c.termo ? `Convênio / contrato de rateio nº ${c.termo}` : "Convênio / contrato de rateio",
+        base: "Lei 11.107/2005, art. 8º · IN TCE-MG 05/2025, art. 7º",
+        campos: [
+          { rotulo: "Número do instrumento", valor: c.termo },
+          { rotulo: "Valor do repasse", valor: brl(c.valor) },
+          { rotulo: "Ente ou consórcio beneficiário", valor: c.beneficiario },
+          { rotulo: "Autor da emenda", valor: autor },
+          { rotulo: "Vigência", valor: periodo(c.vigenciaInicio, c.vigenciaFim) },
+          { rotulo: "Publicado em", valor: c.extratoPublicadoEm ? dataBr(c.extratoPublicadoEm) : null },
+          { rotulo: "Gestor do instrumento", valor: c.gestorPrefeitura },
+          { rotulo: "Conta bancária", valor: c.conta, largo: true },
+        ],
+      };
     case "extrato":
+      if (c.instrumento === "convenio") {
+        return {
+          titulo: c.termo ? `Publicação do convênio nº ${c.termo}` : "Publicação do convênio",
+          base: "IN TCE-MG 05/2025, art. 7º, VIII (publicidade do instrumento)",
+          campos: [
+            { rotulo: "Instrumento", valor: c.termo },
+            { rotulo: "Valor do repasse", valor: brl(c.valor) },
+            { rotulo: "Ente ou consórcio beneficiário", valor: c.beneficiario },
+            { rotulo: "Vigência", valor: periodo(c.vigenciaInicio, c.vigenciaFim) },
+            { rotulo: "Publicado em", valor: c.extratoPublicadoEm ? dataBr(c.extratoPublicadoEm) : null },
+          ],
+        };
+      }
       return {
         titulo: c.termo ? `Extrato do termo nº ${c.termo}` : "Extrato do termo de fomento",
         base: "Lei 13.019/2014, art. 38 (publicação do extrato) · IN TCE-MG 05/2025, art. 7º",

@@ -77,6 +77,18 @@ export const BASES: Record<string, BaseLegal> = {
     citacao: "Lei 13.019/2014, art. 69",
     resumo: "A entidade presta contas ao fim da vigência, no prazo definido no termo (até 90 dias, conforme o termo).",
   },
+  convenio_publicacao: {
+    citacao: "IN TCE-MG 05/2025, art. 7º, VIII",
+    resumo: "O convênio (contrato de rateio) é um instrumento que deve ser divulgado com o número e o processo administrativo; não se aplica o extrato do termo de fomento (Lei 13.019/2014, art. 38).",
+  },
+  convenio_conta: {
+    citacao: "IN TCE-MG 05/2025, art. 6º",
+    resumo: "Conta específica para a transferência, em instituição financeira oficial onde houver. A regra de conta isenta de tarifa da Lei 13.019/2014 (art. 51) é do MROSC e não se aplica ao convênio.",
+  },
+  convenio_vigencia: {
+    citacao: "Lei 11.107/2005, art. 8º, § 1º",
+    resumo: "O contrato de rateio é formalizado a cada exercício financeiro e não vai além da vigência das dotações que o suportam; não se aplica a prestação de contas em 90 dias da Lei 13.019/2014 (art. 69).",
+  },
   natureza_despesa: {
     citacao: "Portaria Interministerial STN/SOF nº 163/2001",
     resumo: "O 3º grupo da natureza da despesa distingue transferência a entidade sem fins lucrativos (50) de aplicação direta (90).",
@@ -108,7 +120,17 @@ export const BASE_DA_PENDENCIA: Record<string, keyof typeof BASES> = {
   exequibilidade_vencida: "exequibilidade",
 };
 
-export function baseDaPendencia(regra: string): string | undefined {
-  const chave = BASE_DA_PENDENCIA[regra.split(":")[0]];
+/** Regras cujo fundamento muda quando o instrumento é convênio (contrato de rateio) e não termo de fomento do MROSC. */
+const BASE_DA_PENDENCIA_CONVENIO: Record<string, keyof typeof BASES> = {
+  termo_sem_extrato: "convenio_publicacao",
+  sem_conta: "convenio_conta",
+  conta_repetida: "convenio_conta",
+  conta_banco_nao_oficial: "convenio_conta",
+  vigencia: "convenio_vigencia",
+};
+
+export function baseDaPendencia(regra: string, instrumento?: "termo_fomento" | "convenio" | null): string | undefined {
+  const k = regra.split(":")[0];
+  const chave = (instrumento === "convenio" ? BASE_DA_PENDENCIA_CONVENIO[k] : undefined) ?? BASE_DA_PENDENCIA[k];
   return chave ? BASES[chave].citacao : undefined;
 }

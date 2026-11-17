@@ -11,6 +11,7 @@ import { dataBr, situacaoVigencia } from "@/lib/emendas/regras";
 import type { ExecucaoEmenda, Modalidade } from "@/types/emendas";
 
 type Campos = {
+  instrumento: "termo_fomento" | "convenio";
   numeroTermo: string;
   processoLicitatorio: string;
   vigenciaInicio: string;
@@ -29,6 +30,7 @@ function hojeLocal() {
 
 function paraCampos(x: ExecucaoEmenda | null): Campos {
   return {
+    instrumento: x?.instrumento ?? "termo_fomento",
     numeroTermo: x?.numero_termo ?? "",
     processoLicitatorio: x?.processo_licitatorio ?? "",
     vigenciaInicio: x?.vigencia_inicio ?? "",
@@ -51,26 +53,30 @@ export function PainelParceria({
   modalidade,
   execucao,
   podeEditar,
+  permiteConvenio = false,
 }: {
   emendaId: string;
   modalidade: Modalidade;
   execucao: ExecucaoEmenda | null;
   podeEditar: boolean;
+  /** Emendas de ente/consórcio podem ter convênio (contrato de rateio) no lugar do termo de fomento. */
+  permiteConvenio?: boolean;
 }) {
   const [editando, setEditando] = React.useState(false);
   const [aviso, setAviso] = React.useState<string | null>(null);
   const repasse = modalidade === "repasse";
   const vigencia = situacaoVigencia(execucao?.vigencia_fim, hojeLocal());
+  const convenio = execucao?.instrumento === "convenio";
   const semExtrato = repasse && !!execucao?.numero_termo && !execucao.data_publicacao_extrato;
 
   const linhas: [string, string | null][] = repasse
     ? [
-        ["Termo de parceria", execucao?.numero_termo ? `nº ${execucao.numero_termo}` : null],
+        [convenio ? "Convênio (contrato de rateio)" : "Termo de parceria", execucao?.numero_termo ? `nº ${execucao.numero_termo}` : null],
         [
           "Vigência (cronograma de execução)",
           execucao?.vigencia_inicio || execucao?.vigencia_fim ? `${dataBr(execucao?.vigencia_inicio)} a ${dataBr(execucao?.vigencia_fim)}` : null,
         ],
-        ["Publicação do extrato", execucao?.data_publicacao_extrato ? dataBr(execucao.data_publicacao_extrato) : null],
+        [convenio ? "Publicação do convênio" : "Publicação do extrato", execucao?.data_publicacao_extrato ? dataBr(execucao.data_publicacao_extrato) : null],
         ["Conta bancária da entidade", execucao?.conta_bancaria ?? null],
         ["Gestor da parceria na entidade", execucao?.gestor_osc ?? null],
         ["Gestor da parceria na Prefeitura", execucao?.gestor_pmc ?? null],
@@ -85,7 +91,7 @@ export function PainelParceria({
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-cataguases-marinho">
           {repasse ? "Parceria e execução" : "Execução"}
-          {repasse && <BaseLegalDica chave="termo_extrato" />}
+          {repasse && <BaseLegalDica chave={convenio ? "convenio_publicacao" : "termo_extrato"} />}
         </h2>
         {podeEditar && (
           <button
@@ -107,7 +113,7 @@ export function PainelParceria({
           )}
           {semExtrato && (
             <li className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden /> Extrato do termo ainda sem data de publicação
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden /> {convenio ? "Convênio ainda sem data de publicação" : "Extrato do termo ainda sem data de publicação"}
             </li>
           )}
         </ul>
@@ -138,6 +144,7 @@ export function PainelParceria({
           aoAvisar={setAviso}
           emendaId={emendaId}
           repasse={repasse}
+          permiteConvenio={permiteConvenio}
           inicial={paraCampos(execucao)}
         />
       )}
@@ -151,6 +158,7 @@ function DialogoParceria({
   aoAvisar,
   emendaId,
   repasse,
+  permiteConvenio,
   inicial,
 }: {
   aberto: boolean;
@@ -158,6 +166,7 @@ function DialogoParceria({
   aoAvisar: (aviso: string | null) => void;
   emendaId: string;
   repasse: boolean;
+  permiteConvenio: boolean;
   inicial: Campos;
 }) {
   // Montado só enquanto aberto: reabre sempre com o que está salvo.
@@ -181,6 +190,7 @@ function DialogoParceria({
     aoFechar();
   }
 
+  const convenio = c.instrumento === "convenio";
   const rotulo = "flex flex-col gap-1.5 text-[13px] font-medium text-cataguases-marinho";
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
@@ -193,14 +203,32 @@ function DialogoParceria({
         </DialogHeader>
         <form className="mt-4 flex flex-col gap-3.5" onSubmit={salvar}>
           <div className="grid gap-3.5 sm:grid-cols-2">
+            {repasse && permiteConvenio && (
+              <label className={`${rotulo} sm:col-span-2`}>
+                Instrumento da parceria
+                <select
+                  className={CAMPO}
+                  value={c.instrumento}
+                  onChange={(e) => setC((v) => ({ ...v, instrumento: e.target.value as Campos["instrumento"] }))}
+                >
+                  <option value="termo_fomento">Termo de fomento ou de colaboração (MROSC)</option>
+                  <option value="convenio">Convênio (contrato de rateio com consórcio público)</option>
+                </select>
+                {convenio && (
+                  <span className="text-xs font-normal text-slate-600">
+                    Sem plano de trabalho nem extrato do art. 38 da Lei 13.019. Os documentos exigidos passam a ser o próprio convênio (contrato de rateio) e a sua publicação.
+                  </span>
+                )}
+              </label>
+            )}
             {repasse ? (
               <>
                 <label className={rotulo}>
-                  Nº do termo de parceria
+                  {convenio ? "Nº do convênio (contrato de rateio)" : "Nº do termo de parceria"}
                   <input className={CAMPO} maxLength={40} placeholder="027/2026" {...campo("numeroTermo")} />
                 </label>
                 <label className={rotulo}>
-                  <span className="flex items-center gap-1.5">Publicação do extrato <BaseLegalDica chave="termo_extrato" /></span>
+                  <span className="flex items-center gap-1.5">{convenio ? "Publicação do convênio" : "Publicação do extrato"} <BaseLegalDica chave={convenio ? "convenio_publicacao" : "termo_extrato"} /></span>
                   <input type="date" className={CAMPO} {...campo("dataPublicacaoExtrato")} />
                 </label>
                 <label className={rotulo}>
@@ -208,7 +236,7 @@ function DialogoParceria({
                   <input type="date" className={CAMPO} {...campo("vigenciaInicio")} />
                 </label>
                 <label className={rotulo}>
-                  <span className="flex items-center gap-1.5">Fim da vigência <BaseLegalDica chave="prestacao_contas" /></span>
+                  <span className="flex items-center gap-1.5">Fim da vigência <BaseLegalDica chave={convenio ? "convenio_vigencia" : "prestacao_contas"} /></span>
                   <input type="date" className={CAMPO} {...campo("vigenciaFim")} />
                 </label>
               </>
@@ -229,7 +257,7 @@ function DialogoParceria({
                   <input className={CAMPO} maxLength={200} {...campo("gestorOsc")} />
                 </label>
                 <label className={rotulo}>
-                  <span className="flex items-center gap-1.5">Conta bancária da entidade <BaseLegalDica chave="conta_parceria" /></span>
+                  <span className="flex items-center gap-1.5">Conta bancária da entidade <BaseLegalDica chave={convenio ? "convenio_conta" : "conta_parceria"} /></span>
                   <input className={CAMPO} maxLength={200} {...campo("contaBancaria")} />
                 </label>
               </>

@@ -74,7 +74,7 @@ const CAMPOS_EXECUCAO = new Set([
   "numero_termo", "processo_licitatorio", "processo_id", "data_envio_pagamento", "vigencia_inicio", "vigencia_fim",
   "data_publicacao_extrato", "conta_bancaria", "gestor_osc", "gestor_pmc", "observacao", "numero_contrato",
   "localidade", "inicio_previsto", "termino_previsto", "plano_metas", "plano_outras_fontes", "anuencia_sus",
-  "anuencia_sus_data", "identificador_contabil", "fonte_recurso",
+  "anuencia_sus_data", "identificador_contabil", "fonte_recurso", "instrumento",
 ]);
 const CAMPOS_DATA = new Set(["data_envio_pagamento", "vigencia_inicio", "vigencia_fim", "data_publicacao_extrato", "inicio_previsto", "termino_previsto", "anuencia_sus_data"]);
 const SITUACOES_FASE = new Set(["pendente", "em_andamento", "concluida", "nao_se_aplica"]);
@@ -91,6 +91,7 @@ function validarProposta(p: Linha): string | null {
     if (typeof v === "string" && v.length > 4000) return "Valor longo demais.";
     if (v !== null && CAMPOS_DATA.has(p.campo) && !/^\d{4}-\d{2}-\d{2}$/.test(v as string)) return "Data inválida.";
     if (v !== null && p.campo === "plano_outras_fontes" && !/^\d{1,12}(\.\d{1,2})?$/.test(v as string)) return "Valor inválido.";
+    if (p.campo === "instrumento" && !["termo_fomento", "convenio"].includes(v as string)) return "Valor inválido.";
     if (v !== null && p.campo === "anuencia_sus" && !["sim", "nao", "nao_se_aplica"].includes(v as string)) return "Valor inválido.";
     return null;
   }

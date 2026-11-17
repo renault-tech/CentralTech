@@ -44,6 +44,24 @@ describe("pendencias", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-12-31" } })).not.toContain("exequibilidade_vencida");
   });
 
+  it("convênio sem publicação: mesmo alerta, sem citar a Lei 13.019; vigência encerrada não cobra prestação em 90 dias", () => {
+    const ente = { ...emenda, tipo_execucao: "ente" as const };
+    const execucao = { numero_termo: "9/2026", vigencia_fim: "2026-01-10", data_publicacao_extrato: null, conta_bancaria: null, instrumento: "convenio" as const };
+    const ps = pendencias(entrada({ execucao, emenda: ente }));
+    const ext = ps.find((p) => p.regra === "termo_sem_extrato")!;
+    expect(ext.titulo).toMatch(/Convênio/);
+    expect(ext.detalhe).not.toMatch(/13\.019/);
+    expect(ext.base).toMatch(/IN TCE-MG 05\/2025/);
+    expect(ps.find((p) => p.regra === "sem_conta")!.detalhe).not.toMatch(/13\.019/);
+    const vig = ps.find((p) => p.regra === "vigencia")!;
+    expect(vig.detalhe).not.toMatch(/art\. 69/);
+    expect(vig.gravidade).toBe("media");
+    expect(vig.base).toMatch(/11\.107/);
+    const termo = pendencias(entrada({ execucao: { ...execucao, instrumento: "termo_fomento" }, emenda: ente }));
+    expect(termo.find((p) => p.regra === "termo_sem_extrato")!.detalhe).toMatch(/13\.019/);
+    expect(termo.find((p) => p.regra === "vigencia")!.detalhe).toMatch(/art\. 69/);
+  });
+
   it("termo sem extrato e sem conta (só OSC/ente)", () => {
     const execucao = { numero_termo: "9/2026", vigencia_fim: null, data_publicacao_extrato: null, conta_bancaria: null };
     expect(regras({ execucao })).toEqual(expect.arrayContaining(["termo_sem_extrato", "sem_conta"]));

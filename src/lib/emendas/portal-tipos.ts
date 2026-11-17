@@ -44,6 +44,8 @@ export type LinhaPortal = {
   /** Data(s) de disponibilização do recurso: empenhos, liquidações e pagamentos. */
   movimentos: MovimentoPortal[];
   termo: string | null;
+  /** Termo de fomento (padrão) ou convênio / contrato de rateio. */
+  instrumento?: "termo_fomento" | "convenio";
   processo: string | null;
   contrato: string | null;
   inicioPrevisto: string | null;

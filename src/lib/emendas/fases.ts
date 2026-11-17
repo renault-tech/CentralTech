@@ -103,7 +103,7 @@ export type EntradaFases = {
   valorEmenda?: number | null;
   /** Processo do Compras ligado à emenda (execução direta). */
   compras?: ResumoCompras | null;
-  execucao: Pick<ExecucaoEmenda, "numero_termo" | "vigencia_inicio" | "data_publicacao_extrato"> | null;
+  execucao: (Pick<ExecucaoEmenda, "numero_termo" | "vigencia_inicio" | "data_publicacao_extrato"> & { instrumento?: ExecucaoEmenda["instrumento"] }) | null;
   exercicio: Pick<Exercicio, "data_aprovacao_loa"> | null;
   parecer: { data: string } | null;
   catalogo?: CatalogoEtapas;
@@ -204,12 +204,19 @@ export function situacaoFases(entrada: EntradaFases): FaseCalculada[] {
   const { emenda } = entrada;
   const posAtual = posicaoNaTrilha(emenda.modalidade, emenda.etapa, cat);
 
+  // Convênio (ex.: contrato de rateio com consórcio): não é parceria do MROSC. A fase do plano de trabalho não se aplica
+  // e o instrumento assinado leva o nome certo.
+  const convenio = entrada.execucao?.instrumento === "convenio";
   return entrada.fases
     .filter((f) => f.ativa)
     .sort((a, b) => a.ordem - b.ordem)
+    .map((f) => (convenio && f.chave === "termo" ? { ...f, nome: "Convênio (contrato de rateio) assinado" } : f))
     .map((fase): FaseCalculada => {
       const manual = entrada.manuais.get(fase.chave);
       const base = { fase, data: null, documento: null, observacao: null, alertas: [] as string[] };
+      if (convenio && fase.chave === "plano") {
+        return { ...base, situacao: "nao_se_aplica", origem: "derivada", resumo: "Não se aplica: convênio (contrato de rateio) não tem plano de trabalho do MROSC; vale o próprio instrumento." };
+      }
       const real = dadoDerivado(fase, entrada);
 
       if (real && "data" in real) {
