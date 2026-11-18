@@ -389,7 +389,7 @@ export type Proposta = {
 export type DocumentoDriveRow = {
   id: string;
   emenda_id: string;
-  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio";
+  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio" | "nota_fiscal" | "prestacao_contas";
   titulo: string;
   drive_file_id: string;
   drive_versao: string | null;
@@ -429,6 +429,7 @@ export type DatabaseEmendas = {
       remanejamentos: Tabela<Remanejamento, "emenda_id" | "antes" | "depois", "id" | "criado_em">;
       execucao: Tabela<ExecucaoEmenda, "id", never>;
       conciliacoes: Tabela<ConciliacaoRow, "id", never>;
+      encerramentos: Tabela<EncerramentoRow, "id" | "situacao", never>;
       documentos: Tabela<DocumentoEmenda, "emenda_id" | "tipo" | "nome_arquivo" | "caminho", "id" | "criado_em">;
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;
@@ -509,4 +510,17 @@ export type ConciliacaoRow = {
   observacao: string | null;
   atualizado_em: string;
   atualizado_por: string | null;
+};
+
+/** Situação de encerramento da emenda (`emendas.encerramentos`): cumprida, cumprida com economia, não cumprida ou restos a pagar. */
+export type EncerramentoRow = {
+  id: string;
+  situacao: "cumprida" | "cumprida_economia" | "nao_cumprida" | "restos_a_pagar";
+  definida_em: string;
+  observacao: string | null;
+  devolucao_valor: number | string | null;
+  devolucao_data: string | null;
+  devolucao_documento: string | null;
+  definida_por: string | null;
+  atualizado_em: string;
 };

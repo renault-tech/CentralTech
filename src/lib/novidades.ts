@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-19",
+    titulo: "Emendas: situação de encerramento e Panorama da execução",
+    descricao:
+      "Cada emenda agora pode ser encerrada pelo gestor: cumprida, cumprida com economia (ou com devolução de saldo, no repasse), não cumprida ou em restos a pagar. Para marcar como cumprida é preciso ligar o documento que comprova: a nota fiscal com atesto (execução direta) ou a prestação de contas (repasse), que ficam na aba Documentação. O valor não empenhado volta ao caixa e a emenda continua contando como cumprida; restos a pagar vale só para empenho não pago. A tela Saldos virou Panorama da execução: cartões que filtram a lista de emendas (empenhado, pago, sem empenho, cumpridas, restos a pagar, empenho a anular, devoluções, excesso), quadros por secretaria, vereador e tipo, e o relatório completo em Excel e PDF para a prestação de contas e a conciliação com a Contabilidade. O Painel ganhou um resumo com o link.",
+  },
+  {
     data: "2026-11-18",
     titulo: "Emendas: aba Financeiro mais enxuta",
     descricao:

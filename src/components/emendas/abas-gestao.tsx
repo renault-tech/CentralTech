@@ -298,9 +298,13 @@ export function AbaDocumentacao({
 }) {
   if (exigidos.length === 0) {
     return (
-      <p className="text-sm text-slate-600">
-        {tipoRotulo}: a lei não exige termo de fomento, plano de trabalho ou extrato para este tipo de execução. Os documentos próprios da compra ficam no processo ligado na aba Fases.
-      </p>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-slate-600">
+          {tipoRotulo}: a lei não exige termo de fomento, plano de trabalho ou extrato para este tipo de execução. Os documentos próprios da compra ficam no processo ligado na aba Fases.
+        </p>
+        <ComprovacaoCumprimento docsDrive={docsDrive} gestor={gestor} emendaId={emendaId} executar={executar} />
+        {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={["nota_fiscal"]} executar={executar} />}
+      </div>
     );
   }
   const disponiveis = exigidos.filter((e) => docsDrive.some((d) => d.tipo === e.tipo)).length;
@@ -356,7 +360,40 @@ export function AbaDocumentacao({
           );
         })}
       </ul>
+      <ComprovacaoCumprimento docsDrive={docsDrive} gestor={gestor} emendaId={emendaId} executar={executar} />
       {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={exigidos.map((e) => e.tipo)} executar={executar} />}
+    </div>
+  );
+}
+
+/** Documento que comprova o cumprimento da emenda (nota fiscal com atesto, ou prestação de contas), ligado no Drive. Documento interno. */
+function ComprovacaoCumprimento({ docsDrive, gestor, emendaId, executar }: { docsDrive: DocumentoDrive[]; gestor: boolean; emendaId: string; executar: (acao: () => Promise<Resultado>) => Promise<Resultado> }) {
+  const docs = docsDrive.filter((d) => d.tipo === "nota_fiscal" || d.tipo === "prestacao_contas");
+  if (docs.length === 0) return <p className="text-xs text-slate-500">Comprovação do cumprimento (nota fiscal ou prestação de contas): ainda não ligada. Ela é pedida ao marcar a emenda como cumprida, na aba Financeiro.</p>;
+  return (
+    <div className="rounded-lg border border-slate-200 p-3">
+      <p className="text-sm font-medium text-cataguases-marinho">Comprovação do cumprimento</p>
+      <ul className="mt-1.5 flex flex-col gap-1">
+        {docs.map((d) => (
+          <li key={d.id} className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-700">{ROTULO_DRIVE[d.tipo]}</span>
+            <a href={urlOriginal(d.drive_file_id)} target="_blank" rel="noopener noreferrer" className="font-medium text-[#5B3FA8] hover:underline">
+              Ver original
+            </a>
+            {gestor && (
+              <button
+                type="button"
+                className="text-slate-500 hover:text-red-700 hover:underline"
+                onClick={() => {
+                  if (window.confirm("Remover o vínculo com este documento? O arquivo continua no Drive.")) void executar(() => removerDocumentoDrive(d.id, emendaId));
+                }}
+              >
+                Remover
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { CheckCircle2, Undo2 } from "lucide-react";
 
 import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO } from "@/components/emendas/detalhe-emenda";
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
-import { desfazerConciliacao, salvarConciliacao } from "@/lib/emendas/actions";
+import { desfazerConciliacao, desfazerEncerramento, salvarConciliacao, salvarEncerramento } from "@/lib/emendas/actions";
+import { vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
+import { COR_SITUACAO, documentoComprobatorio, rotuloSituacao, type Encerramento, type SituacaoEncerramento, type TipoExecucaoEnc } from "@/lib/emendas/encerramento";
 import { situacaoConciliacao, type Conciliacao } from "@/lib/emendas/conciliacao";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -97,6 +99,9 @@ export function CartoesFinanceiros({
   pago,
   etapa,
   conciliacao: c,
+  encerramento,
+  tipo,
+  provaLigada,
   gestor,
   executar,
 }: {
@@ -106,6 +111,10 @@ export function CartoesFinanceiros({
   pago: number;
   etapa: string;
   conciliacao: Conciliacao | null;
+  encerramento: Encerramento | null;
+  tipo: TipoExecucaoEnc;
+  /** O documento que comprova o cumprimento (nota fiscal ou prestação de contas) já está ligado na Documentação. */
+  provaLigada: boolean;
   gestor: boolean;
   executar: Executar;
 }) {
@@ -113,13 +122,26 @@ export function CartoesFinanceiros({
   const aPagar = Math.max(0, Math.round((empenhado - pago) * 100) / 100);
   const semEmpenhar = Math.round((valor - empenhado) * 100) / 100;
   const acima = semEmpenhar < -0.005;
+  const semSaldoPendente = semEmpenhar <= 0.005 && aPagar <= 0.005;
+  const form = { emendaId, tipo, provaLigada, gestor, executar, valor, empenhado, pago };
   return (
+    <div className="flex flex-col gap-2">
+      {encerramento && <FaixaEncerramento enc={encerramento} tipo={tipo} gestor={gestor} emendaId={emendaId} executar={executar} />}
     <dl className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Valores da emenda">
       <Cartao rotulo="Valor da emenda" valor={valor} alinhar="inicio" dica="Valor total indicado pelo vereador, dentro da cota do exercício." />
       <Cartao rotulo="Empenhado" valor={empenhado} dica="Soma dos empenhos lançados. Fica sempre com o valor exato do IPM, sem arredondamento." />
-      <Cartao rotulo="Pago" valor={pago} dica="Soma dos pagamentos lançados (inclui retenções, quando houver)." />
+      <Cartao rotulo="Pago" valor={pago} dica="Soma dos pagamentos lançados (inclui retenções, quando houver).">
+        {gestor && !encerramento && semSaldoPendente && empenhado > 0.005 && pago > 0.005 && (
+          <Acao rotulo={tipo === "direta" ? "Marcar emenda como cumprida" : "Encerrar a emenda"}>
+            {(fechar) => <FormEncerramento {...form} opcoes={tipo === "direta" ? ["cumprida", "nao_cumprida"] : ["cumprida", "cumprida_economia", "nao_cumprida"]} fechar={fechar} />}
+          </Acao>
+        )}
+      </Cartao>
       <Cartao rotulo="A pagar (do empenhado)" valor={aPagar} cor={sit.saldoEmpenho > 0 ? "text-amber-800" : undefined} dica="Empenhado menos pago. Se a execução terminou e ainda sobra empenho sem pagar, o saldo deve ser anulado no IPM.">
         <AcaoAnulacao emendaId={emendaId} sit={sit} valor={sit.saldoEmpenho || aPagar} c={c} gestor={gestor} executar={executar} />
+        {gestor && !encerramento && aPagar > 0.005 && (
+          <Acao rotulo="Inscrever em restos a pagar">{(fechar) => <FormEncerramento {...form} opcoes={["restos_a_pagar"]} fechar={fechar} />}</Acao>
+        )}
       </Cartao>
       {acima ? (
         <Cartao rotulo="Acima da emenda" valor={-semEmpenhar} cor="text-red-700" alinhar="fim" dica="Empenhado maior que o valor da emenda. O excesso só é aceito com a fonte de recurso que o cobriu, conforme o IPM.">
@@ -127,18 +149,20 @@ export function CartoesFinanceiros({
         </Cartao>
       ) : (
         <Cartao rotulo="Sem empenhar" valor={semEmpenhar} cor={semEmpenhar > 0.005 ? "text-amber-800" : "text-slate-500"} alinhar="fim" dica="Valor da emenda menos o empenhado. Quando a execução termina com sobra, ela é registrada como saldo não executado (conferida com o IPM).">
-          <AcaoSaldo emendaId={emendaId} sit={sit} c={c} falta={semEmpenhar} empenhado={empenhado} gestor={gestor} executar={executar} />
+          <AcaoSaldo sit={sit} c={c} falta={semEmpenhar} empenhado={empenhado} gestor={gestor} semEncerramento={!encerramento} form={form} />
         </Cartao>
       )}
     </dl>
+    </div>
   );
 }
 
 type Sit = ReturnType<typeof situacaoConciliacao>;
 
-function AcaoSaldo({ emendaId, sit, c, falta, empenhado, gestor, executar }: { emendaId: string; sit: Sit; c: Conciliacao | null; falta: number; empenhado: number; gestor: boolean; executar: Executar }) {
-  const { pendente, erro, enviar } = useEnvio(executar);
-  const [obs, setObs] = React.useState(c?.saldo_observacao ?? "");
+type PropsForm = { emendaId: string; tipo: TipoExecucaoEnc; provaLigada: boolean; gestor: boolean; executar: Executar; valor: number; empenhado: number; pago: number };
+
+function AcaoSaldo({ sit, c, falta, empenhado, gestor, semEncerramento, form }: { sit: Sit; c: Conciliacao | null; falta: number; empenhado: number; gestor: boolean; semEncerramento: boolean; form: PropsForm }) {
+  const { pendente, erro, enviar } = useEnvio(form.executar);
   if (sit.saldoRegistrado)
     return (
       <div className="flex flex-col gap-1">
@@ -146,26 +170,120 @@ function AcaoSaldo({ emendaId, sit, c, falta, empenhado, gestor, executar }: { e
           <CheckCircle2 className="h-3 w-3" aria-hidden /> Saldo registrado em {dataBr(c?.saldo_registrado_em)}
         </span>
         {c?.saldo_observacao && <p className="text-xs text-slate-600">“{c.saldo_observacao}”</p>}
-        {gestor && <Desfazer pendente={pendente} onClick={() => enviar(() => desfazerConciliacao({ emendaId, bloco: "saldo" }))} />}
+        {gestor && semEncerramento && <Desfazer pendente={pendente} onClick={() => enviar(() => desfazerConciliacao({ emendaId: form.emendaId, bloco: "saldo" }))} />}
         {erro && <p role="alert" className="text-xs text-red-700">{erro}</p>}
       </div>
     );
-  // Só aparece quando há empenho e sobra valor da emenda sem empenhar.
-  if (!gestor || empenhado <= 0.005 || falta <= 0.005) return sit.saldoNaoExecutado > 0 ? <span className={cn(SELO, "bg-amber-50 text-amber-900")}>Saldo a registrar</span> : null;
-  const encerrando = sit.saldoNaoExecutado <= 0; // execução ainda em andamento: o gestor encerra o empenho com saldo
+  // O botão só existe quando há empenho e sobra valor da emenda sem empenhar.
+  if (!gestor || !semEncerramento || empenhado <= 0.005 || falta <= 0.005) return sit.saldoNaoExecutado > 0 ? <span className={cn(SELO, "bg-amber-50 text-amber-900")}>Saldo a registrar</span> : null;
   return (
-    <Acao rotulo={encerrando ? "Encerrar empenho com saldo" : "Registrar saldo não executado"}>
-      {(fechar) => (
-        <>
-          <label className={ROTULO}>
-            Justificativa (opcional)
-            <textarea className={CAMPO} rows={2} maxLength={1000} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="ex.: conferido com o IPM" />
-          </label>
-          <Botoes pendente={pendente} fechar={fechar} confirmar={() => enviar(() => salvarConciliacao({ emendaId, registrarSaldo: true, encerrarEmpenho: encerrando || undefined, saldoObservacao: obs }), fechar)} />
-          {erro && <p role="alert" className="text-xs text-red-700">{erro}</p>}
-        </>
-      )}
+    <Acao rotulo="Registrar saldo e situação da emenda">
+      {(fechar) => <FormEncerramento {...form} opcoes={["cumprida_economia", "nao_cumprida"]} fechar={fechar} />}
     </Acao>
+  );
+}
+
+const DESCRICAO_SITUACAO: Record<SituacaoEncerramento, (tipo: TipoExecucaoEnc) => string> = {
+  cumprida: () => "O objeto foi entregue integralmente.",
+  cumprida_economia: (tipo) => (tipo === "direta" ? "O objeto foi entregue gastando menos. A parte não empenhada volta ao caixa da Prefeitura e a emenda conta como cumprida." : "A entidade cumpriu o objeto e devolveu o saldo que não gastou."),
+  nao_cumprida: () => "O objeto não foi entregue (impedimento ou desistência).",
+  restos_a_pagar: () => "O empenho não pago passa para o exercício seguinte. Só vale para valor já empenhado.",
+};
+
+/** Janela de encerramento: situação, comprovante (nota fiscal ou prestação de contas), devolução no repasse e observação. */
+function FormEncerramento({ emendaId, tipo, provaLigada, executar, opcoes, fechar }: PropsForm & { opcoes: SituacaoEncerramento[]; fechar: () => void }) {
+  const { pendente, erro, enviar } = useEnvio(executar);
+  const [situacao, setSituacao] = React.useState<SituacaoEncerramento>(opcoes[0]);
+  const [obs, setObs] = React.useState("");
+  const [link, setLink] = React.useState("");
+  const [dev, setDev] = React.useState("");
+  const [devData, setDevData] = React.useState("");
+  const [devDoc, setDevDoc] = React.useState("");
+  const prova = documentoComprobatorio(tipo);
+  const exigeProva = situacao === "cumprida" || situacao === "cumprida_economia";
+  const comDevolucao = situacao === "cumprida_economia" && tipo !== "direta";
+  const devNum = Number(dev.replace(/\./g, "").replace(",", "."));
+
+  function confirmar() {
+    enviar(async () => {
+      if (exigeProva && !provaLigada) {
+        if (!link.trim()) return { sucesso: false as const, erro: `Cole o link do documento: ${prova.rotulo.toLowerCase()}.` };
+        const r = await vincularDocumentoDrive({ emendaId, tipo: prova.tipo, link });
+        if (!r.sucesso) return r;
+      }
+      return salvarEncerramento({ emendaId, situacao, observacao: obs, devolucaoValor: comDevolucao && dev ? devNum : null, devolucaoData: comDevolucao && dev ? devData : null, devolucaoDocumento: comDevolucao ? devDoc : undefined });
+    }, fechar);
+  }
+
+  return (
+    <fieldset className="flex flex-col gap-2" disabled={pendente}>
+      <legend className="sr-only">Situação da emenda</legend>
+      {opcoes.length > 1 &&
+        opcoes.map((o) => (
+          <label key={o} className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs has-[:checked]:border-[#6B4FBB] has-[:checked]:bg-[#6B4FBB]/5">
+            <input type="radio" name={`sit-${emendaId}`} checked={situacao === o} onChange={() => setSituacao(o)} className="mt-0.5" />
+            <span>
+              <span className="font-medium text-slate-800">{rotuloSituacao(o, tipo)}</span>
+              <span className="block text-slate-600">{DESCRICAO_SITUACAO[o](tipo)}</span>
+            </span>
+          </label>
+        ))}
+      {opcoes.length === 1 && <p className="text-xs text-slate-600">{DESCRICAO_SITUACAO[situacao](tipo)}</p>}
+      {exigeProva &&
+        (provaLigada ? (
+          <p className="flex items-center gap-1 text-xs text-green-800">
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> {prova.rotulo}: já ligado na Documentação.
+          </p>
+        ) : (
+          <label className={ROTULO}>
+            {prova.rotulo} (obrigatório)
+            <input className={CAMPO} value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole o link do arquivo no Drive" />
+          </label>
+        ))}
+      {comDevolucao && (
+        <div className="grid gap-2 rounded-lg border border-dashed border-slate-300 p-2">
+          <p className="text-xs font-medium text-slate-700">Devolução de saldo pela entidade (se houve)</p>
+          <label className={ROTULO}>
+            Valor devolvido (R$)
+            <input className={CAMPO} inputMode="decimal" value={dev} onChange={(e) => setDev(e.target.value)} placeholder="0,00" />
+          </label>
+          {dev && (
+            <>
+              <label className={ROTULO}>
+                Data da devolução
+                <input type="date" className={CAMPO} value={devData} onChange={(e) => setDevData(e.target.value)} />
+              </label>
+              <label className={ROTULO}>
+                Comprovante / nº (opcional)
+                <input className={CAMPO} maxLength={200} value={devDoc} onChange={(e) => setDevDoc(e.target.value)} />
+              </label>
+            </>
+          )}
+        </div>
+      )}
+      <label className={ROTULO}>
+        Justificativa (opcional)
+        <textarea className={CAMPO} rows={2} maxLength={2000} value={obs} onChange={(e) => setObs(e.target.value)} />
+      </label>
+      <Botoes pendente={pendente} fechar={fechar} confirmar={confirmar} desabilitar={comDevolucao && !!dev && (!(devNum > 0) || !devData)} />
+      {erro && <p role="alert" className="text-xs text-red-700">{erro}</p>}
+    </fieldset>
+  );
+}
+
+/** Faixa com a situação já definida (selo, data, devolução e justificativa), com "Desfazer" para o gestor. */
+function FaixaEncerramento({ enc, tipo, gestor, emendaId, executar }: { enc: Encerramento; tipo: TipoExecucaoEnc; gestor: boolean; emendaId: string; executar: Executar }) {
+  const { pendente, erro, enviar } = useEnvio(executar);
+  const dev = Number(enc.devolucao_valor ?? 0);
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <span className={cn(SELO, COR_SITUACAO[enc.situacao].selo)}>{rotuloSituacao(enc.situacao, tipo)}</span>
+      <span className="text-xs text-slate-600">definida em {dataBr(enc.definida_em)}</span>
+      {dev > 0 && <span className="text-xs text-slate-700">Devolução de {brl(dev)} em {dataBr(enc.devolucao_data)}{enc.devolucao_documento ? ` · ${enc.devolucao_documento}` : ""}</span>}
+      {enc.observacao && <span className="text-xs text-slate-600">“{enc.observacao}”</span>}
+      {gestor && <Desfazer pendente={pendente} onClick={() => enviar(() => desfazerEncerramento({ emendaId }))} />}
+      {erro && <p role="alert" className="basis-full text-xs text-red-700">{erro}</p>}
+    </div>
   );
 }
 
