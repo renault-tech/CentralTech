@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-18",
+    titulo: "Frotas: \"Ligar veículos à FIPE\" em lote",
+    descricao:
+      "O botão \"Atualizar valores da FIPE\" só refaz o valor de quem já está ligado à FIPE, e nenhum veículo estava. Agora há o botão \"Ligar veículos à FIPE\": ele procura sozinho a marca, o modelo e o ano de cada veículo sem vínculo, grava o valor e lista os que precisam de escolha na mão (modelo duvidoso, marca ou ano não encontrados). Veículos alugados, máquinas e valores digitados na mão ficam de fora.",
+  },
+  {
+    data: "2026-11-18",
     titulo: "Frotas: tela Manutenção × FIPE e atualização da FIPE mais confiável",
     descricao:
       "Nova tela \"Manutenção × FIPE\" no Frotas: para cada veículo, quanto já se gastou em manutenção (no período escolhido e acumulado, ano a ano) comparado ao valor na tabela FIPE, com alerta de atenção e de avaliar baixa ou troca. Veículos sem valor na FIPE aparecem à parte, com o gasto. O botão \"Atualizar valores da FIPE\" agora consulta em lotes pequenos e continua sozinho até terminar, e mostra o motivo quando a FIPE recusa a consulta.",
