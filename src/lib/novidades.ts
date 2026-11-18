@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-18",
+    titulo: "Emendas: aba Financeiro mais enxuta",
+    descricao:
+      "Os valores aparecem uma vez só, em cinco cartões alinhados (valor da emenda, empenhado, pago, a pagar e sem empenhar); o cartão de liquidado saiu. A conciliação com o IPM ocupa bem menos espaço: cada situação virou uma linha compacta, sem repetir o quadro de valores.",
+  },
+  {
+    data: "2026-11-18",
     titulo: "Emendas: painel de conciliação mais claro, \"Desfazer\" e nova tela de Saldos",
     descricao:
       "O painel \"Conciliação com o IPM\" ganhou novo visual: o quadro de valores (emenda, empenhado, pago e diferença), cada situação com etiqueta e cor, os passos da anulação do saldo do empenho e botões maiores no celular. Cada registro agora pode ser desfeito (\"Desfazer\"). Nova tela Saldos, no menu do módulo, soma os saldos de todas as emendas para a Contabilidade: saldo não executado (registrado e a registrar), empenho a anular no IPM e excesso sobre a emenda com a fonte, com resumo por secretaria, filtros e Excel.",
