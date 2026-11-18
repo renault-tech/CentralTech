@@ -7,6 +7,7 @@ import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
 import type { DocumentoDrive } from "@/lib/emendas/documentos-drive";
 import type { Conciliacao } from "@/lib/emendas/conciliacao";
+import type { Encerramento } from "@/lib/emendas/encerramento";
 import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emendas/regras";
 import type {
   Andamento,
@@ -189,6 +190,18 @@ export async function listarConciliacoes(idsEmendas: string[]): Promise<Concilia
   return lotes.flat() as Conciliacao[];
 }
 
+export async function listarEncerramentos(idsEmendas: string[]): Promise<Encerramento[]> {
+  if (idsEmendas.length === 0) return [];
+  const emendas = await criarClienteEmendas();
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const { data, error } = await emendas.from("encerramentos").select("*").in("id", lote);
+      return error ? [] : (data ?? []);
+    })
+  );
+  return lotes.flat() as Encerramento[];
+}
+
 export const listarVereadores = cache(async (): Promise<Vereador[]> => {
   const emendas = await criarClienteEmendas();
   const { data, error } = await emendas.from("vereadores").select("*").order("numero");
@@ -291,6 +304,7 @@ export type DetalheEmenda = {
   /** Links para os documentos no Drive (nenhum arquivo fica no banco). */
   docsDrive: DocumentoDrive[];
   conciliacao: Conciliacao | null;
+  encerramento: Encerramento | null;
 };
 
 export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | null> {
@@ -299,7 +313,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
   if (error) falhou("detalhe", error);
   if (!emenda) return null;
 
-  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas, docsDrive, conciliacao] = await Promise.all([
+  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas, docsDrive, conciliacao, encerramento] = await Promise.all([
     emendas.from("andamentos").select("*").eq("emenda_id", id).order("data", { ascending: false }).order("criado_em", { ascending: false }),
     emendas.from("movimentos_financeiros").select("*").eq("emenda_id", id).order("criado_em"),
     emendas.from("impedimentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
@@ -316,6 +330,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
       .order("tipo")
       .order("titulo"),
     emendas.from("conciliacoes").select("*").eq("id", id).maybeSingle(),
+    emendas.from("encerramentos").select("*").eq("id", id).maybeSingle(),
   ]);
   for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas]) {
     if (r.error) falhou("detalhe-filhos", r.error);
@@ -356,6 +371,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     // Os links do Drive são acessório: se a leitura falhar, a emenda abre do mesmo jeito, sem eles.
     docsDrive: docsLista,
     conciliacao: (conciliacao.error ? null : conciliacao.data) as Conciliacao | null,
+    encerramento: (encerramento.error ? null : encerramento.data) as Encerramento | null,
   };
 }
 

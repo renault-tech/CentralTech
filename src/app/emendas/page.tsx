@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { Gauge } from "lucide-react";
 
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { FaixaTipos } from "@/components/emendas/faixa-tipos";
@@ -15,6 +17,8 @@ import {
   resolverExercicio,
 } from "@/lib/emendas/dados";
 import { brl } from "@/lib/emendas/regras";
+import { carregarPanorama } from "@/lib/emendas/panorama-dados";
+import { totaisPorCartao } from "@/lib/emendas/encerramento";
 import { dataNoFuso } from "@/lib/fuso";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +79,9 @@ export default async function PaginaPainelEmendas({
             hoje={hoje}
           />
           <Suspense>
+            <CartaoPanorama ano={exercicio.ano} />
+          </Suspense>
+          <Suspense>
             <PainelEmendas
               emendas={emendas}
               movimentos={movimentos}
@@ -90,5 +97,39 @@ export default async function PaginaPainelEmendas({
         </>
       )}
     </div>
+  );
+}
+
+/** Resumo do Panorama da execução no Painel: os números que pedem atenção, com o link para o quadro completo. */
+async function CartaoPanorama({ ano }: { ano: number }) {
+  const { linhas } = await carregarPanorama(ano);
+  const t = totaisPorCartao(linhas);
+  const itens: [string, string, string][] = [
+    ["Cumpridas", String(t.cumprida.quantidade + t.cumprida_economia.quantidade), "c=cumprida"],
+    ["Sem situação definida", String(t.sem_situacao.quantidade), "c=sem_situacao"],
+    ["Em restos a pagar", brl(t.restos_a_pagar.valor), "c=restos_a_pagar"],
+    ["Empenho não pago", brl(t.a_pagar.valor), "c=a_pagar"],
+  ];
+  return (
+    <section aria-label="Panorama da execução" className="rounded-xl border border-slate-200 bg-white p-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-cataguases-marinho">
+          <Gauge className="h-4 w-4 text-[#5B3FA8]" aria-hidden /> Panorama da execução
+        </h2>
+        <Link href={`/emendas/panorama?ano=${ano}`} className="text-xs font-medium text-[#5B3FA8] underline-offset-2 hover:underline">
+          Ver o quadro completo
+        </Link>
+      </div>
+      <ul className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {itens.map(([nome, valor, q]) => (
+          <li key={nome}>
+            <Link href={`/emendas/panorama?ano=${ano}&${q}`} className="block rounded-lg bg-slate-50 px-3 py-2 transition-colors duration-200 hover:bg-slate-100">
+              <span className="block text-[11px] text-slate-500">{nome}</span>
+              <span className="text-base font-semibold tabular-nums text-cataguases-marinho">{valor}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

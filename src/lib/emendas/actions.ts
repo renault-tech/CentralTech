@@ -14,6 +14,7 @@ import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { situacaoConciliacao } from "@/lib/emendas/conciliacao";
+import { SITUACOES_ENCERRAMENTO, documentoComprobatorio, validarEncerramento } from "@/lib/emendas/encerramento";
 import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { CATEGORIAS, categoriaPorTipoENome, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
@@ -767,6 +768,92 @@ export async function desfazerConciliacao(dados: { emendaId: string; bloco: "sal
   if (vazio) await emendas.from("conciliacoes").delete().eq("id", dados.emendaId);
   revalidar(dados.emendaId);
   return { sucesso: true, aviso: "Registro desfeito." };
+}
+
+const esquemaEncerramento = z.object({
+  emendaId: z.uuid(),
+  situacao: z.enum(SITUACOES_ENCERRAMENTO),
+  observacao: z.string().trim().max(2000).optional(),
+  devolucaoValor: z.number().positive().max(1_000_000_000).nullish(),
+  devolucaoData: data.nullish(),
+  devolucaoDocumento: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Situação de encerramento da emenda (um campo só): cumprida, cumprida com economia (ou devolução de saldo, no repasse), não
+ * cumprida ou inscrita em restos a pagar. Só gestor/admin. Cumprida exige o documento que comprova (nota fiscal na execução direta,
+ * prestação de contas no repasse) já ligado na Documentação. Quando sobra valor sem empenhar, registra junto o saldo não executado
+ * da conciliação com o IPM, para que os dois nunca discordem. Restos a pagar vale só para empenho (valor não empenhado não vira restos).
+ */
+export async function salvarEncerramento(dados: z.input<typeof esquemaEncerramento>): Promise<Resultado> {
+  const a = esquemaEncerramento.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores definem a situação de encerramento da emenda." };
+  const emendas = await criarClienteEmendas();
+  const [{ data: em }, { data: movs }, { data: docs }] = await Promise.all([
+    emendas.from("v_emendas").select("valor,etapa,tipo_execucao,modalidade").eq("id", a.data.emendaId).maybeSingle(),
+    emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", a.data.emendaId),
+    emendas.from("documentos_drive").select("tipo").eq("emenda_id", a.data.emendaId).in("tipo", ["nota_fiscal", "prestacao_contas"]),
+  ]);
+  if (!em) return { sucesso: false, erro: "Emenda não encontrada." };
+  const tipo = tipoDaEmenda(em);
+  const t = totaisFinanceiros(movs ?? []);
+  const prova = documentoComprobatorio(tipo).tipo;
+  const impedimento = validarEncerramento({
+    situacao: a.data.situacao,
+    tipo,
+    financeiro: { valor: Number(em.valor), empenhado: t.empenhado, pago: t.pago },
+    temDocumento: (docs ?? []).some((d) => d.tipo === prova),
+    devolucaoValor: a.data.devolucaoValor ?? null,
+    devolucaoData: a.data.devolucaoData ?? null,
+  });
+  if (impedimento) return { sucesso: false, erro: impedimento };
+  const hoje = new Date().toISOString().slice(0, 10);
+  const { error } = await emendas.from("encerramentos").upsert({
+    id: a.data.emendaId,
+    situacao: a.data.situacao,
+    definida_em: hoje,
+    observacao: a.data.observacao || null,
+    devolucao_valor: a.data.devolucaoValor ?? null,
+    devolucao_data: a.data.devolucaoValor ? (a.data.devolucaoData ?? null) : null,
+    devolucao_documento: a.data.devolucaoValor ? a.data.devolucaoDocumento || null : null,
+    definida_por: ctx.usuario.id,
+    atualizado_em: new Date().toISOString(),
+  });
+  if (error) {
+    console.error("[salvarEncerramento]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  // Valor da emenda que ficou sem empenhar: registra o saldo não executado (conciliação) para os dois registros concordarem.
+  const falta = Math.round((Number(em.valor) - t.empenhado) * 100) / 100;
+  if (falta > 0.005 && t.empenhado > 0 && a.data.situacao !== "restos_a_pagar") {
+    await emendas.from("conciliacoes").upsert({
+      id: a.data.emendaId,
+      saldo_registrado_em: hoje,
+      saldo_valor: falta,
+      ...(a.data.observacao ? { saldo_observacao: a.data.observacao } : {}),
+      atualizado_em: new Date().toISOString(),
+      atualizado_por: ctx.usuario.id,
+    });
+  }
+  revalidar(a.data.emendaId);
+  revalidatePath("/emendas/panorama");
+  return { sucesso: true };
+}
+
+/** Desfaz a situação de encerramento (a emenda volta a "sem situação definida"). Só gestor; fica na auditoria. */
+export async function desfazerEncerramento(dados: { emendaId: string }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Dados inválidos." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores desfazem a situação de encerramento." };
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("encerramentos").delete().eq("id", dados.emendaId).select("id");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!data?.length) return { sucesso: false, erro: "Esta emenda não tem situação de encerramento." };
+  revalidar(dados.emendaId);
+  revalidatePath("/emendas/panorama");
+  return { sucesso: true, aviso: "Situação desfeita. O saldo da conciliação, se foi registrado, continua e pode ser desfeito à parte." };
 }
 
 /** Desfaz um arredondamento (sem justificativa: ele só afeta se a fase conta como completa; fica na auditoria). */
