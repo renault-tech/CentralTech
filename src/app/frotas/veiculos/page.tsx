@@ -14,6 +14,8 @@ import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
 import { opcoesExportar } from "@/lib/frotas/exportacao";
 
+export const maxDuration = 60;
+
 export const metadata = { title: "Veículos · Frotas" };
 
 const LIMITE_LINHAS = 300;

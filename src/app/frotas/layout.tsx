@@ -56,6 +56,7 @@ export default async function LayoutFrotas({ children }: { children: React.React
     { href: "/frotas/combustivel", rotulo: "Combustível" },
     { href: "/frotas/manutencao", rotulo: "Manutenção", selo: orcamentos },
     { href: "/frotas/veiculos", rotulo: "Veículos" },
+    { href: "/frotas/custos", rotulo: "Manutenção × FIPE" },
     { href: "/frotas/analise", rotulo: "Análise da frota" },
     ...(ctx.gestor ? [{ href: "/frotas/configuracoes", rotulo: "Configurações" }] : []),
   ];
