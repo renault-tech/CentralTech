@@ -7,6 +7,7 @@ import {
   listarFasesCatalogo,
   listarFasesEJustificativas,
   listarDocumentosResumo,
+  listarDescricoes,
   listarMovimentos,
   listarPareceres,
   listarVereadores,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/emendas/dados";
 import { resumirProcessos } from "@/lib/emendas/compras";
 import { medir } from "@/lib/emendas/tempo";
+import { objetoGenerico } from "@/lib/emendas/pendencias";
 import { calcularEmendas, type CalculoEmenda } from "@/lib/emendas/resumo";
 import type { EmendaResumo, Exercicio } from "@/types/emendas";
 
@@ -27,6 +29,10 @@ export async function calcularEmendasDoExercicio(
   movimentosJaCarregados?: MovimentoResumo[]
 ): Promise<Map<string, CalculoEmenda>> {
   const ids = emendas.map((e) => e.id);
+  // As telas não carregam a descrição (pesada); para objeto genérico, busca só dessas para a regra enxergar a finalidade.
+  const genericas = emendas.filter((e) => !e.descricao && objetoGenerico(e.objeto)).map((e) => e.id);
+  const descricoes = genericas.length ? await medir("calculos:descricoes", () => listarDescricoes(genericas)) : new Map<string, string>();
+  if (descricoes.size) emendas = emendas.map((e) => (descricoes.has(e.id) ? { ...e, descricao: descricoes.get(e.id) as string } : e));
   const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo, documentos, vereadores] = await Promise.all([
     medir("calculos:fases-catalogo", () => listarFasesCatalogo()),
     movimentosJaCarregados ?? medir("calculos:movimentos", () => listarMovimentos(ids)),
