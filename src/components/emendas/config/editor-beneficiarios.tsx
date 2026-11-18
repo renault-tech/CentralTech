@@ -7,6 +7,7 @@ import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
 import { salvarBeneficiario } from "@/lib/emendas/actions-config";
 import { lerDocumentoBeneficiario } from "@/lib/emendas/actions-beneficiario";
+import { consultarCnpj } from "@/lib/emendas/actions-cnpj";
 import { CATEGORIAS, INFO_CATEGORIA, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { ROTULO_INSTRUMENTO } from "@/lib/emendas/documentos-drive";
@@ -85,6 +86,8 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
   const [representante, setRepresentante] = React.useState(beneficiario?.representante ?? "");
   const [avisos, setAvisos] = React.useState<string[]>([]);
   const [lendo, setLendo] = React.useState(false);
+  const [consultando, setConsultando] = React.useState(false);
+  const [avisoCnpj, setAvisoCnpj] = React.useState<string | null>(null);
   const [erroLeitura, setErroLeitura] = React.useState<string | null>(null);
   const [preenchidos, setPreenchidos] = React.useState<string[]>([]);
   const { erro, salvando, salvar } = useSalvar();
@@ -140,6 +143,49 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
     setAvisos(r.avisos);
   }
 
+  /** Preenche o cadastro pelo CNPJ (Receita, via BrasilAPI): nome, endereço, contato, representante e categoria. A pessoa confere e salva. */
+  async function preencherPeloCnpj() {
+    setConsultando(true);
+    setErroLeitura(null);
+    setAvisoCnpj(null);
+    setPreenchidos([]);
+    const r = await consultarCnpj(documento);
+    setConsultando(false);
+    if (!r.sucesso) return setErroLeitura(r.erro);
+    const d = r.dados;
+    const novos: string[] = [];
+    if (d.nome) {
+      setNome(d.nome);
+      novos.push("nome");
+    }
+    if (d.endereco) {
+      setEndereco(d.endereco);
+      novos.push("endereço");
+    }
+    if (d.email) {
+      setEmail(d.email);
+      novos.push("e-mail");
+    }
+    if (d.telefone) {
+      setTelefone(d.telefone);
+      novos.push("telefone");
+    }
+    if (d.representante) {
+      setRepresentante(d.representante);
+      novos.push("representante");
+    }
+    if (d.categoria) {
+      setCategoria(d.categoria);
+      novos.push(`categoria (${d.naturezaJuridica || "natureza jurídica"})`);
+    }
+    setPreenchidos(novos);
+    const avisos: string[] = [];
+    if (!d.ativa) avisos.push(`Situação cadastral na Receita: ${d.situacao || "não informada"}. Confirme se a entidade pode receber recursos.`);
+    if (r.jaCadastrado) avisos.push(`Este CNPJ já está cadastrado como “${r.jaCadastrado.nome}”.`);
+    setAvisoCnpj(avisos.length ? avisos.join(" ") : null);
+  }
+
+  const cnpjCompleto = documento.replace(/\D/g, "").length === 14;
   const rotulo = "flex flex-col gap-1 text-[13px] font-medium text-cataguases-marinho";
   return (
     <div className="flex flex-col gap-3">
@@ -162,6 +208,7 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
           ))}
         </ul>
       )}
+      {avisoCnpj && <p className="text-xs text-amber-900" role="status">{avisoCnpj}</p>}
       <Erro texto={erroLeitura} />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={cn(rotulo, "sm:col-span-2")}>
@@ -189,6 +236,11 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
         <label className={rotulo}>
           {tipo === "pessoa_fisica" ? "CPF" : tipo === "orgao_publico" ? "CNPJ (opcional)" : "CNPJ"}
           <input className={CAMPO} placeholder={tipo === "pessoa_fisica" ? "000.000.000-00" : "00.000.000/0000-00"} value={documento} onChange={(e) => setDocumento(e.target.value)} />
+          {tipo !== "pessoa_fisica" && !beneficiario && (
+            <button type="button" className={cn(BOTAO, "mt-1 w-fit", (!cnpjCompleto || consultando) && "pointer-events-none opacity-50")} onClick={() => void preencherPeloCnpj()} disabled={!cnpjCompleto || consultando}>
+              {consultando ? "Consultando a Receita…" : "Preencher pelo CNPJ"}
+            </button>
+          )}
         </label>
         <label className={cn(rotulo, "sm:col-span-2")}>
           Endereço <span className="font-normal text-slate-500">(uso interno)</span>
