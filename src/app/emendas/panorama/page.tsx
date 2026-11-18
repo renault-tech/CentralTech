@@ -4,7 +4,7 @@ import { Download, Gauge } from "lucide-react";
 import { Vazio } from "@/components/emendas/ui";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { resolverExercicio } from "@/lib/emendas/dados";
-import { carregarPanorama } from "@/lib/emendas/panorama-dados";
+import { carregarPanorama, carregarRestosAnteriores } from "@/lib/emendas/panorama-dados";
 import {
   COR_SITUACAO,
   CARTOES,
@@ -70,7 +70,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
   const { ano, c, s, t } = await searchParams;
   const { exercicio } = await resolverExercicio(ano);
   if (!exercicio) return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
-  const { linhas: todas } = await carregarPanorama(exercicio.ano);
+  const [{ linhas: todas }, restosAnteriores] = await Promise.all([carregarPanorama(exercicio.ano), carregarRestosAnteriores(exercicio.ano)]);
   const secretarias = new Map(todas.map((l) => [l.secretaria_id, l.secretaria_nome]));
   const recorte = todas.filter((l) => (!s || l.secretaria_id === s) && (!t || l.tipo_execucao === t));
   const cartao: Cartao | null = (CARTOES as readonly string[]).includes(c ?? "") ? (c as Cartao) : null;
@@ -201,6 +201,39 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
               </tbody>
             </table>
           )}
+        </section>
+      )}
+
+      {restosAnteriores.length > 0 && (
+        <section className="overflow-x-auto rounded-xl border border-blue-200 bg-white" aria-label="Restos a pagar de exercícios anteriores">
+          <table className="w-full min-w-[640px] border-collapse text-[13px]">
+            <caption className="border-b border-slate-100 px-3.5 py-2.5 text-left text-sm font-semibold text-cataguases-marinho">
+              Restos a pagar de exercícios anteriores · {brl(restosAnteriores.reduce((s, l) => s + l.aPagar, 0))} em {restosAnteriores.length} emenda(s)
+              <span className="mt-0.5 block text-xs font-normal text-slate-500">Continuam pertencendo ao exercício de origem; os pagamentos feitos agora são lançados nelas. Quando o empenho for todo pago, passam sozinhas a cumpridas.</span>
+            </caption>
+            <thead>
+              <tr className="bg-slate-50 text-left text-slate-600">
+                <th scope="col" className="px-3.5 py-2 font-medium">Exercício</th>
+                <th scope="col" className="px-3.5 py-2 font-medium">Emenda</th>
+                <th scope="col" className="px-3.5 py-2 font-medium">Secretaria</th>
+                <th scope="col" className="px-3.5 py-2 text-right font-medium">Empenhado</th>
+                <th scope="col" className="px-3.5 py-2 text-right font-medium">Pago</th>
+                <th scope="col" className="px-3.5 py-2 text-right font-medium">A pagar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {restosAnteriores.map((l) => (
+                <tr key={l.id} className="border-t border-slate-100">
+                  <td className="px-3.5 py-2 tabular-nums">{l.ano}</td>
+                  <td className="px-3.5 py-2"><Link href={`/emendas/${l.id}?aba=financeiro`} className="font-medium text-[#5B3FA8] underline-offset-2 hover:underline">Nº {l.numero}</Link></td>
+                  <td className="px-3.5 py-2">{l.secretaria_nome}</td>
+                  <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.empenhado)}</td>
+                  <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.pago)}</td>
+                  <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.aPagar)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 

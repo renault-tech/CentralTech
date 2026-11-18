@@ -1,4 +1,4 @@
-import { listarConciliacoes, listarEmendas, listarEncerramentos } from "@/lib/emendas/dados";
+import { listarConciliacoes, listarEmendas, listarEncerramentos, listarExercicios } from "@/lib/emendas/dados";
 import { agrupar, linhasPanorama, rotuloSituacao, totaisPorCartao, CARTOES, type Cartao, type EmendaPanorama, type LinhaPanorama } from "@/lib/emendas/encerramento";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import type { Conciliacao } from "@/lib/emendas/conciliacao";
@@ -57,3 +57,18 @@ export function tabelasAgrupadas(linhas: LinhaPanorama[]) {
 }
 
 export const textoSituacao = (l: LinhaPanorama): string => (l.encerramento ? rotuloSituacao(l.encerramento, l.tipo_execucao) : "Sem situação definida");
+
+export type RestoAnterior = LinhaPanorama & { ano: number };
+
+/**
+ * Restos a pagar que vieram de exercícios ANTERIORES a `ano` e ainda têm empenho a pagar. A emenda continua pertencendo ao
+ * exercício de origem (os pagamentos feitos depois são lançados nela); aqui só ficam visíveis para quem acompanha o ano seguinte.
+ */
+export async function carregarRestosAnteriores(ano: number): Promise<RestoAnterior[]> {
+  const exercicios = (await listarExercicios()).filter((e) => e.ano < ano);
+  const por = await Promise.all(exercicios.map(async (e) => (await carregarPanorama(e.ano)).linhas.map((l) => ({ ...l, ano: e.ano }))));
+  return por
+    .flat()
+    .filter((l) => l.encerramento === "restos_a_pagar" && l.aPagar > 0.005)
+    .sort((a, b) => a.ano - b.ano || a.numero - b.numero);
+}

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { linhasDeSaldo } from "@/lib/emendas/saldos";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
-import { carregarPanorama, resumoDoPanorama, tabelasAgrupadas, textoSituacao } from "@/lib/emendas/panorama-dados";
+import { carregarPanorama, carregarRestosAnteriores, resumoDoPanorama, tabelasAgrupadas, textoSituacao } from "@/lib/emendas/panorama-dados";
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +102,15 @@ export async function GET(request: NextRequest) {
     ]);
   for (const c of ["C", "E", "G"]) wc.getColumn(c).numFmt = MOEDA;
   cabecalho(wc);
+
+  const anteriores = await carregarRestosAnteriores(exercicio.ano);
+  if (anteriores.length > 0) {
+    const wr = wb.addWorksheet("Restos de anos anteriores");
+    wr.columns = [{ header: "Exercício de origem", width: 18 }, { header: "Nº", width: 7 }, { header: "Secretaria", width: 26 }, { header: "Beneficiário", width: 34 }, { header: "Empenhado", width: 16 }, { header: "Pago", width: 16 }, { header: "A pagar (restos)", width: 18 }];
+    for (const l of anteriores) wr.addRow([l.ano, l.numero, l.secretaria_nome, l.beneficiario_nome ?? "", l.empenhado, l.pago, l.aPagar]);
+    for (const c of ["E", "F", "G"]) wr.getColumn(c).numFmt = MOEDA;
+    cabecalho(wr);
+  }
 
   const buf = await wb.xlsx.writeBuffer();
   return new NextResponse(buf as ArrayBuffer, {

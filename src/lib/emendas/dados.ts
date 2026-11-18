@@ -6,7 +6,9 @@ import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
 import type { DocumentoDrive } from "@/lib/emendas/documentos-drive";
+import { cookies } from "next/headers";
 import type { Conciliacao } from "@/lib/emendas/conciliacao";
+import { COOKIE_EXERCICIO } from "@/lib/emendas/exercicio-cookie";
 import type { Encerramento } from "@/lib/emendas/encerramento";
 import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emendas/regras";
 import type {
@@ -97,7 +99,15 @@ export const listarExercicios = cache(async (): Promise<Exercicio[]> => {
 /** Exercício pedido na URL, senão o mais recente aberto, senão o mais recente. */
 export async function resolverExercicio(anoParam?: string | null): Promise<{ exercicio: Exercicio | null; exercicios: Exercicio[] }> {
   const exercicios = await listarExercicios();
-  const pedido = Number(anoParam);
+  // Prioridade: ano na URL → exercício escolhido no seletor (cookie) → o mais recente aberto → o mais recente.
+  let pedido = Number(anoParam);
+  if (!exercicios.some((e) => e.ano === pedido)) {
+    try {
+      pedido = Number((await cookies()).get(COOKIE_EXERCICIO)?.value);
+    } catch {
+      pedido = NaN; // fora de uma requisição (sem cookies): cai no padrão
+    }
+  }
   const exercicio =
     exercicios.find((e) => e.ano === pedido) ?? exercicios.find((e) => e.situacao === "aberto") ?? exercicios[0] ?? null;
   return { exercicio, exercicios };
