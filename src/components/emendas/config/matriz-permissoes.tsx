@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { definirPermissoes } from "@/lib/emendas/actions-config";
+import { definirMaster, definirPermissoes } from "@/lib/emendas/actions-config";
 import { DESCRICAO_PERFIL, NOME_PERFIL } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { PerfilEfetivo, PerfilEmendas, Secretaria } from "@/types/emendas";
@@ -33,7 +33,7 @@ const COR_PERFIL: Record<PerfilEfetivo, string> = {
 /** Matriz usuário × secretaria (Ver / Editar), como no mockup aprovado. Só o
  * administrador do Hub e o gestor chegam aqui; o banco
  * (`emendas.definir_acesso`) repete essa regra. */
-export function MatrizPermissoes({ usuarios, secretarias }: { usuarios: UsuarioMatriz[]; secretarias: Secretaria[] }) {
+export function MatrizPermissoes({ usuarios, secretarias, masters = [], souAdmin = false }: { usuarios: UsuarioMatriz[]; secretarias: Secretaria[]; masters?: string[]; souAdmin?: boolean }) {
   const router = useRouter();
   const [selId, setSelId] = React.useState<string | null>(usuarios.find((u) => !u.adminHub)?.id ?? usuarios[0]?.id ?? null);
   const sel = usuarios.find((u) => u.id === selId) ?? null;
@@ -81,12 +81,12 @@ export function MatrizPermissoes({ usuarios, secretarias }: { usuarios: UsuarioM
         </p>
       </section>
 
-      {sel && <Editor key={sel.id} usuario={sel} secretarias={secretarias} aoSalvar={() => router.refresh()} />}
+      {sel && <Editor key={sel.id} usuario={sel} secretarias={secretarias} aoSalvar={() => router.refresh()} master={masters.includes(sel.id)} haMasters={masters.length > 0} souAdmin={souAdmin} />}
     </div>
   );
 }
 
-function Editor({ usuario, secretarias, aoSalvar }: { usuario: UsuarioMatriz; secretarias: Secretaria[]; aoSalvar: () => void }) {
+function Editor({ usuario, secretarias, aoSalvar, master, haMasters, souAdmin }: { usuario: UsuarioMatriz; secretarias: Secretaria[]; aoSalvar: () => void; master: boolean; haMasters: boolean; souAdmin: boolean }) {
   const [perfil, setPerfil] = React.useState<PerfilEmendas>(usuario.perfil ?? "admin_secretaria");
   const [secretariaId, setSecretariaId] = React.useState<string>(usuario.secretariaId ?? "");
   const [mapa, setMapa] = React.useState<Record<string, { ver: boolean; editar: boolean }>>(usuario.permissoes);
@@ -173,9 +173,12 @@ function Editor({ usuario, secretarias, aoSalvar }: { usuario: UsuarioMatriz; se
       </div>
 
       {total ? (
-        <p className="mt-5 rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950">
-          Gestor: vê e edita todas as secretarias. Para restringir, troque o perfil para Admin de secretaria ou Operador.
-        </p>
+        <>
+          <p className="mt-5 rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950">
+            Gestor: vê e edita todas as secretarias. Para restringir, troque o perfil para Admin de secretaria ou Operador.
+          </p>
+          {usuario.perfil === "gestor" && <BlocoMaster usuarioId={usuario.id} master={master} haMasters={haMasters} souAdmin={souAdmin} aoSalvar={aoSalvar} />}
+        </>
       ) : (
         <>
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -239,5 +242,36 @@ function Editor({ usuario, secretarias, aoSalvar }: { usuario: UsuarioMatriz; se
         </div>
       </div>
     </section>
+  );
+}
+
+/** Gestor master: decide encerramento das emendas, abertura/fechamento de exercício e importações. Só o administrador da Central designa. */
+function BlocoMaster({ usuarioId, master, haMasters, souAdmin, aoSalvar }: { usuarioId: string; master: boolean; haMasters: boolean; souAdmin: boolean; aoSalvar: () => void }) {
+  const [salvando, setSalvando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+  async function alternar() {
+    setSalvando(true);
+    setErro(null);
+    const r = await definirMaster({ usuarioId, master: !master });
+    setSalvando(false);
+    if (!r.sucesso) return setErro(r.erro);
+    aoSalvar();
+  }
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 p-4">
+      <p className="text-sm font-medium text-cataguases-marinho">Gestor master {master && <span className="ml-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] text-violet-900">designado</span>}</p>
+      <p className="mt-1 text-xs text-slate-600">
+        Decide o encerramento das emendas, a abertura e o fechamento do exercício e as importações de planilha.{" "}
+        {haMasters ? "Como já há gestor master, os demais gestores deixam de decidir essas coisas." : "Enquanto nenhum for designado, todos os gestores seguem decidindo."}
+      </p>
+      {souAdmin ? (
+        <button type="button" onClick={() => void alternar()} disabled={salvando} className="mt-2 inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50">
+          {salvando ? "Salvando…" : master ? "Retirar gestor master" : "Designar gestor master"}
+        </button>
+      ) : (
+        <p className="mt-2 text-xs text-slate-500">Só o administrador da Central designa o gestor master.</p>
+      )}
+      {erro && <p className="mt-2 text-sm text-red-700" role="alert">{erro}</p>}
+    </div>
   );
 }

@@ -430,6 +430,7 @@ export type DatabaseEmendas = {
       execucao: Tabela<ExecucaoEmenda, "id", never>;
       conciliacoes: Tabela<ConciliacaoRow, "id", never>;
       encerramentos: Tabela<EncerramentoRow, "id" | "situacao", never>;
+      masters: Tabela<{ usuario_id: string; designado_por: string | null; designado_em: string }, "usuario_id", "designado_por" | "designado_em">;
       documentos: Tabela<DocumentoEmenda, "emenda_id" | "tipo" | "nome_arquivo" | "caminho", "id" | "criado_em">;
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { MatrizPermissoes, type UsuarioMatriz } from "@/components/emendas/config/matriz-permissoes";
 import { Vazio } from "@/components/emendas/ui";
 import { listarSecretarias, obterContextoEmendas } from "@/lib/emendas/dados";
+import { listarMasters } from "@/lib/emendas/master";
 import { ehGestor } from "@/lib/emendas/regras";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
@@ -23,10 +24,11 @@ export default async function PaginaUsuariosEmendas() {
   const gestor = ehGestor(ctx.perfil);
 
   const emendas = await criarClienteEmendas();
-  const [secretarias, { data: usuarios }, { data: permissoes }] = await Promise.all([
+  const [secretarias, { data: usuarios }, { data: permissoes }, masters] = await Promise.all([
     listarSecretarias(),
     emendas.from("usuarios").select("*").eq("ativo", true),
     emendas.from("permissoes").select("*"),
+    listarMasters(),
   ]);
 
   const admin = criarClienteAdmin();
@@ -68,5 +70,5 @@ export default async function PaginaUsuariosEmendas() {
     return <Vazio>{gestor ? "Ninguém tem acesso ao módulo ainda. Libere pela Central: Configurações → Usuários e acessos." : "Sua secretaria ainda não tem outras pessoas no módulo."}</Vazio>;
   }
 
-  return <MatrizPermissoes usuarios={linhas} secretarias={secretarias.filter((s) => s.ativo)} />;
+  return <MatrizPermissoes usuarios={linhas} secretarias={secretarias.filter((s) => s.ativo)} masters={masters} souAdmin={ctx.usuario.admin_hub} />;
 }

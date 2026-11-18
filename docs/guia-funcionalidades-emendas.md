@@ -8,7 +8,8 @@ Atualizado em 19/11/2026. Cada seção diz **quem usa**, **onde fica** e **como 
 | Perfil | O que faz |
 |---|---|
 | **Administrador da Central** | Acesso total. Único que publica ou retira o Portal público. |
-| **Gestor** | Tudo no módulo: cadastro, valores, remanejamento, importação, encerramento das emendas, conciliação, configurações. (No futuro haverá um *gestor master* para decisões de encerramento e abertura de exercício; hoje essas regras valem para gestor e administrador.) |
+| **Gestor** | Cadastro, valores, remanejamento, conciliação, configurações e todas as rotinas do dia a dia. As decisões de encerramento das emendas, abertura/fechamento de exercício e importação de planilhas são do **gestor master** quando há um designado (ver abaixo). |
+| **Gestor master** | Gestor designado pelo administrador da Central (Configurações › Usuários e permissões). Decide o encerramento das emendas, a abertura e o fechamento do exercício e as importações. Enquanto nenhum master for designado, todos os gestores seguem decidindo; depois que há um, só ele e o administrador. |
 | **Administrador de secretaria / Operador** | Registra a execução das emendas da própria secretaria. Mudanças em dado já preenchido viram **proposta** que o gestor aprova. |
 | **Consulta** | Só lê, nas secretarias liberadas. |
 
@@ -18,7 +19,7 @@ Cada pessoa só enxerga as emendas das secretarias a que tem permissão (a regra
 
 - Acima de todas as telas do módulo há o seletor **Exercício**. Escolher 2026 ou 2027 muda Painel, Emendas, Pendências, Panorama, Relatórios, Portal e Configurações de uma vez.
 - A escolha fica guardada: abrir outra tela mantém o ano. Ao entrar de novo, o módulo abre o exercício aberto mais recente.
-- Exercício encerrado aparece com o aviso "encerrado". Mesmo assim, **restos a pagar** de um ano encerrado ainda recebem pagamentos.
+- **Exercício encerrado:** aparece com o aviso "encerrado" e fica protegido. Só se lançam **pagamentos e anulações de emendas inscritas em restos a pagar**; empenhos, novas emendas, remanejamentos, cancelamentos e andamentos exigem **reabrir** o exercício (Configurações › Exercício, pelo gestor master ou administrador).
 - Cadastros que valem para todos os anos: vereadores, secretarias, beneficiários, catálogos de fases e documentos. O que é do ano: cota por vereador, percentual mínimo da Saúde, LOA, prazo de exequibilidade, dados de publicação.
 
 ## 3. Painel
@@ -135,5 +136,4 @@ Em *Configurações › Beneficiários › Novo beneficiário* há duas ajudas:
 
 ## 18. Em construção (combinado, ainda não feito)
 
-- **Perfil de gestor master** para as decisões de encerramento e de abertura/fechamento de exercício (hoje valem para gestor e administrador; a regra está num ponto só).
-- **Bloqueio de lançamentos em exercício encerrado** (hoje só há o aviso, porque restos a pagar ainda recebem pagamentos).
+- Nada pendente do plano combinado até aqui. Novas ideias entram nesta lista.

@@ -14,6 +14,7 @@ import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { situacaoConciliacao } from "@/lib/emendas/conciliacao";
+import { exigirDecisor } from "@/lib/emendas/master";
 import { SITUACOES_ENCERRAMENTO, documentoComprobatorio, validarEncerramento } from "@/lib/emendas/encerramento";
 import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { CATEGORIAS, categoriaPorTipoENome, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
@@ -61,6 +62,20 @@ function revalidar(emendaId?: string) {
   revalidatePath(emendaId ? `/emendas/${emendaId}` : "/emendas", emendaId ? "page" : "layout");
 }
 
+
+const MSG_ENCERRADO = "O exercício está encerrado. Reabra o exercício em Configurações > Exercício para alterar a emenda (restos a pagar seguem recebendo pagamentos).";
+
+/** Exercício encerrado só aceita pagamento de restos a pagar (o banco barra os lançamentos); as demais alterações exigem reabrir. */
+async function anoEncerrado(emendas: Awaited<ReturnType<typeof criarClienteEmendas>>, ano: number): Promise<boolean> {
+  const { data } = await emendas.from("exercicios").select("situacao").eq("ano", ano).maybeSingle();
+  return data?.situacao === "encerrado";
+}
+
+async function emendaDeExercicioEncerrado(emendas: Awaited<ReturnType<typeof criarClienteEmendas>>, emendaId: string): Promise<boolean> {
+  const { data } = await emendas.from("emendas").select("ano").eq("id", emendaId).maybeSingle();
+  return data ? anoEncerrado(emendas, data.ano) : false;
+}
+
 const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
 const textoOpcional = (max: number) =>
   z
@@ -87,6 +102,7 @@ export async function registrarAndamento(dados: z.input<typeof esquemaAndamento>
   const a = esquemaAndamento.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   if (!(await exigirAcesso())) return { sucesso: false, erro: "Sem acesso ao módulo." };
+  if (await emendaDeExercicioEncerrado(await criarClienteEmendas(), a.data.emendaId)) return { sucesso: false, erro: MSG_ENCERRADO };
 
   if (a.data.etapa === "liquidada") return { sucesso: false, erro: "A liquidação deixou de ser uma fase da execução." };
 
@@ -788,8 +804,9 @@ const esquemaEncerramento = z.object({
 export async function salvarEncerramento(dados: z.input<typeof esquemaEncerramento>): Promise<Resultado> {
   const a = esquemaEncerramento.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
-  const ctx = await exigirAcesso();
-  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores definem a situação de encerramento da emenda." };
+  const decisor = await exigirDecisor("definem a situação de encerramento da emenda");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
+  const ctx = decisor.ctx;
   const emendas = await criarClienteEmendas();
   const [{ data: em }, { data: movs }, { data: docs }] = await Promise.all([
     emendas.from("v_emendas").select("valor,etapa,tipo_execucao,modalidade").eq("id", a.data.emendaId).maybeSingle(),
@@ -845,8 +862,8 @@ export async function salvarEncerramento(dados: z.input<typeof esquemaEncerramen
 /** Desfaz a situação de encerramento (a emenda volta a "sem situação definida"). Só gestor; fica na auditoria. */
 export async function desfazerEncerramento(dados: { emendaId: string }): Promise<Resultado> {
   if (!z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Dados inválidos." };
-  const ctx = await exigirAcesso();
-  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores desfazem a situação de encerramento." };
+  const decisor = await exigirDecisor("desfazem a situação de encerramento");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const emendas = await criarClienteEmendas();
   const { data, error } = await emendas.from("encerramentos").delete().eq("id", dados.emendaId).select("id");
   if (error) return { sucesso: false, erro: traduzir(error) };
@@ -1107,6 +1124,7 @@ export async function salvarEmenda(dados: z.input<typeof esquemaEmenda>): Promis
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores cadastram e corrigem emendas." };
 
   const emendas = await criarClienteEmendas();
+  if (await anoEncerrado(emendas, a.data.ano)) return { sucesso: false, erro: MSG_ENCERRADO };
   const benef = await resolverBeneficiario(emendas, a.data.beneficiarioId, a.data.beneficiarioNovo, a.data.beneficiarioTipo, a.data.beneficiarioDoc, a.data.beneficiarioCategoria);
   if (benef.erro) return { sucesso: false, erro: benef.erro };
 
@@ -1203,6 +1221,7 @@ export async function remanejarEmenda(dados: z.input<typeof esquemaRemanejamento
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores remanejam emendas." };
 
   const emendas = await criarClienteEmendas();
+  if (await emendaDeExercicioEncerrado(emendas, a.data.emendaId)) return { sucesso: false, erro: MSG_ENCERRADO };
   const { beneficiarioNovo, beneficiarioTipo, beneficiarioCategoria, beneficiarioDoc, ...novo } = a.data.novo;
   if (beneficiarioNovo) {
     const benef = await resolverBeneficiario(emendas, null, beneficiarioNovo, beneficiarioTipo, beneficiarioDoc, beneficiarioCategoria);
@@ -1228,6 +1247,7 @@ export async function definirCancelamento(emendaId: string, cancelada: boolean):
   const ctx = await exigirAcesso();
   if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores cancelam emendas." };
   const emendas = await criarClienteEmendas();
+  if (await emendaDeExercicioEncerrado(emendas, emendaId)) return { sucesso: false, erro: MSG_ENCERRADO };
   const { data: linhas, error } = await emendas.from("emendas").update({ situacao: cancelada ? "cancelada" : "normal" }).eq("id", emendaId).select("id");
   if (!error && !linhas?.length) return { sucesso: false, erro: "Nada foi gravado: a emenda não foi encontrada ou você não tem permissão." };
   if (error) {
