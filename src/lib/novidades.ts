@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-18",
+    titulo: "Emendas: painel de conciliação mais claro, \"Desfazer\" e nova tela de Saldos",
+    descricao:
+      "O painel \"Conciliação com o IPM\" ganhou novo visual: o quadro de valores (emenda, empenhado, pago e diferença), cada situação com etiqueta e cor, os passos da anulação do saldo do empenho e botões maiores no celular. Cada registro agora pode ser desfeito (\"Desfazer\"). Nova tela Saldos, no menu do módulo, soma os saldos de todas as emendas para a Contabilidade: saldo não executado (registrado e a registrar), empenho a anular no IPM e excesso sobre a emenda com a fonte, com resumo por secretaria, filtros e Excel.",
+  },
+  {
+    data: "2026-11-18",
     titulo: "Emendas: valor contábil exato e conciliação com o IPM",
     descricao:
       "Seguindo a orientação do Controle Interno, empenhado e pago não são mais arredondados (o botão \"Arredondar centavos\" saiu e os arredondamentos antigos foram apagados). Na aba Financeiro, quando há diferença para o valor da emenda, aparece o painel \"Conciliação com o IPM\": registrar o saldo não executado, indicar a anulação do saldo do empenho a fazer no IPM e, se o executado passou do valor da emenda, a fonte de recurso do excesso. Cada campo só aparece quando se aplica. Há também três pendências novas: saldo a registrar, saldo do empenho a anular e excesso sem fonte.",

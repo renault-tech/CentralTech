@@ -744,6 +744,31 @@ export async function salvarConciliacao(dados: z.input<typeof esquemaConciliacao
   return { sucesso: true };
 }
 
+/** Desfaz um bloco da conciliação com o IPM (saldo registrado, anulação solicitada ou fonte do excesso). Só gestor; fica na auditoria.
+ * Se a linha ficar vazia, é apagada. */
+export async function desfazerConciliacao(dados: { emendaId: string; bloco: "saldo" | "anulacao" | "excesso" }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.emendaId).success || !["saldo", "anulacao", "excesso"].includes(dados.bloco)) return { sucesso: false, erro: "Dados inválidos." };
+  const ctx = await exigirAcesso();
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores desfazem a conciliação com o IPM." };
+  const emendas = await criarClienteEmendas();
+  const limpar: Record<string, null> =
+    dados.bloco === "saldo"
+      ? { saldo_registrado_em: null, saldo_valor: null, saldo_observacao: null }
+      : dados.bloco === "anulacao"
+        ? { anulacao_solicitada_em: null, anulacao_documento: null, anulacao_valor: null }
+        : { excesso_fonte: null, excesso_documento: null, excesso_valor: null };
+  const { data, error } = await emendas.from("conciliacoes").update({ ...limpar, atualizado_em: new Date().toISOString(), atualizado_por: ctx.usuario.id }).eq("id", dados.emendaId).select("*").maybeSingle();
+  if (error) {
+    console.error("[desfazerConciliacao]", error);
+    return { sucesso: false, erro: traduzir(error) };
+  }
+  if (!data) return { sucesso: false, erro: "Não há registro de conciliação nesta emenda." };
+  const vazio = !data.saldo_registrado_em && !data.anulacao_solicitada_em && !data.excesso_fonte && !data.conciliado_ipm_em && !data.observacao && !data.saldo_observacao && !data.anulacao_documento && !data.excesso_documento;
+  if (vazio) await emendas.from("conciliacoes").delete().eq("id", dados.emendaId);
+  revalidar(dados.emendaId);
+  return { sucesso: true, aviso: "Registro desfeito." };
+}
+
 /** Desfaz um arredondamento (sem justificativa: ele só afeta se a fase conta como completa; fica na auditoria). */
 export async function desfazerArredondamento(dados: { id: string; emendaId: string }): Promise<Resultado> {
   if (!z.uuid().safeParse(dados.id).success || !z.uuid().safeParse(dados.emendaId).success) return { sucesso: false, erro: "Registro inválido." };
