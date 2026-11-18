@@ -6,6 +6,7 @@ import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
 import type { DocumentoDrive } from "@/lib/emendas/documentos-drive";
+import type { Conciliacao } from "@/lib/emendas/conciliacao";
 import { CATALOGO_PADRAO, type CatalogoEtapas, type InfoEtapa } from "@/lib/emendas/regras";
 import type {
   Andamento,
@@ -174,6 +175,20 @@ export async function listarExecucoes(idsEmendas: string[]): Promise<ExecucaoEme
   return lotes.flat();
 }
 
+/** Conciliações com o IPM das emendas pedidas (só existe linha onde houve o que registrar). */
+export async function listarConciliacoes(idsEmendas: string[]): Promise<Conciliacao[]> {
+  if (idsEmendas.length === 0) return [];
+  const emendas = await criarClienteEmendas();
+  const lotes = await Promise.all(
+    lotesDe(idsEmendas, 150).map(async (lote) => {
+      const { data, error } = await emendas.from("conciliacoes").select("*").in("id", lote);
+      // Acessório: se a leitura falhar, as telas funcionam sem ela.
+      return error ? [] : (data ?? []);
+    })
+  );
+  return lotes.flat() as Conciliacao[];
+}
+
 export const listarVereadores = cache(async (): Promise<Vereador[]> => {
   const emendas = await criarClienteEmendas();
   const { data, error } = await emendas.from("vereadores").select("*").order("numero");
@@ -275,6 +290,7 @@ export type DetalheEmenda = {
   justificadas: PendenciaJustificada[];
   /** Links para os documentos no Drive (nenhum arquivo fica no banco). */
   docsDrive: DocumentoDrive[];
+  conciliacao: Conciliacao | null;
 };
 
 export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | null> {
@@ -283,7 +299,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
   if (error) falhou("detalhe", error);
   if (!emenda) return null;
 
-  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas, docsDrive] = await Promise.all([
+  const [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas, docsDrive, conciliacao] = await Promise.all([
     emendas.from("andamentos").select("*").eq("emenda_id", id).order("data", { ascending: false }).order("criado_em", { ascending: false }),
     emendas.from("movimentos_financeiros").select("*").eq("emenda_id", id).order("criado_em"),
     emendas.from("impedimentos").select("*").eq("emenda_id", id).order("criado_em", { ascending: false }),
@@ -299,6 +315,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
       .eq("emenda_id", id)
       .order("tipo")
       .order("titulo"),
+    emendas.from("conciliacoes").select("*").eq("id", id).maybeSingle(),
   ]);
   for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas]) {
     if (r.error) falhou("detalhe-filhos", r.error);
@@ -338,6 +355,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     justificadas: justificadas.data ?? [],
     // Os links do Drive são acessório: se a leitura falhar, a emenda abre do mesmo jeito, sem eles.
     docsDrive: docsLista,
+    conciliacao: (conciliacao.error ? null : conciliacao.data) as Conciliacao | null,
   };
 }
 

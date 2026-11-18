@@ -13,6 +13,7 @@ import { buscarProcessoPorNumero, sugerirProcessos, type SugestaoProcesso } from
 import { excedeuLimite, ipDoCliente } from "@/lib/seguranca/limite-requisicoes";
 import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
+import { situacaoConciliacao } from "@/lib/emendas/conciliacao";
 import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { CATEGORIAS, categoriaPorTipoENome, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
@@ -681,42 +682,66 @@ export async function corrigirMovimento(dados: z.input<typeof esquemaCorrecaoMov
   return { sucesso: true };
 }
 
-/** Diferença de até R$ 1,00 entre o valor da emenda e o que consta no IPM pode ser arredondada: o lançamento real NÃO muda
- * (empenhado e pago continuam os do IPM, e é o que o portal público mostra); grava-se um registro de arredondamento,
- * com o valor real na observação, que só faz a fase contar como completa. Pode ser desfeito a qualquer momento. */
-const LIMITE_ARREDONDAMENTO = 1;
+const esquemaConciliacao = z.object({
+  emendaId: z.uuid(),
+  /** Registrar o saldo não executado atual (valor da emenda − empenhado) como conferido com o IPM. */
+  registrarSaldo: z.boolean().optional(),
+  /** Registrar o saldo mesmo antes de a emenda estar paga (o gestor decidiu encerrar o empenho com saldo). */
+  encerrarEmpenho: z.boolean().optional(),
+  saldoObservacao: z.string().trim().max(1000).optional(),
+  anulacaoSolicitadaEm: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional(),
+  anulacaoDocumento: z.string().trim().max(200).optional(),
+  excessoFonte: z.string().trim().max(300).optional(),
+  excessoDocumento: z.string().trim().max(200).optional(),
+  conciliadoIpmEm: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional(),
+});
 
-export async function arredondarCentavos(emendaId: string): Promise<Resultado> {
-  if (!z.uuid().safeParse(emendaId).success) return { sucesso: false, erro: "Emenda inválida." };
+/**
+ * Conciliação com o IPM (orientação do Controle Interno): o valor contábil não é arredondado. Aqui se registra o saldo não
+ * executado da emenda, a solicitação de anulação do saldo do empenho e a fonte de recurso do excesso. Só gestor/admin.
+ * O saldo registrado guarda o valor do momento: se o empenho mudar, o registro deixa de valer e a pendência volta.
+ */
+export async function salvarConciliacao(dados: z.input<typeof esquemaConciliacao>): Promise<Resultado> {
+  const a = esquemaConciliacao.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
   const ctx = await exigirAcesso();
-  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores arredondam centavos." };
+  if (!ctx || !ehGestor(ctx.perfil)) return { sucesso: false, erro: "Só gestores registram a conciliação com o IPM." };
   const emendas = await criarClienteEmendas();
-  const [{ data: em }, { data: movs }] = await Promise.all([
-    emendas.from("emendas").select("valor").eq("id", emendaId).maybeSingle(),
-    emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", emendaId),
+  const [{ data: em }, { data: movs }, { data: atual }] = await Promise.all([
+    emendas.from("emendas").select("valor,etapa").eq("id", a.data.emendaId).maybeSingle(),
+    emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", a.data.emendaId),
+    emendas.from("conciliacoes").select("*").eq("id", a.data.emendaId).maybeSingle(),
   ]);
   if (!em) return { sucesso: false, erro: "Emenda não encontrada." };
-  const valor = Number(em.valor);
   const t = totaisFinanceiros(movs ?? []);
-  const hoje = new Date().toISOString().slice(0, 10);
-  const novos: { tipo: "arredondamento_empenho" | "arredondamento_pagamento"; valor: number; observacao: string }[] = [];
-  const faltaEmp = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
-  if (t.empenhado > 0 && faltaEmp > 0.004 && faltaEmp <= LIMITE_ARREDONDAMENTO + 0.004)
-    novos.push({ tipo: "arredondamento_empenho", valor: faltaEmp, observacao: `Arredondado por ${brl(faltaEmp)}. Valor real empenhado: ${brl(t.empenhado)} (valor da emenda: ${brl(valor)}).` });
-  // O pagamento é medido contra o que foi empenhado (valor real), não contra o valor da emenda.
-  const faltaPago = Math.round((t.empenhado - t.pago - t.arredPago) * 100) / 100;
-  if (t.pago > 0 && faltaPago > 0.004 && faltaPago <= LIMITE_ARREDONDAMENTO + 0.004)
-    novos.push({ tipo: "arredondamento_pagamento", valor: faltaPago, observacao: `Arredondado por ${brl(faltaPago)}. Valor real pago: ${brl(t.pago)} (empenhado: ${brl(t.empenhado)}).` });
-  if (novos.length === 0) return { sucesso: false, erro: `Não há diferença de até ${brl(LIMITE_ARREDONDAMENTO)} para arredondar nesta emenda (ou já está arredondada).` };
-  // importar: sem aviso de lançamento
-  const { error } = await emendas.from("movimentos_financeiros").insert(novos.map((n) => ({ emenda_id: emendaId, tipo: n.tipo, valor: n.valor, data: hoje, numero: null, observacao: n.observacao, usuario_id: ctx.usuario.id })));
+  const sit = situacaoConciliacao({ valor: Number(em.valor), empenhado: t.empenhado, pago: t.pago, etapa: em.etapa }, atual ?? null);
+  const campos: Record<string, string | number | null> = {};
+  if (a.data.registrarSaldo) {
+    const saldo = a.data.encerrarEmpenho ? Math.round((Number(em.valor) - t.empenhado) * 100) / 100 : sit.saldoNaoExecutado;
+    if (saldo <= 0.005 || t.empenhado <= 0) return { sucesso: false, erro: "Não há saldo não executado a registrar nesta emenda." };
+    campos.saldo_registrado_em = new Date().toISOString().slice(0, 10);
+    campos.saldo_valor = saldo;
+  }
+  if (a.data.saldoObservacao !== undefined) campos.saldo_observacao = a.data.saldoObservacao || null;
+  if (a.data.anulacaoSolicitadaEm !== undefined) {
+    campos.anulacao_solicitada_em = a.data.anulacaoSolicitadaEm || null;
+    campos.anulacao_valor = a.data.anulacaoSolicitadaEm ? Math.max(sit.saldoEmpenho, Math.round((t.empenhado - t.pago) * 100) / 100) : null;
+  }
+  if (a.data.anulacaoDocumento !== undefined) campos.anulacao_documento = a.data.anulacaoDocumento || null;
+  if (a.data.excessoFonte !== undefined) {
+    campos.excesso_fonte = a.data.excessoFonte || null;
+    campos.excesso_valor = a.data.excessoFonte && sit.excesso > 0 ? sit.excesso : a.data.excessoFonte ? (atual?.excesso_valor ?? null) : null;
+  }
+  if (a.data.excessoDocumento !== undefined) campos.excesso_documento = a.data.excessoDocumento || null;
+  if (a.data.conciliadoIpmEm !== undefined) campos.conciliado_ipm_em = a.data.conciliadoIpmEm || null;
+  if (Object.keys(campos).length === 0) return { sucesso: false, erro: "Nada para gravar." };
+  const { error } = await emendas.from("conciliacoes").upsert({ id: a.data.emendaId, ...campos, atualizado_em: new Date().toISOString(), atualizado_por: ctx.usuario.id });
   if (error) {
-    console.error("[arredondarCentavos]", error);
+    console.error("[salvarConciliacao]", error);
     return { sucesso: false, erro: traduzir(error) };
   }
-  await avancarEtapaPorLancamentos(emendas, emendaId);
-  revalidar(emendaId);
-  return { sucesso: true, aviso: `Arredondado por ${novos.map((n) => brl(n.valor)).join(" e ")}. O valor real continua registrado e o arredondamento pode ser desfeito.` };
+  revalidar(a.data.emendaId);
+  return { sucesso: true };
 }
 
 /** Desfaz um arredondamento (sem justificativa: ele só afeta se a fase conta como completa; fica na auditoria). */

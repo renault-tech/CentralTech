@@ -8,6 +8,7 @@ import {
   listarFasesEJustificativas,
   listarDocumentosResumo,
   listarDescricoes,
+  listarConciliacoes,
   listarMovimentos,
   listarPareceres,
   listarVereadores,
@@ -33,7 +34,7 @@ export async function calcularEmendasDoExercicio(
   const genericas = emendas.filter((e) => !e.descricao && objetoGenerico(e.objeto)).map((e) => e.id);
   const descricoes = genericas.length ? await medir("calculos:descricoes", () => listarDescricoes(genericas)) : new Map<string, string>();
   if (descricoes.size) emendas = emendas.map((e) => (descricoes.has(e.id) ? { ...e, descricao: descricoes.get(e.id) as string } : e));
-  const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo, documentos, vereadores] = await Promise.all([
+  const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo, documentos, vereadores, conciliacoes] = await Promise.all([
     medir("calculos:fases-catalogo", () => listarFasesCatalogo()),
     movimentosJaCarregados ?? medir("calculos:movimentos", () => listarMovimentos(ids)),
     medir("calculos:execucoes", () => listarExecucoes(ids)),
@@ -42,6 +43,7 @@ export async function calcularEmendasDoExercicio(
     medir("calculos:catalogo-etapas", () => obterCatalogoEtapas()),
     medir("calculos:documentos", () => listarDocumentosResumo(ids)),
     medir("calculos:vereadores", () => listarVereadores()),
+    medir("calculos:conciliacoes", () => listarConciliacoes(ids)),
   ]);
   // Processo do Compras ligado a cada emenda: alimenta as fases da execução direta.
   const compras = await medir("calculos:compras", () => resumirProcessos(execucoes.map((x) => x.processo_id).filter((x): x is string => !!x)).catch(() => new Map()));
@@ -52,6 +54,7 @@ export async function calcularEmendasDoExercicio(
     manuais,
     movimentos,
     execucoes,
+    conciliacoes,
     exercicio,
     pareceres,
     justificadas,

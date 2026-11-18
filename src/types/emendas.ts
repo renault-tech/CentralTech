@@ -428,6 +428,7 @@ export type DatabaseEmendas = {
       impedimentos: Tabela<Impedimento, "emenda_id" | "tipo" | "justificativa", "id" | "criado_em">;
       remanejamentos: Tabela<Remanejamento, "emenda_id" | "antes" | "depois", "id" | "criado_em">;
       execucao: Tabela<ExecucaoEmenda, "id", never>;
+      conciliacoes: Tabela<ConciliacaoRow, "id", never>;
       documentos: Tabela<DocumentoEmenda, "emenda_id" | "tipo" | "nome_arquivo" | "caminho", "id" | "criado_em">;
       usuarios: Tabela<UsuarioEmendas, "id" | "perfil", "criado_em">;
       permissoes: Tabela<PermissaoSecretaria, "usuario_id" | "secretaria_id", never>;
@@ -490,4 +491,22 @@ export type DatabaseEmendas = {
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
+};
+
+/** Conciliação com o IPM (`emendas.conciliacoes`): saldo não executado, anulação do saldo do empenho e fonte do excesso. */
+export type ConciliacaoRow = {
+  id: string;
+  saldo_registrado_em: string | null;
+  saldo_valor: number | string | null;
+  saldo_observacao: string | null;
+  anulacao_solicitada_em: string | null;
+  anulacao_documento: string | null;
+  anulacao_valor: number | string | null;
+  excesso_valor: number | string | null;
+  excesso_fonte: string | null;
+  excesso_documento: string | null;
+  conciliado_ipm_em: string | null;
+  observacao: string | null;
+  atualizado_em: string;
+  atualizado_por: string | null;
 };

@@ -5,6 +5,7 @@
 
 import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type FaseCalculada, type ResumoCompras } from "@/lib/emendas/fases";
 import { avaliarArt7, contasRepetidas, relatoriosDeGestao, type DocumentoResumo, type ItemConformidade } from "@/lib/emendas/conformidade";
+import { situacaoConciliacao, type Conciliacao } from "@/lib/emendas/conciliacao";
 import { documentosExigidos } from "@/lib/emendas/documentos-drive";
 import { maiorGravidade, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
 import { CATALOGO_PADRAO, type CatalogoEtapas } from "@/lib/emendas/regras";
@@ -46,6 +47,8 @@ export type EntradaResumos = {
   /** Resumo do processo do Compras de cada vínculo (processo_id → resumo). */
   compras?: Map<string, ResumoCompras>;
   execucoes: ExecucaoEmenda[];
+  /** Conciliação com o IPM (saldo, anulação, fonte do excesso); só há linha onde houve o que registrar. */
+  conciliacoes?: Conciliacao[];
   exercicio: Pick<Exercicio, "data_aprovacao_loa" | "prazo_exequibilidade" | "numero_lei_loa" | "municipio_nome" | "municipio_cnpj" | "unidade_parlamentar"> | null;
   /** Partido por vereador (id → partido). */
   partidos?: Map<string, string | null>;
@@ -105,6 +108,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
   const manuais = agrupar(e.manuais, (m) => m.emenda_id);
   const movs = agrupar(e.movimentos, (m) => m.emenda_id);
   const execucoes = new Map(e.execucoes.map((x) => [x.id, x]));
+  const conciliacoes = new Map((e.conciliacoes ?? []).map((c) => [c.id, c]));
   const pareceres = new Map(e.pareceres.map((p) => [p.secretaria_id, p]));
   const justificadas = agrupar(e.justificadas, (j) => j.emenda_id);
   const docs = agrupar(e.documentos ?? [], (d) => d.emenda_id);
@@ -114,12 +118,15 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
   for (const emenda of e.emendas) {
     const execucao = execucoes.get(emenda.id) ?? null;
     const parecer = pareceres.get(emenda.secretaria_id) ?? null;
+    const conciliacao = conciliacoes.get(emenda.id) ?? null;
+    const sit = situacaoConciliacao(emenda, conciliacao);
     const fases = situacaoFases({
       emenda,
       fases: fasesPorTipo.get(tipoDaEmenda(emenda)) ?? [],
       manuais: mapaManuais(manuais.get(emenda.id) ?? []),
       movimentos: movs.get(emenda.id) ?? [],
       valorEmenda: Number(emenda.valor),
+      saldoNaoExecutado: sit.saldoRegistrado ? sit.saldoNaoExecutado : 0,
       compras: execucao?.processo_id ? (e.compras?.get(execucao.processo_id) ?? null) : null,
       execucao,
       exercicio: e.exercicio,
@@ -140,6 +147,7 @@ export function calcularEmendas(e: EntradaResumos): Map<string, CalculoEmenda> {
         execucao,
         exercicio: e.exercicio,
         temParecer: !!parecer,
+        conciliacao: sit,
         movimentos: movs.get(emenda.id) ?? [],
         justificadas: justificadas.get(emenda.id),
         conformidade: {
