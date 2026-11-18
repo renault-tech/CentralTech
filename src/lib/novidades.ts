@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-19",
+    titulo: "Emendas: assistente de exercício, ajustes pós-exequibilidade e cadastro de entidade pelo CNPJ",
+    descricao:
+      "Em Configurações › Exercício há um assistente que mostra o que falta para o ano estar pronto (parâmetros, vereadores, emendas aprovadas e ajustes) e permite abrir um novo exercício copiando a cota e os dados do anterior, e fechar o anterior conferindo as emendas sem situação. Em Importar, a planilha atualizada depois da análise de exequibilidade é comparada com o cadastro: só o que mudou aparece, você marca o que aplicar e cada mudança vira remanejamento com ato e motivo. No cadastro de beneficiários, \"Preencher pelo CNPJ\" traz nome, endereço, contato, representante e categoria da Receita, sem digitar.",
+  },
+  {
+    data: "2026-11-19",
     titulo: "Emendas: seletor de exercício em todas as telas e restos a pagar no ano seguinte",
     descricao:
       "O módulo agora tem o seletor Exercício acima de todas as telas: escolher 2026 ou 2027 muda Painel, Emendas, Pendências, Panorama, Relatórios, Portal e Configurações de uma vez, e a escolha fica guardada. O Panorama da execução passou a mostrar os restos a pagar de exercícios anteriores; quando o empenho de um restos a pagar é todo pago, a emenda passa sozinha a cumprida. Também foi criado o guia de funcionalidades do módulo (docs/guia-funcionalidades-emendas.md), base para o tutorial.",

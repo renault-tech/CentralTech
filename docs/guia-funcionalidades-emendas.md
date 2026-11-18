@@ -116,7 +116,24 @@ Exercício (cota, LOA, prazo, dados de publicação, permissão de lançamento p
 - **Boletim do portal** por e-mail (diário, só quando algo mudou).
 - Tudo que é gravado fica na **auditoria** (quem, quando, o que mudou) e aparece no histórico da emenda.
 
-## 16. Em construção (combinado, ainda não feito)
+## 16. Abrir um novo exercício (Configurações › Exercício)
 
-- **Abertura de novo exercício guiada** (Configurações › Exercício): criar o ano copiando os dados do anterior, conferir vereadores, importar a planilha das emendas aprovadas e, depois, a planilha de ajustes pós-exequibilidade (só o que mudou, com ato e motivo), e fechar o ano anterior verificando o que ainda está sem situação. O cadastro de entidades novas será preenchido por consulta ao CNPJ.
-- **Perfil de gestor master** para as decisões de encerramento e de abertura/fechamento de exercício.
+O **Assistente do exercício** mostra, para o ano selecionado, o que falta para ele estar pronto e leva à tela onde cada passo se resolve:
+
+1. **Exercício criado.** Em *Abrir um novo exercício* escolhe-se o ano e de qual ano **copiar** a cota por vereador, o mínimo da Saúde, a RCL e os dados do Município. LOA, lei, prazo de exequibilidade e a publicação do portal **não** são copiados (são de cada ano).
+2. **Parâmetros do ano:** cota, data da LOA, nº da lei e prazo de exequibilidade (os quadros logo abaixo).
+3. **Vereadores:** o cadastro vale para todos os anos; ajusta-se quem saiu ou entrou em *Vereadores*.
+4. **Emendas aprovadas:** *Importar planilha*. A prévia confere vereadores, cota e destinações antes de gravar; reimportar não duplica.
+5. **Ajustes depois da exequibilidade:** *Importar ajustes* (seção "Ajustes depois da exequibilidade", em Importar). Envia-se a planilha atualizada; a plataforma **compara com o cadastro e mostra só o que mudou** (valor, objeto, ficha/dotação, destinação), as emendas novas e as que sumiram da planilha. O gestor marca o que aplicar, informa o **ato** e o **motivo**; cada mudança vira **remanejamento** no histórico da emenda. Célula vazia na planilha nunca apaga um dado.
+6. **Fechar o exercício anterior:** mostra quantas emendas do ano anterior ainda estão **sem situação de encerramento** (com link para vê-las no Panorama). Para fechar com pendências é preciso escrever uma justificativa. Fechar **não impede** pagar restos a pagar. *Reabrir* desfaz.
+
+## 17. Cadastro de entidades sem digitação
+
+Em *Configurações › Beneficiários › Novo beneficiário* há duas ajudas:
+- **Preencher pelo CNPJ:** digitando os 14 números, a plataforma consulta a Receita (BrasilAPI) e preenche nome, endereço, e-mail, telefone, representante (primeiro dirigente do quadro societário, sem CPF) e **categoria** (pela natureza jurídica). Avisa se a situação cadastral não é "ativa" e se o CNPJ já está cadastrado. A pessoa confere e salva.
+- **Importar de um documento (PDF):** lê cartão do CNPJ, estatuto ou plano de trabalho. O arquivo não é guardado.
+
+## 18. Em construção (combinado, ainda não feito)
+
+- **Perfil de gestor master** para as decisões de encerramento e de abertura/fechamento de exercício (hoje valem para gestor e administrador; a regra está num ponto só).
+- **Bloqueio de lançamentos em exercício encerrado** (hoje só há o aviso, porque restos a pagar ainda recebem pagamentos).

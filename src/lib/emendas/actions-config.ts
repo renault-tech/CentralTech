@@ -11,7 +11,9 @@ import { ehGestor } from "@/lib/emendas/regras";
 import { validarDocumento } from "@/lib/emendas/documentos";
 import { CATEGORIAS, tipoDaCategoria } from "@/lib/emendas/categorias";
 import { lerPlanilha, type LinhaImportacao } from "@/lib/emendas/importacao/planilha";
+import { compararPlanilha, novoDoRemanejamento, type EmendaCadastrada, type ResultadoComparacao } from "@/lib/emendas/importacao/ajustes";
 import type { Resultado } from "@/lib/emendas/actions";
+import type { Exercicio } from "@/types/emendas";
 
 /**
  * Configurações do módulo Emendas (catálogos, permissões, importação).
@@ -776,4 +778,168 @@ export async function confirmarImportacao(formData: FormData): Promise<
   }
   revalidar();
   return { sucesso: true, ...data };
+}
+
+// ------------------------------------------------- abertura e fechamento de exercício
+
+const esquemaAbrirExercicio = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  /** Exercício de onde copiar cota, mínimo da Saúde, RCL e os dados de publicação (nunca LOA, lei, prazo nem publicação do portal). */
+  copiarDe: z.number().int().min(2020).max(2100).nullable().optional(),
+});
+
+/**
+ * Abre um novo exercício copiando os parâmetros do anterior (cota por vereador, mínimo da Saúde, RCL, nome e CNPJ do Município,
+ * unidade parlamentar), para ninguém redigitar. LOA, lei, prazo de exequibilidade e a publicação do portal NÃO são copiados: são
+ * de cada ano. Só gestor; recusa ano que já existe.
+ */
+export async function abrirExercicio(dados: z.input<typeof esquemaAbrirExercicio>): Promise<Resultado> {
+  const a = esquemaAbrirExercicio.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores abrem exercícios." };
+  const emendas = await criarClienteEmendas();
+  const { data: ja } = await emendas.from("exercicios").select("ano").eq("ano", a.data.ano).maybeSingle();
+  if (ja) return { sucesso: false, erro: `O exercício ${a.data.ano} já existe.` };
+  let base: Partial<Omit<Exercicio, "ano" | "criado_em">> & { cota_por_vereador: number } = { cota_por_vereador: 0, percentual_saude_min: 50 };
+  if (a.data.copiarDe) {
+    const { data: origem } = await emendas.from("exercicios").select("*").eq("ano", a.data.copiarDe).maybeSingle();
+    if (!origem) return { sucesso: false, erro: `Exercício ${a.data.copiarDe} não encontrado para copiar.` };
+    base = {
+      cota_por_vereador: origem.cota_por_vereador,
+      percentual_saude_min: origem.percentual_saude_min,
+      rcl: origem.rcl,
+      percentual_rcl: origem.percentual_rcl,
+      municipio_nome: origem.municipio_nome,
+      municipio_cnpj: origem.municipio_cnpj,
+      unidade_parlamentar: origem.unidade_parlamentar,
+      secretaria_edita_lancamentos: origem.secretaria_edita_lancamentos,
+    };
+  }
+  const { error } = await emendas.from("exercicios").insert({ ano: a.data.ano, situacao: "aberto", ...base });
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  revalidar();
+  return { sucesso: true, aviso: `Exercício ${a.data.ano} aberto. Confira a cota por vereador e preencha a LOA e o prazo de exequibilidade.` };
+}
+
+const esquemaFecharExercicio = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  justificativa: z.string().trim().max(2000).optional(),
+});
+
+/**
+ * Fecha o exercício. Só gestor/admin (ponto único para o futuro "gestor master"). Se ainda há emenda sem situação de encerramento,
+ * é preciso justificar: a justificativa fica na auditoria do exercício. Fechar não impede pagar restos a pagar depois.
+ */
+export async function fecharExercicio(dados: z.input<typeof esquemaFecharExercicio>): Promise<Resultado> {
+  const a = esquemaFecharExercicio.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores fecham exercícios." };
+  const { carregarPanorama } = await import("@/lib/emendas/panorama-dados");
+  const { linhas } = await carregarPanorama(a.data.ano);
+  const semSituacao = linhas.filter((l) => !l.encerramento).length;
+  if (semSituacao > 0 && (a.data.justificativa ?? "").length < 10) {
+    return { sucesso: false, erro: `${semSituacao} emenda(s) ainda estão sem situação de encerramento. Defina a situação de cada uma ou escreva a justificativa (mínimo de 10 caracteres) para fechar mesmo assim.` };
+  }
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("exercicios").update({ situacao: "encerrado" }).eq("ano", a.data.ano).select("ano");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!data?.length) return { sucesso: false, erro: "Exercício não encontrado ou sem permissão." };
+  revalidar();
+  return { sucesso: true, aviso: semSituacao > 0 ? `Exercício ${a.data.ano} fechado com ${semSituacao} emenda(s) sem situação definida.` : `Exercício ${a.data.ano} fechado.` };
+}
+
+export async function reabrirExercicio(ano: number): Promise<Resultado> {
+  if (!Number.isInteger(ano)) return { sucesso: false, erro: "Exercício inválido." };
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores reabrem exercícios." };
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("exercicios").update({ situacao: "aberto" }).eq("ano", ano).select("ano");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!data?.length) return { sucesso: false, erro: "Exercício não encontrado ou sem permissão." };
+  revalidar();
+  return { sucesso: true };
+}
+
+// ------------------------------------------------- ajustes pós-exequibilidade (planilha atualizada)
+
+export type PreviaAjustes =
+  | { sucesso: true; ano: number; comparacao: ResultadoComparacao; erros: string[] }
+  | { sucesso: false; erro: string };
+
+async function compararArquivo(formData: FormData) {
+  const ano = Number(formData.get("ano"));
+  if (!Number.isInteger(ano)) return { erro: "Escolha o exercício." } as const;
+  const r = await lerArquivo(formData);
+  if ("erro" in r) return { erro: r.erro as string } as const;
+  const { listarEmendas } = await import("@/lib/emendas/dados");
+  const existentes = await listarEmendas(ano);
+  const cadastradas: EmendaCadastrada[] = existentes.map((e) => ({ id: e.id, numero: e.numero, situacao: e.situacao, valor: e.valor, objeto: e.objeto, ficha: e.ficha ?? null, dotacao_texto: e.dotacao_texto ?? null, beneficiario_nome: e.beneficiario_nome }));
+  return { ano, leitura: r.leitura, comparacao: compararPlanilha(r.leitura.linhas, cadastradas) } as const;
+}
+
+/** Passo 1 dos ajustes: compara a planilha atualizada com o que já está cadastrado (nada é gravado). */
+export async function previaAjustes(formData: FormData): Promise<PreviaAjustes> {
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores importam planilhas." };
+  const c = await compararArquivo(formData);
+  if ("erro" in c) return { sucesso: false, erro: c.erro as string };
+  return { sucesso: true, ano: c.ano, comparacao: c.comparacao, erros: c.leitura.erros };
+}
+
+export type RelatorioAjustes = { numero: number; acao: "remanejada" | "criada" | "cancelada"; ok: boolean; detalhe?: string };
+
+/**
+ * Passo 2 dos ajustes: relê o arquivo no servidor (não confia na prévia do navegador) e aplica SÓ o que o gestor marcou:
+ * mudanças viram remanejamentos com o ato e o motivo informados (ficam no histórico da emenda); emendas novas entram pela mesma
+ * importação transacional; as que sumiram da planilha são canceladas se marcadas. Cada item tem o próprio resultado.
+ */
+export async function aplicarAjustes(formData: FormData): Promise<{ sucesso: true; itens: RelatorioAjustes[] } | { sucesso: false; erro: string }> {
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores aplicam ajustes." };
+  const ato = String(formData.get("ato") ?? "").trim();
+  const motivo = String(formData.get("motivo") ?? "").trim();
+  if (ato.length < 3) return { sucesso: false, erro: "Informe o ato (ex.: Decreto, Ofício da Câmara)." };
+  if (motivo.length < 5) return { sucesso: false, erro: "Informe o motivo dos ajustes." };
+  const lista = (nome: string): number[] => {
+    try {
+      const v = JSON.parse(String(formData.get(nome) ?? "[]"));
+      return Array.isArray(v) ? v.filter((n) => Number.isInteger(n)) : [];
+    } catch {
+      return [];
+    }
+  };
+  const marcadas = new Set(lista("alteradas"));
+  const novasMarcadas = new Set(lista("novas"));
+  const canceladas = new Set(lista("canceladas"));
+  const c = await compararArquivo(formData);
+  if ("erro" in c) return { sucesso: false, erro: c.erro as string };
+  const { remanejarEmenda, definirCancelamento } = await import("@/lib/emendas/actions");
+  const itens: RelatorioAjustes[] = [];
+
+  for (const alt of c.comparacao.alteradas.filter((x) => marcadas.has(x.numero))) {
+    const { novo, erros } = novoDoRemanejamento(alt.mudancas.filter((m) => m.campo !== "beneficiario"));
+    const benef = alt.mudancas.find((m) => m.campo === "beneficiario");
+    if (erros.length) {
+      itens.push({ numero: alt.numero, acao: "remanejada", ok: false, detalhe: erros.join("; ") });
+      continue;
+    }
+    const r = await remanejarEmenda({ emendaId: alt.id, ato, motivo, novo: { ...novo, ...(benef ? { beneficiarioNovo: benef.depois } : {}) } });
+    itens.push({ numero: alt.numero, acao: "remanejada", ok: r.sucesso, detalhe: r.sucesso ? alt.mudancas.map((m) => m.rotulo).join(", ") : r.erro });
+  }
+
+  const linhasNovas = c.leitura.linhas.filter((l) => c.comparacao.novas.includes(l.numero) && novasMarcadas.has(l.numero));
+  if (linhasNovas.length) {
+    const emendas = await criarClienteEmendas();
+    const payload = linhasNovas.map((l) => ({
+      numero: l.numero, numero_vereador: l.numero_vereador, vereador_numero: l.vereador_numero, objeto: l.objeto, descricao: l.descricao, valor: l.valor,
+      beneficiario: l.beneficiario, unidade_codigo: l.unidade_codigo, saude: l.saude, funcional: l.funcional, natureza: l.natureza, dotacao_texto: l.dotacao_texto,
+      ficha: l.ficha, status_original: l.status_original, etapa: l.etapa, empenho: l.empenho, data_pagamento: l.data_pagamento, remanejamento: null,
+    }));
+    const { error } = await emendas.rpc("importar", { p_ano: c.ano, p_emendas: payload });
+    for (const l of linhasNovas) itens.push({ numero: l.numero, acao: "criada", ok: !error, detalhe: error ? traduzir(error) : undefined });
+  }
+
+  for (const aus of c.comparacao.ausentes.filter((x) => canceladas.has(x.numero))) {
+    const r = await definirCancelamento(aus.id, true);
+    itens.push({ numero: aus.numero, acao: "cancelada", ok: r.sucesso, detalhe: r.sucesso ? undefined : r.erro });
+  }
+  revalidar();
+  return { sucesso: true, itens };
 }
