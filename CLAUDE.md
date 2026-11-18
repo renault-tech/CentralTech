@@ -2078,3 +2078,9 @@ Pedido do dono: a entidade precisa carregar origem e tipo, e isso deve se reflet
 - **Dado a decidir**: o IEF (emenda 70) é ente público com instrumento padrão (termo de fomento) e por isso aparece na pendência nova; o gestor decide se vira convênio. Projeto Superação segue como OSC (A06 depende do Jurídico).
 - Ficha das 3 emendas do Cisum corrigida de "RATERIO" para "RATEIO" (só o texto; o código da dotação não mudou).
 
+
+
+## Frotas: Manutenção × FIPE e correção do botão da FIPE (18/11/2026)
+
+- **Botão "Atualizar valores da FIPE" não funcionava**: o código da API conferia com a spec v2 da Parallelum, então a causa provável é de execução: 25 consultas em série (até 12 s cada) estouravam o tempo da função, e sem token o limite da FIPE (500/dia) é dividido com todos os outros usuários do mesmo IP da Vercel (429). Agora `atualizarValoresFipe` faz rodadas de 8 em paralelo (4 por vez, consulta repetida de mesmo modelo/ano reaproveitada), a tela repete as rodadas sozinha, mostra o motivo da falha (`motivo`) e para no limite; `maxDuration = 60` em Veículos e Manutenção × FIPE. **Passo do dono**: criar um token gratuito em fipe.api.br e pôr em `FIPE_API_TOKEN` na Vercel (sem ele o 429 volta). Não testado contra a API real (o sandbox bloqueia `fipe.parallelum.com.br`).
+- **`/frotas/custos` (Manutenção × FIPE)**: `lib/frotas/custos.ts` (puro, testado): período (12 m, 24 m, ano, tudo), gasto do período e acumulado por veículo, ano a ano, % do valor FIPE com os mesmos limites de `frotas.parametros`, valor "desatualizado" (> 45 dias) e veículos sem valor listados à parte. Complementa a Análise da frota (que só olha 12 meses de quem já tem valor). Ainda sem exportação própria.

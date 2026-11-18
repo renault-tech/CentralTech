@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { atualizarValoresFipe } from "@/lib/frotas/actions-importacao";
 import { CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
 
-/** Atualiza o valor dos veículos já ligados à FIPE (em rodadas de 25, para não estourar o tempo). */
+/** Atualiza o valor dos veículos já ligados à FIPE (em rodadas curtas repetidas sozinhas, para não estourar o tempo). */
 export function AtualizarFipe() {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
@@ -15,12 +15,27 @@ export function AtualizarFipe() {
   function rodar() {
     setMsg(null);
     iniciar(async () => {
-      const r = await atualizarValoresFipe();
-      if (!r.sucesso) return setMsg({ tipo: "erro", texto: r.erro });
-      const partes = [`${r.atualizados} atualizados`];
-      if (r.falhas) partes.push(`${r.falhas} com falha`);
-      if (r.restantes) partes.push(`faltam ${r.restantes}: clique de novo para continuar`);
-      setMsg({ tipo: r.falhas ? "aviso" : "ok", texto: partes.join(" · ") + "." });
+      let atualizados = 0;
+      let falhas = 0;
+      let motivo: string | null = null;
+      // Repete as rodadas até acabar (cada uma é curta, para caber no tempo da função).
+      for (let i = 0; i < 40; i += 1) {
+        let r: Awaited<ReturnType<typeof atualizarValoresFipe>>;
+        try {
+          r = await atualizarValoresFipe();
+        } catch {
+          return setMsg({ tipo: "erro", texto: `${atualizados} atualizados. A consulta foi interrompida (tempo esgotado ou sem conexão); clique de novo para continuar.` });
+        }
+        if (!r.sucesso) return setMsg({ tipo: "erro", texto: r.erro });
+        atualizados += r.atualizados;
+        falhas += r.falhas;
+        motivo ??= r.motivo;
+        if (r.parar || r.restantes === 0 || (r.atualizados === 0 && r.falhas > 0)) break;
+      }
+      const partes = [`${atualizados} atualizados`];
+      if (falhas) partes.push(`${falhas} com falha`);
+      const texto = partes.join(" · ") + "." + (motivo ? ` Motivo: ${motivo}` : atualizados === 0 && falhas === 0 ? " Todos os veículos ligados à FIPE já estão com o valor deste mês." : "");
+      setMsg({ tipo: falhas ? (atualizados ? "aviso" : "erro") : "ok", texto });
       router.refresh();
     });
   }

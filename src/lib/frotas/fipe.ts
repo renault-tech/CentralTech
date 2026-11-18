@@ -31,7 +31,8 @@ async function pedir(caminho: string): Promise<unknown> {
   const timer = setTimeout(() => controle.abort(), 12_000);
   try {
     const resposta = await fetch(`${BASE}${caminho}`, { headers, signal: controle.signal, cache: "no-store" });
-    if (resposta.status === 429) throw new ErroFipe("O limite de consultas à tabela FIPE foi atingido. Tente de novo mais tarde.");
+    if (resposta.status === 429) throw new ErroFipe(process.env.FIPE_API_TOKEN ? "O limite diário de consultas à tabela FIPE foi atingido. Tente de novo amanhã." : "O limite de consultas à tabela FIPE foi atingido (sem token o limite é de 500 por dia, dividido com outros usuários do mesmo servidor). Cadastre um token gratuito em fipe.api.br e informe em FIPE_API_TOKEN.");
+    if (resposta.status === 401 || resposta.status === 403) throw new ErroFipe("A tabela FIPE recusou a consulta (token inválido ou ausente). Confira FIPE_API_TOKEN.");
     if (!resposta.ok) throw new ErroFipe(`A tabela FIPE respondeu com erro (${resposta.status}).`);
     return await resposta.json();
   } catch (e) {

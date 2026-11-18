@@ -281,10 +281,26 @@ export async function aplicarFipe(dados: z.input<typeof esquemaAplicar>): Promis
   }
 }
 
-const POR_RODADA = 25;
+const POR_RODADA = 8;
+const EM_PARALELO = 4;
 
-/** Atualiza o valor dos veículos já vinculados à FIPE (os de valor mais antigo primeiro; em rodadas de 25). */
-export async function atualizarValoresFipe(): Promise<{ sucesso: true; atualizados: number; falhas: number; restantes: number } | Falha> {
+export type ResultadoRodadaFipe = {
+  sucesso: true;
+  atualizados: number;
+  falhas: number;
+  restantes: number;
+  /** Primeiro motivo de falha, para a tela mostrar o que de fato aconteceu. */
+  motivo: string | null;
+  /** Parar de insistir (limite diário da FIPE atingido). */
+  parar: boolean;
+};
+
+/**
+ * Atualiza o valor dos veículos já vinculados à FIPE (os de valor mais antigo primeiro).
+ * Rodadas pequenas e em paralelo: a função serverless tem tempo limitado e a FIPE responde em 1–3 s por
+ * consulta; a tela repete as rodadas sozinha até acabar. Veículos com o mesmo modelo/ano dividem 1 consulta.
+ */
+export async function atualizarValoresFipe(): Promise<ResultadoRodadaFipe | Falha> {
   if (!(await exigirGestor())) return falha("Só o Setor de Frotas consulta a FIPE.");
   const frotas = await criarClienteFrotas();
   const hoje = dataNoFuso(new Date());
@@ -297,24 +313,41 @@ export async function atualizarValoresFipe(): Promise<{ sucesso: true; atualizad
     .limit(POR_RODADA + 1);
   if (error) return falha("Não foi possível ler os veículos vinculados à FIPE.");
 
-  const fila = data.slice(0, POR_RODADA);
+  const fila = data.slice(0, POR_RODADA).filter((v) => v.fipe_tipo && v.fipe_marca_id && v.fipe_modelo_id && v.fipe_ano_id);
+  const consultas = new Map<string, Promise<Awaited<ReturnType<typeof consultarPreco>>>>();
   let atualizados = 0;
   let falhas = 0;
-  for (const v of fila) {
-    if (!v.fipe_tipo || !v.fipe_marca_id || !v.fipe_modelo_id || !v.fipe_ano_id) continue;
+  let motivo: string | null = null;
+  let parar = false;
+
+  async function uma(v: (typeof fila)[number]) {
+    const chave = `${v.fipe_tipo}|${v.fipe_marca_id}|${v.fipe_modelo_id}|${v.fipe_ano_id}`;
     try {
-      const preco = await consultarPreco(v.fipe_tipo, v.fipe_marca_id, v.fipe_modelo_id, v.fipe_ano_id);
+      let consulta = consultas.get(chave);
+      if (!consulta) {
+        consulta = consultarPreco(v.fipe_tipo!, v.fipe_marca_id!, v.fipe_modelo_id!, v.fipe_ano_id!);
+        consultas.set(chave, consulta);
+      }
+      const preco = await consulta;
       const { error: erroGravar } = await frotas
         .from("veiculos")
         .update({ valor_referencia: preco.valor, valor_fonte: "fipe", valor_referencia_em: hoje, fipe_referencia: preco.referencia || null })
         .eq("id", v.id);
-      if (erroGravar) falhas += 1;
-      else atualizados += 1;
+      if (erroGravar) {
+        falhas += 1;
+        motivo ??= "Consultou a FIPE, mas não conseguiu gravar o valor no cadastro.";
+      } else atualizados += 1;
     } catch (e) {
       falhas += 1;
-      if (e instanceof ErroFipe && /limite/i.test(e.message)) break; // sem limite de consultas, parar já
+      const msg = e instanceof ErroFipe ? e.message : "Falha inesperada ao consultar a FIPE.";
+      motivo ??= msg;
+      if (e instanceof ErroFipe && /limite/i.test(e.message)) parar = true;
     }
   }
+
+  for (let i = 0; i < fila.length && !parar; i += EM_PARALELO) {
+    await Promise.all(fila.slice(i, i + EM_PARALELO).map(uma));
+  }
   revalidatePath("/frotas", "layout");
-  return { sucesso: true, atualizados, falhas, restantes: Math.max(0, data.length - POR_RODADA) };
+  return { sucesso: true, atualizados, falhas, restantes: Math.max(0, data.length - POR_RODADA), motivo, parar };
 }
