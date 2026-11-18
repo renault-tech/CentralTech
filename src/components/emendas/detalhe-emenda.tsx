@@ -24,7 +24,7 @@ import {
 } from "@/lib/emendas/actions";
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
-import { PainelConciliacao } from "@/components/emendas/painel-conciliacao";
+import { CartoesFinanceiros } from "@/components/emendas/painel-conciliacao";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { documentosExigidos } from "@/lib/emendas/documentos-drive";
 import { TIPOS_EXECUCAO, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
@@ -372,25 +372,7 @@ export function DetalheEmendaCliente({
 
           {aba === "financeiro" && (
             <div className="flex flex-col gap-4">
-              <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Valores da emenda">
-                {(() => {
-                  const semEmpenhar = Math.round((emenda.valor - emenda.empenhado) * 100) / 100;
-                  const itens: [string, number, string][] = [
-                    ["Valor da emenda", emenda.valor, ""],
-                    ["Empenhado", emenda.empenhado, ""],
-                    ["Pago", emenda.pago, ""],
-                    ["A pagar (do empenhado)", Math.max(0, emenda.empenhado - emenda.pago), ""],
-                    [semEmpenhar < -0.005 ? "Acima da emenda" : "Sem empenhar", Math.abs(semEmpenhar), semEmpenhar < -0.005 ? "text-red-700" : semEmpenhar > 0.005 ? "text-amber-800" : "text-slate-500"],
-                  ];
-                  return itens.map(([rotulo, v, cor]) => (
-                    <div key={rotulo} className="rounded-lg border border-slate-200 px-3 py-2.5">
-                      <dt className="text-xs text-slate-600">{rotulo}</dt>
-                      <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${cor || "text-cataguases-marinho"}`}>{brl(v)}</dd>
-                    </div>
-                  ));
-                })()}
-              </dl>
-              <PainelConciliacao emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} gestor={gestor} executar={executar} />
+              <CartoesFinanceiros emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} gestor={gestor} executar={executar} />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-[13px]">
                   <thead>

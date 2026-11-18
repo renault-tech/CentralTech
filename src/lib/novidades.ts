@@ -16,7 +16,7 @@ export const NOVIDADES: Novidade[] = [
     data: "2026-11-18",
     titulo: "Emendas: aba Financeiro mais enxuta",
     descricao:
-      "Os valores aparecem uma vez só, em cinco cartões alinhados (valor da emenda, empenhado, pago, a pagar e sem empenhar); o cartão de liquidado saiu. A conciliação com o IPM ocupa bem menos espaço: cada situação virou uma linha compacta, sem repetir o quadro de valores.",
+      "Os valores aparecem uma vez só, em cinco cartões alinhados (valor da emenda, empenhado, pago, a pagar e sem empenhar); o cartão de liquidado saiu. Cada cartão tem uma interrogação com a explicação, e as ações da conciliação com o IPM viraram botões sob o cartão a que se referem (registrar saldo não executado, solicitar anulação do saldo, informar a fonte do excesso). Cada botão só aparece quando aquele valor ocorre, e a justificativa ou os dados só abrem depois do clique.",
   },
   {
     data: "2026-11-18",
