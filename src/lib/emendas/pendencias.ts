@@ -10,6 +10,7 @@ import { conflitoInstrumento } from "@/lib/emendas/categorias";
 import { bancoOficial, faltas, type ItemConformidade, type SituacaoRelatorio } from "@/lib/emendas/conformidade";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
+import { objetoDaDescricao } from "@/lib/emendas/objeto-da-descricao";
 import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
 
 export type Gravidade = "alta" | "media" | "baixa";
@@ -60,6 +61,13 @@ export const ASSUNTO_DA_REGRA: Record<string, { area: (typeof AREAS_PENDENCIA)[n
   objeto_generico: { area: "Cadastro", nome: "Objeto pouco descritivo" },
   sem_beneficiario: { area: "Cadastro", nome: "Sem beneficiário" },
 };
+
+/** Objeto que só nomeia o órgão/entidade ou é curto demais. Usado também para decidir quando buscar a descrição. */
+export function objetoGenerico(objeto: string): boolean {
+  const o = objeto.trim();
+  const soNomeDoOrgao = /^(a|o)\s+(secretaria|fundo|departamento|prefeitura|casa|associa[cç][aã]o)\b/i.test(o) && o.split(/\s+/).length <= 8;
+  return o.length < 25 || soNomeDoOrgao;
+}
 
 export type EntradaPendencias = {
   emenda: EmendaResumo;
@@ -366,8 +374,8 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
   }
 
   const objeto = emenda.objeto.trim();
-  const soNomeDoOrgao = /^(a|o)\s+(secretaria|fundo|departamento|prefeitura|casa|associa[cç][aã]o)\b/i.test(objeto) && objeto.split(/\s+/).length <= 8;
-  if (objeto.length < 25 || soNomeDoOrgao) {
+  // A finalidade pode já estar na descrição da planilha: então a informação existe e não é pendência.
+  if (objetoGenerico(objeto) && !objetoDaDescricao(emenda.descricao)) {
     add({
       regra: "objeto_generico",
       gravidade: "baixa",

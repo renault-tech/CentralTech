@@ -440,3 +440,15 @@ export const contarPropostasPendentes = cache(async (): Promise<number> => {
   const { count } = await emendas.from("propostas").select("id", { count: "exact", head: true }).eq("status", "pendente");
   return count ?? 0;
 });
+
+/** Descrição (texto longo da planilha) só das emendas pedidas: as telas não a carregam, mas algumas regras precisam dela. */
+export async function listarDescricoes(ids: string[]): Promise<Map<string, string>> {
+  const m = new Map<string, string>();
+  if (!ids.length) return m;
+  const emendas = await criarClienteEmendas();
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data } = await emendas.from("emendas").select("id,descricao").in("id", ids.slice(i, i + 100));
+    for (const r of data ?? []) m.set(r.id as string, (r.descricao as string) ?? "");
+  }
+  return m;
+}

@@ -52,6 +52,13 @@ describe("pendencias", () => {
     expect(regras({ emenda: { ...emenda, etapa: "processo_compra" } })).not.toContain("nao_iniciada");
   });
 
+  it("objeto só com o nome do órgão não é pendência se a descrição traz a finalidade", () => {
+    const base = { ...emenda, objeto: "A Casa da Criança" };
+    expect(regras({ emenda: base })).toContain("objeto_generico");
+    const d = "Reforço da dotação orçamentária para a Casa da Criança, cujo intuito será a aquisição de brinquedos, conforme demanda.";
+    expect(regras({ emenda: { ...base, descricao: d } })).not.toContain("objeto_generico");
+  });
+
   it("prazo de exequibilidade vencido sem parecer", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" } })).toContain("exequibilidade_vencida");
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" }, temParecer: true })).not.toContain("exequibilidade_vencida");
