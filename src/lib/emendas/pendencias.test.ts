@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { situacaoConciliacao } from "@/lib/emendas/conciliacao";
 import { situacaoFases } from "@/lib/emendas/fases";
 import { abertas, maiorGravidade, pendencias, type EntradaPendencias } from "@/lib/emendas/pendencias";
 import type { EmendaResumo } from "@/types/emendas";
@@ -57,6 +58,22 @@ describe("pendencias", () => {
     expect(regras({ emenda: base })).toContain("objeto_generico");
     const d = "Reforço da dotação orçamentária para a Casa da Criança, cujo intuito será a aquisição de brinquedos, conforme demanda.";
     expect(regras({ emenda: { ...base, descricao: d } })).not.toContain("objeto_generico");
+  });
+
+  it("conciliação com o IPM: saldo não executado, anulação do saldo do empenho e excesso sem fonte", () => {
+    const paga = { ...emenda, valor: 1000, empenhado: 987.63, pago: 987.63, etapa: "paga" as const };
+    const sit = situacaoConciliacao(paga, null);
+    expect(regras({ emenda: paga, conciliacao: sit })).toContain("saldo_nao_executado");
+    const reg = situacaoConciliacao(paga, { saldo_registrado_em: "2026-11-18", saldo_valor: 12.37, anulacao_solicitada_em: null, excesso_fonte: null });
+    expect(regras({ emenda: paga, conciliacao: reg })).not.toContain("saldo_nao_executado");
+    const encerrada = { ...emenda, valor: 1000, empenhado: 1000, pago: 900, etapa: "concluida" as const };
+    expect(regras({ emenda: encerrada, conciliacao: situacaoConciliacao(encerrada, null) })).toContain("anular_saldo_empenho");
+    const excesso = { ...emenda, valor: 1000, empenhado: 1020, pago: 1020, etapa: "paga" as const };
+    expect(regras({ emenda: excesso, conciliacao: situacaoConciliacao(excesso, null) })).toContain("excesso_sem_fonte");
+    const comFonte = situacaoConciliacao(excesso, { saldo_registrado_em: null, saldo_valor: null, anulacao_solicitada_em: null, excesso_fonte: "Recursos próprios" });
+    const r = regras({ emenda: excesso, conciliacao: comFonte });
+    expect(r).not.toContain("excesso_sem_fonte");
+    expect(r).not.toContain("empenho_maior");
   });
 
   it("prazo de exequibilidade vencido sem parecer", () => {

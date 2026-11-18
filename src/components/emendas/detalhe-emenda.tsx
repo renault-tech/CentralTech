@@ -6,7 +6,6 @@ import { AlertTriangle, Check, Download, FileUp, Paperclip, Pencil, Trash2, X } 
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  arredondarCentavos,
   desfazerArredondamento,
   corrigirMovimento,
   definirCancelamento,
@@ -25,6 +24,7 @@ import {
 } from "@/lib/emendas/actions";
 import { AbaDocumentacao, AbaFases, AbaPendencias, type AtalhosCompras } from "@/components/emendas/abas-gestao";
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
+import { PainelConciliacao } from "@/components/emendas/painel-conciliacao";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { documentosExigidos } from "@/lib/emendas/documentos-drive";
 import { TIPOS_EXECUCAO, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros, type FaseCalculada } from "@/lib/emendas/fases";
@@ -200,15 +200,6 @@ export function DetalheEmendaCliente({
     if (campo === "etapa") return infoEtapa(String(v), catalogo).nome;
     return String(v);
   };
-
-  // Há diferença de até R$ 1,00 (empenho ou pagamento) ainda sem arredondar?
-  const podeArredondar = (() => {
-    const t = totaisFinanceiros(movimentos);
-    const valor = emenda.valor;
-    const fe = Math.round((valor - t.empenhado - t.arredEmpenho) * 100) / 100;
-    const fp = Math.round((t.empenhado - t.pago - t.arredPago) * 100) / 100;
-    return (t.empenhado > 0 && fe > 0.004 && fe <= 1.004) || (t.pago > 0 && fp > 0.004 && fp <= 1.004);
-  })();
 
   async function executar(acao: () => Promise<Resultado>) {
     setErroGeral(null);
@@ -395,6 +386,7 @@ export function DetalheEmendaCliente({
                   </div>
                 ))}
               </div>
+              <PainelConciliacao emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} gestor={gestor} executar={executar} />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-[13px]">
                   <thead>
@@ -438,11 +430,6 @@ export function DetalheEmendaCliente({
                   <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("movimento")}>
                     + Lançar movimento (parcial, anulação…)
                   </button>
-                  {gestor && podeArredondar && (
-                    <button type="button" className="text-xs text-slate-500 underline hover:text-slate-800" onClick={() => executar(() => arredondarCentavos(emenda.id))} title="Considera completa a fase com diferença de até R$ 1,00; o valor real continua registrado e pode ser desfeito">
-                      Arredondar centavos
-                    </button>
-                  )}
                 </div>
               )}
             </div>

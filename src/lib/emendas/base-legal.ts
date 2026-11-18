@@ -97,6 +97,11 @@ export const BASES: Record<string, BaseLegal> = {
     citacao: "Portaria Interministerial STN/SOF nº 163/2001",
     resumo: "O 3º grupo da natureza da despesa distingue transferência a entidade sem fins lucrativos (50) de aplicação direta (90).",
   },
+  conciliacao: {
+    citacao: "Lei 4.320/1964, arts. 58 a 60; orientação do Controle Interno (CGM, 17/11/2026)",
+    resumo:
+      "O valor contábil (empenhado e pago) fica exato, sem arredondamento. Executado menor que a emenda: registrar o saldo não executado e anular o saldo do empenho. Maior: registrar a fonte de recurso que cobriu o excesso.",
+  },
   portal: {
     citacao: "Lei 12.527/2011 (LAI), arts. 8º e 9º; LC 101/2000 (LRF), art. 48-A; IN TCE-MG 05/2025",
     resumo: "Transparência ativa: a execução das emendas é divulgada em meio eletrônico, sem exigir cadastro, em formatos abertos.",
@@ -123,6 +128,9 @@ export const BASE_DA_PENDENCIA: Record<string, keyof typeof BASES> = {
   conta_banco_nao_oficial: "conta_parceria",
   relatorio_gestao: "relatorio_gestao",
   exequibilidade_vencida: "exequibilidade",
+  saldo_nao_executado: "conciliacao",
+  anular_saldo_empenho: "conciliacao",
+  excesso_sem_fonte: "conciliacao",
 };
 
 /** Regras cujo fundamento muda quando o instrumento é convênio (contrato de rateio) e não termo de fomento do MROSC. */

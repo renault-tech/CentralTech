@@ -9,7 +9,8 @@ import { baseDaPendencia } from "@/lib/emendas/base-legal";
 import { conflitoInstrumento } from "@/lib/emendas/categorias";
 import { bancoOficial, faltas, type ItemConformidade, type SituacaoRelatorio } from "@/lib/emendas/conformidade";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
-import { dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
+import { brl, dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
+import type { SituacaoConciliacao } from "@/lib/emendas/conciliacao";
 import { objetoDaDescricao } from "@/lib/emendas/objeto-da-descricao";
 import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
 
@@ -59,6 +60,9 @@ export const ASSUNTO_DA_REGRA: Record<string, { area: (typeof AREAS_PENDENCIA)[n
   conta_banco_nao_oficial: { area: "Publicidade e conta", nome: "Conta em banco não oficial" },
   tipo_incoerente: { area: "Cadastro", nome: "Tipo incoerente com a natureza" },
   objeto_generico: { area: "Cadastro", nome: "Objeto pouco descritivo" },
+  saldo_nao_executado: { area: "Execução", nome: "Saldo não executado a registrar" },
+  anular_saldo_empenho: { area: "Execução", nome: "Saldo do empenho a anular" },
+  excesso_sem_fonte: { area: "Execução", nome: "Excesso sem fonte de recurso" },
   sem_beneficiario: { area: "Cadastro", nome: "Sem beneficiário" },
 };
 
@@ -78,6 +82,8 @@ export type EntradaPendencias = {
   > & { processo_licitatorio?: string | null; processo_id?: string | null } & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
+  /** Conciliação com o IPM (saldo não executado, anulação do saldo do empenho, fonte do excesso). */
+  conciliacao?: SituacaoConciliacao;
   /** Autor da emenda fora do exercício (cassado, licenciado, substituído): a emenda segue com ele. */
   justificadas?: PendenciaJustificada[];
   /** Movimentos financeiros da emenda (para achar lançamentos sem data ou sem número). */
@@ -112,12 +118,43 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     });
   }
 
-  if (emenda.empenhado > emenda.valor + 0.005) {
+  if (emenda.empenhado > emenda.valor + 0.005 && !e.conciliacao?.fonteExcessoInformada) {
     add({
       regra: "empenho_maior",
       gravidade: "alta",
       titulo: "Empenhado acima do valor da emenda",
-      detalhe: `Empenhado ${emenda.empenhado.toFixed(2)} para valor ${emenda.valor.toFixed(2)}.`,
+      detalhe: `Empenhado ${emenda.empenhado.toFixed(2)} para valor ${emenda.valor.toFixed(2)}. Informe em Financeiro > Conciliação com o IPM a fonte de recurso que cobriu o excesso.`,
+      aba: "financeiro",
+    });
+  }
+  const conc = e.conciliacao;
+  if (conc && conc.saldoNaoExecutado > 0 && !conc.saldoRegistrado) {
+    add({
+      regra: "saldo_nao_executado",
+      gravidade: "media",
+      titulo: "Saldo da emenda não executado: registrar",
+      detalhe: `Valor da emenda ${brl(emenda.valor)}, empenhado ${brl(emenda.empenhado)}: ${brl(conc.saldoNaoExecutado)} não executados. Conferir no IPM e registrar o saldo (Financeiro > Conciliação com o IPM). O valor contábil não é arredondado.`,
+      assinatura: `saldo|${conc.saldoNaoExecutado.toFixed(2)}`,
+      aba: "financeiro",
+    });
+  }
+  if (conc && conc.saldoEmpenho > 0) {
+    add({
+      regra: "anular_saldo_empenho",
+      gravidade: "media",
+      titulo: "Anular no IPM o saldo do empenho",
+      detalhe: `Empenhado ${brl(emenda.empenhado)} e pago ${brl(emenda.pago)}: sobram ${brl(conc.saldoEmpenho)} no empenho. ${conc.anulacaoSolicitada ? "Anulação já solicitada; lance a Anulação de empenho depois de feita no IPM." : "A Contabilidade deve anular o saldo; registre a solicitação em Financeiro > Conciliação com o IPM."}`,
+      assinatura: `anulacao|${conc.saldoEmpenho.toFixed(2)}|${conc.anulacaoSolicitada ? "s" : "n"}`,
+      aba: "financeiro",
+    });
+  }
+  if (conc && conc.excesso > 0 && !conc.fonteExcessoInformada) {
+    add({
+      regra: "excesso_sem_fonte",
+      gravidade: "alta",
+      titulo: "Excesso sobre o valor da emenda sem fonte de recurso",
+      detalhe: `O empenhado passa o valor da emenda em ${brl(conc.excesso)}. Registrar em Financeiro > Conciliação com o IPM a fonte de recurso que cobriu o excesso.`,
+      assinatura: `excesso|${conc.excesso.toFixed(2)}`,
       aba: "financeiro",
     });
   }

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-18",
+    titulo: "Emendas: valor contábil exato e conciliação com o IPM",
+    descricao:
+      "Seguindo a orientação do Controle Interno, empenhado e pago não são mais arredondados (o botão \"Arredondar centavos\" saiu e os arredondamentos antigos foram apagados). Na aba Financeiro, quando há diferença para o valor da emenda, aparece o painel \"Conciliação com o IPM\": registrar o saldo não executado, indicar a anulação do saldo do empenho a fazer no IPM e, se o executado passou do valor da emenda, a fonte de recurso do excesso. Cada campo só aparece quando se aplica. Há também três pendências novas: saldo a registrar, saldo do empenho a anular e excesso sem fonte.",
+  },
+  {
+    data: "2026-11-18",
     titulo: "Frotas: \"Ligar veículos à FIPE\" em lote",
     descricao:
       "O botão \"Atualizar valores da FIPE\" só refaz o valor de quem já está ligado à FIPE, e nenhum veículo estava. Agora há o botão \"Ligar veículos à FIPE\": ele procura sozinho a marca, o modelo e o ano de cada veículo sem vínculo, grava o valor e lista os que precisam de escolha na mão (modelo duvidoso, marca ou ano não encontrados). Veículos alugados, máquinas e valores digitados na mão ficam de fora.",
