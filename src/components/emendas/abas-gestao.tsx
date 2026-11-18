@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, CircleDashed, Minus } from "lucide-react";
+import { AlertTriangle, ChevronDown, CircleDashed, Minus } from "lucide-react";
 
-import { removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
+import { preencherPeloPdf, removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
 import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, type Resultado } from "@/lib/emendas/actions";
 import { motivoBloqueioConclusao, type FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
@@ -12,7 +12,7 @@ import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import { JanelaFicha } from "@/components/modulo/janela-ficha";
-import { ROTULO_DRIVE, TIPOS_DRIVE, montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
+import { ROTULO_DRIVE, TIPOS_DRIVE, avisosDoDocumento, montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
 import type { SituacaoFase } from "@/types/emendas";
 
 const CAMPO =
@@ -285,7 +285,9 @@ export function AbaDocumentacao({
   emendaId,
   gestor,
   executar,
+  execucao = null,
 }: {
+  execucao?: { numero_termo?: string | null; data_publicacao_extrato?: string | null } | null;
   exigidos: DocumentoExigido[];
   docsDrive: DocumentoDrive[];
   contexto: ContextoFicha;
@@ -325,7 +327,7 @@ export function AbaDocumentacao({
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   {docs.map((d) => (
-                    <div key={d.id} className="flex items-center gap-1.5">
+                    <div key={d.id} className="flex flex-wrap items-center gap-1.5">
                       <JanelaFicha rotuloTipo={e.rotulo} ficha={montarFicha(d, contexto)} driveFileId={d.drive_file_id} versao={d.drive_versao} />
                       <a href={urlOriginal(d.drive_file_id)} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#5B3FA8] hover:underline">
                         Ver original
@@ -341,6 +343,11 @@ export function AbaDocumentacao({
                           Remover
                         </button>
                       )}
+                      {avisosDoDocumento(d, docs.length, execucao).map((txt) => (
+                        <span key={txt} className="flex basis-full items-start gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900" role="note">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden /> {txt}
+                        </span>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -368,17 +375,35 @@ function CadastroDocumentoDrive({
   const [link, setLink] = React.useState("");
   const [titulo, setTitulo] = React.useState("");
   const [erro, setErro] = React.useState<string | null>(null);
+  const [nota, setNota] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
+  const arquivoRef = React.useRef<HTMLInputElement>(null);
+  const lePdf = tipo === "termo" || tipo === "extrato" || tipo === "convenio";
 
   function cadastrar(ev: React.FormEvent) {
     ev.preventDefault();
     setErro(null);
+    setNota(null);
+    const pdf = arquivoRef.current?.files?.[0];
     iniciar(async () => {
       const r = await executar(() => vincularDocumentoDrive({ emendaId, tipo, link, titulo }));
-      if (r.sucesso) {
-        setLink("");
-        setTitulo("");
-      } else setErro(r.erro);
+      if (!r.sucesso) return setErro(r.erro);
+      if (pdf && lePdf) {
+        const form = new FormData();
+        form.set("emendaId", emendaId);
+        form.set("tipo", tipo);
+        form.set("link", link);
+        form.set("arquivo", pdf);
+        const l = await executar(() => preencherPeloPdf(form));
+        if (!l.sucesso) setErro(l.erro);
+        else {
+          const lido = l as { preenchidos?: string[]; motivo?: string };
+          setNota(lido.preenchidos?.length ? `Preenchido pelo PDF: ${lido.preenchidos.join(" e ")}.` : (lido.motivo ?? null));
+        }
+      }
+      setLink("");
+      setTitulo("");
+      if (arquivoRef.current) arquivoRef.current.value = "";
     });
   }
 
@@ -399,9 +424,20 @@ function CadastroDocumentoDrive({
           {pendente ? "Ligando…" : "Ligar"}
         </button>
       </div>
+      {lePdf && (
+        <label className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          Opcional: escolha o mesmo PDF para o sistema ler e preencher o nº do termo{tipo !== "termo" ? " e a data de publicação" : ""} (o arquivo não é guardado)
+          <input ref={arquivoRef} type="file" accept="application/pdf" className="max-w-[16rem] text-xs" />
+        </label>
+      )}
       {erro && (
         <p role="alert" className="text-xs text-red-700">
           {erro}
+        </p>
+      )}
+      {nota && (
+        <p role="status" className="text-xs text-slate-700">
+          {nota}
         </p>
       )}
       <p className="text-xs text-slate-500">Só o endereço do arquivo é guardado. A ficha (o olho) é montada com os dados desta emenda; só termo, plano, extrato, anuência e relatório vão ao portal.</p>

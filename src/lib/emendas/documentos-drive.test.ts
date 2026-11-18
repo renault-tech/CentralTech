@@ -121,3 +121,13 @@ describe("extrairIdDrive", () => {
     expect(extrairIdDrive("")).toBeNull();
   });
 });
+
+import { avisosDoDocumento } from "@/lib/emendas/documentos-drive";
+describe("avisosDoDocumento", () => {
+  it("sinaliza leitura, duplicidade, arquivo repetido e dado ausente", () => {
+    const a = avisosDoDocumento({ tipo: "termo", leitura_aviso: "PDF é imagem", tambem_em: [5] }, 2, { numero_termo: null });
+    expect(a).toHaveLength(4);
+    expect(avisosDoDocumento({ tipo: "extrato", leitura_aviso: null }, 1, { data_publicacao_extrato: "2026-08-30" })).toEqual([]);
+    expect(avisosDoDocumento({ tipo: "extrato", leitura_aviso: null }, 1, null)[0]).toContain("data de publicação");
+  });
+});

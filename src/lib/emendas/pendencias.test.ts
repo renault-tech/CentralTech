@@ -38,6 +38,20 @@ describe("pendencias", () => {
     expect(regras()).toContain("nao_iniciada");
   });
 
+  it("termo ou processo de compra já cadastrado também é andamento", () => {
+    const base = { numero_termo: null, vigencia_fim: null, data_publicacao_extrato: null, conta_bancaria: null };
+    expect(regras({ execucao: { ...base, processo_licitatorio: "122/2026" } })).not.toContain("nao_iniciada");
+    expect(regras({ execucao: { ...base, processo_id: "abc" } })).not.toContain("nao_iniciada");
+    expect(regras({ execucao: { ...base, numero_termo: "174/2026" } })).not.toContain("nao_iniciada");
+    expect(regras({ execucao: { ...base, processo_licitatorio: "  " } })).toContain("nao_iniciada");
+  });
+
+  it("etapa 'análise' sozinha não é andamento; plano/processo/termo/empenho são", () => {
+    expect(regras({ emenda: { ...emenda, etapa: "analise" } })).toContain("nao_iniciada");
+    expect(regras({ emenda: { ...emenda, etapa: "plano_trabalho" } })).not.toContain("nao_iniciada");
+    expect(regras({ emenda: { ...emenda, etapa: "processo_compra" } })).not.toContain("nao_iniciada");
+  });
+
   it("prazo de exequibilidade vencido sem parecer", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" } })).toContain("exequibilidade_vencida");
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" }, temParecer: true })).not.toContain("exequibilidade_vencida");

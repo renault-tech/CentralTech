@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-18",
+    titulo: "Emendas: preenchimento pelo PDF e \"sem andamento\" mais justo",
+    descricao:
+      "Ao ligar um termo, extrato ou convênio do Drive, dá para escolher o mesmo PDF: a plataforma lê o texto e preenche o nº do termo e a data de publicação quando estiverem vazios e forem inequívocos (o arquivo não é guardado; PDF que é imagem continua manual). Quando o PDF não pode ser lido, é imagem, tem número ou data diferente do cadastro, está repetido ou falta o dado correspondente, um aviso aparece ao lado do documento na aba Documentação. Além disso, \"sem andamento\" passou a considerar qualquer fase depois da indicação e da análise (plano, processo, termo, empenho): termo ou processo cadastrado também contam.",
+  },
+  {
     data: "2026-11-17",
     titulo: "Emendas: categoria do beneficiário, cadastro de novo beneficiário e leitura de documento",
     descricao:

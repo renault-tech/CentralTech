@@ -394,6 +394,7 @@ export type DocumentoDriveRow = {
   drive_file_id: string;
   drive_versao: string | null;
   publico: boolean;
+  leitura_aviso: string | null;
   ficha: Record<string, unknown>;
   conferido_em: string | null;
   conferido_por: string | null;

@@ -67,7 +67,7 @@ export type EntradaPendencias = {
   execucao: Pick<
     ExecucaoEmenda,
     "numero_termo" | "vigencia_fim" | "data_publicacao_extrato" | "conta_bancaria"
-  > & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
+  > & { processo_licitatorio?: string | null; processo_id?: string | null } & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   /** Autor da emenda fora do exercício (cassado, licenciado, substituído): a emenda segue com ele. */
@@ -159,16 +159,22 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     movsDaEmenda.length > 0 ||
     emenda.empenhado > 0 ||
     emenda.pago > 0 ||
+    // Termo assinado ou processo de compra já aberto/ligado ao Compras também é andamento (o dado já está cadastrado).
+    !!execucao?.numero_termo?.trim() ||
+    !!execucao?.processo_licitatorio?.trim() ||
+    !!execucao?.processo_id ||
     e.fases.some(
       (f) =>
         f.fase.chave !== "indicada" &&
+        f.fase.chave !== "analise" &&
         // LOA e parecer são do exercício/da secretaria, não são andamento da emenda
         f.fase.derivacao !== "loa" &&
         f.fase.derivacao !== "parecer" &&
         f.origem !== "presumida" &&
         (f.situacao === "concluida" || f.parcial === true || f.situacao === "em_andamento")
     );
-  const jaIniciou = emenda.etapa !== "indicada" || temAtividade;
+  // Andamento = qualquer fase depois da indicação e da análise (plano, processo, termo, empenho…). Análise sozinha não conta.
+  const jaIniciou = (emenda.etapa !== "indicada" && emenda.etapa !== "analise") || temAtividade;
 
   if (tipo !== "direta" && execucao?.numero_termo && !execucao.data_publicacao_extrato) {
     add({
