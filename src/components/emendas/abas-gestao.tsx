@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronDown, CircleDashed, Minus } from "lucide-react";
 
-import { removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
+import { preencherPeloPdf, removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
 import { desfazerFase, justificarPendencia, removerJustificativa, salvarFase, type Resultado } from "@/lib/emendas/actions";
 import { motivoBloqueioConclusao, type FaseCalculada } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Pendencia } from "@/lib/emendas/pendencias";
@@ -368,17 +368,34 @@ function CadastroDocumentoDrive({
   const [link, setLink] = React.useState("");
   const [titulo, setTitulo] = React.useState("");
   const [erro, setErro] = React.useState<string | null>(null);
+  const [nota, setNota] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
+  const arquivoRef = React.useRef<HTMLInputElement>(null);
+  const lePdf = tipo === "termo" || tipo === "extrato" || tipo === "convenio";
 
   function cadastrar(ev: React.FormEvent) {
     ev.preventDefault();
     setErro(null);
+    setNota(null);
+    const pdf = arquivoRef.current?.files?.[0];
     iniciar(async () => {
       const r = await executar(() => vincularDocumentoDrive({ emendaId, tipo, link, titulo }));
-      if (r.sucesso) {
-        setLink("");
-        setTitulo("");
-      } else setErro(r.erro);
+      if (!r.sucesso) return setErro(r.erro);
+      setLink("");
+      setTitulo("");
+      if (pdf && lePdf) {
+        const form = new FormData();
+        form.set("emendaId", emendaId);
+        form.set("tipo", tipo);
+        form.set("arquivo", pdf);
+        const l = await executar(() => preencherPeloPdf(form));
+        if (!l.sucesso) setErro(l.erro);
+        else {
+          const lido = l as { preenchidos?: string[]; motivo?: string };
+          setNota(lido.preenchidos?.length ? `Preenchido pelo PDF: ${lido.preenchidos.join(" e ")}.` : (lido.motivo ?? null));
+        }
+      }
+      if (arquivoRef.current) arquivoRef.current.value = "";
     });
   }
 
@@ -399,9 +416,20 @@ function CadastroDocumentoDrive({
           {pendente ? "Ligando…" : "Ligar"}
         </button>
       </div>
+      {lePdf && (
+        <label className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          Opcional: escolha o mesmo PDF para o sistema ler e preencher o nº do termo{tipo !== "termo" ? " e a data de publicação" : ""} (o arquivo não é guardado)
+          <input ref={arquivoRef} type="file" accept="application/pdf" className="max-w-[16rem] text-xs" />
+        </label>
+      )}
       {erro && (
         <p role="alert" className="text-xs text-red-700">
           {erro}
+        </p>
+      )}
+      {nota && (
+        <p role="status" className="text-xs text-slate-700">
+          {nota}
         </p>
       )}
       <p className="text-xs text-slate-500">Só o endereço do arquivo é guardado. A ficha (o olho) é montada com os dados desta emenda; só termo, plano, extrato, anuência e relatório vão ao portal.</p>
