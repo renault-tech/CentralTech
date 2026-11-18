@@ -295,13 +295,27 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     emendas.from("pendencias_justificadas").select("*").eq("emenda_id", id),
     emendas
       .from("documentos_drive")
-      .select("id,tipo,titulo,drive_file_id,drive_versao,publico,conferido_em")
+      .select("id,tipo,titulo,drive_file_id,drive_versao,publico,conferido_em,leitura_aviso")
       .eq("emenda_id", id)
       .order("tipo")
       .order("titulo"),
   ]);
   for (const r of [andamentos, movimentos, impedimentos, remanejamentos, documentos, execucao, fasesManuais, checklist, justificadas]) {
     if (r.error) falhou("detalhe-filhos", r.error);
+  }
+
+  const docsLista = ((docsDrive.error ? [] : docsDrive.data) ?? []) as DocumentoDrive[];
+  // Mesmo arquivo ligado a outras emendas? (só sinaliza; pode ser legítimo, ex.: um extrato com várias emendas)
+  if (docsLista.length) {
+    const { data: outros } = await emendas.from("documentos_drive").select("emenda_id,drive_file_id").in("drive_file_id", docsLista.map((d) => d.drive_file_id)).neq("emenda_id", id);
+    if (outros?.length) {
+      const { data: nums } = await emendas.from("emendas").select("id,numero").in("id", [...new Set(outros.map((o) => o.emenda_id))]);
+      const numero = new Map((nums ?? []).map((n) => [n.id, n.numero as number]));
+      for (const d of docsLista) {
+        const lista = outros.filter((o) => o.drive_file_id === d.drive_file_id).map((o) => numero.get(o.emenda_id)).filter((n): n is number => n != null);
+        if (lista.length) d.tambem_em = [...new Set(lista)].sort((x, y) => x - y);
+      }
+    }
   }
 
   return {
@@ -323,7 +337,7 @@ export async function obterDetalheEmenda(id: string): Promise<DetalheEmenda | nu
     checklist: checklist.data ?? [],
     justificadas: justificadas.data ?? [],
     // Os links do Drive são acessório: se a leitura falhar, a emenda abre do mesmo jeito, sem eles.
-    docsDrive: ((docsDrive.error ? [] : docsDrive.data) ?? []) as DocumentoDrive[],
+    docsDrive: docsLista,
   };
 }
 

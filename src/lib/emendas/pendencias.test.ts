@@ -46,6 +46,12 @@ describe("pendencias", () => {
     expect(regras({ execucao: { ...base, processo_licitatorio: "  " } })).toContain("nao_iniciada");
   });
 
+  it("etapa 'análise' sozinha não é andamento; plano/processo/termo/empenho são", () => {
+    expect(regras({ emenda: { ...emenda, etapa: "analise" } })).toContain("nao_iniciada");
+    expect(regras({ emenda: { ...emenda, etapa: "plano_trabalho" } })).not.toContain("nao_iniciada");
+    expect(regras({ emenda: { ...emenda, etapa: "processo_compra" } })).not.toContain("nao_iniciada");
+  });
+
   it("prazo de exequibilidade vencido sem parecer", () => {
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" } })).toContain("exequibilidade_vencida");
     expect(regras({ exercicio: { prazo_exequibilidade: "2026-03-31" }, temParecer: true })).not.toContain("exequibilidade_vencida");

@@ -42,6 +42,10 @@ export type DocumentoDrive = {
   drive_versao: string | null;
   publico: boolean;
   conferido_em: string | null;
+  /** Resultado da leitura automática do PDF (quando houve problema). */
+  leitura_aviso?: string | null;
+  /** Nºs de outras emendas que têm este MESMO arquivo ligado (calculado na leitura do detalhe). */
+  tambem_em?: number[];
 };
 
 /** Endereço do arquivo no Drive. Só o arquivo (nunca a pasta): quem abre não vê os outros. */
@@ -239,4 +243,22 @@ export function montarFicha(doc: Pick<DocumentoDrive, "tipo" | "titulo">, c: Con
         ],
       };
   }
+}
+
+/**
+ * Avisos que ficam ao lado de cada documento ligado: leitura que falhou, arquivo repetido, mais de um do mesmo tipo
+ * e documento ligado sem o dado correspondente no cadastro. Puro: só olha o que já está carregado.
+ */
+export function avisosDoDocumento(
+  doc: Pick<DocumentoDrive, "tipo" | "leitura_aviso" | "tambem_em">,
+  mesmoTipo: number,
+  execucao: { numero_termo?: string | null; data_publicacao_extrato?: string | null } | null
+): string[] {
+  const a: string[] = [];
+  if (doc.leitura_aviso) a.push(doc.leitura_aviso);
+  if (mesmoTipo > 1 && doc.tipo !== "relatorio_gestao" && doc.tipo !== "jornal_edicao") a.push(`Há ${mesmoTipo} documentos deste tipo ligados a esta emenda: pode haver duplicidade.`);
+  if (doc.tambem_em?.length) a.push(`O mesmo arquivo também está ligado à(s) emenda(s) nº ${doc.tambem_em.join(", ")}.`);
+  if ((doc.tipo === "termo" || doc.tipo === "convenio") && !execucao?.numero_termo) a.push("Documento ligado, mas o nº do termo não está no cadastro.");
+  if (doc.tipo === "extrato" && !execucao?.data_publicacao_extrato) a.push("Extrato ligado, mas a data de publicação não está no cadastro.");
+  return a;
 }

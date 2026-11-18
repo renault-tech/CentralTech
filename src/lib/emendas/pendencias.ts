@@ -166,13 +166,15 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     e.fases.some(
       (f) =>
         f.fase.chave !== "indicada" &&
+        f.fase.chave !== "analise" &&
         // LOA e parecer são do exercício/da secretaria, não são andamento da emenda
         f.fase.derivacao !== "loa" &&
         f.fase.derivacao !== "parecer" &&
         f.origem !== "presumida" &&
         (f.situacao === "concluida" || f.parcial === true || f.situacao === "em_andamento")
     );
-  const jaIniciou = emenda.etapa !== "indicada" || temAtividade;
+  // Andamento = qualquer fase depois da indicação e da análise (plano, processo, termo, empenho…). Análise sozinha não conta.
+  const jaIniciou = (emenda.etapa !== "indicada" && emenda.etapa !== "analise") || temAtividade;
 
   if (tipo !== "direta" && execucao?.numero_termo && !execucao.data_publicacao_extrato) {
     add({

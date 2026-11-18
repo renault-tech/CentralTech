@@ -91,6 +91,7 @@ export async function preencherPeloPdf(form: FormData): Promise<Resultado & { pr
   const tipo = z.enum(["termo", "extrato", "convenio"]).safeParse(form.get("tipo"));
   const arquivo = form.get("arquivo");
   if (!emendaId.success || !tipo.success) return { sucesso: true, preenchidos: [] };
+  const driveId = extrairIdDrive(String(form.get("link") ?? ""));
   if (!(arquivo instanceof File) || arquivo.size === 0) return { sucesso: true, preenchidos: [] };
   const ctx = await exigirGestor();
   if (!ctx) return { sucesso: false, erro: "Só o gestor do módulo preenche pelo PDF." };
@@ -98,18 +99,29 @@ export async function preencherPeloPdf(form: FormData): Promise<Resultado & { pr
   const bytes = new Uint8Array(await arquivo.arrayBuffer());
   if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") return { sucesso: true, preenchidos: [], motivo: "O arquivo não é um PDF: não foi lido." };
 
+  const emendas = await criarClienteEmendas();
+  // Guarda (ou limpa) o aviso na linha do documento, para aparecer ao lado dele na aba Documentação.
+  const anotar = async (aviso: string | null) => {
+    if (!driveId) return;
+    await emendas.from("documentos_drive").update({ leitura_aviso: aviso }).eq("emenda_id", emendaId.data).eq("tipo", tipo.data).eq("drive_file_id", driveId);
+    atualizar(emendaId.data);
+  };
+
   let texto = "";
   try {
     const { extractText, getDocumentProxy } = await import("unpdf");
     const { text } = await extractText(await getDocumentProxy(bytes), { mergePages: true });
     texto = Array.isArray(text) ? text.join("\n") : text;
   } catch {
+    await anotar("Não consegui abrir o PDF para ler: confira o arquivo e preencha os dados à mão.");
     return { sucesso: true, preenchidos: [], motivo: "Não consegui abrir o PDF para ler." };
   }
-  if (texto.replace(/\s/g, "").length < 20) return { sucesso: true, preenchidos: [], motivo: "O PDF é uma imagem (sem texto): preencha a data à mão." };
+  if (texto.replace(/\s/g, "").length < 20) {
+    await anotar("PDF é uma imagem (sem texto): o sistema não conseguiu ler. Confira e preencha o nº e a data à mão.");
+    return { sucesso: true, preenchidos: [], motivo: "O PDF é uma imagem (sem texto): preencha a data à mão." };
+  }
 
   const lido = lerParceria(texto);
-  const emendas = await criarClienteEmendas();
   const { data: atual } = await emendas.from("execucao").select("numero_termo, data_publicacao_extrato").eq("id", emendaId.data).maybeSingle();
   const campos: Record<string, string> = {};
   const preenchidos: string[] = [];
@@ -121,13 +133,23 @@ export async function preencherPeloPdf(form: FormData): Promise<Resultado & { pr
     campos.data_publicacao_extrato = lido.dataPublicacao;
     preenchidos.push(`data de publicação ${dataBr(lido.dataPublicacao)}`);
   }
-  if (preenchidos.length === 0) return { sucesso: true, preenchidos, motivo: "Li o PDF, mas não achei com segurança nada para preencher." };
+  // Divergências entre o PDF e o que já está cadastrado: nunca sobrescreve, só sinaliza no documento.
+  const divergencias: string[] = [];
+  if (atual?.numero_termo && lido.numeroTermo && atual.numero_termo.trim() !== lido.numeroTermo) divergencias.push(`o PDF traz o termo ${lido.numeroTermo}, mas o cadastro diz ${atual.numero_termo}`);
+  if (tipo.data !== "termo" && atual?.data_publicacao_extrato && lido.dataPublicacao && atual.data_publicacao_extrato !== lido.dataPublicacao)
+    divergencias.push(`o PDF indica publicação em ${dataBr(lido.dataPublicacao)}, mas o cadastro diz ${dataBr(atual.data_publicacao_extrato)}`);
+  const resumoAviso = divergencias.length ? `Confira: ${divergencias.join("; ")}.` : null;
+  if (preenchidos.length === 0) {
+    await anotar(resumoAviso ?? "Li o PDF, mas não achei o nº do termo nem a data com segurança: confira e preencha à mão.");
+    return { sucesso: true, preenchidos, motivo: resumoAviso ?? "Li o PDF, mas não achei com segurança nada para preencher." };
+  }
 
   const { error } = await emendas.from("execucao").upsert({ id: emendaId.data, ...campos, atualizado_em: new Date().toISOString(), atualizado_por: ctx.usuario.id });
   if (error) {
     console.error("[preencherPeloPdf]", error);
     return { sucesso: false, erro: "Não foi possível gravar o que li do PDF." };
   }
+  await anotar(resumoAviso);
   atualizar(emendaId.data);
   return { sucesso: true, preenchidos };
 }
