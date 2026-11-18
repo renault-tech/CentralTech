@@ -372,20 +372,24 @@ export function DetalheEmendaCliente({
 
           {aba === "financeiro" && (
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-                {[
-                  ["Valor da emenda", emenda.valor],
-                  ["Empenhado", emenda.empenhado],
-                  ["Liquidado", emenda.liquidado],
-                  ["Pago", emenda.pago],
-                  ["A pagar (do empenhado)", Math.max(0, emenda.empenhado - emenda.pago)],
-                ].map(([rotulo, v]) => (
-                  <div key={rotulo as string} className="rounded-lg border border-slate-200 p-3">
-                    <span className="text-xs text-slate-600">{rotulo}</span>
-                    <div className="mt-1 text-lg font-semibold tabular-nums text-cataguases-marinho">{brl(v as number)}</div>
-                  </div>
-                ))}
-              </div>
+              <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Valores da emenda">
+                {(() => {
+                  const semEmpenhar = Math.round((emenda.valor - emenda.empenhado) * 100) / 100;
+                  const itens: [string, number, string][] = [
+                    ["Valor da emenda", emenda.valor, ""],
+                    ["Empenhado", emenda.empenhado, ""],
+                    ["Pago", emenda.pago, ""],
+                    ["A pagar (do empenhado)", Math.max(0, emenda.empenhado - emenda.pago), ""],
+                    [semEmpenhar < -0.005 ? "Acima da emenda" : "Sem empenhar", Math.abs(semEmpenhar), semEmpenhar < -0.005 ? "text-red-700" : semEmpenhar > 0.005 ? "text-amber-800" : "text-slate-500"],
+                  ];
+                  return itens.map(([rotulo, v, cor]) => (
+                    <div key={rotulo} className="rounded-lg border border-slate-200 px-3 py-2.5">
+                      <dt className="text-xs text-slate-600">{rotulo}</dt>
+                      <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${cor || "text-cataguases-marinho"}`}>{brl(v)}</dd>
+                    </div>
+                  ));
+                })()}
+              </dl>
               <PainelConciliacao emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} gestor={gestor} executar={executar} />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-[13px]">

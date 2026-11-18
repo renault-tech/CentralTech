@@ -72,49 +72,24 @@ export function PainelConciliacao({
   }
 
   const aResolver = (sit.saldoNaoExecutado > 0 && !sit.saldoRegistrado ? 1 : 0) + (sit.saldoEmpenho > 0 ? 1 : 0) + (sit.excesso > 0 && !sit.fonteExcessoInformada ? 1 : 0);
-  const diferenca = Math.round((valor - empenhado) * 100) / 100;
 
   return (
-    <section aria-label="Conciliação com o IPM" className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#6B4FBB]/10 text-[#5B3FA8]" aria-hidden>
-            <Scale className="h-[18px] w-[18px]" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-cataguases-marinho">Conciliação com o IPM</h3>
-            <p className="mt-0.5 max-w-prose text-xs leading-relaxed text-slate-600">
-              Empenhado e pago ficam com o valor contábil exato, sem arredondamento. A diferença para o valor da emenda é registrada aqui.
-            </p>
-          </div>
-        </div>
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", aResolver ? "bg-amber-50 text-amber-900" : "bg-green-50 text-green-800")}>
-          {aResolver ? <Clock className="h-3.5 w-3.5" aria-hidden /> : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
+    <section aria-label="Conciliação com o IPM" className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Scale className="h-4 w-4 text-[#5B3FA8]" aria-hidden />
+        <h3 className="text-sm font-semibold text-cataguases-marinho" title="Empenhado e pago ficam com o valor contábil exato, sem arredondamento. A diferença para o valor da emenda é registrada aqui.">
+          Conciliação com o IPM
+        </h3>
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", aResolver ? "bg-amber-50 text-amber-900" : "bg-green-50 text-green-800")}>
+          {aResolver ? <Clock className="h-3 w-3" aria-hidden /> : <CheckCircle2 className="h-3 w-3" aria-hidden />}
           {aResolver ? `${aResolver} a resolver` : "Tudo registrado"}
         </span>
-      </header>
-
-      <div className="flex flex-col gap-4 p-4">
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Valores da emenda">
-          {[
-            ["Valor da emenda", brl(valor), "text-cataguases-marinho"],
-            ["Empenhado", brl(empenhado), "text-cataguases-marinho"],
-            ["Pago", brl(pago), "text-cataguases-marinho"],
-            [diferenca >= 0 ? "Sem empenhar" : "Acima da emenda", brl(Math.abs(diferenca)), diferenca < -0.005 ? "text-red-700" : diferenca > 0.005 ? "text-amber-800" : "text-slate-500"],
-          ].map(([k, v, cor]) => (
-            <div key={k} className="rounded-lg bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] text-slate-500">{k}</dt>
-              <dd className={cn("mt-0.5 text-sm font-semibold tabular-nums", cor)}>{v}</dd>
-            </div>
-          ))}
-        </dl>
-
-        {(sit.saldoNaoExecutado > 0 || conciliacao?.saldo_registrado_em) && <BlocoSaldo emendaId={emendaId} sit={sit} c={conciliacao} gestor={gestor} executar={executar} />}
-        {(sit.saldoEmpenho > 0 || conciliacao?.anulacao_solicitada_em) && (
-          <BlocoAnulacao emendaId={emendaId} sit={sit} saldoEmpenho={Math.round((empenhado - pago) * 100) / 100} c={conciliacao} gestor={gestor} executar={executar} />
-        )}
-        {(sit.excesso > 0 || sit.fonteExcessoInformada) && <BlocoExcesso emendaId={emendaId} sit={sit} c={conciliacao} gestor={gestor} executar={executar} />}
       </div>
+      {(sit.saldoNaoExecutado > 0 || conciliacao?.saldo_registrado_em) && <BlocoSaldo emendaId={emendaId} sit={sit} c={conciliacao} gestor={gestor} executar={executar} />}
+      {(sit.saldoEmpenho > 0 || conciliacao?.anulacao_solicitada_em) && (
+        <BlocoAnulacao emendaId={emendaId} sit={sit} saldoEmpenho={Math.round((empenhado - pago) * 100) / 100} c={conciliacao} gestor={gestor} executar={executar} />
+      )}
+      {(sit.excesso > 0 || sit.fonteExcessoInformada) && <BlocoExcesso emendaId={emendaId} sit={sit} c={conciliacao} gestor={gestor} executar={executar} />}
     </section>
   );
 }
@@ -129,14 +104,14 @@ const TOM: Record<Tom, { borda: string; selo: string }> = {
 
 function Bloco({ tom, titulo, valor, selo, icone, children }: { tom: Tom; titulo: string; valor: string; selo: string; icone: React.ReactNode; children: React.ReactNode }) {
   return (
-    <article className={cn("rounded-lg border border-slate-200 border-l-4 p-3.5 sm:p-4", TOM[tom].borda)}>
+    <article className={cn("rounded-lg border border-slate-200 border-l-4 px-3 py-2.5", TOM[tom].borda)}>
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="flex min-w-0 items-center gap-2">
           <span className="text-slate-500" aria-hidden>{icone}</span>
           <h4 className="text-sm font-semibold text-cataguases-marinho">{titulo}</h4>
           <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", TOM[tom].selo)}>{selo}</span>
         </div>
-        <p className="text-base font-semibold tabular-nums text-cataguases-marinho">{valor}</p>
+        <p className="text-sm font-semibold tabular-nums text-cataguases-marinho">{valor}</p>
       </div>
       {children}
     </article>
@@ -165,11 +140,11 @@ function BlocoSaldo({ emendaId, sit, c, gestor, executar }: PropsBloco) {
       selo={registrado ? `Registrado em ${dataBr(c?.saldo_registrado_em)}` : "A registrar"}
       icone={registrado ? <CheckCircle2 className="h-4 w-4" /> : <CircleDashed className="h-4 w-4" />}
     >
-      <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-slate-600">
+      <p className="mt-1 max-w-prose text-xs leading-snug text-slate-600">
         {registrado ? "Parte do valor da emenda que não foi empenhada, conferida com o IPM." : "Parte do valor da emenda que não foi empenhada. Confira no IPM e registre; o empenhado continua exato."}
       </p>
       {gestor && (
-        <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end">
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
           <label className={cn(ROTULO, "flex-1")}>
             Observação (opcional)
             <input className={CAMPO} maxLength={1000} value={obs} onChange={(e) => setObs(e.target.value)} />
@@ -215,16 +190,16 @@ function BlocoAnulacao({ emendaId, sit, saldoEmpenho, c, gestor, executar }: Pro
       selo={solicitada ? `Solicitada em ${dataBr(c?.anulacao_solicitada_em)}` : "A solicitar"}
       icone={<ArrowDownToLine className="h-4 w-4" />}
     >
-      <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-slate-600">
+      <p className="mt-1 max-w-prose text-xs leading-snug text-slate-600">
         Há empenho não pago ({brl(saldoEmpenho)}). Com a execução encerrada, o saldo deve ser anulado no IPM.
       </p>
-      <ol className="mt-2.5 flex flex-col gap-1.5" aria-label="Passos da anulação">
+      <ol className="mt-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-5" aria-label="Passos da anulação">
         <Passo n={1} feito={solicitada} atual={!solicitada}>Solicitar a anulação à Contabilidade e registrar abaixo</Passo>
         <Passo n={2} feito={false} atual={solicitada}>A Contabilidade anula o saldo no IPM</Passo>
         <Passo n={3} feito={false} atual={false}>Lançar a <strong>Anulação de empenho</strong> em “Lançar movimento”: este aviso some sozinho</Passo>
       </ol>
       {gestor && (
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-[auto_1fr_auto] sm:items-end">
+        <div className="mt-2 grid gap-2 sm:grid-cols-[auto_1fr_auto] sm:items-end">
           <label className={ROTULO}>
             Solicitada em
             <input type="date" className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} />
@@ -259,9 +234,9 @@ function BlocoExcesso({ emendaId, sit, c, gestor, executar }: PropsBloco) {
       selo={informada ? "Fonte informada" : "Sem fonte de recurso"}
       icone={informada ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
     >
-      <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-slate-600">Informe a fonte de recurso que cobriu o excesso, conforme o IPM.</p>
+      <p className="mt-1 max-w-prose text-xs leading-snug text-slate-600">Informe a fonte de recurso que cobriu o excesso, conforme o IPM.</p>
       {gestor ? (
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <label className={ROTULO}>
             Fonte de recurso do excesso
             <input className={CAMPO} maxLength={300} value={fonte} onChange={(e) => setFonte(e.target.value)} placeholder="ex.: recursos próprios, com a ficha e a fonte do IPM" />
