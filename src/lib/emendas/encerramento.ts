@@ -115,6 +115,8 @@ export type LinhaPanorama = EmendaPanorama & {
   anular: number;
   excesso: number;
   semFonte: boolean;
+  /** Estava em restos a pagar e o empenho foi todo pago: a emenda passa sozinha a "cumprida" (só na leitura; nada é regravado). */
+  restosQuitados: boolean;
 };
 
 /** Chave de cada cartão do Panorama (cada cartão é um filtro da lista). */
@@ -146,16 +148,19 @@ export function linhasPanorama(emendas: EmendaPanorama[], encerramentos: Encerra
       const c = con.get(e.id) ?? null;
       const semEmpenhar = Math.max(0, r2(e.valor - e.empenhado));
       const aPagar = Math.max(0, r2(e.empenhado - e.pago));
-      const encerrada = x ? x.situacao !== "restos_a_pagar" : false;
+      const restosQuitados = x?.situacao === "restos_a_pagar" && e.empenhado > 0.005 && aPagar <= 0.005;
+      const situacaoEfetiva: SituacaoEncerramento | null = restosQuitados ? (semEmpenhar > 0.005 ? "cumprida_economia" : "cumprida") : (x?.situacao ?? null);
+      const encerrada = situacaoEfetiva ? situacaoEfetiva !== "restos_a_pagar" : false;
       return {
         ...e,
         semEmpenhar,
         aPagar,
-        encerramento: x?.situacao ?? null,
+        encerramento: situacaoEfetiva,
+        restosQuitados,
         encerradaEm: x?.definida_em ?? null,
         devolucao: r2(num(x?.devolucao_valor)),
-        economia: x && (x.situacao === "cumprida_economia" || x.situacao === "cumprida") ? semEmpenhar : 0,
-        restos: x?.situacao === "restos_a_pagar" ? aPagar : 0,
+        economia: situacaoEfetiva === "cumprida_economia" || situacaoEfetiva === "cumprida" ? semEmpenhar : 0,
+        restos: situacaoEfetiva === "restos_a_pagar" ? aPagar : 0,
         // Saldo do empenho a anular só faz sentido quando a emenda foi encerrada e ainda sobra empenho sem pagar.
         anular: encerrada && aPagar > 0.005 ? aPagar : 0,
         excesso: Math.max(0, r2(e.empenhado - e.valor)),

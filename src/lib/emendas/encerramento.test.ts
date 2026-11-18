@@ -71,6 +71,15 @@ describe("panorama", () => {
     expect(t.a_pagar.valor).toBe(70 + 30);
     expect(pertenceAoCartao(linhas[0], "todas")).toBe(true);
   });
+  it("restos a pagar todo pago passa sozinho a cumprida", () => {
+    const l = linhasPanorama([base(7, { empenhado: 60, pago: 60 })], [enc("e7", "restos_a_pagar")], []);
+    expect(l[0].restosQuitados).toBe(true);
+    expect(l[0].encerramento).toBe("cumprida_economia");
+    expect(l[0].restos).toBe(0);
+    const ainda = linhasPanorama([base(8, { empenhado: 60, pago: 20 })], [enc("e8", "restos_a_pagar")], []);
+    expect(ainda[0].restosQuitados).toBe(false);
+    expect(ainda[0].restos).toBe(40);
+  });
   it("agrupa por secretaria", () => {
     const g = agrupar(linhas, "secretaria");
     expect(g).toHaveLength(1);

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
@@ -10,7 +11,8 @@ import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
-import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas } from "@/lib/emendas/dados";
+import { SeletorExercicio } from "@/components/emendas/seletor-exercicio";
+import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
 import { anosDoPortal, metaDoPortal, pacoteDoPortal } from "@/lib/emendas/portal";
 import { contarPorGravidade, verificarPortal } from "@/lib/emendas/portal-verificacao";
@@ -63,10 +65,11 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   }
 
   const gestor = ehGestor(ctx.perfil);
-  const [catalogo, propostasPendentes, alertasPortal] = await Promise.all([
+  const [catalogo, propostasPendentes, alertasPortal, { exercicio: exercicioAtual, exercicios }] = await Promise.all([
     promessaCatalogo,
     contarPropostasPendentes().catch(() => 0),
     criticosDoPortal().catch(() => 0),
+    resolverExercicio(null),
   ]);
   const itens = [
     { href: "/emendas", rotulo: "Painel", exato: true },
@@ -100,6 +103,11 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
         }
       />
       <main id="conteudo" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+        {exercicioAtual && (
+          <React.Suspense fallback={null}>
+            <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+          </React.Suspense>
+        )}
         <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
       </main>
     </div>
