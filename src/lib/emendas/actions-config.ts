@@ -7,6 +7,7 @@ import { TAG_PORTAL } from "@/lib/emendas/portal-tag";
 
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
+import { exigirDecisor } from "@/lib/emendas/master";
 import { ehGestor } from "@/lib/emendas/regras";
 import { validarDocumento } from "@/lib/emendas/documentos";
 import { CATEGORIAS, tipoDaCategoria } from "@/lib/emendas/categorias";
@@ -60,7 +61,8 @@ const esquemaExercicio = z.object({
 export async function salvarExercicio(dados: z.input<typeof esquemaExercicio>): Promise<Resultado> {
   const a = esquemaExercicio.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores configuram o módulo." };
+  const decisor = await exigirDecisor("configuram exercícios");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const emendas = await criarClienteEmendas();
   const { error } = await emendas.from("exercicios").upsert({
     ano: a.data.ano,
@@ -685,7 +687,8 @@ async function lerArquivo(formData: FormData) {
 /** Passo 1: lê a planilha e confere contra o cadastro (vereadores,
  * unidades, cota, números já usados) — nada é gravado. */
 export async function previaImportacao(formData: FormData): Promise<PreviaImportacao> {
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores importam planilhas." };
+  const decisor = await exigirDecisor("importam planilhas");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const ano = Number(formData.get("ano"));
   if (!Number.isInteger(ano)) return { sucesso: false, erro: "Escolha o exercício." };
   const r = await lerArquivo(formData);
@@ -743,7 +746,8 @@ export async function previaImportacao(formData: FormData): Promise<PreviaImport
 export async function confirmarImportacao(formData: FormData): Promise<
   { sucesso: true; criadas: number; ignoradas: number; remanejamentos: number; movimentos: number } | { sucesso: false; erro: string }
 > {
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores importam planilhas." };
+  const decisor = await exigirDecisor("importam planilhas");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const ano = Number(formData.get("ano"));
   const r = await lerArquivo(formData);
   if ("erro" in r) return { sucesso: false, erro: r.erro as string };
@@ -796,7 +800,8 @@ const esquemaAbrirExercicio = z.object({
 export async function abrirExercicio(dados: z.input<typeof esquemaAbrirExercicio>): Promise<Resultado> {
   const a = esquemaAbrirExercicio.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores abrem exercícios." };
+  const decisor = await exigirDecisor("abrem exercícios");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const emendas = await criarClienteEmendas();
   const { data: ja } = await emendas.from("exercicios").select("ano").eq("ano", a.data.ano).maybeSingle();
   if (ja) return { sucesso: false, erro: `O exercício ${a.data.ano} já existe.` };
@@ -833,7 +838,8 @@ const esquemaFecharExercicio = z.object({
 export async function fecharExercicio(dados: z.input<typeof esquemaFecharExercicio>): Promise<Resultado> {
   const a = esquemaFecharExercicio.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores fecham exercícios." };
+  const decisor = await exigirDecisor("fecham exercícios");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const { carregarPanorama } = await import("@/lib/emendas/panorama-dados");
   const { linhas } = await carregarPanorama(a.data.ano);
   const semSituacao = linhas.filter((l) => !l.encerramento).length;
@@ -850,7 +856,8 @@ export async function fecharExercicio(dados: z.input<typeof esquemaFecharExercic
 
 export async function reabrirExercicio(ano: number): Promise<Resultado> {
   if (!Number.isInteger(ano)) return { sucesso: false, erro: "Exercício inválido." };
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores reabrem exercícios." };
+  const decisor = await exigirDecisor("reabrem exercícios");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const emendas = await criarClienteEmendas();
   const { data, error } = await emendas.from("exercicios").update({ situacao: "aberto" }).eq("ano", ano).select("ano");
   if (error) return { sucesso: false, erro: traduzir(error) };
@@ -878,7 +885,8 @@ async function compararArquivo(formData: FormData) {
 
 /** Passo 1 dos ajustes: compara a planilha atualizada com o que já está cadastrado (nada é gravado). */
 export async function previaAjustes(formData: FormData): Promise<PreviaAjustes> {
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores importam planilhas." };
+  const decisor = await exigirDecisor("importam planilhas");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const c = await compararArquivo(formData);
   if ("erro" in c) return { sucesso: false, erro: c.erro as string };
   return { sucesso: true, ano: c.ano, comparacao: c.comparacao, erros: c.leitura.erros };
@@ -892,7 +900,8 @@ export type RelatorioAjustes = { numero: number; acao: "remanejada" | "criada" |
  * importação transacional; as que sumiram da planilha são canceladas se marcadas. Cada item tem o próprio resultado.
  */
 export async function aplicarAjustes(formData: FormData): Promise<{ sucesso: true; itens: RelatorioAjustes[] } | { sucesso: false; erro: string }> {
-  if (!(await exigirGestor())) return { sucesso: false, erro: "Só gestores aplicam ajustes." };
+  const decisor = await exigirDecisor("aplicam ajustes");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
   const ato = String(formData.get("ato") ?? "").trim();
   const motivo = String(formData.get("motivo") ?? "").trim();
   if (ato.length < 3) return { sucesso: false, erro: "Informe o ato (ex.: Decreto, Ofício da Câmara)." };
@@ -942,4 +951,26 @@ export async function aplicarAjustes(formData: FormData): Promise<{ sucesso: tru
   }
   revalidar();
   return { sucesso: true, itens };
+}
+
+/**
+ * Designa ou retira um gestor master. Só o administrador da Central (também garantido pela RLS de `emendas.masters`).
+ * A pessoa precisa ter perfil de gestor. Enquanto não houver nenhum master, gestores seguem decidindo (ver `master-regra.ts`).
+ */
+export async function definirMaster(dados: { usuarioId: string; master: boolean }): Promise<Resultado> {
+  if (!z.uuid().safeParse(dados.usuarioId).success) return { sucesso: false, erro: "Usuário inválido." };
+  const ctx = await obterContextoEmendas();
+  if (ctx.situacao !== "ok" || !ctx.usuario.admin_hub) return { sucesso: false, erro: "Só o administrador da Central designa o gestor master." };
+  const emendas = await criarClienteEmendas();
+  if (dados.master) {
+    const { data: u } = await emendas.from("usuarios").select("perfil,ativo").eq("id", dados.usuarioId).maybeSingle();
+    if (!u || u.perfil !== "gestor" || !u.ativo) return { sucesso: false, erro: "Só quem tem perfil de gestor ativo pode ser gestor master." };
+    const { error } = await emendas.from("masters").upsert({ usuario_id: dados.usuarioId });
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  } else {
+    const { error } = await emendas.from("masters").delete().eq("usuario_id", dados.usuarioId);
+    if (error) return { sucesso: false, erro: traduzir(error) };
+  }
+  revalidar();
+  return { sucesso: true };
 }

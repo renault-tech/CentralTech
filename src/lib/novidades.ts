@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-20",
+    titulo: "Emendas: gestor master e proteção do exercício encerrado",
+    descricao:
+      "O administrador da Central pode designar um gestor master (Configurações › Usuários e permissões), que passa a decidir o encerramento das emendas, a abertura e o fechamento do exercício e as importações de planilha. Enquanto nenhum for designado, todos os gestores seguem decidindo. Exercício encerrado agora é protegido: só entram pagamentos e anulações de restos a pagar; os demais lançamentos, remanejamentos e cadastros exigem reabrir o exercício.",
+  },
+  {
     data: "2026-11-19",
     titulo: "Emendas: assistente de exercício, ajustes pós-exequibilidade e cadastro de entidade pelo CNPJ",
     descricao:
