@@ -8,6 +8,7 @@ import { CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
 
 type Msg = { tipo: "ok" | "erro" | "aviso"; texto: string };
 type SemLigacao = RodadaLigarFipe["semLigacao"];
+type Aproximados = RodadaLigarFipe["aproximados"];
 
 /**
  * Valores da FIPE: "Ligar veículos à FIPE" procura sozinho a marca/modelo/ano de quem ainda não tem vínculo
@@ -20,10 +21,12 @@ export function AtualizarFipe() {
   const [msg, setMsg] = React.useState<Msg | null>(null);
   const [progresso, setProgresso] = React.useState<string | null>(null);
   const [semLigacao, setSemLigacao] = React.useState<SemLigacao>([]);
+  const [aproximados, setAproximados] = React.useState<Aproximados>([]);
 
   function atualizar() {
     setMsg(null);
     setSemLigacao([]);
+    setAproximados([]);
     iniciar(async () => {
       let atualizados = 0;
       let falhas = 0;
@@ -58,10 +61,12 @@ export function AtualizarFipe() {
   function ligar() {
     setMsg(null);
     setSemLigacao([]);
+    setAproximados([]);
     iniciar(async () => {
       let ligados = 0;
       let motivo: string | null = null;
       const pendentes: SemLigacao = [];
+      const aprox: Aproximados = [];
       const ignorar: string[] = [];
       for (let i = 0; i < 80; i += 1) {
         setProgresso(`Ligando à FIPE… ${ligados} ligados, ${pendentes.length} para escolher na mão`);
@@ -71,15 +76,18 @@ export function AtualizarFipe() {
         } catch {
           setProgresso(null);
           setSemLigacao(pendentes);
+          setAproximados(aprox);
           return setMsg({ tipo: "erro", texto: `${ligados} ligados. A consulta foi interrompida (tempo esgotado ou sem conexão); clique de novo para continuar.` });
         }
         if (!r.sucesso) {
           setProgresso(null);
           setSemLigacao(pendentes);
+          setAproximados(aprox);
           return setMsg({ tipo: "erro", texto: r.erro });
         }
         ligados += r.ligados;
         motivo ??= r.motivo;
+        aprox.push(...r.aproximados);
         for (const p of r.semLigacao) {
           pendentes.push(p);
           ignorar.push(p.id);
@@ -89,7 +97,9 @@ export function AtualizarFipe() {
       }
       setProgresso(null);
       setSemLigacao(pendentes);
+      setAproximados(aprox);
       const partes = [`${ligados} ligados à FIPE`];
+      if (aprox.length) partes.push(`${aprox.length} por aproximação (confira a lista)`);
       if (pendentes.length) partes.push(`${pendentes.length} para escolher na mão (veja a lista)`);
       setMsg({ tipo: motivo ? (ligados ? "aviso" : "erro") : pendentes.length ? "aviso" : "ok", texto: partes.join(" · ") + "." + (motivo ? ` ${motivo}` : "") });
       router.refresh();
@@ -108,6 +118,19 @@ export function AtualizarFipe() {
       </div>
       {progresso && <p role="status" className="text-xs text-slate-600">{progresso}</p>}
       {msg && <Mensagem tipo={msg.tipo}>{msg.texto}</Mensagem>}
+      {aproximados.length > 0 && (
+        <details className="w-full max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-900">
+          <summary className="cursor-pointer font-semibold">Ligados por aproximação — confira a versão ({aproximados.length})</summary>
+          <p className="mt-1.5">O cadastro era curto e várias versões da FIPE serviam; foi escolhida a de nome mais curto. Se a versão estiver errada, corrija em Veículos → editar → &quot;Procurar na FIPE&quot;.</p>
+          <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
+            {aproximados.map((v) => (
+              <li key={v.id}>
+                <span className="font-semibold">{v.placa ?? "Sem placa"}</span> · {v.modelo} → {v.escolhido}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {semLigacao.length > 0 && (
         <details className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-3 text-left text-xs text-slate-700">
           <summary className="cursor-pointer font-semibold">Veículos que precisam de escolha na mão ({semLigacao.length})</summary>

@@ -370,8 +370,12 @@ export async function atualizarValoresFipe(): Promise<ResultadoRodadaFipe | Falh
 // ------------------------------------------------------------- ligar à FIPE em lote
 
 const LIGAR_POR_RODADA = 5;
-/** Só liga sozinho quando o modelo da FIPE é claramente o melhor; o resto fica para a pessoa escolher. */
-const MIN_PONTOS = 0.75;
+/**
+ * Liga sozinho quando o modelo do cadastro aparece no nome do modelo da FIPE. Cadastro curto ("Spin", "Gol")
+ * casa com várias versões da FIPE; nesse empate escolhe a de nome mais curto (a versão-base) e marca como
+ * APROXIMADO para a pessoa conferir. Abaixo do mínimo, vai para "escolher na mão".
+ */
+const MIN_PONTOS = 0.6;
 const MARGEM = 0.15;
 
 const esquemaLigar = z.object({ ignorar: z.array(z.uuid()).max(500).default([]) });
@@ -381,6 +385,8 @@ export type RodadaLigarFipe = {
   ligados: number;
   /** Veículos que a rodada não conseguiu ligar sozinha, com o motivo. */
   semLigacao: { id: string; placa: string | null; modelo: string; motivo: string }[];
+  /** Ligados por aproximação (várias versões da FIPE serviam): conferir se a versão escolhida é a certa. */
+  aproximados: { id: string; placa: string | null; modelo: string; escolhido: string; valor: number }[];
   restantes: number;
   parar: boolean;
   motivo: string | null;
@@ -419,6 +425,7 @@ export async function ligarVeiculosFipe(dados: z.input<typeof esquemaLigar>): Pr
   let motivo: string | null = null;
   let parar = false;
   const semLigacao: RodadaLigarFipe["semLigacao"] = [];
+  const aproximados: RodadaLigarFipe["aproximados"] = [];
 
   for (const v of fila) {
     if (parar) break;
@@ -445,10 +452,7 @@ export async function ligarVeiculosFipe(dados: z.input<typeof esquemaLigar>): Pr
         falhou("Nenhum modelo da FIPE parecido o bastante.");
         continue;
       }
-      if (segundo && melhor.pontos - segundo.pontos < MARGEM) {
-        falhou(`Dúvida entre "${melhor.nome}" e "${segundo.nome}".`);
-        continue;
-      }
+      const aproximado = Boolean(segundo && melhor.pontos - segundo.pontos < MARGEM);
       const anoEscolhido = escolherAno(await listarAnos(tipo, marca.codigo, melhor.codigo), v.ano_modelo ?? v.ano_fabricacao, v.combustivel);
       if (!anoEscolhido) {
         falhou(`Ano ${v.ano_modelo ?? v.ano_fabricacao ?? "?"} não existe na FIPE para "${melhor.nome}".`);
@@ -470,7 +474,10 @@ export async function ligarVeiculosFipe(dados: z.input<typeof esquemaLigar>): Pr
         })
         .eq("id", v.id);
       if (erroGravar) falhou("Consultou a FIPE, mas não conseguiu gravar.");
-      else ligados += 1;
+      else {
+        ligados += 1;
+        if (aproximado) aproximados.push({ id: v.id, placa: v.placa, modelo: v.modelo, escolhido: melhor.nome, valor: preco.valor });
+      }
     } catch (e) {
       const msg = e instanceof ErroFipe ? e.message : "Falha inesperada ao consultar a FIPE.";
       motivo ??= msg;
@@ -479,5 +486,5 @@ export async function ligarVeiculosFipe(dados: z.input<typeof esquemaLigar>): Pr
     }
   }
   revalidatePath("/frotas", "layout");
-  return { sucesso: true, ligados, semLigacao, restantes: Math.max(0, data.length - LIGAR_POR_RODADA), parar, motivo };
+  return { sucesso: true, ligados, semLigacao, aproximados, restantes: Math.max(0, data.length - LIGAR_POR_RODADA), parar, motivo };
 }
