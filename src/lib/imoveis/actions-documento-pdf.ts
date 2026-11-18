@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterContextoImoveis } from "@/lib/imoveis/dados";
-import { lerDocumento, type DocumentoLido, type TipoDocumentoLido } from "@/lib/imoveis/pdf-documento";
+import { chave } from "@/lib/imoveis/importacao/planilha-contas";
+import { lerContrato, lerDocumento, type DadosContrato, type DocumentoLido, type TipoDocumentoLido } from "@/lib/imoveis/pdf-documento";
+import { extrairTexto } from "@/lib/imoveis/texto-arquivo";
 import { ROTULO_TIPO } from "@/lib/imoveis/regras";
 import { criarClienteImoveis } from "@/lib/supabase/imoveis-cliente";
 import type { TipoUnidade } from "@/types/imoveis";
@@ -126,4 +128,56 @@ export async function aplicarDocumento(entrada: z.input<typeof esquemaAplicar>):
   }
   revalidatePath("/imoveis", "layout");
   return { sucesso: true };
+}
+
+// ------------------------------------------------------------------ cadastro do imóvel
+
+export type PropostaCadastro = DadosContrato & { imobiliariaId?: string; imobiliariaRotulo?: string; secretariaId?: string; secretariaRotulo?: string };
+export type ResultadoLeituraCadastro = { sucesso: true; proposta: PropostaCadastro; avisos: string[] } | { sucesso: true; semTexto: true } | { sucesso: false; erro: string };
+
+/**
+ * Lê um contrato (PDF, Word .docx ou texto) só para PREENCHER o formulário de cadastro do imóvel: extrai o texto na memória, propõe os
+ * campos e casa imobiliária e secretaria com o cadastro. NÃO grava nada e o arquivo não é guardado (nem banco, nem bucket, nem disco).
+ */
+export async function lerDocumentoParaCadastro(form: FormData): Promise<ResultadoLeituraCadastro> {
+  if (!(await exigirGestor())) return { sucesso: false, erro: "Só o Setor de Imóveis lê documentos." };
+  const arquivo = form.get("arquivo");
+  if (!(arquivo instanceof File) || arquivo.size === 0) return { sucesso: false, erro: "Escolha um arquivo (PDF, Word .docx ou texto)." };
+  if (arquivo.size > MAX_BYTES) return { sucesso: false, erro: "O arquivo tem mais de 5 MB." };
+  if (!/\.(pdf|docx|txt)$/i.test(arquivo.name)) return { sucesso: false, erro: "Use um PDF, um Word (.docx) ou um arquivo de texto (.txt)." };
+
+  let texto: string;
+  try {
+    texto = await extrairTexto(arquivo.name, new Uint8Array(await arquivo.arrayBuffer()));
+  } catch {
+    return { sucesso: false, erro: "Não consegui abrir este arquivo." };
+  }
+  if (texto.replace(/\s/g, "").length < 20) return { sucesso: true, semTexto: true };
+
+  const lido = lerContrato(texto);
+  if (lido.tipo !== "contrato") return { sucesso: false, erro: "Não foi possível ler o documento." };
+  const proposta: PropostaCadastro = { ...lido.dados };
+  const avisos = [...lido.avisos];
+
+  const imoveis = await criarClienteImoveis();
+  const [{ data: imobs }, { data: secs }] = await Promise.all([
+    imoveis.from("imobiliarias").select("id, nome").eq("ativa", true),
+    imoveis.from("secretarias").select("id, nome").eq("ativa", true),
+  ]);
+  const casa = (lista: { id: string; nome: string }[] | null, lido: string | undefined) => {
+    const k = chave(lido ?? "");
+    if (!k) return null;
+    const achados = (lista ?? []).filter((x) => {
+      const n = chave(x.nome);
+      return n === k || n.includes(k) || k.includes(n);
+    });
+    return achados.length === 1 ? achados[0] : null;
+  };
+  const imob = casa(imobs, proposta.imobiliariaNome);
+  if (imob) Object.assign(proposta, { imobiliariaId: imob.id, imobiliariaRotulo: imob.nome });
+  else if (proposta.imobiliariaNome) avisos.push(`Imobiliária “${proposta.imobiliariaNome}” não encontrada no cadastro: cadastre em Configurações ou escolha à mão.`);
+  const sec = casa(secs, proposta.secretariaNome);
+  if (sec) Object.assign(proposta, { secretariaId: sec.id, secretariaRotulo: sec.nome });
+  else if (proposta.secretariaNome) avisos.push(`Secretaria “${proposta.secretariaNome}” não casou com o cadastro: escolha à mão.`);
+  return { sucesso: true, proposta, avisos };
 }

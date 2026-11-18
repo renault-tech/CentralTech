@@ -20,6 +20,16 @@ export type DadosContrato = {
   indiceReajuste?: IndiceReajuste;
   proprietarioNome?: string;
   proprietarioDocumento?: string;
+  proprietarioContato?: string;
+  proprietarioConta?: string;
+  /** Endereço do imóvel locado (com " - CEP 00000-000" quando o documento traz o CEP). */
+  endereco?: string;
+  finalidade?: string;
+  /** Primeiro aniversário do início da vigência depois de hoje (só quando há índice de reajuste). */
+  proximoReajuste?: string;
+  /** Nomes lidos do texto; a action os casa com o cadastro de imobiliárias e de secretarias. */
+  imobiliariaNome?: string;
+  secretariaNome?: string;
 };
 export type DadosTitularidade = { tipo?: TipoUnidade; unidadeId?: string; dataTroca?: string };
 export type DadosVistoria = { dataVistoria?: string; vistoriador?: string; resumo?: string };
@@ -66,7 +76,20 @@ function somaMesesData(iso: string, meses: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function lerContrato(texto: string): DocumentoLido {
+const hojeIso = () => new Date().toISOString().slice(0, 10);
+
+/** Próximo aniversário do início (no mesmo dia/mês) estritamente depois de `hoje`. */
+export function proximoAniversario(inicio: string, hoje: string): string {
+  let ano = Number(hoje.slice(0, 4));
+  for (let i = 0; i < 3; i++, ano++) {
+    const d = new Date(Date.UTC(ano, Number(inicio.slice(5, 7)) - 1, Number(inicio.slice(8, 10))));
+    const iso = d.toISOString().slice(0, 10);
+    if (iso > hoje && iso > inicio) return iso;
+  }
+  return inicio;
+}
+
+export function lerContrato(texto: string, hoje: string = hojeIso()): DocumentoLido {
   const t = limpar(texto);
   const avisos: string[] = [];
   const dados: DadosContrato = {};
@@ -106,6 +129,34 @@ export function lerContrato(texto: string): DocumentoLido {
   const doc = t.slice(loc ? (loc.index ?? 0) : 0).match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})\b/);
   if (doc) dados.proprietarioDocumento = doc[1];
   if (!dados.proprietarioNome) avisos.push("Locador (proprietário) não encontrado.");
+
+  // Contato e conta bancária do locador (depois da menção ao locador, quando ela existe).
+  const apos = t.slice(loc ? (loc.index ?? 0) : 0);
+  const mail = apos.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/);
+  const tel = apos.match(/(?:\(\d{2}\)\s?|\b\d{2}\s)9?\d{4}-?\d{4}\b/);
+  const contato = [tel?.[0], mail?.[0]].filter(Boolean).join(" · ");
+  if (contato) dados.proprietarioContato = contato;
+  const conta = t.match(/((?:Banco|BANCO|Caixa Econ[ôo]mica|CAIXA)[^.;]{0,120}?(?:ag[êe]ncia|AG\.?)\s*(?:n[ºo°.]*)?\s*:?\s*[\d.-]+[^.;]{0,50}?conta(?: corrente| poupan[çc]a)?\s*(?:n[ºo°.]*)?\s*:?\s*[\d.-]*\d[\dxX]?)/);
+  if (conta) dados.proprietarioConta = limpar(conta[1]).slice(0, 160);
+
+  // Endereço e finalidade do imóvel locado.
+  const end = t.match(/(?:im[óo]vel|objeto)[^.]{0,100}?(?:situad[oa]|localizad[oa]|sit[oa])\s+(?:[àa]|na|no|em)\s+((?:Rua|R\.|Avenida|Av\.|Pra[çc]a|Pça\.?|Travessa|Estrada|Rodovia|Alameda|Largo)[^.;]{5,150}?)(?=,?\s+(?:nesta|na cidade|em Cataguases|CEP|de propriedade|pertencente)|[.;])/i);
+  if (end) {
+    const cep = t.slice(end.index ?? 0, (end.index ?? 0) + 400).match(/CEP\s*:?\s*(\d{5})-?(\d{3})/i);
+    dados.endereco = `${limpar(end[1]).replace(/[,\s]+$/, "")}${cep ? ` - CEP ${cep[1]}-${cep[2]}` : ""}`;
+  } else avisos.push("Endereço do imóvel não encontrado.");
+  const fin = t.match(/destina-se\s+(?:exclusivamente\s+)?(?:ao|[àa]|para|a)\s+(.{5,140}?)(?:\.|;|,\s+n[ãa]o)/i);
+  if (fin) dados.finalidade = limpar(fin[1]).replace(/^(?:uso\s+)?/i, "").replace(/^./, (c) => c.toUpperCase());
+
+  const imob = t.match(/imobili[áa]ria\s+([A-ZÀ-Ú][A-Za-zÀ-ú0-9.&' -]{2,60}?)(?=,|\s+inscrit|\s+CNPJ|\s+CRECI|\s+neste|\.)/);
+  if (imob) dados.imobiliariaNome = limpar(imob[1]);
+  const sec = t.match(/Secretaria\s+Municipal\s+d[aeo]s?\s+([A-ZÀ-Úa-zà-ú ]{3,50}?)(?=,|\.|\s+CNPJ|\s+inscrit|\s+neste|\s+representad)/);
+  if (sec) dados.secretariaNome = limpar(sec[1]);
+
+  if (dados.indiceReajuste && dados.vigenciaInicio) {
+    dados.proximoReajuste = proximoAniversario(dados.vigenciaInicio, hoje);
+    avisos.push("Próximo reajuste calculado como o próximo aniversário do início da vigência. Confira.");
+  }
 
   return { tipo: "contrato", dados, avisos };
 }

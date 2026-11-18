@@ -64,3 +64,28 @@ describe("lerDocumento", () => {
     expect(lerDocumento("contrato", CONTRATO, unidades).tipo).toBe("contrato");
   });
 });
+
+describe("lerContrato — campos do cadastro do imóvel", () => {
+  const TEXTO = `CONTRATO DE LOCAÇÃO Nº 007/2025
+O MUNICÍPIO DE CATAGUASES, por meio da Secretaria Municipal de Educação, CNPJ 18.095.400/0001-70, LOCATÁRIO.
+LOCADOR: MARIA DAS GRAÇAS LIMA, brasileira, CPF 123.456.789-09, telefone (32) 99876-5432, e-mail maria.lima@exemplo.com.br,
+administrado pela imobiliária Lar Doce Lar Ltda, CNPJ 11.222.333/0001-44.
+CLÁUSULA 1ª: O imóvel situado à Rua Coronel Vieira, 204, Centro, nesta cidade, CEP 36770-000, destina-se exclusivamente ao funcionamento de creche municipal.
+O prazo é de 24 meses, a partir de 10/03/2025. Aluguel de R$ 3.200,00, a ser pago até o dia 10. Reajuste anual pelo IGP-M.
+Os pagamentos serão feitos no Banco do Brasil, agência 1234-5, conta corrente 98765-4.`;
+  it("lê endereço com CEP, finalidade, contato, conta, imobiliária, secretaria e próximo reajuste", () => {
+    const r = lerContrato(TEXTO, "2026-11-18");
+    if (r.tipo !== "contrato") return;
+    expect(r.dados).toMatchObject({
+      contratoNumero: "007/2025", valorAluguel: 3200, indiceReajuste: "IGP-M", diaVencimento: 10, proximoReajuste: "2027-03-10",
+      endereco: "Rua Coronel Vieira, 204, Centro - CEP 36770-000", finalidade: "Funcionamento de creche municipal",
+      proprietarioContato: "(32) 99876-5432 · maria.lima@exemplo.com.br", imobiliariaNome: "Lar Doce Lar Ltda", secretariaNome: "Educação",
+    });
+    expect(r.dados.proprietarioConta).toMatch(/Banco do Brasil.*1234-5.*98765-4/);
+  });
+  it("não inventa endereço e avisa", () => {
+    const r = lerContrato("Contrato nº 1/2025. Aluguel de R$ 1.000,00.", "2026-11-18");
+    expect(r.dados).not.toHaveProperty("endereco");
+    expect(r.avisos.some((a) => /Endereço/.test(a))).toBe(true);
+  });
+});

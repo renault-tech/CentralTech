@@ -1957,6 +1957,10 @@ tem `interno: true`.
   imóvel aparece o aviso com a caixa "marcar como revisado" (`salvarImovel({revisado:true})` zera o campo). Motivos gerados: vínculo/contrato/aluguel não
   informados (todos), endereço genérico (107), possível duplicidade água × luz (27 pares, mesmo número e rua/nome parecidos — **não foram unificados**), conta com
   valor R$ 0,00, secretaria criada da aba. Reimportar pela tela continua sem sobrescrever mês já lançado.
+- **Preencher o cadastro a partir de documento (18/11/2026)**: no `FormularioImovel` (novo e edição) o bloco `ImportarDocumentoCadastro` envia um contrato (PDF, Word `.docx` ou `.txt`, até 5 MB)
+  à action `lerDocumentoParaCadastro` (só gestor): `texto-arquivo.ts` extrai SÓ O TEXTO na memória (`unpdf`; `.docx` = `fflate` + `word/document.xml`), `lerContrato` propõe os campos
+  (além dos antigos: endereço com CEP, finalidade, contato, conta, imobiliária e secretaria casadas com o cadastro, próximo reajuste = aniversário do início) e a tela mostra cada um com
+  caixa; o que o formulário já tem com outro valor começa desmarcado. Nada é gravado ali (quem grava é "Cadastrar/Salvar") e **o arquivo nunca é guardado**. Sem OCR; padrões escritos com textos de exemplo.
 - **Ainda não feito**: escolha de colunas na exportação, tour guiado, OCR de PDF digitalizado, ligar/mesclar imóveis duplicados depois de importar
   (a prévia sugere a ligação por nome/endereço; se o nome de água e luz diferir, nascem dois imóveis para o mesmo lugar), empenho e dotação
   (as planilhas trazem FICHA/EMPENHO/VALOR EMPENHO por secretaria, ainda não lidos), vencimento e pagamento das contas importadas (as planilhas não trazem).

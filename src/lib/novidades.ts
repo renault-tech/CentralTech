@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-18",
+    titulo: "Imóveis: preencher o cadastro a partir de um documento",
+    descricao:
+      "No cadastro (novo ou edição) do imóvel há “Preencher a partir de um documento”: envie o contrato de locação em PDF, Word (.docx) ou texto e o sistema propõe endereço, secretaria, finalidade, contrato, vigência, aluguel, vencimento, índice, próximo reajuste, imobiliária e dados do proprietário. Você confere campo a campo e salva. O sistema só extrai o texto: o arquivo não é guardado.",
+  },
+  {
     data: "2026-11-07",
     titulo: "Imóveis: gráficos não caem a zero em meses sem conta lançada",
     descricao:

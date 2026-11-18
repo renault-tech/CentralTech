@@ -4,11 +4,12 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { CampoEndereco } from "@/components/modulo/campo-endereco";
+import { ImportarDocumentoCadastro } from "@/components/imoveis/importar-documento-cadastro";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/imoveis/ui";
 import { excluirImovel, salvarImovel } from "@/lib/imoveis/actions";
 import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
-import type { Imobiliaria, Imovel, SecretariaImoveis } from "@/types/imoveis";
+import type { Imobiliaria, Imovel, SecretariaImoveis, VinculoImovel } from "@/types/imoveis";
 
 /** Cadastro e edição de um imóvel: dados, contrato, imobiliária e proprietário. */
 export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara }: { imovel: Imovel | null; secretarias: SecretariaImoveis[]; imobiliarias: Imobiliaria[]; voltarPara: string }) {
@@ -35,6 +36,7 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
     observacoes: imovel?.observacoes ?? "",
   });
   const [revisado, setRevisado] = React.useState(false);
+  const [versaoEndereco, setVersaoEndereco] = React.useState(0); // remonta o CampoEndereco quando um documento troca o endereço
   const [erro, setErro] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setV((x) => ({ ...x, [k]: e.target.value }));
@@ -87,10 +89,18 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
   const campo = ESTILO_CAMPO_PADRAO;
   return (
     <form onSubmit={salvar} className="flex flex-col gap-6">
+      <ImportarDocumentoCadastro
+        atual={v}
+        rotuloAtual={(k, valor) => (k === "secretariaId" ? (secretarias.find((s) => s.id === valor)?.nome ?? valor) : k === "imobiliariaId" ? (imobiliarias.find((m) => m.id === valor)?.nome ?? valor) : valor)}
+        aoPreencher={(p) => {
+          setV((x) => ({ ...x, ...p, vinculo: (p.vinculo ?? x.vinculo) as VinculoImovel }));
+          if (p.endereco !== undefined) setVersaoEndereco((n) => n + 1);
+        }}
+      />
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-1 text-sm font-semibold text-cataguases-marinho">Imóvel</legend>
         <Campo rotulo="Nome" htmlFor="i-nome"><input id="i-nome" required className={campo} value={v.nome} onChange={set("nome")} /></Campo>
-        <CampoEndereco id="i-end" valor={v.endereco} aoMudar={(endereco) => setV((x) => ({ ...x, endereco }))} />
+        <CampoEndereco key={versaoEndereco} id="i-end" valor={v.endereco} aoMudar={(endereco) => setV((x) => ({ ...x, endereco }))} />
         <Campo rotulo="Secretaria" htmlFor="i-sec">
           <select id="i-sec" required className={campo} value={v.secretariaId} onChange={set("secretariaId")}>
             <option value="">Escolha…</option>
