@@ -3,10 +3,9 @@
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Cartao, Kpi } from "@/components/emendas/ui";
-import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
+import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import {
   etapasEmOrdem,
   GRUPOS_EXECUCAO,
@@ -61,17 +60,15 @@ export function PainelEmendas({
   /** AAAA-MM-DD, do servidor (evita divergência de hidratação). */
   hoje: string;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
+  const { params, definir: definirUrl } = useFiltrosUrl("emendas-painel", String(exercicio.ano));
 
   const f: Filtros = React.useMemo(
     () => ({ v: params.get("v") ?? "", s: params.get("s") ?? "", saude: params.get("saude") ?? "", mod: params.get("mod") ?? "", etapa: params.get("etapa") ?? "" }),
     [params]
   );
 
-  function definir(mudancas: Partial<Filtros> & { ano?: string }) {
-    atualizarFiltrosNaUrl(params, mudancas, pathname, (url) => router.replace(url, { scroll: false }));
+  function definir(mudancas: Partial<Filtros>) {
+    definirUrl(mudancas);
   }
   const alternar = (k: keyof Filtros, valor: string) => definir({ [k]: f[k] === valor ? "" : valor });
 

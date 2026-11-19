@@ -16,6 +16,24 @@ import { montarUrlComParametros } from "@/lib/filtros-url";
  */
 const PAUSA_DIGITACAO_MS = 350;
 
+/** Mesma memória das listas filtradas no navegador (`useFiltrosUrl`): quem volta de um detalhe encontra o recorte que deixou. */
+const CHAVE_SALVA = (caminho: string) => `filtros-lista:${caminho}`;
+function lerSalvo(caminho: string): string {
+  try {
+    return window.sessionStorage.getItem(CHAVE_SALVA(caminho)) ?? "";
+  } catch {
+    return "";
+  }
+}
+function gravarSalvo(caminho: string, consulta: string) {
+  try {
+    if (consulta) window.sessionStorage.setItem(CHAVE_SALVA(caminho), consulta);
+    else window.sessionStorage.removeItem(CHAVE_SALVA(caminho));
+  } catch {
+    // armazenamento bloqueado: só deixa de lembrar
+  }
+}
+
 export function FormularioFiltros({
   children,
   className,
@@ -40,6 +58,29 @@ export function FormularioFiltros({
     []
   );
 
+  // Chegou sem filtro nenhum (aba do menu, "Voltar"): reaplica os da última visita, já mostrando nos campos.
+  useEffect(() => {
+    const atual = new URLSearchParams(window.location.search);
+    const ano = atual.get("ano");
+    atual.delete("ano");
+    if (atual.toString()) return; // chegou com filtros próprios (link de outra tela)
+    const form = formRef.current;
+    const salvoBruto = lerSalvo(caminho);
+    if (!salvoBruto || !form) return;
+    const p = new URLSearchParams(salvoBruto);
+    if (ano) p.set("ano", ano);
+    const salvo = p.toString();
+    for (const el of Array.from(form.elements)) {
+      if (el instanceof HTMLInputElement && el.name && el.type !== "hidden") {
+        if (el.type === "checkbox" || el.type === "radio") el.checked = p.get(el.name) === el.value;
+        else el.value = p.get(el.name) ?? "";
+      } else if (el instanceof HTMLSelectElement && el.name) el.value = p.get(el.name) ?? "";
+    }
+    iniciar(() => router.replace(`${caminho}?${salvo}`, { scroll: false }));
+    // só na chegada à tela
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function aplicar() {
     if (temporizador.current) clearTimeout(temporizador.current);
     temporizador.current = null;
@@ -50,6 +91,7 @@ export function FormularioFiltros({
       if (typeof v === "string") params[k] = v;
     });
     const url = montarUrlComParametros(caminho, params);
+    gravarSalvo(caminho, url.includes("?") ? url.split("?")[1] : "");
     iniciar(() => router.replace(url, { scroll: false }));
   }
 
@@ -73,6 +115,7 @@ export function FormularioFiltros({
       } else if (el instanceof HTMLSelectElement) el.value = "";
     }
     if (temporizador.current) clearTimeout(temporizador.current);
+    gravarSalvo(caminho, "");
     iniciar(() => router.replace(limpar!.href, { scroll: false }));
   }
 
