@@ -1,6 +1,6 @@
 import "server-only";
 
-import { listarEmendas, listarExecucoes } from "@/lib/emendas/dados";
+import { listarEmendasEmCache, listarExecucoes } from "@/lib/emendas/dados";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import {
   relatorioImpedimentos,
@@ -16,7 +16,7 @@ export type Relatorio = (typeof RELATORIOS)[number];
 
 /** Monta um relatório sob a RLS de quem pede (cada pessoa só relata o que vê). */
 export async function montarRelatorio(r: Relatorio, ano: number): Promise<Tabela> {
-  const emendas = await listarEmendas(ano);
+  const emendas = await listarEmendasEmCache(ano);
   if (r === "vereador") return relatorioPorVereador(emendas);
   if (r === "secretaria") return relatorioPorSecretaria(emendas);
   if (r === "beneficiario") return relatorioPorBeneficiario(emendas);

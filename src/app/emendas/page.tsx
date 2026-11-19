@@ -5,12 +5,13 @@ import { Gauge } from "lucide-react";
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { FaixaTipos } from "@/components/emendas/faixa-tipos";
 import { PainelEmendas } from "@/components/emendas/painel-emendas";
+import { lerComCache } from "@/lib/emendas/cache-dados";
 import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
 import { resumoDaLinha, type ResumoLinha } from "@/lib/emendas/resumo";
 import { Vazio } from "@/components/emendas/ui";
 import {
-  listarEmendas,
+  listarEmendasEmCache,
   listarMovimentos,
   listarSecretarias,
   listarVereadores,
@@ -47,9 +48,9 @@ export default async function PaginaPainelEmendas({
   }
 
   const [emendas, vereadores, secretarias] = await medir("painel:emendas+cadastros", () =>
-    Promise.all([listarEmendas(exercicio.ano), listarVereadores(), listarSecretarias()])
+    Promise.all([listarEmendasEmCache(exercicio.ano), listarVereadores(), listarSecretarias()])
   );
-  const movimentos = await medir("painel:movimentos", () => listarMovimentos(emendas.map((e) => e.id)));
+  const movimentos = await medir("painel:movimentos", () => lerComCache("movimentos", String(exercicio.ano), () => listarMovimentos(emendas.map((e) => e.id))));
   const calculos = await medir("painel:calculos", () => calcularEmendasDoExercicio(emendas, exercicio, movimentos));
   const resumos: Record<string, ResumoLinha> = {};
   for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);

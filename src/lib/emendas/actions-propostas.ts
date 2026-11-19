@@ -2,7 +2,8 @@
 
 import { createHash } from "node:crypto";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { revalidarCaminho as revalidatePath } from "@/lib/emendas/invalidar";
 import { z } from "zod";
 
 import { TAG_PORTAL } from "@/lib/emendas/portal-tag";

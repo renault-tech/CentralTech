@@ -4,7 +4,7 @@ import { Download } from "lucide-react";
 
 import { BotaoImprimir } from "@/components/emendas/botao-imprimir";
 import { BarraEtapas, Chip, LinkVoltar, SeloEtapa } from "@/components/emendas/ui";
-import { listarEmendas, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendasEmCache, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, cumpreSaude, dataBr, numeroVereador, pct, porSecretaria } from "@/lib/emendas/regras";
 import { dataNoFuso } from "@/lib/fuso";
 
@@ -16,7 +16,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
   const [{ id }, { ano }] = await Promise.all([params, searchParams]);
   const { exercicio } = await resolverExercicio(ano);
   if (!exercicio) notFound();
-  const [emendas, vereadores, catalogo] = await Promise.all([listarEmendas(exercicio.ano), listarVereadores(), obterCatalogoEtapas()]);
+  const [emendas, vereadores, catalogo] = await Promise.all([listarEmendasEmCache(exercicio.ano), listarVereadores(), obterCatalogoEtapas()]);
   const vereador = vereadores.find((v) => v.id === id);
   if (!vereador) notFound();
 

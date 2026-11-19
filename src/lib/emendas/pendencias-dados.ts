@@ -1,7 +1,7 @@
 import "server-only";
 
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
-import { listarEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendasEmCache, resolverExercicio } from "@/lib/emendas/dados";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { ORDEM_GRAVIDADE } from "@/lib/emendas/pendencias";
 import type { EmendaPainel, LinhaDocFaltando, LinhaPendencia } from "@/lib/emendas/painel-pendencias";
@@ -11,7 +11,7 @@ import { medir } from "@/lib/emendas/tempo";
 export async function carregarPendencias(ano?: string | null) {
   const { exercicio } = await medir("pendencias:exercicio", () => resolverExercicio(ano ?? undefined));
   if (!exercicio) return null;
-  const emendas = await medir("pendencias:emendas", () => listarEmendas(exercicio.ano));
+  const emendas = await medir("pendencias:emendas", () => listarEmendasEmCache(exercicio.ano));
   const calculos = await medir("pendencias:calculos", () => calcularEmendasDoExercicio(emendas, exercicio));
 
   const linhas: LinhaPendencia[] = [];
