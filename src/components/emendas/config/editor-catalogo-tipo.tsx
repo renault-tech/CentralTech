@@ -92,7 +92,7 @@ function ListaFases({ tipo, cor, fases, etapas }: { tipo: TipoExecucao; cor: str
           editando === f.chave ? (
             <FormFase key={f.chave} tipo={tipo} fase={f} etapas={etapas} aoFechar={() => setEditando(null)} />
           ) : (
-            <li key={f.chave} className={cn("flex flex-wrap items-center gap-2 px-3 py-2.5 text-[13px]", !f.ativa && "opacity-55")}>
+            <li key={f.chave} className={cn("flex flex-wrap items-center gap-2 px-3 py-2.5 text-[0.8125rem]", !f.ativa && "opacity-55")}>
               <span className="h-5 w-1 rounded-full" style={{ backgroundColor: cor }} aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-cataguases-marinho">
@@ -196,7 +196,7 @@ function ListaItens({ tipo, itens }: { tipo: TipoExecucao; itens: ItemChecklist[
           editando === it.chave ? (
             <FormItem key={it.chave} tipo={tipo} item={it} aoFechar={() => setEditando(null)} />
           ) : (
-            <li key={it.chave} className={cn("flex flex-wrap items-center gap-2 px-3 py-2.5 text-[13px]", !it.ativo && "opacity-55")}>
+            <li key={it.chave} className={cn("flex flex-wrap items-center gap-2 px-3 py-2.5 text-[0.8125rem]", !it.ativo && "opacity-55")}>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-cataguases-marinho">
                   {it.nome}

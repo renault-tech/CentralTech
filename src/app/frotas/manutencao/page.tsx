@@ -126,7 +126,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                 href={montarUrl("/frotas/manutencao", { sit: f.chave === "andamento" ? undefined : f.chave, q: filtro.q })}
                 aria-current={situacaoAtiva === f.chave ? "true" : undefined}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors",
+                  "rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold transition-colors",
                   situacaoAtiva === f.chave ? "bg-[#3F5A12] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 )}
               >
@@ -170,7 +170,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                         <span className="text-sm font-semibold text-cataguases-marinho">{descreve(m.veiculo_id)}</span>
                         <span className="shrink-0 text-xs text-slate-500">{nomeSecretaria.get(m.secretaria_id)}</span>
                       </span>
-                      <span className="text-[13px] text-slate-600">{m.servico}{m.oc_numero ? ` · OC ${m.oc_numero}` : ""}</span>
+                      <span className="text-[0.8125rem] text-slate-600">{m.servico}{m.oc_numero ? ` · OC ${m.oc_numero}` : ""}</span>
                       <span className="flex flex-wrap items-center gap-1.5">
                         <Selo tom={TOM_ETAPA[s.etapa]}>{s.rotulo}</Selo>
                         {s.emAndamento && nivel !== "ok" && <SeloDias dias={dias} nivel={nivel} />}
@@ -260,7 +260,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
 
                 {analise.pctComEste !== null && (
                   <div className="mt-4">
-                    <div className="mb-1.5 flex justify-between gap-3 text-[13px] text-slate-600">
+                    <div className="mb-1.5 flex justify-between gap-3 text-[0.8125rem] text-slate-600">
                       <span>Manutenção acumulada com este orçamento, em relação ao valor do veículo</span>
                       <strong className="font-semibold text-slate-900">{pct(analise.pctComEste)}</strong>
                     </div>
@@ -300,7 +300,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                     {analise.historico.length === 0 ? (
                       <p className="text-sm text-slate-500">Sem serviços liberados nos últimos 12 meses.</p>
                     ) : (
-                      <ul className="divide-y divide-slate-100 text-[13px]">
+                      <ul className="divide-y divide-slate-100 text-[0.8125rem]">
                         {analise.historico.map((h) => (
                           <li key={h.id} className="flex justify-between gap-3 py-2">
                             <span>{formatarData(h.data)} · {h.servico}</span>
@@ -315,7 +315,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
                     {analise.parecidos.length === 0 ? (
                       <p className="text-sm text-slate-500">Nenhum serviço de mesmo nome nos últimos 12 meses.</p>
                     ) : (
-                      <ul className="divide-y divide-slate-100 text-[13px]">
+                      <ul className="divide-y divide-slate-100 text-[0.8125rem]">
                         {analise.parecidos.map((p) => (
                           <li key={p.id} className="flex justify-between gap-3 py-2">
                             <span>{p.servico} · {p.veiculo}</span>
@@ -358,7 +358,7 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
 
               {gestor && (
                 <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-                  <summary className="cursor-pointer text-[15px] font-semibold text-cataguases-marinho">
+                  <summary className="cursor-pointer text-[0.9375rem] font-semibold text-cataguases-marinho">
                     {atual.status_analise === "a_analisar" || atual.status_analise === "novo_orcamento" ? "Corrigir o orçamento" : "Corrigir serviço, oficina ou observações"}
                   </summary>
                   <div className="mt-3">

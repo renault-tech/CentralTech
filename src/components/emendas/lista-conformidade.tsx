@@ -64,7 +64,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
       </dl>
 
       <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[640px] border-collapse text-[13px]">
+        <table className="w-full min-w-[640px] border-collapse text-[0.8125rem]">
           <thead>
             <tr className="bg-slate-50 text-left text-slate-600">
               <th scope="col" className="px-3.5 py-2.5 font-medium">Item</th>
@@ -103,7 +103,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
       </section>
 
       <div className="flex flex-wrap items-center gap-4">
-        <h2 className="text-[15px] font-semibold text-cataguases-marinho">Emendas com itens a completar ({filtradas.length})</h2>
+        <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">Emendas com itens a completar ({filtradas.length})</h2>
         {item && (
           <button type="button" onClick={() => definir({ i: "" })} className={ESTILO_CAMPO + " text-xs"}>
             Filtro: {rotuloCodigo(item)} · {nomeItem(item)} ✕

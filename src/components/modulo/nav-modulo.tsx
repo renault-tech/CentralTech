@@ -75,7 +75,7 @@ export function NavModulo({
               >
                 {item.rotulo}
                 {!!item.selo && (
-                  <span className="ml-1.5 rounded-full bg-[color:var(--modulo-texto)] px-1.5 py-px text-[11px] font-medium tabular-nums text-white">
+                  <span className="ml-1.5 rounded-full bg-[color:var(--modulo-texto)] px-1.5 py-px text-[0.6875rem] font-medium tabular-nums text-white">
                     {item.selo}
                     <span className="sr-only"> pendente(s)</span>
                   </span>

@@ -124,7 +124,7 @@ async function CartaoPanorama({ ano }: { ano: number }) {
         {itens.map(([nome, valor, q]) => (
           <li key={nome}>
             <Link href={`/emendas/panorama?ano=${ano}&${q}`} className="block rounded-lg bg-slate-50 px-3 py-2 transition-colors duration-200 hover:bg-slate-100">
-              <span className="block text-[11px] text-slate-500">{nome}</span>
+              <span className="block text-[0.6875rem] text-slate-500">{nome}</span>
               <span className="text-base font-semibold tabular-nums text-cataguases-marinho">{valor}</span>
             </Link>
           </li>

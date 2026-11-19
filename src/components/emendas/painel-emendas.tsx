@@ -252,7 +252,7 @@ export function PainelEmendas({
                     f.v && !ativo && "opacity-50"
                   )}
                 >
-                  <span className="truncate text-[13px] text-cataguases-marinho">
+                  <span className="truncate text-[0.8125rem] text-cataguases-marinho">
                     <span className="font-mono text-slate-500">{numeroVereador(l.numero)}</span> {l.nome}
                   </span>
                   <span className="flex h-3.5 overflow-hidden rounded bg-slate-100">
@@ -265,7 +265,7 @@ export function PainelEmendas({
                   <span className="text-right text-xs font-semibold tabular-nums">{l.total ? pct(l.pago / l.total, 0) : "—"}</span>
                   <span
                     className={cn(
-                      "hidden rounded-full px-1.5 py-0.5 text-center text-[11px] sm:inline",
+                      "hidden rounded-full px-1.5 py-0.5 text-center text-[0.6875rem] sm:inline",
                       !recorteSoVereadorOuNada || !l.total ? "bg-slate-100 text-slate-500" : ok ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900"
                     )}
                   >
@@ -294,7 +294,7 @@ export function PainelEmendas({
                     aria-pressed={ativo}
                     className={cn("grid grid-cols-[118px_1fr_84px] items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-violet-50 sm:grid-cols-[150px_1fr_96px] sm:gap-2.5", ativo && "bg-violet-50")}
                   >
-                    <span className="flex items-center gap-2 text-[13px] text-cataguases-marinho">
+                    <span className="flex items-center gap-2 text-[0.8125rem] text-cataguases-marinho">
                       <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: etapa.cor }} aria-hidden />
                       {etapa.nome}
                     </span>
@@ -401,7 +401,7 @@ export function PainelEmendas({
                     f.s && !ativo && "opacity-50"
                   )}
                 >
-                  <span className="truncate text-[13px] text-cataguases-marinho">{l.nome}</span>
+                  <span className="truncate text-[0.8125rem] text-cataguases-marinho">{l.nome}</span>
                   <span className="relative h-4 overflow-hidden rounded bg-slate-50">
                     <span className="absolute inset-y-0 left-0 rounded bg-[#DDD6F7]" style={{ width: `${(l.total / maxS) * 100}%` }} />
                     <span className="absolute inset-y-0 left-0 rounded bg-[#563A9E]" style={{ width: `${(l.pago / maxS) * 100}%` }} />
@@ -427,9 +427,9 @@ export function PainelEmendas({
                   : { borda: "border-slate-200", fundo: "bg-slate-50", ic: "bg-indigo-100 text-indigo-900" };
             const conteudo = (
               <>
-                <span className={cn("flex h-9 w-9 flex-none items-center justify-center rounded-lg text-[15px] font-bold", tom.ic)}>{a.quantidade}</span>
+                <span className={cn("flex h-9 w-9 flex-none items-center justify-center rounded-lg text-[0.9375rem] font-bold", tom.ic)}>{a.quantidade}</span>
                 <span className="flex flex-col gap-0.5">
-                  <strong className="text-[13px] text-cataguases-marinho">{a.titulo}</strong>
+                  <strong className="text-[0.8125rem] text-cataguases-marinho">{a.titulo}</strong>
                   <span className="text-xs text-slate-600">{a.detalhe}</span>
                 </span>
               </>
@@ -467,7 +467,7 @@ function Divisao({ a, b, va, vb, cor, apoioA, apoioB }: { a: string; b: string; 
   const total = va + vb || 1;
   return (
     <div className="mb-4 last:mb-0">
-      <div className="mb-1.5 flex justify-between text-[13px]">
+      <div className="mb-1.5 flex justify-between text-[0.8125rem]">
         <span>
           {a} <strong>{pct(va / total)}</strong>
         </span>

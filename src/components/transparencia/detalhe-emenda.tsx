@@ -21,11 +21,11 @@ function Campo({ rotulo, valor, inciso, largo, antes }: { rotulo: string; valor:
   const vazio = valor === null || valor === undefined || valor === "";
   return (
     <div className={largo ? "sm:col-span-2" : undefined}>
-      <dt className="flex items-baseline gap-1.5 text-[12px] text-[var(--p-tinta-3)]">
+      <dt className="flex items-baseline gap-1.5 text-[0.75rem] text-[var(--p-tinta-3)]">
         {rotulo}
-        {inciso && <span className="text-[10.5px] tracking-wide opacity-70">art. 7º, {inciso}</span>}
+        {inciso && <span className="text-[0.65625rem] tracking-wide opacity-70">art. 7º, {inciso}</span>}
       </dt>
-      <dd className={`mt-0.5 text-[14.5px] leading-snug ${vazio ? "italic text-[var(--p-tinta-3)]" : "font-medium text-[var(--p-tinta)]"}`}>{vazio ? (antes ? "Será divulgado antes da execução" : "Não informado") : valor}</dd>
+      <dd className={`mt-0.5 text-[0.90625rem] leading-snug ${vazio ? "italic text-[var(--p-tinta-3)]" : "font-medium text-[var(--p-tinta)]"}`}>{vazio ? (antes ? "Será divulgado antes da execução" : "Não informado") : valor}</dd>
     </div>
   );
 }
@@ -57,13 +57,13 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
     <div className="text-[var(--p-tinta)]">
       <div className="mb-6 rounded-2xl bg-[var(--p-superficie-2)] p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-[28px] font-semibold tracking-tight tabular-nums">{brl(l.valor)}</p>
+          <p className="text-[1.75rem] font-semibold tracking-tight tabular-nums">{brl(l.valor)}</p>
           <SeloSituacao s={situacaoPublica(l)} />
         </div>
         <div className="mt-3">
           <BarraExecucao p={p} altura={12} titulo={`Emenda nº ${l.numero}`} />
         </div>
-        <dl className="mt-3 grid grid-cols-3 gap-2 text-[13px]">
+        <dl className="mt-3 grid grid-cols-3 gap-2 text-[0.8125rem]">
           {[
             ["Pago", p.pago],
             ["A pagar", p.aPagar],
@@ -72,7 +72,7 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
             <div key={k as string}>
               <dt className="text-[var(--p-tinta-3)]">{k}</dt>
               <dd className="font-semibold tabular-nums">{brl(v as number)}</dd>
-              <dd className="text-[12px] text-[var(--p-tinta-3)] tabular-nums">{pct((v as number) / (l.valor || 1))}</dd>
+              <dd className="text-[0.75rem] text-[var(--p-tinta-3)] tabular-nums">{pct((v as number) / (l.valor || 1))}</dd>
             </div>
           ))}
         </dl>
@@ -82,8 +82,8 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
       </div>
 
       <Secao titulo="O quê">
-        <p className="text-[16px] font-semibold leading-snug">{l.objeto}</p>
-        {l.descricao && l.descricao !== l.objeto && <p className="mt-2 whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--p-tinta-2)]">{l.descricao}</p>}
+        <p className="text-[1rem] font-semibold leading-snug">{l.objeto}</p>
+        {l.descricao && l.descricao !== l.objeto && <p className="mt-2 whitespace-pre-line text-[0.90625rem] leading-relaxed text-[var(--p-tinta-2)]">{l.descricao}</p>}
         <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
           <Campo rotulo="Localidade beneficiada" inciso="VI" valor={l.localidade} />
           <Campo rotulo="Cronograma previsto" inciso="VII" valor={cronograma} antes={semExecucao} />
@@ -133,9 +133,9 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
       </Secao>
 
       <Secao titulo="Linha do tempo do dinheiro">
-        <p className="mb-3 text-[12px] text-[var(--p-tinta-3)]">Datas de disponibilização do recurso (art. 7º, XIII): empenho reserva, liquidação confere a entrega, pagamento transfere.</p>
+        <p className="mb-3 text-[0.75rem] text-[var(--p-tinta-3)]">Datas de disponibilização do recurso (art. 7º, XIII): empenho reserva, liquidação confere a entrega, pagamento transfere.</p>
         {l.movimentos.length === 0 ? (
-          <p className="text-[14px] text-[var(--p-tinta-2)]">Ainda sem movimentação financeira.</p>
+          <p className="text-[0.875rem] text-[var(--p-tinta-2)]">Ainda sem movimentação financeira.</p>
         ) : (
           <ol className="relative ml-1.5 border-l border-[var(--p-linha-forte)]">
             {l.movimentos.map((m, i) => (
@@ -146,10 +146,10 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
                   style={{ background: m.tipo === "pagamento" ? "var(--s-pago)" : m.tipo === "anulacao" ? "var(--e-impedida)" : "var(--s-apagar)" }}
                 />
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <span className="text-[14px] font-semibold">{NOME_MOV[m.tipo]}</span>
-                  <span className="text-[14px] font-semibold tabular-nums">{m.tipo === "anulacao" ? "− " : ""}{brl(m.valor)}</span>
+                  <span className="text-[0.875rem] font-semibold">{NOME_MOV[m.tipo]}</span>
+                  <span className="text-[0.875rem] font-semibold tabular-nums">{m.tipo === "anulacao" ? "− " : ""}{brl(m.valor)}</span>
                 </div>
-                <p className="text-[12.5px] text-[var(--p-tinta-3)]">
+                <p className="text-[0.78125rem] text-[var(--p-tinta-3)]">
                   {m.data ? dataBr(m.data) : "data não informada"}
                   {m.numero ? ` · nº ${m.numero}` : ""}
                 </p>
@@ -166,11 +166,11 @@ export function DetalheEmenda({ l, nomeEtapa }: { l: LinhaPortal; nomeEtapa: (c:
               <li key={d.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--p-linha)] p-3">
                 <FileText className="h-5 w-5 shrink-0 text-[var(--p-acento-texto)]" aria-hidden />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold">{ROTULO_DRIVE[d.tipo]}</p>
-                  <p className="text-[12px] text-[var(--p-tinta-3)]">{montarFicha(d, l).titulo}</p>
+                  <p className="text-[0.875rem] font-semibold">{ROTULO_DRIVE[d.tipo]}</p>
+                  <p className="text-[0.75rem] text-[var(--p-tinta-3)]">{montarFicha(d, l).titulo}</p>
                 </div>
-                <JanelaFicha rotuloTipo={ROTULO_DRIVE[d.tipo]} ficha={montarFicha(d, l)} driveFileId={d.fileId} versao={d.versao} rotuloBotao="Ver ficha" classeBotao="portal-botao-sec !min-h-9 !px-3 !text-[13px]" />
-                <a href={urlOriginal(d.fileId)} target="_blank" rel="noopener noreferrer" className="portal-botao-sec !min-h-9 !px-3 !text-[13px]">
+                <JanelaFicha rotuloTipo={ROTULO_DRIVE[d.tipo]} ficha={montarFicha(d, l)} driveFileId={d.fileId} versao={d.versao} rotuloBotao="Ver ficha" classeBotao="portal-botao-sec !min-h-9 !px-3 !text-[0.8125rem]" />
+                <a href={urlOriginal(d.fileId)} target="_blank" rel="noopener noreferrer" className="portal-botao-sec !min-h-9 !px-3 !text-[0.8125rem]">
                   Ver original
                 </a>
               </li>
@@ -199,15 +199,15 @@ function ItemDocumento({ rotulo, inciso, docs, vazio }: { rotulo: string; inciso
         {docs.length ? <Check className="h-4 w-4" aria-hidden /> : <Minus className="h-4 w-4" aria-hidden />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-semibold">
-          {rotulo} <span className="text-[11px] font-normal text-[var(--p-tinta-3)]">art. 7º, {inciso}</span>
+        <p className="text-[0.875rem] font-semibold">
+          {rotulo} <span className="text-[0.6875rem] font-normal text-[var(--p-tinta-3)]">art. 7º, {inciso}</span>
         </p>
         {docs.length === 0 ? (
-          <p className="text-[13px] text-[var(--p-tinta-3)]">{vazio ?? "Ainda não disponibilizado."}</p>
+          <p className="text-[0.8125rem] text-[var(--p-tinta-3)]">{vazio ?? "Ainda não disponibilizado."}</p>
         ) : (
           <div className="mt-1.5 flex flex-wrap gap-2">
             {docs.map((d) => (
-              <a key={d.id} href={`/transparencia/emendas/documento/${d.id}`} target="_blank" rel="noopener" className="portal-botao-sec !min-h-9 !px-3 !text-[13px]">
+              <a key={d.id} href={`/transparencia/emendas/documento/${d.id}`} target="_blank" rel="noopener" className="portal-botao-sec !min-h-9 !px-3 !text-[0.8125rem]">
                 <FileText className="h-4 w-4" aria-hidden />
                 {d.competencia ? `${d.competencia} · ` : ""}Abrir PDF
               </a>

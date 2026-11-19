@@ -70,7 +70,7 @@ export function PainelTransparencia({
         </ul>
       )}
 
-      <dl className="flex flex-col gap-1.5 text-[13px]">
+      <dl className="flex flex-col gap-1.5 text-[0.8125rem]">
         {[
           ["Localidade beneficiada", execucao?.localidade],
           ["Início previsto", execucao?.inicio_previsto ? execucao.inicio_previsto.split("-").reverse().join("/") : null],

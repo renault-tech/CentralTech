@@ -74,17 +74,17 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
 
       {resumo.length > 0 && (
         <section className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-[15px] font-semibold text-amber-900">Dados a revisar antes de confiar nos relatórios</h2>
+          <h2 className="text-[0.9375rem] font-semibold text-amber-900">Dados a revisar antes de confiar nos relatórios</h2>
           <p className="mt-1 text-sm text-amber-900">
             A importação não corrige nada sozinha: marca cada ponto e o veículo continua cadastrado. Quando o dado for corrigido (ou marcado como correto), o aviso some.
           </p>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {resumo.map((g) => (
-              <span key={g.codigo} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-[13px] font-semibold text-amber-900">
+              <span key={g.codigo} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-[0.8125rem] font-semibold text-amber-900">
                 <strong className="font-bold">{g.n}</strong> {g.rotulo}
               </span>
             ))}
-            <Link href={montarUrl("/frotas/veiculos", { rev: "1" })} className="rounded-full bg-amber-900 px-3 py-1 text-[13px] font-semibold text-white hover:bg-amber-950">
+            <Link href={montarUrl("/frotas/veiculos", { rev: "1" })} className="rounded-full bg-amber-900 px-3 py-1 text-[0.8125rem] font-semibold text-white hover:bg-amber-950">
               Ver só os veículos com aviso
             </Link>
           </div>
@@ -181,7 +181,7 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
                             <Selo tom="ambar">Falta o valor</Selo>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-[13px] font-semibold text-amber-900">
+                        <td className="px-4 py-2.5 text-[0.8125rem] font-semibold text-amber-900">
                           {a.map((x) => (
                             <span key={x.codigo} className="block">{x.texto}</span>
                           ))}

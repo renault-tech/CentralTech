@@ -241,7 +241,7 @@ export function PainelPendencias({
                 aria-controls="painel-pend-corpo"
                 tabIndex={ativa ? 0 : -1}
                 onClick={() => setVisao(v.chave)}
-                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
+                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[0.8125rem] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
                   ativa ? "text-cataguases-marinho" : "text-slate-600 hover:text-cataguases-marinho"
                 } ${ativa ? "print:block" : "print:hidden"}`}
               >
@@ -304,7 +304,7 @@ export function PainelPendencias({
                   }`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
-                  <span className="truncate text-[13px] text-cataguases-marinho">{i.rotulo}</span>
+                  <span className="truncate text-[0.8125rem] text-cataguases-marinho">{i.rotulo}</span>
                   <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
                     {param && medida === "n" ? (
                       (["alta", "media", "baixa"] as const).map((g) => <span key={g} style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
@@ -312,7 +312,7 @@ export function PainelPendencias({
                       <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                     )}
                   </span>
-                  <span className="whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
+                  <span className="whitespace-nowrap text-right text-[0.8125rem] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                 </button>
                 {i.emendas && aberto && (

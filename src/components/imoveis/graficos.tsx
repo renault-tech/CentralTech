@@ -26,14 +26,14 @@ export function GraficoLinhas({ rotulos, series, altura = 220, formato = fmtCurt
         return (
           <g key={k}>
             <line x1={pl} x2={W - pr} y1={y(v)} y2={y(v)} className="stroke-slate-200" />
-            <text x={pl - 8} y={y(v) + 4} textAnchor="end" className="fill-slate-500 text-[11px]">
+            <text x={pl - 8} y={y(v) + 4} textAnchor="end" className="fill-slate-500 text-[0.6875rem]">
               {formato(v)}
             </text>
           </g>
         );
       })}
       {rotulos.map((r, i) => (
-        <text key={`${r}-${i}`} x={x(i)} y={H - 6} textAnchor="middle" className="fill-slate-500 text-[11px]">
+        <text key={`${r}-${i}`} x={x(i)} y={H - 6} textAnchor="middle" className="fill-slate-500 text-[0.6875rem]">
           {r}
         </text>
       ))}
@@ -71,7 +71,7 @@ export function GraficoColunas({ rotulos, valores, cor, media, alerta = false, a
         return (
           <g key={k}>
             <line x1={pl} x2={W - pr} y1={y(v)} y2={y(v)} className="stroke-slate-200" />
-            <text x={pl - 8} y={y(v) + 4} textAnchor="end" className="fill-slate-500 text-[11px]">
+            <text x={pl - 8} y={y(v) + 4} textAnchor="end" className="fill-slate-500 text-[0.6875rem]">
               {fmtCurto(v)}
             </text>
           </g>
@@ -83,7 +83,7 @@ export function GraficoColunas({ rotulos, valores, cor, media, alerta = false, a
         return (
           <g key={`${rotulos[i]}-${i}`}>
             <rect x={xi} y={y(v)} width={larg} height={Math.max(0, H - pb - y(v))} rx={3} fill={ultima && alerta ? "#B42318" : cor} opacity={ultima ? 1 : 0.78} />
-            <text x={xi + larg / 2} y={H - 6} textAnchor="middle" className="fill-slate-500 text-[11px]">
+            <text x={xi + larg / 2} y={H - 6} textAnchor="middle" className="fill-slate-500 text-[0.6875rem]">
               {rotulos[i]}
             </text>
           </g>
@@ -92,7 +92,7 @@ export function GraficoColunas({ rotulos, valores, cor, media, alerta = false, a
       {media ? (
         <g>
           <line x1={pl} x2={W - pr} y1={y(media)} y2={y(media)} className="stroke-slate-400" strokeDasharray="4 4" />
-          <text x={W - pr} y={y(media) - 4} textAnchor="end" className="fill-slate-500 text-[11px]">
+          <text x={W - pr} y={y(media) - 4} textAnchor="end" className="fill-slate-500 text-[0.6875rem]">
             média
           </text>
         </g>

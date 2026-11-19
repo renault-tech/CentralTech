@@ -56,7 +56,7 @@ export function InterruptorBloqueio({
           />
         </button>
       </label>
-      {erro && <p className="mt-1 text-[11px] text-red-700">{erro}</p>}
+      {erro && <p className="mt-1 text-[0.6875rem] text-red-700">{erro}</p>}
     </div>
   );
 }

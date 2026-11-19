@@ -3,6 +3,7 @@ import { ArrowLeft, Inbox, LogOut, Settings } from "lucide-react";
 
 import { Brasao } from "@/components/brasao";
 import { AlternarTema } from "@/components/layout/alternar-tema";
+import { ControleZoom } from "@/components/layout/controle-zoom";
 import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 import { sair } from "@/lib/actions/auth";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
@@ -104,7 +105,7 @@ export function CabecalhoVisual({
             <Brasao tamanho={32} />
             <div>
               <p className="text-sm font-semibold leading-tight">Central Cataguases</p>
-              <p className="text-[11px] leading-tight text-slate-300">Prefeitura de Cataguases</p>
+              <p className="text-[0.6875rem] leading-tight text-slate-300">Prefeitura de Cataguases</p>
             </div>
           </Link>
         )}
@@ -150,6 +151,7 @@ export function CabecalhoVisual({
           <BotaoFeedback appInicial={modulo?.app ?? "hub"} />
           <BotaoAjuda />
           <AlternarTema />
+          <ControleZoom />
           <span aria-hidden className="mx-1 hidden h-6 w-px bg-white/15 sm:block" />
           <Link href="/conta" className={`${CLASSE_LINK_CABECALHO} hidden max-w-[14rem] sm:inline-flex`} title="Minha conta">
             <span className="truncate">{usuario.nome}</span>

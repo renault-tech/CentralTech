@@ -194,7 +194,7 @@ html.dark:has(.portal-raiz) body {
   box-shadow: var(--p-sombra);
 }
 .portal-rotulo {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -226,7 +226,7 @@ html.dark:has(.portal-raiz) body {
   background: var(--p-superficie);
   color: var(--p-tinta);
   padding: 0 34px 0 12px;
-  font-size: 14px;
+  font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   appearance: none;
@@ -260,7 +260,7 @@ input.portal-campo {
   background: var(--p-tinta);
   color: var(--p-fundo);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem;
   transition: transform 0.1s ease-out, opacity 0.2s;
 }
 .portal-botao:hover { opacity: 0.9; }
@@ -276,7 +276,7 @@ input.portal-campo {
   background: var(--p-acento-suave);
   color: var(--p-acento-texto);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   transition: transform 0.1s ease-out, background 0.2s;
 }
 .portal-botao-sec:hover { background: color-mix(in srgb, var(--p-acento) 18%, transparent); }
@@ -290,7 +290,7 @@ input.portal-campo {
   border-radius: 999px;
   color: #fff;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
   -webkit-backdrop-filter: blur(12px);
@@ -349,7 +349,7 @@ input.portal-campo {
   color: var(--p-tinta);
   border: 1px solid var(--p-linha);
   box-shadow: var(--p-sombra-alta);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.4;
   animation: portal-entra 0.12s ease-out;
 }
@@ -425,7 +425,7 @@ input.portal-campo {
   border-radius: 999px;
   background: var(--p-tinta);
   color: var(--p-fundo);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   box-shadow: var(--p-sombra-alta);
   animation: portal-entra 0.25s ease-out;
@@ -437,8 +437,8 @@ input.portal-campo {
   padding: 18px;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
-.driver-popover.portal-tour .driver-popover-title { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
-.driver-popover.portal-tour .driver-popover-description { font-size: 14px; line-height: 1.5; color: #48484f; }
+.driver-popover.portal-tour .driver-popover-title { font-size: 1.0625rem; font-weight: 650; letter-spacing: -0.01em; }
+.driver-popover.portal-tour .driver-popover-description { font-size: 0.875rem; line-height: 1.5; color: #48484f; }
 
 @media (prefers-reduced-motion: reduce) {
   .portal-raiz *,

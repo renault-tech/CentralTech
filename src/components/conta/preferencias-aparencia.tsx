@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { AjusteZoom } from "@/components/layout/controle-zoom";
 import { assinarTema, definirEstilo, definirModo, lerEstilo, lerModo, type Estilo, type Modo } from "@/lib/tema";
 
 const OPCOES: { valor: Modo; rotulo: string; detalhe: string }[] = [
@@ -53,6 +54,13 @@ export function PreferenciasAparencia() {
             <span className="pl-6 text-xs text-slate-600">{o.detalhe}</span>
           </label>
         ))}
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend className="mb-1 text-sm font-medium text-slate-900">Tamanho do texto</legend>
+      <p className="mb-3 text-xs text-slate-600">Vale só neste navegador e se ajusta sozinho à largura da tela. Também há um botão “Aa” no cabeçalho de todas as telas.</p>
+      <div className="max-w-sm">
+        <AjusteZoom />
       </div>
     </fieldset>
     </div>

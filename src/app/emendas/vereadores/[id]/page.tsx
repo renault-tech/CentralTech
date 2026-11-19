@@ -47,7 +47,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
       <section className="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#0C1D33,#132C4C_55%,#0E2440)] px-6 py-6 text-white print:bg-none print:px-0 print:text-cataguases-marinho">
         <div>
           <span className="mb-3 block h-[3px] w-9 rounded-full bg-cataguases-dourado" aria-hidden />
-          <p className="text-[13px] text-slate-300 print:text-slate-600">Vereador(a) nº {numeroVereador(vereador.numero)} · Exercício {exercicio.ano}</p>
+          <p className="text-[0.8125rem] text-slate-300 print:text-slate-600">Vereador(a) nº {numeroVereador(vereador.numero)} · Exercício {exercicio.ano}</p>
           <h1 className="mt-1 text-2xl font-semibold">{vereador.nome}</h1>
           <p className="mt-1 text-sm text-slate-300 print:text-slate-600">
             {dele.length} emendas · cota de {brl(cota)}
@@ -72,7 +72,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
               <span className="text-2xl font-semibold tabular-nums" style={{ color: m.cor === "#9479DD" ? "#4C3494" : m.cor }}>
                 {m.valor}
               </span>
-              <span className="text-[13px] text-slate-600">{m.de}</span>
+              <span className="text-[0.8125rem] text-slate-600">{m.de}</span>
             </div>
             <div className="relative h-2.5 rounded-full bg-slate-100">
               <div className="h-2.5 rounded-full" style={{ width: `${Math.min(1, m.w) * 100}%`, backgroundColor: m.cor }} />
@@ -84,7 +84,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 [break-inside:avoid]">
-        <h2 className="mb-3 text-[15px] font-semibold text-cataguases-marinho">Para onde vai a cota</h2>
+        <h2 className="mb-3 text-[0.9375rem] font-semibold text-cataguases-marinho">Para onde vai a cota</h2>
         <div className="flex h-6 overflow-hidden rounded-md" aria-hidden>
           {distrib.map((d, i) => (
             <span key={d.secretariaId} title={d.nome} style={{ width: `${(d.total / (total || 1)) * 100}%`, backgroundColor: CORES[i % CORES.length] }} className="border-r-2 border-white last:border-0" />
@@ -92,7 +92,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
         </div>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {distrib.map((d, i) => (
-            <li key={d.secretariaId} className="flex items-center gap-2 text-[13px]">
+            <li key={d.secretariaId} className="flex items-center gap-2 text-[0.8125rem]">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CORES[i % CORES.length] }} aria-hidden />
               <span className="flex-1">{d.nome}</span>
               <strong className="tabular-nums">
@@ -104,8 +104,8 @@ export default async function PaginaVereador({ params, searchParams }: { params:
       </section>
 
       <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <h2 className="px-5 pb-2 pt-4 text-[15px] font-semibold text-cataguases-marinho">Emendas do vereador</h2>
-        <table className="w-full min-w-[820px] border-collapse text-[13px]">
+        <h2 className="px-5 pb-2 pt-4 text-[0.9375rem] font-semibold text-cataguases-marinho">Emendas do vereador</h2>
+        <table className="w-full min-w-[820px] border-collapse text-[0.8125rem]">
           <thead>
             <tr className="bg-slate-50 text-left text-slate-600">
               <th scope="col" className="px-4 py-2 font-medium">ID</th>

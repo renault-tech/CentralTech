@@ -56,7 +56,7 @@ function EmPreparacao() {
       <div className="max-w-lg text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--p-acento-texto)]">Prefeitura de Cataguases · Transparência</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--p-tinta)]">Emendas impositivas</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-[var(--p-tinta-2)]">
+        <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--p-tinta-2)]">
           As informações do exercício estão sendo conferidas pela gestão e serão publicadas em breve nesta página.
         </p>
       </div>

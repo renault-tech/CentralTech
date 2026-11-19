@@ -30,8 +30,8 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
           return (
             <div key={l.secretariaId} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
-                <h2 className="text-[15px] font-semibold text-cataguases-marinho">{l.nome}</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">{edita ? "você edita" : "só leitura"}</span>
+                <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">{l.nome}</h2>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.6875rem] text-slate-600">{edita ? "você edita" : "só leitura"}</span>
               </div>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-semibold tabular-nums text-cataguases-marinho">{brlCurto(l.total)}</span>
@@ -54,7 +54,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
                   <dd className="text-base font-semibold text-cataguases-marinho">{impedidas}</dd>
                 </div>
               </dl>
-              <div className="flex gap-3 text-[13px]">
+              <div className="flex gap-3 text-[0.8125rem]">
                 <Link href={`/emendas/lista?ano=${exercicio.ano}&s=${l.secretariaId}`} className="font-medium text-cataguases-azul hover:underline">
                   Ver {l.quantidade} emendas
                 </Link>

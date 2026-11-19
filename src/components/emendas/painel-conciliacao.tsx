@@ -18,7 +18,7 @@ type Executar = (acao: () => Promise<Resultado>) => Promise<Resultado>;
 /** Altura de toque de 44 px no celular e compacta no computador (padrão dos módulos). */
 const ALVO = "min-h-11 sm:min-h-9";
 const ROTULO = "flex flex-col gap-1 text-xs font-medium text-slate-700";
-const SELO = "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+const SELO = "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium";
 
 function useEnvio(executar: Executar) {
   const [pendente, iniciar] = React.useTransition();

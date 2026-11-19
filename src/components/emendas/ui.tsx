@@ -27,7 +27,7 @@ export function Cartao({
     <section className={cn("rounded-xl border border-slate-200 bg-white p-4 sm:p-5", className)}>
       {(titulo || apoio || acao) && (
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          {titulo && <h2 className="text-[15px] font-semibold text-cataguases-marinho">{titulo}</h2>}
+          {titulo && <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">{titulo}</h2>}
           {apoio && <span className="text-xs text-slate-500">{apoio}</span>}
           {acao}
         </div>
@@ -250,7 +250,7 @@ export function LinhaEtapas({
               </span>
               {i < itens.length - 1 && <span className="ml-1.5 h-[3px] flex-1 rounded" style={{ backgroundColor: linha }} />}
             </div>
-            <span className={cn("text-[13px]", atual ? "font-semibold text-cataguases-marinho" : it.estado !== "pendente" || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
+            <span className={cn("text-[0.8125rem]", atual ? "font-semibold text-cataguases-marinho" : it.estado !== "pendente" || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
               {infoEtapa(it.k, catalogo).nome}
             </span>
             <span className="text-xs text-slate-500">

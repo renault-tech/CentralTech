@@ -25,7 +25,7 @@ export function SeloPendencias({ quantidade, gravidade }: { quantidade: number; 
   if (!quantidade || !gravidade) return null;
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[11px] font-medium tabular-nums"
+      className="inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[0.6875rem] font-medium tabular-nums"
       style={{ borderColor: COR_GRAVIDADE[gravidade], color: COR_GRAVIDADE[gravidade] }}
       title={`${quantidade} pendência${quantidade === 1 ? "" : "s"} · maior gravidade: ${NOME_GRAVIDADE[gravidade]}`}
     >

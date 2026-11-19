@@ -80,7 +80,7 @@ export function BuscaFipeVeiculo({ veiculoId, tipoInicial }: { veiculoId: string
 
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <p className="text-[13px] font-semibold text-slate-700">Buscar o valor na tabela FIPE</p>
+      <p className="text-[0.8125rem] font-semibold text-slate-700">Buscar o valor na tabela FIPE</p>
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1 text-xs font-semibold text-slate-600">
           Tipo de veículo

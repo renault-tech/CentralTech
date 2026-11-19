@@ -39,8 +39,8 @@ export function useSalvar() {
 export function Secao({ titulo, apoio, children }: { titulo: string; apoio?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="text-[15px] font-semibold text-cataguases-marinho">{titulo}</h2>
-      {apoio && <p className="mt-0.5 text-[13px] text-slate-600">{apoio}</p>}
+      <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">{titulo}</h2>
+      {apoio && <p className="mt-0.5 text-[0.8125rem] text-slate-600">{apoio}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -64,7 +64,7 @@ export function EditorExercicios({ exercicios }: { exercicios: Exercicio[] }) {
       apoio="Cada ano tem sua cota por vereador e o mínimo na Saúde. A cota vale como bloqueio no cadastro; os 50% na Saúde, como alerta."
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-[13px]">
+        <table className="w-full min-w-[640px] text-[0.8125rem]">
           <thead>
             <tr className="text-left text-slate-600">
               <th className="py-2 pr-3 font-medium">Ano</th>
@@ -186,7 +186,7 @@ export function EditorVereadores({ vereadores }: { vereadores: Vereador[] }) {
           ) : editando === v.id ? (
             <FormVereador key={v.id} vereador={v} aoFechar={() => setEditando(null)} />
           ) : (
-            <li key={v.id} className={cn("flex items-center gap-3 py-2.5 text-[13px]", !v.ativo && "opacity-60")}>
+            <li key={v.id} className={cn("flex items-center gap-3 py-2.5 text-[0.8125rem]", !v.ativo && "opacity-60")}>
               <span className="w-8 font-mono text-slate-500">{numeroVereador(v.numero)}</span>
               <span className="flex-1 font-medium text-cataguases-marinho">{v.nome}</span>
               <span className={cn(v.partido ? "text-slate-500" : "text-amber-800")}>{v.partido ?? "sem partido"}</span>
@@ -226,7 +226,7 @@ function FormSubstituicao({ sai, aoFechar }: { sai: Vereador; aoFechar: () => vo
   const { erro, salvando, salvar } = useSalvar();
   return (
     <li className="rounded-lg bg-slate-50 p-3">
-      <p className="mb-2 text-[13px] text-slate-700">
+      <p className="mb-2 text-[0.8125rem] text-slate-700">
         <strong>{sai.nome}</strong> sai; as emendas dele continuam registradas no nome dele. Quem entra começa sem emendas.
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -258,7 +258,7 @@ function FormVereador({ vereador, proximo, aoFechar }: { vereador?: Vereador; pr
         <input className={cn(CAMPO, "w-16")} value={numero} onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))} aria-label="Número" />
         <input className={cn(CAMPO, "min-w-[220px] flex-1")} placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome" />
         <input className={cn(CAMPO, "w-28")} placeholder="Partido (obrigatório)" value={partido} onChange={(e) => setPartido(e.target.value)} aria-label="Partido" required />
-        <label className="flex items-center gap-1.5 text-[13px]">
+        <label className="flex items-center gap-1.5 text-[0.8125rem]">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativo
         </label>
         <button
@@ -291,7 +291,7 @@ export function EditorSecretarias({ secretarias, unidades }: { secretarias: Secr
             editSec === s.id ? (
               <FormSecretaria key={s.id} secretaria={s} aoFechar={() => setEditSec(null)} />
             ) : (
-              <li key={s.id} className={cn("flex items-center gap-3 py-2.5 text-[13px]", !s.ativo && "opacity-60")}>
+              <li key={s.id} className={cn("flex items-center gap-3 py-2.5 text-[0.8125rem]", !s.ativo && "opacity-60")}>
                 <span className="flex-1 font-medium text-cataguases-marinho">{s.nome}</span>
                 <span className="text-xs text-slate-500">{unidades.filter((u) => u.secretaria_id === s.id).length} unidade(s)</span>
                 <button type="button" aria-label={`Editar ${s.nome}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setEditSec(s.id)}>
@@ -315,7 +315,7 @@ export function EditorSecretarias({ secretarias, unidades }: { secretarias: Secr
             editUni === u.id ? (
               <FormUnidade key={u.id} unidade={u} secretarias={secretarias} aoFechar={() => setEditUni(null)} />
             ) : (
-              <li key={u.id} className={cn("flex items-center gap-3 py-2.5 text-[13px]", !u.ativo && "opacity-60")}>
+              <li key={u.id} className={cn("flex items-center gap-3 py-2.5 text-[0.8125rem]", !u.ativo && "opacity-60")}>
                 <span className="w-12 font-mono text-slate-500">{u.codigo}</span>
                 <span className="flex-1 font-medium text-cataguases-marinho">{u.nome}</span>
                 <span className="text-xs text-slate-500">{secretarias.find((s) => s.id === u.secretaria_id)?.nome}</span>
@@ -345,7 +345,7 @@ function FormSecretaria({ secretaria, aoFechar }: { secretaria?: Secretaria; aoF
     <li className="py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <input className={cn(CAMPO, "min-w-[200px] flex-1")} value={nome} onChange={(e) => setNome(e.target.value)} aria-label="Nome da secretaria" />
-        <label className="flex items-center gap-1.5 text-[13px]">
+        <label className="flex items-center gap-1.5 text-[0.8125rem]">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativa
         </label>
         <button type="button" disabled={salvando} className={BOTAO} onClick={() => void salvar(() => salvarSecretaria({ id: secretaria?.id, nome, ativo }), aoFechar)}>
@@ -379,7 +379,7 @@ function FormUnidade({ unidade, secretarias, aoFechar }: { unidade?: UnidadeOrca
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-[13px]">
+        <label className="flex items-center gap-1.5 text-[0.8125rem]">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} /> Ativa
         </label>
         <button

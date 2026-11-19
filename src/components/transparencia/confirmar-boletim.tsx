@@ -14,7 +14,7 @@ export function ConfirmarBoletim({ acao, token }: { acao: "confirmar" | "cancela
       <div className="w-full max-w-md rounded-[28px] border border-[var(--p-linha)] bg-[var(--p-superficie)] p-8 text-center shadow-[var(--p-sombra)]">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--p-acento-texto)]">Transparência · Cataguases</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--p-tinta)]">{confirmar ? "Confirmar o boletim" : "Cancelar o boletim"}</h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-[var(--p-tinta-2)]">
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--p-tinta-2)]">
           {resultado?.mensagem ??
             (confirmar
               ? "Toque no botão para passar a receber, por e-mail, as atualizações das emendas impositivas."

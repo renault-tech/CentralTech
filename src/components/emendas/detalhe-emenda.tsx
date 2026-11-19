@@ -346,7 +346,7 @@ export function DetalheEmendaCliente({
                   <div className="pb-5">
                     <strong className="text-sm text-cataguases-marinho">{infoEtapa(a.etapa, catalogo).nome}</strong>
                     {a.documento && <span className="ml-2 font-mono text-xs text-slate-600">{a.documento}</span>}
-                    {a.observacao && <p className="mt-0.5 text-[13px] text-slate-600">{a.observacao}</p>}
+                    {a.observacao && <p className="mt-0.5 text-[0.8125rem] text-slate-600">{a.observacao}</p>}
                     <p className="mt-0.5 text-xs text-slate-500">
                       {a.usuario_nome ? `Registrado por ${a.usuario_nome}` : "Registro do sistema"} em {new Date(a.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                       {gestor && (
@@ -374,7 +374,7 @@ export function DetalheEmendaCliente({
             <div className="flex flex-col gap-4">
               <CartoesFinanceiros emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} encerramento={detalhe.encerramento} tipo={tipoDaEmenda(emenda)} provaLigada={detalhe.docsDrive.some((d) => d.tipo === (tipoDaEmenda(emenda) === "direta" ? "nota_fiscal" : "prestacao_contas"))} gestor={gestor} executar={executar} />
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] border-collapse text-[13px]">
+                <table className="w-full min-w-[560px] border-collapse text-[0.8125rem]">
                   <thead>
                     <tr className="bg-slate-50 text-left text-slate-600">
                       <th scope="col" className="px-3 py-2 font-medium">Movimento</th>
@@ -436,9 +436,9 @@ export function DetalheEmendaCliente({
                       {r.ato ? ` · ${r.ato}` : ""}
                     </span>
                   </div>
-                  {r.motivo && <p className="mt-1 text-[13px] text-slate-600">{r.motivo}</p>}
+                  {r.motivo && <p className="mt-1 text-[0.8125rem] text-slate-600">{r.motivo}</p>}
                   {Object.keys(r.antes).map((campo) => (
-                    <div key={campo} className="mt-2.5 grid gap-2 text-[13px] sm:grid-cols-[150px_1fr_1fr]">
+                    <div key={campo} className="mt-2.5 grid gap-2 text-[0.8125rem] sm:grid-cols-[150px_1fr_1fr]">
                       <span className="text-slate-600">{ROTULO_CAMPO[campo] ?? campo}</span>
                       <span className="rounded-md bg-red-50 px-2 py-1.5 text-red-900 line-through decoration-red-300">{exibir(campo, r.antes[campo])}</span>
                       <span className="rounded-md bg-green-50 px-2 py-1.5 text-green-900">{exibir(campo, r.depois[campo])}</span>
@@ -447,7 +447,7 @@ export function DetalheEmendaCliente({
                 </div>
               ))}
               {impedimentos.filter((i) => i.resolvido_em).map((i) => (
-                <div key={i.id} className="rounded-lg border border-slate-200 p-4 text-[13px]">
+                <div key={i.id} className="rounded-lg border border-slate-200 p-4 text-[0.8125rem]">
                   <div className="flex flex-wrap justify-between gap-2">
                     <strong className="text-sm text-cataguases-marinho">Impedimento {NOME_IMPEDIMENTO[i.tipo].toLowerCase()} (resolvido)</strong>
                     <span className="text-xs text-slate-600">
@@ -461,7 +461,7 @@ export function DetalheEmendaCliente({
               {gestor && auditoria.length > 0 && (
                 <div className="rounded-lg border border-slate-200 p-4">
                   <strong className="text-sm text-cataguases-marinho">Registro de alterações (quem, quando e o quê)</strong>
-                  <ul className="mt-2 flex flex-col gap-2 text-[13px]">
+                  <ul className="mt-2 flex flex-col gap-2 text-[0.8125rem]">
                     {auditoria.map((a) => {
                       const mudou = a.acao === "UPDATE" && a.antes && a.depois
                         ? Object.keys(a.depois).filter(
@@ -605,7 +605,7 @@ function useEnvio() {
 
 function Campo({ rotulo, children, dica }: { rotulo: string; children: React.ReactNode; dica?: string }) {
   return (
-    <label className="flex flex-col gap-1.5 text-[13px] font-medium text-cataguases-marinho">
+    <label className="flex flex-col gap-1.5 text-[0.8125rem] font-medium text-cataguases-marinho">
       {rotulo}
       {children}
       {dica && <span className="text-xs font-normal text-slate-500">{dica}</span>}
@@ -957,7 +957,7 @@ function DialogoRemanejar({
               <input required inputMode="decimal" className={CAMPO} value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
             </Campo>
           </div>
-          <label className="flex items-center gap-2 text-[13px] text-cataguases-marinho">
+          <label className="flex items-center gap-2 text-[0.8125rem] text-cataguases-marinho">
             <input type="checkbox" checked={saude} onChange={(e) => setSaude(e.target.checked)} className="h-4 w-4 accent-[#6B4FBB]" /> Conta para a Saúde
           </label>
           <div className="grid gap-3.5 sm:grid-cols-2">
@@ -994,7 +994,7 @@ function ResolverImpedimento({
   const [texto, setTexto] = React.useState("");
   const { enviando, erro, enviar } = useEnvio();
   return (
-    <div className="mt-2 text-[13px] text-amber-950">
+    <div className="mt-2 text-[0.8125rem] text-amber-950">
       <p>
         <strong>{nomeTipo}</strong> desde {dataBr(impedimento.data)}: {impedimento.justificativa}
       </p>
@@ -1163,7 +1163,7 @@ function Documentos({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-[13px] text-slate-600">
+      <p className="text-[0.8125rem] text-slate-600">
         Checklist de {modalidade === "repasse" ? "repasse a entidade (parceria)" : "aplicação direta (compra pela Prefeitura)"}. Arquivos ficam no próprio sistema, com acesso controlado pela secretaria. <strong>Plano de trabalho, relatório de gestão e anuência do SUS são divulgados no portal público</strong> (IN TCE-MG 05/2025, art. 7º): anexe apenas versões que possam ser publicadas.
       </p>
       <ul className="flex flex-col gap-2">
@@ -1227,7 +1227,7 @@ function ListaAnexos({
   return (
     <ul className="flex w-full flex-col gap-1 sm:w-auto">
       {anexos.map((d) => (
-        <li key={d.id} className="flex items-center gap-2 text-[13px]">
+        <li key={d.id} className="flex items-center gap-2 text-[0.8125rem]">
           <Paperclip className="h-3.5 w-3.5 text-slate-500" aria-hidden />
           <button
             type="button"

@@ -120,7 +120,7 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
           </h2>
           <ul className="divide-y divide-slate-100">
             {ps.map((p) => (
-              <li key={p.id} className="flex items-start gap-3 px-4 py-3 text-[13px]">
+              <li key={p.id} className="flex items-start gap-3 px-4 py-3 text-[0.8125rem]">
                 {gestor && p.status === "pendente" && (
                   <input type="checkbox" className="mt-1 h-4 w-4 accent-[#6B4FBB]" checked={marcadas.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Marcar ${rotulo(p)}`} />
                 )}
@@ -154,7 +154,7 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-cataguases-marinho">Decididas recentemente ({decididas.length})</summary>
           <ul className="divide-y divide-slate-100">
             {decididas.map((p) => (
-              <li key={p.id} className="px-4 py-2.5 text-[13px] text-slate-700">
+              <li key={p.id} className="px-4 py-2.5 text-[0.8125rem] text-slate-700">
                 <span className={p.status === "aprovada" ? "text-green-700" : "text-slate-500"}>{p.status === "aprovada" ? "Aprovada" : "Rejeitada"}</span> · nº {p.emenda_numero} · {rotulo(p)}: {mostrar(p, p.valor_proposto)}
               </li>
             ))}

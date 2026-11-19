@@ -42,7 +42,7 @@ export function MatrizPermissoes({ usuarios, secretarias, masters = [], souAdmin
     <div className="flex flex-wrap items-start gap-5">
       <section className="flex-[1_1_320px] overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-          <h2 className="text-[15px] font-semibold text-cataguases-marinho">Quem acessa o módulo</h2>
+          <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">Quem acessa o módulo</h2>
           <span className="text-xs text-slate-500">{usuarios.length}</span>
         </div>
         <ul>
@@ -66,7 +66,7 @@ export function MatrizPermissoes({ usuarios, secretarias, masters = [], souAdmin
                 >
                   <span className="flex w-full items-center justify-between gap-2">
                     <strong className="text-sm font-semibold text-cataguases-marinho">{u.nome}</strong>
-                    <span className={cn("rounded-full px-2 py-0.5 text-[11px]", perfil ? COR_PERFIL[perfil] : "bg-amber-100 text-amber-900")}>
+                    <span className={cn("rounded-full px-2 py-0.5 text-[0.6875rem]", perfil ? COR_PERFIL[perfil] : "bg-amber-100 text-amber-900")}>
                       {perfil ? NOME_PERFIL[perfil] : "Pendente"}
                     </span>
                   </span>
@@ -142,8 +142,8 @@ function Editor({ usuario, secretarias, aoSalvar, master, haMasters, souAdmin }:
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-cataguases-marinho">{usuario.nome}</h2>
-          <p className="text-[13px] text-slate-600">{usuario.email}</p>
-          <p className="mt-1 max-w-xl text-[13px] text-slate-600">{DESCRICAO_PERFIL[perfil]}</p>
+          <p className="text-[0.8125rem] text-slate-600">{usuario.email}</p>
+          <p className="mt-1 max-w-xl text-[0.8125rem] text-slate-600">{DESCRICAO_PERFIL[perfil]}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
@@ -182,7 +182,7 @@ function Editor({ usuario, secretarias, aoSalvar, master, haMasters, souAdmin }:
       ) : (
         <>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-[13px] text-slate-600">Atalhos:</span>
+            <span className="mr-1 text-[0.8125rem] text-slate-600">Atalhos:</span>
             {(
               [
                 ["propria_ve_outras", "Edita a própria, vê as outras"],
@@ -190,7 +190,7 @@ function Editor({ usuario, secretarias, aoSalvar, master, haMasters, souAdmin }:
                 ["ve_todas", "Só visualiza todas"],
               ] as const
             ).map(([k, rotulo]) => (
-              <button key={k} type="button" onClick={() => atalho(k)} className="h-8 rounded-full border border-slate-300 bg-white px-3 text-[13px] text-cataguases-marinho hover:bg-slate-50">
+              <button key={k} type="button" onClick={() => atalho(k)} className="h-8 rounded-full border border-slate-300 bg-white px-3 text-[0.8125rem] text-cataguases-marinho hover:bg-slate-50">
                 {rotulo}
               </button>
             ))}
@@ -212,7 +212,7 @@ function Editor({ usuario, secretarias, aoSalvar, master, haMasters, souAdmin }:
                     <tr key={s.id} className={cn("border-t border-slate-100", s.id === secretariaId && "bg-indigo-50/40")}>
                       <th scope="row" className="px-3.5 py-2.5 text-left font-medium text-cataguases-marinho">
                         {s.nome}
-                        {s.id === secretariaId && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-normal text-indigo-900">secretaria da pessoa</span>}
+                        {s.id === secretariaId && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[0.6875rem] font-normal text-indigo-900">secretaria da pessoa</span>}
                       </th>
                       <td className="px-3.5 py-2.5 text-center">
                         <input type="checkbox" className="h-[18px] w-[18px] accent-[#6B4FBB]" aria-label={`Visualizar ${s.nome}`} checked={x.ver} disabled={x.editar} onChange={(e) => alterar(s.id, "ver", e.target.checked)} />
@@ -259,7 +259,7 @@ function BlocoMaster({ usuarioId, master, haMasters, souAdmin, aoSalvar }: { usu
   }
   return (
     <div className="mt-4 rounded-lg border border-slate-200 p-4">
-      <p className="text-sm font-medium text-cataguases-marinho">Gestor master {master && <span className="ml-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] text-violet-900">designado</span>}</p>
+      <p className="text-sm font-medium text-cataguases-marinho">Gestor master {master && <span className="ml-1 rounded-full bg-violet-100 px-2 py-0.5 text-[0.6875rem] text-violet-900">designado</span>}</p>
       <p className="mt-1 text-xs text-slate-600">
         Decide o encerramento das emendas, a abertura e o fechamento do exercício e as importações de planilha.{" "}
         {haMasters ? "Como já há gestor master, os demais gestores deixam de decidir essas coisas." : "Enquanto nenhum for designado, todos os gestores seguem decidindo."}

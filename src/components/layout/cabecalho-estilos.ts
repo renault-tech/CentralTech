@@ -15,4 +15,4 @@ export const CLASSE_LINK_CABECALHO = `${BASE} h-11 gap-1.5 px-3 text-sm sm:h-10`
 
 /** Contador vermelho (pedidos pendentes, feedback novo). */
 export const CLASSE_CONTADOR_CABECALHO =
-  "inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cataguases-vermelho px-1.5 text-[11px] font-semibold text-white";
+  "inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cataguases-vermelho px-1.5 text-[0.6875rem] font-semibold text-white";

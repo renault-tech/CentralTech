@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-22",
+    titulo: "Zoom do texto em toda a plataforma",
+    descricao:
+      "Um botão discreto “Aa”, ao lado do modo escuro no cabeçalho, aumenta o tamanho das letras de toda a plataforma em seis passos (100% a 200%), com − e + e atalhos de teclado (+, − e 0) com o painel aberto. A escolha fica guardada neste navegador e já vem aplicada ao abrir a página. É inteligente: se a tela for estreita, o zoom é limitado ao que ainda cabe (no celular, até 125%) e volta ao valor escolhido quando a tela cresce. Nas páginas sem cabeçalho (login, portal da transparência) o botão aparece no canto inferior direito. Também dá para ajustar em Minha conta → Aparência. Além disso, o painel de gráficos que entrou na aba Emendas foi retirado, por repetir os filtros que já ficam logo acima.",
+  },
+  {
     data: "2026-11-21",
     titulo: "Emendas: gráficos na lista, motivo das pendências e abas mais visíveis",
     descricao:

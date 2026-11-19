@@ -59,7 +59,7 @@ export function EditorBeneficiarios({ beneficiarios, usos }: { beneficiarios: Be
               <FormBeneficiario beneficiario={b} aoFechar={() => setEditando(null)} />
             </li>
           ) : (
-            <li key={b.id} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
+            <li key={b.id} className="flex flex-wrap items-center gap-3 py-2.5 text-[0.8125rem]">
               <span className="min-w-[200px] flex-1 font-medium text-cataguases-marinho">{b.nome}</span>
               <CategoriaSelo categoria={b.categoria} />
               <span className={cn("font-mono text-xs", b.cnpj || b.cpf ? "text-slate-600" : "text-amber-800")}>{b.cnpj ?? (b.cpf ? mascararCpf(b.cpf) : b.tipo === "pessoa_fisica" ? "sem CPF" : "sem CNPJ")}</span>
@@ -186,7 +186,7 @@ function FormBeneficiario({ beneficiario, aoFechar }: { beneficiario: Beneficiar
   }
 
   const cnpjCompleto = documento.replace(/\D/g, "").length === 14;
-  const rotulo = "flex flex-col gap-1 text-[13px] font-medium text-cataguases-marinho";
+  const rotulo = "flex flex-col gap-1 text-[0.8125rem] font-medium text-cataguases-marinho";
   return (
     <div className="flex flex-col gap-3">
       {!beneficiario && (

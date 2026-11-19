@@ -63,10 +63,10 @@ export default async function PaginaInicial({
 
       <main id="conteudo" className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 pb-14 pt-10 sm:px-6">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.025em] text-cataguases-marinho sm:text-[40px]">
+          <h1 className="text-[2.125rem] font-bold leading-[1.1] tracking-[-0.025em] text-cataguases-marinho sm:text-[2.5rem]">
             {saudacao()}, {usuario.nome.split(" ")[0]}.
           </h1>
-          <p className="text-[17px] leading-snug text-slate-600">Escolha um módulo para continuar. O login continua sendo o mesmo que você já usa.</p>
+          <p className="text-[1.0625rem] leading-snug text-slate-600">Escolha um módulo para continuar. O login continua sendo o mesmo que você já usa.</p>
         </div>
 
         {pendentes > 0 && (
@@ -74,7 +74,7 @@ export default async function PaginaInicial({
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(233,166,59,0.22)]">
               <UserPlus className="h-[18px] w-[18px] text-[#8A5A00]" aria-hidden />
             </span>
-            <span className="flex-1 text-[15px] font-medium">
+            <span className="flex-1 text-[0.9375rem] font-medium">
               {pendentes} {pendentes === 1 ? "pedido de acesso aguarda" : "pedidos de acesso aguardam"} a sua decisão
             </span>
             <span className="shrink-0 text-sm font-medium text-[#0A5FD0]">Revisar</span>

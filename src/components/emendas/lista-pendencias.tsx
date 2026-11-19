@@ -123,7 +123,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         }}
       />
       {totalJustificadas > 0 && (
-        <label className="flex h-11 items-center gap-1.5 text-[13px] text-slate-700 sm:h-9">
+        <label className="flex h-11 items-center gap-1.5 text-[0.8125rem] text-slate-700 sm:h-9">
           <input type="checkbox" className="h-4 w-4 accent-[#6B4FBB]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
           Justificadas ({totalJustificadas})
         </label>
@@ -135,7 +135,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
             setBusca("");
             definir({ t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" });
           }}
-          className="h-11 rounded-lg px-2.5 text-[13px] font-medium text-[#5B3FA8] hover:bg-violet-50 sm:h-9"
+          className="h-11 rounded-lg px-2.5 text-[0.8125rem] font-medium text-[#5B3FA8] hover:bg-violet-50 sm:h-9"
         >
           Limpar
         </button>
@@ -188,7 +188,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
                   ))}
                 </p>
               )}
-              <p className="mt-0.5 text-[13px] text-slate-700">{l.detalhe}</p>
+              <p className="mt-0.5 text-[0.8125rem] text-slate-700">{l.detalhe}</p>
               {l.justificativa && (
                 <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">
                   <strong>Justificada{l.justificadaEm ? ` em ${dataBr(l.justificadaEm.slice(0, 10))}` : ""}:</strong> {l.justificativa}

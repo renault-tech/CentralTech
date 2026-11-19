@@ -26,7 +26,7 @@ export function FaixaTipos({
 
   return (
     <div className="flex flex-col gap-3">
-      <ol className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-slate-600" aria-label="Datas do exercício">
+      <ol className="flex flex-wrap gap-x-6 gap-y-1 text-[0.8125rem] text-slate-600" aria-label="Datas do exercício">
         {marcos.map((m) => (
           <li key={m.rotulo} className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: m.data && m.data <= hoje ? "#16A34A" : "#94A3B8" }} aria-hidden />

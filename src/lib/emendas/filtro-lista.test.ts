@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { agruparLista, classeFinanceira, faixaFinanceira, filtrarEmendasLista, lerFiltrosLista, somar } from "@/lib/emendas/painel-lista";
+import { filtrarEmendasLista, lerFiltrosLista } from "@/lib/emendas/filtro-lista";
 import type { EmendaResumo } from "@/types/emendas";
 
 const base = {
@@ -21,7 +21,7 @@ const pend = { a: { abertas: 0, regras: [] }, b: { abertas: 2, regras: ["vigenci
 const F = lerFiltrosLista(() => "");
 const nums = (xs: EmendaResumo[]) => xs.map((x) => x.numero);
 
-describe("lista de emendas: filtros do dashboard", () => {
+describe("lista de emendas: filtros", () => {
   it("sem filtro devolve tudo; cada filtro corta e `ignorar` tira só o próprio", () => {
     expect(filtrarEmendasLista(L, pend, F)).toHaveLength(4);
     expect(nums(filtrarEmendasLista(L, pend, { ...F, v: "v2" }))).toEqual([2]);
@@ -40,25 +40,5 @@ describe("lista de emendas: filtros do dashboard", () => {
   it("busca ignora acento e caixa; lista de números do alerta restringe", () => {
     expect(nums(filtrarEmendasLista(L, pend, lerFiltrosLista(() => "", "onibus ESCOLAR")))).toEqual([3]);
     expect(nums(filtrarEmendasLista(L, pend, lerFiltrosLista((k) => (k === "numeros" ? "1,4" : ""))))).toEqual([1, 4]);
-  });
-});
-
-describe("lista de emendas: números do dashboard", () => {
-  it("classe financeira é exclusiva e a faixa respeita o valor de cada emenda", () => {
-    expect(L.map(classeFinanceira)).toEqual(["paga", "paga_parcial", "sem_empenho", "empenhada_sem_pagamento"]);
-    const f = faixaFinanceira(L);
-    expect(f).toEqual({ pago: 1200, aPagar: 500, semEmpenho: 300 });
-    expect(f.pago + f.aPagar + f.semEmpenho).toBe(2000);
-    // empenho acima do valor e pago acima do empenhado não estouram a faixa
-    expect(faixaFinanceira([e({ id: "x", numero: 9, valor: 100, empenhado: 150, pago: 120 })])).toEqual({ pago: 100, aPagar: 0, semEmpenho: 0 });
-  });
-
-  it("totais e agrupamento: uma emenda pode cair em mais de um grupo (pendências por assunto)", () => {
-    expect(somar(L, pend)).toEqual({ n: 4, valor: 2000, empenhado: 1700, pago: 1200, comPendencia: 2 });
-    const porVer = agruparLista(L, pend, (x) => [{ chave: x.vereador_id, rotulo: x.vereador_nome }]);
-    expect(porVer.find((g) => g.chave === "v1")).toMatchObject({ n: 3, valor: 1500, pago: 1000, comPendencia: 1 });
-    const porAssunto = agruparLista(L, pend, (x) => (pend[x.id as keyof typeof pend]?.regras ?? []).map((r) => ({ chave: r, rotulo: r })));
-    expect(porAssunto.find((g) => g.chave === "vigencia")).toMatchObject({ n: 2, valor: 800 });
-    expect(porAssunto.reduce((s, g) => s + g.n, 0)).toBe(3);
   });
 });

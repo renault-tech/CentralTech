@@ -49,7 +49,7 @@ export function JanelaFicha({
         title="Ver ficha do documento"
       >
         <Eye className="h-[18px] w-[18px]" aria-hidden />
-        {rotuloBotao && <span className="ml-1.5 text-[13px] font-medium">{rotuloBotao}</span>}
+        {rotuloBotao && <span className="ml-1.5 text-[0.8125rem] font-medium">{rotuloBotao}</span>}
       </button>
 
       <dialog
@@ -62,7 +62,7 @@ export function JanelaFicha({
       >
         <div className="flex items-start justify-between gap-3 p-5 pb-0">
           <div className="min-w-0">
-            <p className="text-[12px] font-medium uppercase tracking-wide text-slate-500">Ficha do documento · {rotuloTipo}</p>
+            <p className="text-[0.75rem] font-medium uppercase tracking-wide text-slate-500">Ficha do documento · {rotuloTipo}</p>
             <h2 id={titulo} className="mt-1 text-xl font-semibold tracking-tight text-cataguases-marinho">
               {ficha.titulo}
             </h2>
@@ -77,8 +77,8 @@ export function JanelaFicha({
             const em = c.valor === null || c.valor === "";
             return (
               <div key={c.rotulo} className={c.largo ? "sm:col-span-2" : undefined}>
-                <dt className="text-[12px] text-slate-500">{c.rotulo}</dt>
-                <dd className={`mt-0.5 text-[14.5px] leading-snug ${em ? "italic text-slate-500" : "font-medium text-slate-900"}`}>{em ? vazio : c.valor}</dd>
+                <dt className="text-[0.75rem] text-slate-500">{c.rotulo}</dt>
+                <dd className={`mt-0.5 text-[0.90625rem] leading-snug ${em ? "italic text-slate-500" : "font-medium text-slate-900"}`}>{em ? vazio : c.valor}</dd>
               </div>
             );
           })}
@@ -98,7 +98,7 @@ export function JanelaFicha({
           ) : (
             <p className="text-sm text-slate-500">Link do original indisponível.</p>
           )}
-          <p className="text-[12px] leading-relaxed text-slate-500">
+          <p className="text-[0.75rem] leading-relaxed text-slate-500">
             O original abre em outra aba, a partir do arquivo da Prefeitura{versao ? ` (versão de ${new Date(versao).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })})` : ""}. Dados pessoais (CPF, RG e endereço de pessoas físicas) são retirados da versão pública. Base legal: {ficha.base}.
           </p>
         </div>

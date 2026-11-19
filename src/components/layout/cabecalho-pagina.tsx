@@ -65,7 +65,7 @@ export function CabecalhoPagina({
             {titulo}
           </h1>
           {subtitulo && (
-            <p className={cn("cab-sub mt-0.5 text-[rgba(180,199,224,0.85)]", grande ? "text-sm" : "text-[13px]")}>
+            <p className={cn("cab-sub mt-0.5 text-[rgba(180,199,224,0.85)]", grande ? "text-sm" : "text-[0.8125rem]")}>
               {subtitulo}
             </p>
           )}

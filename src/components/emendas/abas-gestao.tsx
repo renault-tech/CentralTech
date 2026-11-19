@@ -133,7 +133,7 @@ export function AbaFases({
                 )}
               </div>
               {f.fase.referencia && <p className="text-xs text-slate-500">Base legal: {f.fase.referencia}</p>}
-              {f.observacao && <p className="mt-0.5 text-[13px] text-slate-600">{f.observacao}</p>}
+              {f.observacao && <p className="mt-0.5 text-[0.8125rem] text-slate-600">{f.observacao}</p>}
               {!manual && f.fase.derivacao && (
                 <p className="mt-0.5 text-xs text-slate-500">
                   Preencha em: <span className="font-medium text-slate-700">{ONDE_EDITAR[f.fase.derivacao]}</span>
@@ -539,7 +539,7 @@ export function AbaPendencias({
               ))}
             </p>
           )}
-          <p className="mt-1 text-[13px] text-slate-700">{p.detalhe}</p>
+          <p className="mt-1 text-[0.8125rem] text-slate-700">{p.detalhe}</p>
           {p.base && <p className="mt-0.5 text-xs text-slate-500">Base legal: {p.base}</p>}
           {p.justificativa ? (
             <p className="mt-2 text-xs text-slate-600">
