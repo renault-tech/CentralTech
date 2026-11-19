@@ -35,3 +35,9 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 ## D. Plataforma
 16. **Importador de PDF do beneficiário**: calibrado só com textos de exemplo; testar com os primeiros cartões do CNPJ reais.
 17. **Leitores de PDF do Frotas e do Imóveis**: idem, calibrar com documentos reais.
+
+## Termos aditivos de troca de conta (19/11/2026)
+- Modelos em `docs/aditivos-conta-bancaria/` (23 PDFs preenchíveis com o timbre da secretaria; checklist em Excel; modelo de extrato). Cláusulas conferidas nos termos reais: Administração (conta no item 5.2, alterações na cláusula 8) e Esporte (item 7.2, Cláusula Décima).
+- **Vigência do cadastro errada em 10 termos** (AMAF e Cristo Vive: E23, 32, 34, 35, 37, 38, 50, 130, 157, 213): o cadastro tem vigência até 23/12/2026, mas os termos dizem 12 meses (conferido nos PDFs de E23, E32 e E50; extrato da E23: 09/09/2026 a 09/09/2027). **Não corrigido no banco** (regra: não sobrescrever campo preenchido sem confirmação); os PDFs usam início + 12 meses. A pendência "vigência" desses termos na plataforma depende dessa correção.
+- E148 já tem o 1º aditivo de troca de conta (02/11/2026, 62.082-3 → 63.402-6): fora da lista.
+
