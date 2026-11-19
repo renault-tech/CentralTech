@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
@@ -11,7 +10,7 @@ import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
-import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
+import { useFiltrosUrl } from "@/components/emendas/use-filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
@@ -56,18 +55,15 @@ export function TabelaEmendas({
   podeCriar: boolean;
 }) {
   const catalogo = useCatalogo();
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const [busca, setBusca] = React.useState(params.get("q") ?? "");
-  const pausaUrl = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { params, definir: definirUrl } = useFiltrosUrl("emendas-lista", String(ano));
+  const busca = params.get("q") ?? "";
   const [limite, setLimite] = React.useState(POR_PAGINA);
 
   const f = { ...lerFiltrosLista((k) => params.get(k), busca), ordem: params.get("ordem") ?? "numero" };
 
   function definir(m: Record<string, string>) {
     setLimite(POR_PAGINA);
-    atualizarFiltrosNaUrl(params, m, pathname, (url) => router.replace(url, { scroll: false }));
+    definirUrl(m);
   }
 
   // Os mesmos filtros alimentam a tabela e o dashboard; cada aba de tipo conta com todos os filtros, menos o de tipo.
@@ -110,12 +106,9 @@ export function TabelaEmendas({
           type="search"
           value={busca}
           onChange={(e) => {
-            setBusca(e.target.value);
             setLimite(POR_PAGINA);
-            // grava na URL (para o link reproduzir a busca) depois de uma pausa; o filtro local é imediato
-            const texto = e.target.value.trim();
-            if (pausaUrl.current) clearTimeout(pausaUrl.current);
-            pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
+            // a lista filtra a cada tecla; só a gravação na URL espera uma pausa
+            definirUrl({ q: e.target.value }, true);
           }}
           placeholder="Buscar objeto, beneficiário ou vereador"
           className={`${ESTILO_CAMPO} w-full pl-9`}
@@ -135,8 +128,6 @@ export function TabelaEmendas({
   );
 
   function limparTudo() {
-    setBusca("");
-    setLimite(POR_PAGINA);
     definir({ v: "", s: "", etapa: "", p: "", situacao: "", fin: "", sd: "", cat: "", rem: "", pe: "", numeros: "", q: "" });
   }
 

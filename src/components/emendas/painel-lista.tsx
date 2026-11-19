@@ -177,6 +177,45 @@ export function PainelLista({
     f.numeros.length > 0 && { chave: "numeros", rotulo: `Só as emendas do alerta (${f.numeros.length})` },
   ].filter(Boolean) as FiltroAtivo[];
 
+  /** O que está escolhido numa aba (nome curto e cor), para a aba dizer sozinha que há filtro nela. */
+  const filtroDaAba = (param: ChaveLista): { rotulo: string; cor: string } | null => {
+    const valor = String(f[param as keyof FiltrosLista] ?? "");
+    if (!valor) return null;
+    switch (param) {
+      case "v":
+        return { rotulo: nomeDe("vereador_id", (e) => `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`, valor), cor: "var(--modulo)" };
+      case "s":
+        return { rotulo: nomeDe("secretaria_id", (e) => e.secretaria_nome, valor), cor: "var(--modulo)" };
+      case "etapa": {
+        const et = infoEtapa(valor, catalogo);
+        return { rotulo: et.nome, cor: et.cor === "#CBD5E1" ? CINZA : et.cor };
+      }
+      case "fin":
+        return { rotulo: CLASSES_FINANCEIRAS.find(([k]) => k === valor)?.[1] ?? "Paga, sem data", cor: COR_FINANCEIRA[valor] ?? CINZA };
+      case "cat": {
+        const c = INFO_CATEGORIA[valor as keyof typeof INFO_CATEGORIA];
+        return { rotulo: c?.nome ?? valor, cor: c?.cor ?? CINZA };
+      }
+      case "sd":
+        return { rotulo: valor === "1" ? "Saúde" : "Fora da Saúde", cor: valor === "1" ? "#0E7490" : CINZA };
+      case "pe":
+        return { rotulo: ASSUNTO_DA_REGRA[valor]?.nome ?? valor, cor: "var(--modulo)" };
+      case "situacao":
+        return { rotulo: NOME_SITUACAO[valor] ?? valor, cor: COR_SITUACAO[valor] ?? CINZA };
+      case "rem":
+        return { rotulo: valor === "1" ? "Remanejadas" : "Não remanejadas", cor: valor === "1" ? "#6B4FBB" : CINZA };
+      default:
+        return null;
+    }
+  };
+
+  // De onde vem o valor pago: totalmente pagas + pagas em parte (as demais classes não têm pagamento).
+  const pagoPorClasse = { paga: 0, paga_parcial: 0 };
+  for (const e of filtradas) {
+    const c = classeFinanceira(e);
+    if (c === "paga" || c === "paga_parcial") pagoPorClasse[c] += e.pago;
+  }
+
   const celula = "min-w-0 px-5 py-3.5";
   const numero = "whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl";
   const parte = (v: number) => (faixaTotal ? `${(v / faixaTotal) * 100}%` : "0%");
@@ -215,27 +254,44 @@ export function PainelLista({
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-xs font-medium text-slate-600">Valor indicado</dt>
+          <dt className="text-xs font-medium text-slate-600">Valor indicado (soma das emendas)</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{brlCurto(tot.valor)}</span>
             <span className="text-xs tabular-nums text-slate-600">{todas.valor ? pct(tot.valor / todas.valor, 0) : "0%"} do exercício</span>
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-xs font-medium text-slate-600">Empenhado</dt>
+          <dt className="text-xs font-medium text-slate-600">Empenhado (reservado para pagar)</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{brlCurto(tot.empenhado)}</span>
             <span className="text-xs tabular-nums text-slate-600">{tot.valor ? pct(tot.empenhado / tot.valor, 0) : "0%"} do indicado</span>
           </dd>
         </div>
         <div className={celula}>
-          <dt className="text-xs font-medium text-slate-600">Pago</dt>
+          <dt className="text-xs font-medium text-slate-600">Pago (tudo o que já saiu)</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{brlCurto(tot.pago)}</span>
             <span className="text-xs tabular-nums text-slate-600">{tot.valor ? pct(tot.pago / tot.valor, 0) : "0%"} do indicado</span>
+            {tot.pago > 0 && (
+              <span className="basis-full text-xs leading-snug text-slate-600">
+                {pagoPorClasse.paga > 0 && <>{brlCurto(pagoPorClasse.paga)} de emendas totalmente pagas</>}
+                {pagoPorClasse.paga > 0 && pagoPorClasse.paga_parcial > 0 && " + "}
+                {pagoPorClasse.paga_parcial > 0 && <>{brlCurto(pagoPorClasse.paga_parcial)} de emendas pagas em parte</>}
+              </span>
+            )}
           </dd>
         </div>
       </dl>
+
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-slate-200 px-5 py-2 text-xs text-slate-600">
+        <span className="font-medium">Do valor indicado:</span>
+        {([["paga", "pago", faixa.pago], ["paga_parcial", "empenhado, falta pagar", faixa.aPagar], ["sem_empenho", "ainda sem empenho", faixa.semEmpenho]] as const).map(([k, nome, v]) => (
+          <span key={k} className="inline-flex items-center gap-1.5 tabular-nums">
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: COR_FINANCEIRA[k] }} aria-hidden />
+            {nome} {brlCurto(v)} ({faixaTotal ? pct(v / faixaTotal, 0) : "0%"})
+          </span>
+        ))}
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 border-b border-slate-200 px-2">
         <div
@@ -253,7 +309,7 @@ export function PainelLista({
         >
           {VISOES.map((v) => {
             const ativa = v.chave === visao;
-            const filtrada = !!f[v.param as keyof FiltrosLista];
+            const sel = filtroDaAba(v.param);
             return (
               <button
                 key={v.chave}
@@ -264,19 +320,28 @@ export function PainelLista({
                 aria-controls="painel-lista-corpo"
                 tabIndex={ativa ? 0 : -1}
                 onClick={() => setVisao(v.chave)}
-                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-sm font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
-                  ativa ? "text-cataguases-marinho" : "text-slate-600 hover:text-cataguases-marinho"
-                }`}
+                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-sm transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
+                  ativa ? "font-semibold text-cataguases-marinho" : "font-medium text-slate-600 hover:text-cataguases-marinho"
+                } ${sel ? "bg-[color-mix(in_srgb,var(--modulo)_9%,transparent)]" : ""}`}
               >
                 {v.rotulo}
-                {filtrada && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "var(--modulo)" }} title="Filtro ativo" />}
+                {sel && (
+                  <span
+                    className="inline-flex max-w-[10rem] items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--modulo)_16%,transparent)] py-0.5 pl-1.5 pr-2 text-xs font-semibold text-[color:var(--modulo-tinta)] ring-1 ring-inset ring-[color:var(--modulo-tinta)]/40"
+                    title={`Filtro ativo nesta aba: ${sel.rotulo}`}
+                  >
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: sel.cor }} aria-hidden />
+                    <span className="truncate">{sel.rotulo}</span>
+                    <span className="sr-only"> (filtro ativo)</span>
+                  </span>
+                )}
                 {ativa && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full" style={{ backgroundColor: "var(--modulo)" }} aria-hidden />}
               </button>
             );
           })}
         </div>
         <div role="group" aria-label="Medida" className="my-1 inline-flex rounded-lg bg-slate-100 p-0.5 text-xs">
-          {([["n", visao === "pendencia" ? "Pendências" : "Emendas"], ["valor", "Valor"], ["pago", "Pago"]] as const).map(([m, rotulo]) => (
+          {([["n", visao === "pendencia" ? "Pendências" : "Emendas"], ["valor", "Valor indicado"], ["pago", "Valor pago"]] as const).map(([m, rotulo]) => (
             <button
               key={m}
               type="button"
@@ -301,7 +366,14 @@ export function PainelLista({
           />
         </div>
 
-        <ul className="max-h-72 overflow-y-auto overscroll-contain py-2 lg:max-h-[18.5rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <div className="min-w-0">
+        <p className="px-6 pb-1 pt-3 text-xs leading-snug text-slate-600">
+          {medida === "n" && (visao === "pendencia" ? "Quantas pendências há em cada assunto." : "Quantas emendas há em cada grupo.")}
+          {medida === "valor" && "Valor indicado: o valor total de cada emenda, esteja ou não pago."}
+          {medida === "pago" && "Valor pago: quanto já foi pago nas emendas de cada grupo."}
+          {visao === "financeiro" && " Totalmente paga = pago igual ao valor da emenda; paga em parte = pagou algo, mas menos que o valor; empenhada, sem pagamento = reservada, nada pago."}
+        </p>
+        <ul className="max-h-72 overflow-y-auto overscroll-contain py-1 lg:max-h-[16rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -334,6 +406,7 @@ export function PainelLista({
             <li className="px-6 pb-1 pt-2 text-xs text-slate-600">Uma emenda com mais de uma pendência conta em cada assunto. Para o detalhe, abra a aba Pendências.</li>
           )}
         </ul>
+        </div>
       </div>
     </section>
   );

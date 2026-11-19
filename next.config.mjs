@@ -21,6 +21,10 @@ const nextConfig = {
     return [{ source: "/:path*", headers: CABECALHOS_DE_SEGURANCA }];
   },
   experimental: {
+    // Cache do roteador no navegador: voltar para uma tela já aberta (da emenda para a lista, de uma aba para outra)
+    // aparece na hora em vez de refazer a consulta ao banco. Toda gravação (Server Action com revalidação) esvazia
+    // esse cache; o prazo curto só limita quanto uma mudança feita por OUTRA pessoa demora a aparecer.
+    staleTimes: { dynamic: 45, static: 300 },
     // Importação da planilha de emendas (Server Action com o .xlsx): o
     // limite padrão de 1 MB é apertado para uma planilha anual com
     // descrições longas.

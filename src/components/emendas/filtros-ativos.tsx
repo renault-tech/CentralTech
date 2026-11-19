@@ -10,9 +10,16 @@ export type FiltroAtivo = { chave: string; rotulo: string };
  * repetindo o que o gráfico já faz. Some quando não há filtro, sem deixar linha vazia.
  */
 export function FiltrosAtivos({ filtros, aoRemover, aoLimparTudo }: { filtros: FiltroAtivo[]; aoRemover: (chave: string) => void; aoLimparTudo: () => void }) {
-  if (filtros.length === 0) return null;
+  // A linha existe sempre, com a mesma altura: o chip aparecer ou sumir não empurra o gráfico para baixo do cursor.
+  if (filtros.length === 0) {
+    return (
+      <p className="flex min-h-[3.25rem] items-center border-b border-slate-200 px-4 text-xs text-slate-600 print:hidden">
+        Nenhum filtro aplicado. Clique numa fatia, numa linha ou numa aba do gráfico para filtrar a lista.
+      </p>
+    );
+  }
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-2.5 print:hidden" role="group" aria-label="Filtros ativos">
+    <div className="flex min-h-[3.25rem] flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-2 print:hidden" role="group" aria-label="Filtros ativos">
       <span className="text-xs font-medium text-slate-600">Filtrando por</span>
       {filtros.map((f) => (
         <button
