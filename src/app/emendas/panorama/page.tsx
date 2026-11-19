@@ -57,6 +57,12 @@ const GRUPOS: Grupo[] = [
   },
 ];
 
+const QUADROS = [
+  { chave: "secretaria", rotulo: "Por secretaria" },
+  { chave: "vereador", rotulo: "Por vereador" },
+  { chave: "tipo", rotulo: "Por tipo de execução" },
+] as const;
+
 const NOME_CARTAO = Object.fromEntries(GRUPOS.flatMap((g) => g.itens.map((i) => [i.c, i.nome]))) as Record<Cartao, string>;
 const CAMPO_FILTRO = "h-10 rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB] sm:h-[38px]";
 const COR_TOM = { alerta: "#B45309", ok: "#15803D", info: "#1D4ED8", neutro: "#0C1D33" } as const;
@@ -66,8 +72,8 @@ const COR_TOM = { alerta: "#B45309", ok: "#15803D", info: "#1D4ED8", neutro: "#0
  * Cada cartão é um filtro: ao clicar, a lista abaixo mostra as emendas a que o número se refere. O Excel/PDF completo
  * serve à prestação de contas e à conciliação com a Contabilidade. Cada pessoa vê o que a RLS libera.
  */
-export default async function PaginaPanorama({ searchParams }: { searchParams: Promise<{ ano?: string; c?: string; s?: string; t?: string }> }) {
-  const { ano, c, s, t } = await searchParams;
+export default async function PaginaPanorama({ searchParams }: { searchParams: Promise<{ ano?: string; c?: string; s?: string; t?: string; q?: string }> }) {
+  const { ano, c, s, t, q } = await searchParams;
   const { exercicio } = await resolverExercicio(ano);
   if (!exercicio) return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
   const [{ linhas: todas }, restosAnteriores] = await Promise.all([carregarPanorama(exercicio.ano), carregarRestosAnteriores(exercicio.ano)]);
@@ -76,16 +82,15 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
   const cartao: Cartao | null = (CARTOES as readonly string[]).includes(c ?? "") ? (c as Cartao) : null;
   const totais = totaisPorCartao(recorte);
   const lista = cartao ? recorte.filter((l) => pertenceAoCartao(l, cartao)) : [];
-  const href = (nova: Cartao | null) => {
-    const p = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(nova ? { c: nova } : {}) });
+  const quadro = QUADROS.some((x) => x.chave === q) ? (q as (typeof QUADROS)[number]["chave"]) : "secretaria";
+  const href = (nova: Cartao | null, outroQuadro?: string) => {
+    const p = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(nova ? { c: nova } : {}), ...((outroQuadro ?? q) ? { q: (outroQuadro ?? q) as string } : {}) });
     return `/emendas/panorama?${p.toString()}`;
   };
   const qExport = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}) }).toString();
   const exportar = `/emendas/panorama/exportar?${qExport}`;
   const exportarPdf = `/emendas/panorama/exportar?${qExport}&formato=pdf`;
-  const porSecretaria = agrupar(recorte, "secretaria");
-  const porVereador = agrupar(recorte, "vereador");
-  const porTipo = agrupar(recorte, "tipo");
+  const linhasDoQuadro = agrupar(recorte, quadro);
 
   return (
     <div className="flex flex-col gap-5">
@@ -111,6 +116,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
       <FormularioFiltros className="flex flex-wrap items-center gap-2" limpar={{ href: `/emendas/panorama?ano=${exercicio.ano}${c ? `&c=${c}` : ""}`, className: "text-sm text-slate-600 underline underline-offset-2 hover:text-slate-900", visivel: !!(s || t) }}>
         <input type="hidden" name="ano" value={exercicio.ano} />
         {c && <input type="hidden" name="c" value={c} />}
+        {q && <input type="hidden" name="q" value={q} />}
         <label className="sr-only" htmlFor="f-sec">Secretaria</label>
         <select id="f-sec" name="s" defaultValue={s ?? ""} className={CAMPO_FILTRO}>
           <option value="">Todas as secretarias</option>
@@ -127,31 +133,34 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
         </select>
       </FormularioFiltros>
 
-      {GRUPOS.map((g) => (
-        <section key={g.titulo} aria-label={g.titulo}>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{g.titulo}</h2>
-          <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-5">
-            {g.itens.map((i) => {
-              const tot = totais[i.c];
-              const ativo = cartao === i.c;
-              return (
-                <li key={i.c}>
-                  <Link
-                    href={ativo ? href(null) : href(i.c)}
-                    aria-pressed={ativo}
-                    scroll={false}
-                    className={`block h-full rounded-xl border bg-white p-3 transition-colors duration-200 hover:border-[#6B4FBB]/60 focus-visible:outline-2 ${ativo ? "border-[#6B4FBB] ring-1 ring-[#6B4FBB]" : "border-slate-200"}`}
-                  >
-                    <span className="text-xs text-slate-600">{i.nome}</span>
-                    <span className="mt-0.5 block text-lg font-semibold tabular-nums" style={{ color: COR_TOM[i.tom ?? "neutro"] }}>{brl(tot.valor)}</span>
-                    <span className="mt-0.5 block text-[0.6875rem] leading-snug text-slate-500">{tot.quantidade} emenda(s) · {i.apoio}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+      {/* Quatro quadros lado a lado (dois por linha em tela larga); os cartões de cada quadro crescem para ocupar a linha toda. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {GRUPOS.map((g) => (
+          <section key={g.titulo} aria-label={g.titulo} className="rounded-xl border border-slate-200 bg-white p-3.5">
+            <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600">{g.titulo}</h2>
+            <ul className="flex flex-wrap gap-2.5">
+              {g.itens.map((i) => {
+                const tot = totais[i.c];
+                const ativo = cartao === i.c;
+                return (
+                  <li key={i.c} className="min-w-[9.5rem] flex-1 basis-[9.5rem]">
+                    <Link
+                      href={ativo ? href(null) : href(i.c)}
+                      aria-pressed={ativo}
+                      scroll={false}
+                      className={`block h-full rounded-lg border bg-slate-50/60 p-3 transition-colors duration-200 hover:border-[#6B4FBB]/60 focus-visible:outline-2 ${ativo ? "border-[#6B4FBB] bg-white ring-1 ring-[#6B4FBB]" : "border-slate-200"}`}
+                    >
+                      <span className="text-xs text-slate-600">{i.nome}</span>
+                      <span className="mt-0.5 block text-lg font-semibold tabular-nums" style={{ color: COR_TOM[i.tom ?? "neutro"] }}>{brl(tot.valor)}</span>
+                      <span className="mt-0.5 block text-[0.6875rem] leading-snug text-slate-600">{tot.quantidade} emenda(s) · {i.apoio}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
 
       {cartao && (
         <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white" aria-label={`Emendas: ${NOME_CARTAO[cartao]}`}>
@@ -237,19 +246,32 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
         </section>
       )}
 
-      <Quadro titulo="Por secretaria" linhas={porSecretaria} />
-      <Quadro titulo="Por vereador" linhas={porVereador} />
-      <Quadro titulo="Por tipo de execução" linhas={porTipo} />
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label="Quadro por grupo">
+        <nav aria-label="Agrupar por" className="flex flex-wrap gap-1 border-b border-slate-200 px-2">
+          {QUADROS.map((x) => (
+            <Link
+              key={x.chave}
+              href={href(cartao, x.chave)}
+              scroll={false}
+              aria-current={quadro === x.chave ? "page" : undefined}
+              className={`relative inline-flex min-h-11 items-center px-3 text-sm sm:min-h-10 ${quadro === x.chave ? "font-semibold text-cataguases-marinho" : "font-medium text-slate-600 hover:text-cataguases-marinho"}`}
+            >
+              {x.rotulo}
+              {quadro === x.chave && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full" style={{ backgroundColor: "var(--modulo)" }} aria-hidden />}
+            </Link>
+          ))}
+        </nav>
+        <Quadro linhas={linhasDoQuadro} />
+      </section>
     </div>
   );
 }
 
-function Quadro({ titulo, linhas }: { titulo: string; linhas: ReturnType<typeof agrupar> }) {
-  if (linhas.length === 0) return null;
+function Quadro({ linhas }: { linhas: ReturnType<typeof agrupar> }) {
+  if (linhas.length === 0) return <p className="p-4 text-sm text-slate-600">Nada a mostrar neste recorte.</p>;
   return (
-    <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white" aria-label={titulo}>
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] border-collapse text-[0.8125rem]">
-        <caption className="border-b border-slate-100 px-3.5 py-2.5 text-left text-sm font-semibold text-cataguases-marinho">{titulo}</caption>
         <thead>
           <tr className="bg-slate-50 text-left text-slate-600">
             <th scope="col" className="px-3.5 py-2 font-medium">Nome</th>
@@ -279,6 +301,6 @@ function Quadro({ titulo, linhas }: { titulo: string; linhas: ReturnType<typeof 
           ))}
         </tbody>
       </table>
-    </section>
+    </div>
   );
 }
