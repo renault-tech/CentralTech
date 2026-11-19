@@ -17,6 +17,7 @@ import {
 } from "@/lib/emendas/dados";
 import { resumirProcessos } from "@/lib/emendas/compras";
 import { medir } from "@/lib/emendas/tempo";
+import { lerComCache } from "@/lib/emendas/cache-dados";
 import { objetoGenerico } from "@/lib/emendas/pendencias";
 import { calcularEmendas, type CalculoEmenda } from "@/lib/emendas/resumo";
 import type { EmendaResumo, Exercicio } from "@/types/emendas";
@@ -32,18 +33,19 @@ export async function calcularEmendasDoExercicio(
   const ids = emendas.map((e) => e.id);
   // As telas não carregam a descrição (pesada); para objeto genérico, busca só dessas para a regra enxergar a finalidade.
   const genericas = emendas.filter((e) => !e.descricao && objetoGenerico(e.objeto)).map((e) => e.id);
-  const descricoes = genericas.length ? await medir("calculos:descricoes", () => listarDescricoes(genericas)) : new Map<string, string>();
+  const ano = String(exercicio.ano);
+  const descricoes = genericas.length ? await medir("calculos:descricoes", () => lerComCache("descricoes", ano, async () => [...(await listarDescricoes(genericas))]).then((l) => new Map(l))) : new Map<string, string>();
   if (descricoes.size) emendas = emendas.map((e) => (descricoes.has(e.id) ? { ...e, descricao: descricoes.get(e.id) as string } : e));
   const [fasesCatalogo, movimentos, execucoes, { fases: manuais, justificadas }, pareceres, catalogo, documentos, vereadores, conciliacoes] = await Promise.all([
-    medir("calculos:fases-catalogo", () => listarFasesCatalogo()),
-    movimentosJaCarregados ?? medir("calculos:movimentos", () => listarMovimentos(ids)),
-    medir("calculos:execucoes", () => listarExecucoes(ids)),
-    medir("calculos:fases-justificativas", () => listarFasesEJustificativas(ids)),
-    medir("calculos:pareceres", () => listarPareceres(exercicio.ano)),
-    medir("calculos:catalogo-etapas", () => obterCatalogoEtapas()),
-    medir("calculos:documentos", () => listarDocumentosResumo(ids)),
-    medir("calculos:vereadores", () => listarVereadores()),
-    medir("calculos:conciliacoes", () => listarConciliacoes(ids)),
+    medir("calculos:fases-catalogo", () => lerComCache("fases-catalogo", ano, () => listarFasesCatalogo())),
+    movimentosJaCarregados ?? medir("calculos:movimentos", () => lerComCache("movimentos", ano, () => listarMovimentos(ids))),
+    medir("calculos:execucoes", () => lerComCache("execucoes", ano, () => listarExecucoes(ids))),
+    medir("calculos:fases-justificativas", () => lerComCache("fases-justificativas", ano, () => listarFasesEJustificativas(ids))),
+    medir("calculos:pareceres", () => lerComCache("pareceres", ano, () => listarPareceres(exercicio.ano))),
+    medir("calculos:catalogo-etapas", () => lerComCache("catalogo-etapas", ano, () => obterCatalogoEtapas())),
+    medir("calculos:documentos", () => lerComCache("documentos", ano, () => listarDocumentosResumo(ids))),
+    medir("calculos:vereadores", () => lerComCache("vereadores", ano, () => listarVereadores())),
+    medir("calculos:conciliacoes", () => lerComCache("conciliacoes", ano, () => listarConciliacoes(ids))),
   ]);
   // Processo do Compras ligado a cada emenda: alimenta as fases da execução direta.
   const compras = await medir("calculos:compras", () => resumirProcessos(execucoes.map((x) => x.processo_id).filter((x): x is string => !!x)).catch(() => new Map()));

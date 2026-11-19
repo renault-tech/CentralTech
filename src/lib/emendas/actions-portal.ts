@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag, updateTag } from "next/cache";
+import { revalidateTag, updateTag } from "next/cache";
+import { revalidarCaminho as revalidatePath } from "@/lib/emendas/invalidar";
 import { z } from "zod";
 
 import { obterContextoEmendas } from "@/lib/emendas/dados";

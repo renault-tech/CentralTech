@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
 import { Vazio } from "@/components/emendas/ui";
-import { listarEmendas, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendasEmCache, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, brlCurto, infoEtapa, pct, porSecretaria } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
   const [{ exercicio }, ctx] = await Promise.all([resolverExercicio(ano), obterContextoEmendas()]);
   if (!exercicio || ctx.situacao !== "ok") return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
 
-  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano), obterCatalogoEtapas()]);
+  const [todas, catalogo] = await Promise.all([listarEmendasEmCache(exercicio.ano), obterCatalogoEtapas()]);
   const emendas = todas.filter((e) => e.situacao !== "cancelada");
   const linhas = porSecretaria(emendas);
 

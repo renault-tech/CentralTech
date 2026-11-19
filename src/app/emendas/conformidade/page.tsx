@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ListaConformidade, type LinhaConformidade, type ResumoItem } from "@/components/emendas/lista-conformidade";
 import { Vazio } from "@/components/emendas/ui";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
-import { listarEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarEmendasEmCache, resolverExercicio } from "@/lib/emendas/dados";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { medir } from "@/lib/emendas/tempo";
 
@@ -14,7 +14,7 @@ export default async function PaginaConformidade({ searchParams }: { searchParam
   const { ano } = await searchParams;
   const { exercicio } = await medir("conformidade:exercicio", () => resolverExercicio(ano));
   if (!exercicio) return <Vazio>Nenhum exercício cadastrado ainda.</Vazio>;
-  const emendas = await medir("conformidade:emendas", () => listarEmendas(exercicio.ano));
+  const emendas = await medir("conformidade:emendas", () => listarEmendasEmCache(exercicio.ano));
   const calculos = await medir("conformidade:calculos", () => calcularEmendasDoExercicio(emendas, exercicio));
 
   const resumo = new Map<string, ResumoItem>();

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-19",
+    titulo: "Trocar de aba nas Emendas ficou mais rápido",
+    descricao:
+      "Lista, Painel, Pendências, Conformidade, Panorama, Vereadores e Secretarias reaproveitam, por até 1 minuto, os dados que a aba anterior já carregou, em vez de consultar o banco do zero a cada troca. Cada pessoa tem o seu cache e continua vendo só o que as suas permissões liberam; ao gravar qualquer coisa, os dados são atualizados na hora. Uma alteração feita direto no banco pode levar até 1 minuto para aparecer.",
+  },
+  {
+    data: "2026-11-19",
     titulo: "Emendas: filtro Beneficiário, Panorama e Conformidade mais claros",
     descricao:
       "A aba “Beneficiário” do painel da lista de Emendas voltou a mostrar as categorias (OSC, Saúde/SUS, consórcio, ente público, órgão municipal, pessoa física): a lista não trazia essa informação. O Panorama aproveita melhor a tela, com os quatro quadros lado a lado e o quadro por secretaria, vereador ou tipo em abas. A Conformidade ganhou uma explicação do que a tela faz e como usar, e as emendas mostram o nome do item que falta em vez do número romano.",

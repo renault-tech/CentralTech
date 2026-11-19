@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
+import { lerComCache } from "@/lib/emendas/cache-dados";
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { temAcessoAoModulo } from "@/lib/sso/gerar-link";
@@ -123,6 +124,14 @@ const COLUNAS_RESUMO =
   "funcional_programatica,natureza_despesa,dotacao_texto,ficha,vereador_id,vereador_numero,vereador_nome," +
   "beneficiario_id,beneficiario_nome,beneficiario_cnpj,beneficiario_categoria,unidade_id,unidade_codigo,unidade_nome,secretaria_id,secretaria_nome," +
   "empenhado,liquidado,pago,ultimo_pagamento,remanejada,impedimentos_abertos";
+
+/**
+ * Mesma leitura de `listarEmendas`, com cache curto por pessoa. Só para telas de CONSULTA: ações que decidem algo a
+ * partir da lista (cota, duplicidade, ajustes) continuam em `listarEmendas`, sempre fresca.
+ */
+export function listarEmendasEmCache(ano: number): Promise<EmendaResumo[]> {
+  return lerComCache("emendas", String(ano), () => listarEmendas(ano));
+}
 
 /** `comDescricao` só para a exportação; nas telas `descricao` vem vazia. */
 export const listarEmendas = cache(async (ano: number, comDescricao = false): Promise<EmendaResumo[]> => {

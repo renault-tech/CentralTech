@@ -1,11 +1,11 @@
-import { listarConciliacoes, listarEmendas, listarEncerramentos, listarExercicios } from "@/lib/emendas/dados";
+import { listarConciliacoes, listarEmendasEmCache, listarEncerramentos, listarExercicios } from "@/lib/emendas/dados";
 import { agrupar, linhasPanorama, rotuloSituacao, totaisPorCartao, CARTOES, type Cartao, type EmendaPanorama, type LinhaPanorama } from "@/lib/emendas/encerramento";
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import type { Conciliacao } from "@/lib/emendas/conciliacao";
 
 /** Linhas do Panorama de um exercício, sob a RLS de quem pede (tela, Excel e PDF usam a mesma origem). */
 export async function carregarPanorama(ano: number): Promise<{ linhas: LinhaPanorama[]; conciliacoes: Conciliacao[] }> {
-  const resumos = await listarEmendas(ano);
+  const resumos = await listarEmendasEmCache(ano);
   const ids = resumos.map((e) => e.id);
   const [encerramentos, conciliacoes] = await Promise.all([listarEncerramentos(ids), listarConciliacoes(ids)]);
   const base: EmendaPanorama[] = resumos.map((e) => ({
