@@ -9,7 +9,7 @@ import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelPendencias } from "@/components/emendas/painel-pendencias";
 import { filtrarPendencias, lerFiltros, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
-import { useFiltrosUrl } from "@/components/emendas/use-filtros-url";
+import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { brl, dataBr } from "@/lib/emendas/regras";
 
 export type { LinhaPendencia };

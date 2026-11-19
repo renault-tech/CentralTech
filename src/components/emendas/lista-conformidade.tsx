@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
-import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
+import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { pct } from "@/lib/emendas/regras";
 import type { TipoExecucao } from "@/types/emendas";
 
@@ -18,14 +17,13 @@ const ESTILO_CAMPO = "h-[38px] rounded-lg border border-slate-300 bg-white px-2.
 const POR_PAGINA = 40;
 
 export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, contasIrregulares }: { ano: number; resumo: ResumoItem[]; linhas: LinhaConformidade[]; relatoriosPendentes: number; contasIrregulares: number }) {
-  const params = useSearchParams();
-  const pathname = usePathname();
+  const { params, definir: definirUrl } = useFiltrosUrl("emendas-conformidade", String(ano));
   const [limite, setLimite] = React.useState(POR_PAGINA);
   const item = params.get("i") ?? "";
   const soExecutadas = params.get("x") === "1";
   const definir = (m: Record<string, string>) => {
     setLimite(POR_PAGINA);
-    atualizarFiltrosNaUrl(params, m, pathname, () => {});
+    definirUrl(m);
   };
 
   const completas = linhas.filter((l) => l.faltas.length === 0).length;

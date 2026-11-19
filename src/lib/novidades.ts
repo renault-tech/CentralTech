@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-23",
+    titulo: "Filtros iguais em toda a plataforma",
+    descricao:
+      "Todas as listas e painéis agora filtram do mesmo jeito: o clique responde na hora, o recorte vai para o endereço da página (dá para compartilhar o link) e, ao abrir um item e voltar, a tela reaparece com os mesmos filtros. Vale para Emendas (lista, painel, pendências e conformidade), Frotas, Imóveis e Feedback. Para limpar, use “Limpar” ou “Limpar tudo”.",
+  },
+  {
+    data: "2026-11-23",
     titulo: "Emendas: filtros que não se perdem, painel mais claro e telas mais rápidas",
     descricao:
       "Ao abrir uma emenda e voltar, a lista de Emendas (e a de Pendências) volta com os mesmos filtros, e os cliques no gráfico respondem na hora. Os indicadores ficaram autoexplicativos: “Pago” mostra quanto vem de emendas totalmente pagas e de pagas em parte, uma legenda diz o que é pago, empenhado e sem empenho do valor indicado, e as medidas viram “Valor indicado” (valor total da emenda) e “Valor pago”. A aba que tem filtro mostra o valor escolhido, com a cor dele. A linha de filtros ativos não faz mais o gráfico pular. A navegação ficou mais rápida: voltar a uma tela já aberta é instantâneo e cada página faz uma consulta de login a menos.",

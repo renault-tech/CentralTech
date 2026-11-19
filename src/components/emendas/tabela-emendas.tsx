@@ -10,7 +10,7 @@ import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
-import { useFiltrosUrl } from "@/components/emendas/use-filtros-url";
+import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
