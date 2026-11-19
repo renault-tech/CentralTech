@@ -13,6 +13,7 @@ import {
   areaDaLinha,
   porArea,
   porAssunto,
+  porMotivo,
   porSecretaria,
   porTipo,
   type Grupo,
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
     tipo: f.t ? TIPOS_EXECUCAO[f.t as keyof typeof TIPOS_EXECUCAO]?.nome : undefined,
     gravidade: f.g ? NOME_GRAVIDADE[f.g as keyof typeof NOME_GRAVIDADE] : undefined,
     secretaria: secretarias.find((s) => s.id === f.s)?.nome,
+    motivo: f.m ? linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo : undefined,
   });
   const nomeTipo = (t: string) => TIPOS_EXECUCAO[t as keyof typeof TIPOS_EXECUCAO]?.nome ?? t;
   const faltando = documentosFaltando(docs, f);
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
       },
       { titulo: "Por área", colunas: ["Área", ...COLUNAS_GRUPO], monetarias: [6], linhas: porArea(lista).map((g) => linhaGrupo(g)) },
       { titulo: "Por assunto", colunas: ["Assunto", ...COLUNAS_GRUPO], monetarias: [6], linhas: porAssunto(lista).map((g) => linhaGrupo(g)) },
+      { titulo: "Por motivo", colunas: ["Motivo", ...COLUNAS_GRUPO], monetarias: [6], linhas: porMotivo(lista, true).map((g) => linhaGrupo(g)) },
       { titulo: "Por secretaria", colunas: ["Secretaria", ...COLUNAS_GRUPO], monetarias: [6], linhas: porSecretaria(lista).map((g) => linhaGrupo(g)) },
       { titulo: "Por tipo de execução", colunas: ["Tipo", ...COLUNAS_GRUPO], monetarias: [6], linhas: porTipo(lista).map((g) => linhaGrupo(g, nomeTipo(g.chave))) },
       {
@@ -76,9 +79,9 @@ export async function GET(request: NextRequest) {
       },
       {
         titulo: "Pendências (lista)",
-        colunas: ["Emenda", "Secretaria", "Tipo", "Valor (R$)", "Gravidade", "Área", "Assunto", "Pendência", "Detalhe", "Justificada"],
+        colunas: ["Emenda", "Secretaria", "Tipo", "Valor (R$)", "Gravidade", "Área", "Assunto", "Motivo", "Pendência", "Detalhe", "Justificada"],
         monetarias: [3],
-        linhas: lista.map((l) => [l.numero, l.secretaria, nomeTipo(l.tipo), l.valor, NOME_GRAVIDADE[l.gravidade], areaDaLinha(l), nomeDaRegra(l), l.titulo, l.detalhe, l.justificativa ? "Sim" : ""]),
+        linhas: lista.map((l) => [l.numero, l.secretaria, nomeTipo(l.tipo), l.valor, NOME_GRAVIDADE[l.gravidade], areaDaLinha(l), nomeDaRegra(l), (l.motivos ?? []).map((m) => m.rotulo).join("; "), l.titulo, l.detalhe, l.justificativa ? "Sim" : ""]),
       },
     ],
   });

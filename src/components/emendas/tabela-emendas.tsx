@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
+import { PainelLista } from "@/components/emendas/painel-lista";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
@@ -14,13 +15,14 @@ import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
-import { brl, combinaSituacaoFinanceira, dataBr, etapasEmOrdem, infoEtapa, numeroVereador, SITUACOES_FINANCEIRAS } from "@/lib/emendas/regras";
+import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador, SITUACOES_FINANCEIRAS } from "@/lib/emendas/regras";
+import { filtrarEmendasLista, lerFiltrosLista } from "@/lib/emendas/painel-lista";
 import { ASSUNTO_DA_REGRA } from "@/lib/emendas/pendencias";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo, Secretaria, Vereador } from "@/types/emendas";
 
 const ESTILO_CAMPO =
-  "h-[38px] rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
+  "h-[38px] min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 
 const POR_PAGINA = 25;
 
@@ -38,10 +40,6 @@ function RegraFases({ resumo, cor }: { resumo?: ResumoLinha; cor: string }) {
       </div>
     </div>
   );
-}
-
-function normalizar(t: string) {
-  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 /** Lista de emendas: busca, filtros (na URL), ordenação, barra de andamento
@@ -69,52 +67,18 @@ export function TabelaEmendas({
   const pausaUrl = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [limite, setLimite] = React.useState(POR_PAGINA);
 
-  const f = {
-    v: params.get("v") ?? "",
-    s: params.get("s") ?? "",
-    etapa: params.get("etapa") ?? "",
-    t: params.get("t") ?? "",
-    p: params.get("p") ?? "",
-    situacao: params.get("situacao") ?? "",
-    fin: params.get("fin") ?? "",
-    sd: params.get("sd") ?? "",
-    cat: params.get("cat") ?? "",
-    rem: params.get("rem") ?? "",
-    pe: params.get("pe") ?? "",
-    ordem: params.get("ordem") ?? "numero",
-    numeros: (params.get("numeros") ?? "").split(",").filter(Boolean).map(Number),
-  };
+  const f = { ...lerFiltrosLista((k) => params.get(k), busca), ordem: params.get("ordem") ?? "numero" };
 
   function definir(m: Record<string, string>) {
     setLimite(POR_PAGINA);
     atualizarFiltrosNaUrl(params, m, pathname, (url) => router.replace(url, { scroll: false }));
   }
 
-  const q = normalizar(busca.trim());
-  const semTipo = emendas.filter(
-    (r) =>
-      (!f.p || (resumos[r.id]?.abertas ?? 0) > 0) &&
-      (!f.pe || (resumos[r.id]?.regras ?? []).includes(f.pe)) &&
-      (!f.fin || combinaSituacaoFinanceira(f.fin, r)) &&
-      (!f.sd || (f.sd === "1" ? r.saude : !r.saude)) &&
-      (!f.cat || r.beneficiario_categoria === f.cat) &&
-      (!f.rem || (f.rem === "1" ? r.remanejada : !r.remanejada)) &&
-      (!f.v || r.vereador_id === f.v) &&
-      (!f.s || r.secretaria_id === f.s) &&
-      (!f.situacao || r.situacao === f.situacao) &&
-      (f.numeros.length === 0 || f.numeros.includes(r.numero)) &&
-      (!q ||
-        q.split(/\s+/).every((parte) =>
-          normalizar(
-            [r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome, r.unidade_codigo, r.ficha ?? ""].join(" ")
-          ).includes(parte)
-        ))
-  );
+  // Os mesmos filtros alimentam a tabela e o dashboard; cada aba de tipo conta com todos os filtros, menos o de tipo.
+  const filtradas = filtrarEmendasLista(emendas, resumos, f);
+  const semTipo = filtrarEmendasLista(emendas, resumos, f, ["t"]);
   const porTipo = (t: string) => semTipo.filter((r) => tipoDaEmenda(r) === t);
-  const base = f.t ? porTipo(f.t) : semTipo;
   const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
-  const usadas = todasEtapas.filter((e) => base.some((r) => r.etapa === e.chave));
-  const filtradas = base.filter((r) => !f.etapa || r.etapa === f.etapa);
 
   const ordenadas = filtradas.slice().sort((a, b) => {
     switch (f.ordem) {
@@ -140,45 +104,8 @@ export function TabelaEmendas({
   }
   if (busca.trim()) exportar.set("q", busca.trim());
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Emendas de {ano}</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {filtradas.length} emendas · {brl(total)} indicados · {brl(pago)} pagos
-          </p>
-        </div>
-        <MenuExportar
-          opcoes={[
-            { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
-            { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
-          ]}
-        />
-      </div>
-
-      <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-200">
-        {[{ chave: "", nome: "Consolidado", cor: "#0C1D33", qtd: semTipo.length }, ...ORDEM_TIPOS.map((t) => ({ chave: t as string, nome: TIPOS_EXECUCAO[t].nome, cor: TIPOS_EXECUCAO[t].cor, qtd: porTipo(t).length }))].map((t) => (
-          <button
-            key={t.chave || "todos"}
-            type="button"
-            role="tab"
-            aria-selected={f.t === t.chave}
-            onClick={() => definir({ t: t.chave })}
-            className={cn(
-              "-mb-px inline-flex h-10 items-center gap-2 border-b-2 px-3.5 text-sm transition-colors",
-              f.t === t.chave ? "font-semibold text-cataguases-marinho" : "border-transparent text-slate-600 hover:text-cataguases-marinho"
-            )}
-            style={f.t === t.chave ? { borderBottomColor: t.cor } : undefined}
-          >
-            {t.chave && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />}
-            {t.nome}
-            <span className="tabular-nums text-slate-500">{t.qtd}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5">
+  const controles = (
+    <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600 sm:max-w-sm">
           Buscar
           <input
@@ -305,7 +232,48 @@ export function TabelaEmendas({
             <option value="parada">Há mais tempo sem mudança</option>
           </select>
         </label>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Emendas de {ano}</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            {filtradas.length} emendas · {brl(total)} indicados · {brl(pago)} pagos
+          </p>
+        </div>
+        <MenuExportar
+          opcoes={[
+            { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
+            { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
+          ]}
+        />
       </div>
+
+      <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-300">
+        {[{ chave: "", nome: "Consolidado", cor: "#0C1D33", qtd: semTipo.length }, ...ORDEM_TIPOS.map((t) => ({ chave: t as string, nome: TIPOS_EXECUCAO[t].nome, cor: TIPOS_EXECUCAO[t].cor, qtd: porTipo(t).length }))].map((t) => (
+          <button
+            key={t.chave || "todos"}
+            type="button"
+            role="tab"
+            aria-selected={f.t === t.chave}
+            onClick={() => definir({ t: t.chave })}
+            className={cn(
+              "-mb-px inline-flex h-11 items-center gap-2 rounded-t-lg border-b-[3px] px-4 text-sm transition-colors",
+              f.t === t.chave ? "font-semibold text-cataguases-marinho" : "border-transparent font-medium text-slate-700 hover:bg-slate-100 hover:text-cataguases-marinho"
+            )}
+            style={f.t === t.chave ? { borderBottomColor: t.cor, backgroundColor: `${t.cor}14` } : undefined}
+          >
+            {t.chave && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />}
+            {t.nome}
+            <span className="tabular-nums text-slate-500">{t.qtd}</span>
+          </button>
+        ))}
+      </div>
+
+      <PainelLista emendas={emendas} resumos={resumos} filtros={f} definir={definir} controles={controles} />
 
       {f.numeros.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900">
@@ -315,29 +283,6 @@ export function TabelaEmendas({
           </button>
         </div>
       )}
-
-      <div role="group" aria-label="Filtrar por etapa" className="flex flex-wrap gap-2">
-        {[{ chave: "", nome: "Todas", cor: "#0C1D33" }, ...usadas].map((e) => {
-          const ativo = f.etapa === e.chave;
-          const qtd = e.chave ? base.filter((r) => r.etapa === e.chave).length : base.length;
-          return (
-            <button
-              key={e.chave || "todas"}
-              type="button"
-              aria-pressed={ativo}
-              onClick={() => definir({ etapa: e.chave })}
-              className={cn(
-                "inline-flex h-[34px] items-center gap-2 rounded-full border px-3 text-[13px] transition-colors",
-                ativo ? "border-cataguases-marinho bg-cataguases-marinho text-white" : "border-slate-300 bg-white text-cataguases-marinho hover:bg-slate-50"
-              )}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: e.cor === "#CBD5E1" ? "#94A3B8" : e.cor }} aria-hidden />
-              {e.nome}
-              <span className="font-semibold tabular-nums">{qtd}</span>
-            </button>
-          );
-        })}
-      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full min-w-[1000px] border-collapse text-[13px]">

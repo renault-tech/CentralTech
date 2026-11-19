@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-21",
+    titulo: "Emendas: gráficos na lista, motivo das pendências e abas mais visíveis",
+    descricao:
+      "A aba Emendas ganhou um painel com pizza e ranking acima da lista: indicadores (emendas, valor indicado, empenhado e pago) e visões por etapa, tipo, vereador, secretaria, situação financeira, beneficiário, Saúde e pendência. Ele responde a todos os filtros que já existiam, e clicar numa fatia ou linha filtra a lista (no celular os filtros ficam recolhidos). Nas Pendências, cada assunto agora mostra o motivo exato — por exemplo, qual data está fora de ordem (pagamento antes do extrato, empenho antes do termo), quais itens da publicidade faltam, se a vigência está terminando ou encerrada —, com nova aba e filtro Motivo, chips nos cartões e no detalhe da emenda e uma aba no Excel. As abas do topo de Emendas, Frotas e Imóveis ficaram maiores, com a aba atual em destaque na cor do módulo.",
+  },
+  {
     data: "2026-11-20",
     titulo: "Emendas: gestor master e proteção do exercício encerrado",
     descricao:

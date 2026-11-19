@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { Pizza, PALETA, CINZA } from "@/components/emendas/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import {
@@ -14,6 +15,7 @@ import {
   nomeDaRegra,
   porArea,
   porAssunto,
+  porMotivo,
   porSecretaria,
   type ChaveFiltro,
   type EmendaPainel,
@@ -25,16 +27,14 @@ import {
 import { brlCurto, pct } from "@/lib/emendas/regras";
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
-/** Cores das fatias quando a dimensão não tem cor própria (área, assunto, secretaria, documento). */
-const PALETA = ["#6B4FBB", "#0E7490", "#C2410C", "#5C7A1F", "#BE185D", "#1D4ED8", "#A16207", "#0F766E"];
-const CINZA = "#94A3B8";
 const ZERO = { alta: 0, media: 0, baixa: 0, total: 0, emendas: 0, valor: 0 };
 
-type Visao = "area" | "gravidade" | "assunto" | "secretaria" | "tipo" | "documentos";
+type Visao = "area" | "gravidade" | "assunto" | "motivo" | "secretaria" | "tipo" | "documentos";
 const VISOES: { chave: Visao; rotulo: string; param?: ChaveFiltro }[] = [
   { chave: "area", rotulo: "Área", param: "a" },
   { chave: "gravidade", rotulo: "Gravidade", param: "g" },
   { chave: "assunto", rotulo: "Assunto", param: "r" },
+  { chave: "motivo", rotulo: "Motivo", param: "m" },
   { chave: "secretaria", rotulo: "Secretaria", param: "s" },
   { chave: "tipo", rotulo: "Tipo", param: "t" },
   { chave: "documentos", rotulo: "Documentos" },
@@ -54,97 +54,6 @@ type Item = {
 };
 
 const doGrupo = (g: Grupo, cor: string): Item => ({ chave: g.chave, rotulo: g.rotulo, n: g.total, valor: g.valor, cor, alta: g.alta, media: g.media, baixa: g.baixa });
-
-/** Pizza (anel) em SVG puro: cada fatia é um botão que filtra a lista; no centro, o total ou a fatia sob o cursor. */
-function Pizza({
-  fatias,
-  selecionada,
-  aoEscolher,
-  dinheiro,
-  rotuloTotal,
-}: {
-  fatias: { chave: string; rotulo: string; v: number; cor: string; clicavel: boolean }[];
-  selecionada: string;
-  aoEscolher: (chave: string) => void;
-  dinheiro: boolean;
-  rotuloTotal: string;
-}) {
-  const [sobre, setSobre] = React.useState<string | null>(null);
-  const R = 38;
-  const C = 2 * Math.PI * R;
-  const total = fatias.reduce((s, f) => s + f.v, 0);
-  const fmt = (v: number) => (dinheiro ? brlCurto(v) : String(v));
-  let acumulado = 0;
-  const arcos = fatias
-    .filter((f) => f.v > 0)
-    .map((f) => {
-      const comprimento = (f.v / total) * C;
-      const arco = { ...f, comprimento, inicio: acumulado };
-      acumulado += comprimento;
-      return arco;
-    })
-    // a fatia escolhida é desenhada por último: o traço mais grosso cobre os vizinhos, não o contrário
-    .sort((a, b) => Number(a.chave === selecionada) - Number(b.chave === selecionada));
-  const foco = fatias.find((f) => f.chave === (sobre ?? selecionada));
-  const corta = (t: string) => (t.length > 17 ? `${t.slice(0, 16)}…` : t);
-
-  return (
-    <svg viewBox="0 0 100 100" className="h-[196px] w-[196px] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
-      {total === 0 ? (
-        <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
-      ) : (
-        arcos.map((a) => {
-          const ativa = a.chave === selecionada;
-          const apagada = (selecionada || sobre) && !ativa && a.chave !== sobre;
-          return (
-            <circle
-              key={a.chave}
-              cx="50"
-              cy="50"
-              r={R}
-              fill="none"
-              stroke={a.cor}
-              strokeWidth={ativa || a.chave === sobre ? 19 : 15}
-              strokeDasharray={`${a.comprimento} ${C - a.comprimento}`}
-              strokeDashoffset={-a.inicio}
-              transform="rotate(-90 50 50)"
-              opacity={apagada ? 0.4 : 1}
-              className={`outline-none transition-[stroke-width,opacity] duration-150 motion-reduce:transition-none ${a.clicavel ? "cursor-pointer" : ""}`}
-              role={a.clicavel ? "button" : undefined}
-              tabIndex={a.clicavel ? 0 : undefined}
-              aria-pressed={a.clicavel ? ativa : undefined}
-              aria-label={`${a.rotulo}: ${fmt(a.v)} (${pct(a.v / total, 0)})`}
-              onMouseEnter={() => setSobre(a.chave)}
-              onMouseLeave={() => setSobre(null)}
-              onFocus={() => setSobre(a.chave)}
-              onBlur={() => setSobre(null)}
-              onClick={() => a.clicavel && aoEscolher(ativa ? "" : a.chave)}
-              onKeyDown={(e) => {
-                if (a.clicavel && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  aoEscolher(ativa ? "" : a.chave);
-                }
-              }}
-            />
-          );
-        })
-      )}
-      <g textAnchor="middle" className="pointer-events-none fill-current">
-        <text x="50" y={dinheiro ? 51 : 52} fontSize={dinheiro ? 8.2 : 17} fontWeight="600" className="tabular-nums">
-          {foco ? fmt(foco.v) : fmt(total)}
-        </text>
-        <text x="50" y="61" fontSize="4.6" opacity="0.7">
-          {foco ? corta(foco.rotulo) : rotuloTotal}
-        </text>
-        {foco && total > 0 && (
-          <text x="50" y="68" fontSize="4.6" opacity="0.7" className="tabular-nums">
-            {pct(foco.v / total, 0)}
-          </text>
-        )}
-      </g>
-    </svg>
-  );
-}
 
 /**
  * Painel de Pendências numa caixa só: filtros, indicadores, abas por dimensão e, abaixo delas, a pizza ao lado do
@@ -199,6 +108,9 @@ export function PainelPendencias({
         return porArea(sem("a", "r")).map((g, i) => doGrupo(g, PALETA[i % PALETA.length]));
       case "assunto":
         return porAssunto(sem("r")).map((g, i) => doGrupo(g, i < PALETA.length ? PALETA[i] : CINZA));
+      case "motivo":
+        // sem o próprio filtro de motivo; com um assunto escolhido o nome dele sai do rótulo (já está claro)
+        return porMotivo(sem("m"), !f.r).map((g, i) => doGrupo(g, i < PALETA.length ? PALETA[i] : CINZA));
       case "secretaria":
         return porSecretaria(sem("s")).map((g, i) => doGrupo(g, i < PALETA.length ? PALETA[i] : CINZA));
       case "documentos":
@@ -216,7 +128,7 @@ export function PainelPendencias({
     }
     // `sem` e `faltando` derivam de linhas/docs/filtros, que já estão nas dependências
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visao, linhas, docs, f.t, f.g, f.s, f.r, f.a, f.j, f.q]);
+  }, [visao, linhas, docs, f.t, f.g, f.s, f.r, f.a, f.m, f.j, f.q]);
 
   const def = VISOES.find((v) => v.chave === visao)!;
   const param = def.param;
@@ -226,7 +138,8 @@ export function PainelPendencias({
   const maximo = Math.max(1, ...itens.map(valorDe));
   const escolher = (chave: string) => {
     if (!param) return;
-    definir({ [param]: chave, ...(param === "a" ? { r: "" } : {}) });
+    // trocar de área ou de assunto zera o que estava abaixo dele (o motivo escolhido pode nem existir no assunto novo)
+    definir({ [param]: chave, ...(param === "a" ? { r: "", m: "" } : param === "r" ? { m: "" } : {}) });
   };
 
   // Pizza: as 8 maiores fatias e um "demais" agregado (não clicável) para não virar confete.
@@ -248,6 +161,7 @@ export function PainelPendencias({
     gravidade: f.g ? NOME_GRAVIDADE[f.g as Gravidade] : undefined,
     secretaria: secretarias.find((s) => s.id === f.s)?.nome,
     assunto: f.r ? nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r }) : undefined,
+    motivo: f.m ? linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo : undefined,
   });
 
   const celula = "min-w-0 px-5 py-3.5";
@@ -385,7 +299,7 @@ export function PainelPendencias({
                         return n;
                       });
                   }}
-                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] sm:grid-cols-[10px_minmax(0,11rem)_minmax(0,1fr)_auto_40px] items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
+                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] ${visao === "motivo" ? "sm:grid-cols-[10px_minmax(0,22rem)_minmax(0,1fr)_auto_40px]" : "sm:grid-cols-[10px_minmax(0,14rem)_minmax(0,1fr)_auto_40px]"} items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
                 >
@@ -418,6 +332,11 @@ export function PainelPendencias({
               </li>
             );
           })}
+          {visao === "motivo" && (
+            <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">
+              A causa específica de cada assunto (por exemplo, quais datas estão fora de ordem). Uma pendência pode ter mais de um motivo e conta em cada um; assuntos com causa única não aparecem aqui.
+            </li>
+          )}
           {visao === "documentos" && itens.length > 0 && (
             <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
           )}

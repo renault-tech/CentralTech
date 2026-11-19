@@ -6,7 +6,7 @@
  */
 
 import { baseDaPendencia } from "@/lib/emendas/base-legal";
-import { conflitoInstrumento } from "@/lib/emendas/categorias";
+import { conflitoInstrumento, INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import { bancoOficial, faltas, type ItemConformidade, type SituacaoRelatorio } from "@/lib/emendas/conformidade";
 import { datasForaDeOrdem, tipoDaEmenda, type FaseCalculada } from "@/lib/emendas/fases";
 import { brl, dataBr, diasAteFimDoAno, situacaoVigencia } from "@/lib/emendas/regras";
@@ -15,6 +15,9 @@ import { objetoDaDescricao } from "@/lib/emendas/objeto-da-descricao";
 import type { EmendaResumo, ExecucaoEmenda, Exercicio, PendenciaJustificada } from "@/types/emendas";
 
 export type Gravidade = "alta" | "media" | "baixa";
+
+/** Motivo específico dentro de um assunto (ex.: "Pagamento antes do extrato" em "Datas fora de ordem"). */
+export type Motivo = { chave: string; rotulo: string };
 
 export type Pendencia = {
   regra: string;
@@ -25,6 +28,11 @@ export type Pendencia = {
   assinatura: string;
   /** Aba do detalhe onde se resolve. */
   aba: "fases" | "documentacao" | "financeiro" | "execucao" | "transparencia" | "documentos";
+  /**
+   * O que, exatamente, causa a pendência. Um assunto agrupa várias causas (datas fora de ordem: quais datas;
+   * publicidade incompleta: quais itens). A chave começa pela da regra, então é única entre assuntos.
+   */
+  motivos?: Motivo[];
   /** Fundamento legal da regra, quando houver. */
   base?: string;
   justificativa?: string;
@@ -179,6 +187,11 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
         tipo === "direta"
           ? "Marcada como execução direta, mas a natureza é de transferência (grupo 50): confirmar o tipo ou a dotação."
           : "Marcada como repasse a OSC, mas a natureza é de aplicação direta (grupo 90): confirmar o tipo ou a dotação.",
+      motivos: [
+        tipo === "direta"
+          ? { chave: "tipo_incoerente:direta_com_repasse", rotulo: "Direta, mas a natureza é de repasse (50)" }
+          : { chave: "tipo_incoerente:osc_com_direta", rotulo: "Repasse a OSC, mas a natureza é de aplicação direta (90)" },
+      ],
       aba: "fases",
     });
   }
@@ -192,6 +205,12 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       titulo: "Instrumento incompatível com o beneficiário",
       detalhe: conflito,
       assinatura: `instrumento|${emenda.beneficiario_categoria}|${execucao?.instrumento ?? "termo_fomento"}`,
+      motivos: [
+        {
+          chave: `instrumento_incompativel:${emenda.beneficiario_categoria ?? "sem_categoria"}:${convenio ? "convenio" : "termo_fomento"}`,
+          rotulo: `${(emenda.beneficiario_categoria ? INFO_CATEGORIA[emenda.beneficiario_categoria]?.nome : null) ?? "Beneficiário"} com ${convenio ? "convênio" : "termo de fomento"}`,
+        },
+      ],
       aba: "execucao",
     });
   }
@@ -255,6 +274,15 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       detalhe: prestacao
         ? `${vig.texto}. Prestação de contas em até 90 dias do término (Lei 13.019, art. 69): ${depoisDeVencer} dia(s) decorridos.`
         : vig.texto,
+      motivos: [
+        !venceu
+          ? { chave: "vigencia:terminando", rotulo: "Vigência terminando" }
+          : prestacao && depoisDeVencer > 90
+            ? { chave: "vigencia:prestacao_atrasada", rotulo: "Encerrada há mais de 90 dias, sem prestação de contas" }
+            : prestacao
+              ? { chave: "vigencia:prestacao_no_prazo", rotulo: "Encerrada, prestação de contas no prazo de 90 dias" }
+              : { chave: "vigencia:encerrada", rotulo: "Vigência encerrada" },
+      ],
       aba: "execucao",
     });
   }
@@ -296,6 +324,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).${
         antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação." : ""
       }`,
+      motivos: [{ chave: `data_fora_de_ordem:${antes.fase.chave}>${depois.fase.chave}`, rotulo: `${depois.fase.nome} antes de ${antes.fase.nome}` }],
       aba: "fases",
     });
   }
@@ -374,6 +403,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
         titulo: iniciou ? "Execução sem publicidade completa (IN TCE-MG 05/2025)" : "Publicidade incompleta (IN TCE-MG 05/2025)",
         detalhe: `Faltam para a divulgação obrigatória: ${faltando.map((f) => `${f.codigo === "art5" ? "art. 5º" : `item ${f.codigo}`} — ${f.nome}`).join("; ")}.${iniciou ? " As informações devem ser divulgadas antes da execução (art. 7º, § 2º)." : ""}`,
         assinatura: `publicidade|${faltando.map((f) => f.codigo).join(",")}|${iniciou ? "exec" : "pre"}`,
+        motivos: faltando.map((f) => ({ chave: `publicidade_incompleta:${f.codigo}`, rotulo: `${f.codigo === "art5" ? "Art. 5º" : `Item ${f.codigo}`} — ${f.nome}` })),
         aba: "transparencia",
       });
     }
@@ -405,6 +435,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
         titulo: r.situacao === "vencido" ? `Relatório de gestão ${r.competencia} em atraso` : `Relatório de gestão ${r.competencia} vence em breve`,
         detalhe: `O relatório de gestão dos recursos de ${r.competencia} deve estar disponível até ${dataBr(r.prazo)} (IN TCE-MG 05/2025, art. 7º, X e § 1º). Anexe-o em Anexos, tipo “Relatório de gestão”, informando o ano.`,
         assinatura: `relatorio|${r.competencia}|${r.situacao}`,
+        motivos: [{ chave: `relatorio_gestao:${r.situacao}`, rotulo: r.situacao === "vencido" ? "Relatório em atraso" : "Relatório vence em breve" }],
         aba: "documentos",
       });
     }

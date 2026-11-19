@@ -530,6 +530,15 @@ export function AbaPendencias({
               Ir resolver
             </button>
           </div>
+          {!!p.motivos?.length && (
+            <p className="mt-1 flex flex-wrap gap-1.5">
+              {p.motivos.map((m) => (
+                <span key={m.chave} className="rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-xs text-slate-700">
+                  {m.rotulo}
+                </span>
+              ))}
+            </p>
+          )}
           <p className="mt-1 text-[13px] text-slate-700">{p.detalhe}</p>
           {p.base && <p className="mt-0.5 text-xs text-slate-500">Base legal: {p.base}</p>}
           {p.justificativa ? (

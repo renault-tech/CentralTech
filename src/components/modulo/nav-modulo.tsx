@@ -19,9 +19,10 @@ export type ItemNav = {
 
 /**
  * Faixa de navegação do módulo (abaixo do cabeçalho da Central) — a MESMA em todos os módulos.
- * Casa por prefixo (abrir uma emenda acende "Emendas"); o sublinhado e o selo usam a cor do módulo
- * (`--modulo` / `--modulo-texto`, definidas no layout). `acao` é o botão principal à direita
- * (ex.: "Nova emenda"). Alvos de toque de 44 px no celular.
+ * Casa por prefixo (abrir uma emenda acende "Emendas"). A aba ativa é uma pílula na cor do módulo (fundo suave,
+ * texto `--modulo-tinta` e barra de 3 px em `--modulo`), as demais têm texto escuro e realce ao passar o mouse;
+ * o selo usa `--modulo-texto` (definidas no layout). `acao` é o botão principal à direita (ex.: "Nova emenda").
+ * Alvos de toque de 44 px no celular.
  */
 export function NavModulo({
   itens,
@@ -40,9 +41,9 @@ export function NavModulo({
   const pathname = usePathname();
 
   return (
-    <div className="border-b border-slate-200 bg-white print:hidden">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 px-4 sm:px-6">
-        <nav className="-mb-px flex flex-wrap gap-x-1" aria-label={rotuloAria} data-tour={tour}>
+    <div className="border-b border-slate-300 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] print:hidden">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 px-3 py-1.5 sm:px-5">
+        <nav className="flex flex-wrap gap-1" aria-label={rotuloAria} data-tour={tour}>
           {itens.map((item) => {
             if (item.externo) {
               return (
@@ -51,7 +52,7 @@ export function NavModulo({
                   href={item.href}
                   target="_blank"
                   rel="noopener"
-                  className="inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] border-transparent px-3.5 text-sm text-slate-600 transition-colors duration-200 hover:text-cataguases-marinho"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-slate-100 hover:text-cataguases-marinho sm:min-h-10"
                 >
                   {item.rotulo}
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -66,10 +67,10 @@ export function NavModulo({
                 href={item.href}
                 aria-current={ativo ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-[3px] px-3.5 text-sm transition-colors duration-200",
+                  "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-colors duration-200 sm:min-h-10",
                   ativo
-                    ? "border-[color:var(--modulo)] font-semibold text-cataguases-marinho"
-                    : "border-transparent text-slate-600 hover:text-cataguases-marinho"
+                    ? "bg-[color-mix(in_srgb,var(--modulo)_13%,transparent)] font-semibold text-[color:var(--modulo-tinta)] shadow-[inset_0_-3px_0_0_var(--modulo)]"
+                    : "font-medium text-slate-700 hover:bg-slate-100 hover:text-cataguases-marinho"
                 )}
               >
                 {item.rotulo}
@@ -83,7 +84,7 @@ export function NavModulo({
             );
           })}
         </nav>
-        {acao && !(ocultarAcaoEm && pathname.startsWith(ocultarAcaoEm)) && <div className="my-1.5 print:hidden">{acao}</div>}
+        {acao && !(ocultarAcaoEm && pathname.startsWith(ocultarAcaoEm)) && <div className="print:hidden">{acao}</div>}
       </div>
     </div>
   );

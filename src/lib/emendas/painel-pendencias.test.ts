@@ -7,13 +7,14 @@ import {
   indicadores,
   porArea,
   porAssunto,
+  porMotivo,
   type EmendaPainel,
   type FiltrosPainel,
   type LinhaDocFaltando,
   type LinhaPendencia,
 } from "@/lib/emendas/painel-pendencias";
 
-const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", j: "", q: "" };
+const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" };
 const linha = (o: Partial<LinhaPendencia>): LinhaPendencia => ({
   emendaId: "e1", numero: 1, objeto: "Obra", valor: 1000, tipo: "osc", secretariaId: "s1", secretaria: "Saúde",
   regra: "vigencia:x", gravidade: "media", titulo: "Vigência", detalhe: "", ...o,
@@ -77,5 +78,27 @@ describe("painel de pendências", () => {
     expect(g[0].emendas.map((e) => e.numero)).toEqual([1, 2, 3]);
     expect(documentosFaltando(docs, { ...F, s: "s2" })).toHaveLength(1);
     expect(documentosFaltando(docs, { ...F, t: "ente" })[0].emendas).toHaveLength(1);
+  });
+
+  it("motivos: filtra, agrupa e conta a pendência em cada motivo que ela tem", () => {
+    const M = [
+      linha({ emendaId: "e1", numero: 1, regra: "data_fora_de_ordem:paga", titulo: "Datas fora de ordem", motivos: [{ chave: "data_fora_de_ordem:extrato>paga", rotulo: "Pagamento antes do extrato" }] }),
+      linha({ emendaId: "e2", numero: 2, regra: "data_fora_de_ordem:paga", titulo: "Datas fora de ordem", motivos: [{ chave: "data_fora_de_ordem:extrato>paga", rotulo: "Pagamento antes do extrato" }] }),
+      linha({ emendaId: "e3", numero: 3, regra: "data_fora_de_ordem:empenhada", titulo: "Datas fora de ordem", motivos: [{ chave: "data_fora_de_ordem:termo>empenhada", rotulo: "Empenho antes do termo" }] }),
+      linha({ emendaId: "e4", numero: 4, regra: "publicidade_incompleta", titulo: "Publicidade", motivos: [{ chave: "publicidade_incompleta:VIII", rotulo: "Item VIII" }, { chave: "publicidade_incompleta:X", rotulo: "Item X" }] }),
+      linha({ emendaId: "e5", numero: 5, regra: "empenho_maior", titulo: "Empenho" }),
+    ];
+    const g = porMotivo(filtrarPendencias(M, F));
+    expect(g.map((x) => [x.chave, x.total])).toEqual([
+      ["data_fora_de_ordem:extrato>paga", 2],
+      ["data_fora_de_ordem:termo>empenhada", 1],
+      ["publicidade_incompleta:VIII", 1],
+      ["publicidade_incompleta:X", 1],
+    ]);
+    expect(porMotivo(M, true)[0].rotulo).toBe("Datas fora de ordem · Pagamento antes do extrato");
+    const V = [linha({ emendaId: "e9", numero: 9, regra: "vigencia:a", titulo: "Vigência", motivos: [{ chave: "vigencia:encerrada", rotulo: "Vigência encerrada" }] })];
+    expect(porMotivo(V, true)[0].rotulo).toBe("Vigência encerrada");
+    expect(filtrarPendencias(M, { ...F, m: "publicidade_incompleta:X" }).map((l) => l.numero)).toEqual([4]);
+    expect(filtrarPendencias(M, { ...F, m: "publicidade_incompleta:X" }, ["m"])).toHaveLength(5);
   });
 });
