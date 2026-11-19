@@ -42,6 +42,32 @@ export function lerFiltrosLista(get: (k: string) => string | null | undefined, b
   };
 }
 
+/**
+ * Quanto uma emenda "combina" com o texto buscado (maior = mais perto). Número igual ao digitado vale mais que número que
+ * começa com ele, que vale mais que número que o contém; depois vêm as palavras do objeto, do beneficiário e do vereador
+ * (começo de palavra antes de meio de palavra). Com várias palavras, somam-se os pontos de cada uma.
+ * `q` já vem normalizado (sem acento, minúsculo); sem texto, tudo vale 0 e a ordem original se mantém.
+ */
+export function pontuarBusca(campos: { numero: number; objeto: string; outros: string[] }, q: string): number {
+  const partes = q.split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return 0;
+  const numero = String(campos.numero);
+  const objeto = normalizarTexto(campos.objeto);
+  const outros = normalizarTexto(campos.outros.join(" "));
+  const comecoDePalavra = (texto: string, parte: string) => texto.startsWith(parte) || texto.includes(` ${parte}`);
+  let total = 0;
+  for (const parte of partes) {
+    if (numero === parte) total += 1000;
+    else if (numero.startsWith(parte)) total += 700;
+    else if (numero.includes(parte)) total += 450;
+    else if (comecoDePalavra(objeto, parte)) total += 300;
+    else if (comecoDePalavra(outros, parte)) total += 200;
+    else if (objeto.includes(parte)) total += 100;
+    else if (outros.includes(parte)) total += 50;
+  }
+  return total;
+}
+
 /** Emendas que passam nos filtros. `ignorar` tira o próprio filtro de um gráfico, para ele mostrar todas as opções. */
 export function filtrarEmendasLista(
   emendas: EmendaResumo[],

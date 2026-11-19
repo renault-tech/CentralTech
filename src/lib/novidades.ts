@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-19",
+    titulo: "Busca de emendas mostra primeiro a que você digitou",
+    descricao:
+      "Ao buscar na lista de Emendas e em Pendências, a emenda cujo número é exatamente o digitado aparece no topo, seguida das que começam com ele, das que o contêm e das que combinam pelo texto (objeto, beneficiário, vereador, secretaria). Escolhendo outra ordem em “Ordenar por”, a ordem escolhida vale.",
+  },
+  {
+    data: "2026-11-19",
     titulo: "Trocar de aba nas Emendas ficou mais rápido",
     descricao:
       "Lista, Painel, Pendências, Conformidade, Panorama, Vereadores e Secretarias reaproveitam, por até 1 minuto, os dados que a aba anterior já carregou, em vez de consultar o banco do zero a cada troca. Cada pessoa tem o seu cache e continua vendo só o que as suas permissões liberam; ao gravar qualquer coisa, os dados são atualizados na hora. Uma alteração feita direto no banco pode levar até 1 minuto para aparecer.",

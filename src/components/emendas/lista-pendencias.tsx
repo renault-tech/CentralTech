@@ -10,6 +10,7 @@ import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelPendencias } from "@/components/emendas/painel-pendencias";
 import { filtrarPendencias, lerFiltros, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
+import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
 import { brl, dataBr } from "@/lib/emendas/regras";
 
 export type { LinhaPendencia };
@@ -30,7 +31,15 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   };
 
   const totalJustificadas = linhas.filter((l) => l.justificativa).length;
-  const filtradas = filtrarPendencias(linhas, { ...f, q: busca });
+  const achadas = filtrarPendencias(linhas, { ...f, q: busca });
+  // Com texto na busca, a emenda cujo número é o digitado vem primeiro, depois as mais parecidas; sem busca, a ordem de sempre.
+  const textoBusca = normalizarTexto(busca.trim());
+  const filtradas = textoBusca
+    ? achadas
+        .map((l, i) => ({ l, i, p: pontuarBusca({ numero: l.numero, objeto: l.objeto, outros: [l.secretaria] }, textoBusca) }))
+        .sort((a, b) => b.p - a.p || a.i - b.i)
+        .map((x) => x.l)
+    : achadas;
   const consultaExcel = (() => {
     const p = new URLSearchParams(params.toString());
     p.set("ano", String(ano));
