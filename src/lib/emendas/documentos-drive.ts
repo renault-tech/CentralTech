@@ -33,8 +33,6 @@ export const ROTULO_INSTRUMENTO: Record<Instrumento, string> = {
   termo_fomento: "Termo de fomento ou de colaboração",
   convenio: "Convênio (contrato de rateio)",
 };
-/** Nome curto do instrumento nos rótulos de campos e de fases. */
-export const NOME_CURTO_INSTRUMENTO: Record<Instrumento, string> = { termo_fomento: "termo", convenio: "convênio" };
 
 export type DocumentoDrive = {
   id: string;
