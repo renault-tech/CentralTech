@@ -177,3 +177,23 @@ describe("pendências financeiras novas", () => {
     expect(regras({ emenda: { ...emenda, etapa: "paga", pago: 5, empenhado: 5 } })).not.toContain("paga_sem_pagamento");
   });
 });
+
+describe("motivos das pendências", () => {
+  const motivos = (regra: string, o?: Partial<EntradaPendencias>) => pendencias(entrada(o)).find((p) => p.regra.split(":")[0] === regra)?.motivos?.map((m) => m.chave);
+  const exec = (vigencia_fim: string | null) => ({ numero_termo: "1/2026", vigencia_fim, data_publicacao_extrato: "2026-02-01", conta_bancaria: "BB" });
+
+  it("vigência: terminando, encerrada e encerrada sem prestação há mais de 90 dias são motivos diferentes", () => {
+    expect(motivos("vigencia", { execucao: exec("2026-11-10") })).toEqual(["vigencia:terminando"]);
+    expect(motivos("vigencia", { execucao: exec("2026-10-20") })).toEqual(["vigencia:prestacao_no_prazo"]);
+    expect(motivos("vigencia", { execucao: exec("2026-06-01") })).toEqual(["vigencia:prestacao_atrasada"]);
+  });
+
+  it("tipo incoerente diz para que lado está errado", () => {
+    expect(motivos("tipo_incoerente", { emenda: { ...emenda, tipo_execucao: "direta", modalidade: "repasse" } })).toEqual(["tipo_incoerente:direta_com_repasse"]);
+    expect(motivos("tipo_incoerente", { emenda: { ...emenda, tipo_execucao: "osc", modalidade: "direta" } })).toEqual(["tipo_incoerente:osc_com_direta"]);
+  });
+
+  it("assunto sem causas distintas não ganha motivo", () => {
+    expect(motivos("nao_iniciada")).toBeUndefined();
+  });
+});

@@ -9,7 +9,7 @@ import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelPendencias } from "@/components/emendas/painel-pendencias";
-import { areaDaLinha, chaveRegra, filtrarPendencias, lerFiltros, nomeDaRegra, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
+import { areaDaLinha, chaveRegra, filtrarPendencias, lerFiltros, nomeDaRegra, porMotivo, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { brl, dataBr } from "@/lib/emendas/regras";
 
@@ -49,6 +49,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   const regras = Array.from(new Set(linhas.map(chaveRegra)))
     .filter((r) => !f.a || areaDe(linhas.find((x) => chaveRegra(x) === r)!) === f.a)
     .sort((x, y) => nomeRegra(x).localeCompare(nomeRegra(y)));
+  // Motivos disponíveis: respondem a todos os filtros, menos ao próprio motivo.
+  const motivos = porMotivo(filtrarPendencias(linhas, { ...f, q: busca }, ["m"]), !f.r);
   const filtradas = filtrarPendencias(linhas, { ...f, q: busca });
   const consultaExcel = (() => {
     const p = new URLSearchParams(params.toString());
@@ -57,7 +59,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
     return p.toString();
   })();
 
-  const temFiltro = !!(f.t || f.g || f.s || f.r || f.a || f.j || busca.trim());
+  const temFiltro = !!(f.t || f.g || f.s || f.r || f.a || f.m || f.j || busca.trim());
   const campo = `${ESTILO_CAMPO} min-w-0 max-w-full`;
 
   const controles = (
@@ -86,7 +88,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
           </option>
         ))}
       </select>
-      <select aria-label="Assunto" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[200px]`} value={f.r} onChange={(e) => definir({ r: e.target.value })}>
+      <select aria-label="Assunto" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[200px]`} value={f.r} onChange={(e) => definir({ r: e.target.value, m: "" })}>
         <option value="">Todos os assuntos</option>
         {regras.map((r) => (
           <option key={r} value={r}>
@@ -94,6 +96,17 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
           </option>
         ))}
       </select>
+      {(motivos.length > 0 || f.m) && (
+        <select aria-label="Motivo" className={`${campo} max-sm:w-[calc(50%-0.25rem)] sm:w-[230px]`} value={f.m} onChange={(e) => definir({ m: e.target.value })}>
+          <option value="">Todos os motivos</option>
+          {f.m && !motivos.some((m) => m.chave === f.m) && <option value={f.m}>{f.m}</option>}
+          {motivos.map((m) => (
+            <option key={m.chave} value={m.chave}>
+              {m.rotulo} ({m.total})
+            </option>
+          ))}
+        </select>
+      )}
       <input
         type="search"
         aria-label="Buscar"
@@ -120,7 +133,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
           type="button"
           onClick={() => {
             setBusca("");
-            definir({ t: "", g: "", s: "", r: "", a: "", j: "", q: "" });
+            definir({ t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" });
           }}
           className="h-11 rounded-lg px-2.5 text-[13px] font-medium text-[#5B3FA8] hover:bg-violet-50 sm:h-9"
         >
@@ -166,6 +179,15 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
                 </span>
                 <span className="ml-auto text-xs tabular-nums text-slate-600">{brl(l.valor)}</span>
               </div>
+              {!!l.motivos?.length && (
+                <p className="mt-1 flex flex-wrap gap-1.5">
+                  {l.motivos.map((m) => (
+                    <span key={m.chave} className="rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-xs text-slate-700">
+                      {m.rotulo}
+                    </span>
+                  ))}
+                </p>
+              )}
               <p className="mt-0.5 text-[13px] text-slate-700">{l.detalhe}</p>
               {l.justificativa && (
                 <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">

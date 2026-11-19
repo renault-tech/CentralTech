@@ -20,7 +20,7 @@ export async function carregarPendencias(ano?: string | null) {
     const base = { emendaId: e.id, numero: e.numero, objeto: e.objeto, valor: e.valor, tipo: tipoDaEmenda(e), secretariaId: e.secretaria_id, secretaria: e.secretaria_nome };
     const c = calculos.get(e.id);
     for (const p of c?.pendencias ?? []) {
-      linhas.push({ ...base, regra: p.regra, gravidade: p.gravidade, titulo: p.titulo, detalhe: p.detalhe, base: p.base, justificativa: p.justificativa, justificadaEm: p.justificadaEm });
+      linhas.push({ ...base, regra: p.regra, gravidade: p.gravidade, titulo: p.titulo, detalhe: p.detalhe, motivos: p.motivos, base: p.base, justificativa: p.justificativa, justificadaEm: p.justificadaEm });
     }
     for (const d of c?.documentosFaltando ?? []) docs.push({ ...base, doc: d.tipo, rotulo: d.rotulo });
   }

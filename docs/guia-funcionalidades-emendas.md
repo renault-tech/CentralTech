@@ -29,6 +29,7 @@ Visão do exercício: régua do ano, um cartão por tipo de execução (direta, 
 ## 4. Emendas (lista e detalhe)
 
 - **Lista:** abas Consolidado / Direta / OSC / Ente, filtros que valem na hora (sem botão "filtrar"), faixa colorida pelo tipo, selo da categoria do beneficiário. Exporta Excel e PDF com os mesmos filtros.
+- **Painel da lista (gráficos):** acima da tabela, indicadores (emendas, valor indicado, empenhado, pago) e pizza com ranking por etapa, tipo, vereador, secretaria, situação financeira, beneficiário, Saúde e pendência, medidos em nº de emendas, valor indicado ou pago. Responde a todos os filtros da lista; clicar numa fatia ou linha aplica o filtro (clicar de novo limpa). Cada gráfico ignora o próprio filtro, para mostrar sempre todas as opções. No celular os filtros ficam recolhidos sob o botão "Filtros".
 - **Detalhe da emenda:** abas **Fases**, **Documentação**, **Pendências**, **Financeiro**, **Andamentos** e **Histórico**.
 - **Tipos de execução:** *direta* (a Prefeitura compra/executa), *OSC* (repasse a organização da sociedade civil por termo de fomento) e *ente* (repasse a hospital, consórcio, outro ente). Cada tipo tem o seu caminho de fases e a sua lista de documentos.
 - **Nova emenda:** o beneficiário escolhido sugere o tipo de execução e o instrumento (termo ou convênio); a pessoa pode trocar.
@@ -76,7 +77,8 @@ Os botões só aparecem para o gestor e **somente quando o valor correspondente 
 
 ## 8. Pendências
 
-- Tela `/emendas/pendencias`: painel com pizza e ranking por área, gravidade, assunto, secretaria, tipo e documentos faltando. Clicar numa fatia filtra a lista.
+- Tela `/emendas/pendencias`: painel com pizza e ranking por área, gravidade, assunto, motivo, secretaria, tipo e documentos faltando. Clicar numa fatia filtra a lista.
+- **Motivo:** o assunto agrupa várias causas, e cada pendência diz qual é a dela (ex.: em "Datas fora de ordem", se é pagamento antes do extrato ou empenho antes do termo; em "Publicidade incompleta", quais itens do art. 7º faltam; em "Vigência", terminando, encerrada ou encerrada há mais de 90 dias sem prestação). Há aba e filtro **Motivo** no painel, chips no cartão e no detalhe da emenda, e uma aba "Por motivo" no Excel. Uma pendência com mais de um motivo conta em cada um.
 - Exemplos de pendência: impedimento aberto, termo sem extrato, parceria sem conta específica, vigência vencida, emenda sem andamento, empenho sem publicidade completa, saldo a registrar, empenho a anular, excesso sem fonte.
 - Cada pendência pode ser **justificada**; a justificativa vale enquanto o dado não mudar. Exporta Excel e PDF.
 

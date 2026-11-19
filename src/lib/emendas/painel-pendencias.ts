@@ -3,7 +3,7 @@
  * Excel usam estas mesmas funções, então os números nunca divergem entre si.
  */
 
-import { ASSUNTO_DA_REGRA, AREAS_PENDENCIA, type Gravidade } from "@/lib/emendas/pendencias";
+import { ASSUNTO_DA_REGRA, AREAS_PENDENCIA, type Gravidade, type Motivo } from "@/lib/emendas/pendencias";
 import type { TipoExecucao } from "@/types/emendas";
 
 export type LinhaPendencia = {
@@ -18,6 +18,8 @@ export type LinhaPendencia = {
   gravidade: Gravidade;
   titulo: string;
   detalhe: string;
+  /** Causas específicas dentro do assunto (ver `Pendencia.motivos`). */
+  motivos?: Motivo[];
   base?: string;
   /** Pendência já justificada (fica fora da contagem, a menos que o filtro peça). */
   justificativa?: string;
@@ -41,8 +43,8 @@ export type LinhaDocFaltando = {
 /** Emenda do exercício (só o que o painel precisa), para dizer "X de Y emendas". */
 export type EmendaPainel = { id: string; numero: number; objeto: string; valor: number; tipo: TipoExecucao; secretariaId: string; secretaria: string };
 
-export type FiltrosPainel = { t: string; g: string; s: string; r: string; a: string; j: string; q: string };
-export type ChaveFiltro = keyof Pick<FiltrosPainel, "t" | "g" | "s" | "r" | "a">;
+export type FiltrosPainel = { t: string; g: string; s: string; r: string; a: string; m: string; j: string; q: string };
+export type ChaveFiltro = keyof Pick<FiltrosPainel, "t" | "g" | "s" | "r" | "a" | "m">;
 
 export const chaveRegra = (l: { regra: string }) => l.regra.split(":")[0];
 export const areaDaLinha = (l: { regra: string }) => ASSUNTO_DA_REGRA[chaveRegra(l)]?.area ?? "Cadastro";
@@ -70,7 +72,8 @@ export function filtrarPendencias(linhas: LinhaPendencia[], f: FiltrosPainel, ig
       combinaEmenda(l, f, ignorar) &&
       (ignorar?.includes("g") || !f.g || l.gravidade === f.g) &&
       (ignorar?.includes("a") || !f.a || areaDaLinha(l) === f.a) &&
-      (ignorar?.includes("r") || !f.r || chaveRegra(l) === f.r)
+      (ignorar?.includes("r") || !f.r || chaveRegra(l) === f.r) &&
+      (ignorar?.includes("m") || !f.m || (l.motivos ?? []).some((m) => m.chave === f.m))
   );
 }
 
@@ -119,6 +122,24 @@ export function porArea(linhas: LinhaPendencia[]): Grupo[] {
 export const porAssunto = (linhas: LinhaPendencia[]) => agruparPendencias(linhas, (l) => ({ chave: chaveRegra(l), rotulo: nomeDaRegra(l) }));
 export const porSecretaria = (linhas: LinhaPendencia[]) => agruparPendencias(linhas, (l) => ({ chave: l.secretariaId, rotulo: l.secretaria }));
 export const porTipo = (linhas: LinhaPendencia[]) => agruparPendencias(linhas, (l) => ({ chave: l.tipo, rotulo: l.tipo }));
+
+/**
+ * Pendências por motivo. Uma pendência pode ter mais de um motivo (publicidade: vários itens faltando) e então conta
+ * uma vez em cada; por isso a soma pode passar do total de pendências. Assuntos sem motivo específico ficam de fora.
+ * `comAssunto` prefixa o nome do assunto ("Datas fora de ordem · Pagamento antes do extrato"), útil quando vários
+ * assuntos aparecem juntos.
+ */
+export function porMotivo(linhas: LinhaPendencia[], comAssunto = false): Grupo[] {
+  const pares = linhas.flatMap((l) => (l.motivos ?? []).map((m) => ({ ...l, motivoDaLinha: m })));
+  const motivoDe = (l: LinhaPendencia) => (l as LinhaPendencia & { motivoDaLinha: Motivo }).motivoDaLinha;
+  return agruparPendencias(pares, (l) => {
+    const m = motivoDe(l);
+    const assunto = nomeDaRegra(l);
+    // "Vigência encerrada" já diz o assunto: não repete "Vigência (…) · Vigência encerrada"
+    const repete = m.rotulo.toLowerCase().startsWith(assunto.split(/[\s(]/)[0].toLowerCase());
+    return { chave: m.chave, rotulo: comAssunto && !repete ? `${assunto} · ${m.rotulo}` : m.rotulo };
+  });
+}
 
 export function porGravidade(linhas: LinhaPendencia[]): Record<Gravidade, number> {
   const r: Record<Gravidade, number> = { alta: 0, media: 0, baixa: 0 };
@@ -171,13 +192,14 @@ export function documentosFaltando(docs: LinhaDocFaltando[], f: FiltrosPainel): 
 }
 
 /** Texto curto dos filtros aplicados, para o cabeçalho da impressão e do Excel. */
-export function descreverFiltros(f: FiltrosPainel, nomes: { tipo?: string; secretaria?: string; gravidade?: string; assunto?: string }): string {
+export function descreverFiltros(f: FiltrosPainel, nomes: { tipo?: string; secretaria?: string; gravidade?: string; assunto?: string; motivo?: string }): string {
   const partes = [
     f.t && `tipo: ${nomes.tipo ?? f.t}`,
     f.g && `gravidade: ${nomes.gravidade ?? f.g}`,
     f.s && `secretaria: ${nomes.secretaria ?? f.s}`,
     f.a && `área: ${f.a}`,
     f.r && `assunto: ${nomes.assunto ?? f.r}`,
+    f.m && `motivo: ${nomes.motivo ?? f.m}`,
     f.q && `busca: ${f.q}`,
     f.j === "1" && "com justificadas",
   ].filter(Boolean);
@@ -186,5 +208,5 @@ export function descreverFiltros(f: FiltrosPainel, nomes: { tipo?: string; secre
 
 export function lerFiltros(get: (k: string) => string | null | undefined): FiltrosPainel {
   const v = (k: string) => get(k) ?? "";
-  return { t: v("t"), g: v("g"), s: v("s"), r: v("r"), a: v("a"), j: v("j"), q: v("q") };
+  return { t: v("t"), g: v("g"), s: v("s"), r: v("r"), a: v("a"), m: v("m"), j: v("j"), q: v("q") };
 }
