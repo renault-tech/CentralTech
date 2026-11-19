@@ -2,12 +2,6 @@ import { cnpjValido } from "@/lib/emendas/portal-verificacao";
 
 export type TipoBeneficiario = "entidade" | "orgao_publico" | "pessoa_fisica";
 
-export const NOME_TIPO_BENEFICIARIO: Record<TipoBeneficiario, string> = {
-  entidade: "Entidade",
-  orgao_publico: "Órgão público",
-  pessoa_fisica: "Pessoa física",
-};
-
 export function cpfValido(cpf: string): boolean {
   const d = cpf.replace(/\D/g, "");
   if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;

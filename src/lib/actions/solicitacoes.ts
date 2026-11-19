@@ -45,6 +45,8 @@ export type ResultadoRecusa = { sucesso: true } | { sucesso: false; erro: string
  * primeiro acesso (`generateLink`, sem depender de e-mail) quando a conta
  * correspondente acabou de ser criada.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function aprovarSolicitacao(
   solicitacaoId: string,
   decisoes: DecisaoAprovacao
@@ -53,6 +55,7 @@ export async function aprovarSolicitacao(
   if (!usuario?.admin_hub) {
     return { sucesso: false, erro: "Sem permissão para aprovar solicitações." };
   }
+  if (!UUID.test(String(solicitacaoId))) return { sucesso: false, erro: "Solicitação inválida." };
 
   const hub = await criarClienteServidor();
   const { data: solicitacao, error: erroSolicitacao } = await hub
@@ -171,11 +174,12 @@ export async function recusarSolicitacao(
   if (!usuario?.admin_hub) {
     return { sucesso: false, erro: "Sem permissão para recusar solicitações." };
   }
+  if (!UUID.test(String(solicitacaoId))) return { sucesso: false, erro: "Solicitação inválida." };
 
   const hub = await criarClienteServidor();
   const { error } = await hub.rpc("rejeitar_solicitacao", {
     p_id: solicitacaoId,
-    p_observacao: observacao || null,
+    p_observacao: observacao ? String(observacao).slice(0, 500) : null,
   });
 
   if (error) {

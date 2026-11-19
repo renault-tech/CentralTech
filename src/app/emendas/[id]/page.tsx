@@ -37,18 +37,18 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   const { id } = await params;
   const { aba } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const ctx = await obterContextoEmendas();
+  // O contexto (sessão, perfil) e as leituras que não dependem dele andam juntos: antes o detalhe só começava
+  // a buscar depois de o perfil voltar.
+  const promessaCtx = obterContextoEmendas();
+  const promessaBase = Promise.all([obterDetalheEmenda(id), obterCatalogoEtapas(), listarBeneficiarios(), listarUnidades(), listarFasesCatalogo(), listarVereadores()]);
+  promessaBase.catch(() => {}); // se o contexto mandar sair, o erro desta rodada não pode virar rejeição solta
+  const ctx = await promessaCtx;
   if (ctx.situacao !== "ok") redirect("/emendas");
 
-  // Tudo o que não depende do resultado do detalhe anda na mesma rodada
-  // (eram 3 etapas em cascata). A auditoria só é lida por gestor.
+  // A auditoria e as exclusões só são lidas por gestor.
   const gestor = ehGestor(ctx.perfil);
-  const [detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, auditoria, vereadores, exclusoes] = await Promise.all([
-    obterDetalheEmenda(id),
-    obterCatalogoEtapas(),
-    listarBeneficiarios(),
-    listarUnidades(),
-    listarFasesCatalogo(),
+  const [[detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, vereadores], auditoria, exclusoes] = await Promise.all([
+    promessaBase,
     gestor
       ? criarClienteEmendas().then((c) =>
           // Tudo o que mexeu nesta emenda: o cadastro (registro_id = emenda) e os registros filhos
@@ -61,7 +61,6 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             .limit(300)
         )
       : Promise.resolve({ data: [] }),
-    listarVereadores(),
     gestor
       ? criarClienteEmendas().then((c) =>
           c.from("exclusoes_justificadas").select("em,usuario_id,justificativa,tipo").eq("emenda_id", id).order("em", { ascending: false })
@@ -71,9 +70,11 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   if (!detalhe) notFound();
   const { emenda, andamentos, movimentos, execucao } = detalhe;
   const tipo = tipoDaEmenda(emenda);
-  const processoCompras = execucao?.processo_id ? await buscarProcessoPorId(execucao.processo_id).catch(() => null) : null;
-  const { exercicio } = await resolverExercicio(String(emenda.ano));
-  const pareceres = await listarPareceres(emenda.ano);
+  const [processoCompras, { exercicio }, pareceres] = await Promise.all([
+    execucao?.processo_id ? buscarProcessoPorId(execucao.processo_id).catch(() => null) : Promise.resolve(null),
+    resolverExercicio(String(emenda.ano)),
+    listarPareceres(emenda.ano),
+  ]);
   const calculo = calcularEmendas({
     emendas: [emenda],
     fasesCatalogo,

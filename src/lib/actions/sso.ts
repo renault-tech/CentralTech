@@ -23,6 +23,8 @@ import type { Modulo } from "@/types/database";
  *    em profundidade, não confia só na UI ter escondido o botão certo.
  */
 export async function abrirModulo(modulo: Modulo): Promise<void> {
+  // Server Action é chamável por qualquer navegador: o módulo vem de fora e só vale se estiver no catálogo.
+  if (typeof modulo !== "string" || !Object.hasOwn(MODULOS, modulo)) redirect("/");
   const usuario = await obterUsuarioAtual();
   if (!usuario) {
     redirect("/login");

@@ -141,12 +141,6 @@ export function porMotivo(linhas: LinhaPendencia[], comAssunto = false): Grupo[]
   });
 }
 
-export function porGravidade(linhas: LinhaPendencia[]): Record<Gravidade, number> {
-  const r: Record<Gravidade, number> = { alta: 0, media: 0, baixa: 0 };
-  for (const l of linhas) r[l.gravidade] += 1;
-  return r;
-}
-
 export type Indicadores = {
   pendencias: number;
   altas: number;

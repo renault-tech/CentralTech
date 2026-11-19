@@ -27,9 +27,8 @@ export default async function DetalheImovel({ params, searchParams }: { params: 
   const { id } = await params;
   const sp = await searchParams;
   const aba = ABAS.some(([k]) => k === sp.aba) ? (sp.aba as (typeof ABAS)[number][0]) : "contrato";
-  const ctx = await obterContextoImoveis();
+  const [ctx, t] = await Promise.all([obterContextoImoveis(), carregarTudo()]);
   const gestor = ctx.situacao === "ok" && ctx.gestor;
-  const t = await carregarTudo();
   const imovel = t.imoveis.find((i) => i.id === id);
   if (!imovel) notFound();
 

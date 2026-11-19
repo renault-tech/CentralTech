@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-19",
+    titulo: "Telas de emenda e de imóvel abrem mais rápido",
+    descricao:
+      "Os detalhes da emenda e do imóvel passaram a buscar o que precisam de uma vez só, em vez de uma coisa depois da outra. Também ficaram mais firmes as validações dos pedidos de acesso e do login direto, e saiu código sem uso.",
+  },
+  {
     data: "2026-11-23",
     titulo: "Filtros iguais em toda a plataforma",
     descricao:

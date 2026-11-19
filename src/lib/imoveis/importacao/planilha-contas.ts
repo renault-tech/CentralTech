@@ -166,5 +166,3 @@ export function enderecoEspecifico(e: string): boolean {
   const k = chave(e);
   return k.length >= 12 && /\d/.test(k) && !/^(rua|estrada|praca|avenida|av|r) (principal|s n|sn)\b/.test(k);
 }
-
-export const MESES_ROTULO = MESES;

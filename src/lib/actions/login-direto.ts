@@ -1,5 +1,6 @@
 "use server";
 
+import { MODULOS } from "@/lib/modulos-info";
 import { exigirAdminHub } from "@/lib/auth/exigir-admin";
 import { revalidatePath } from "next/cache";
 
@@ -34,6 +35,9 @@ export async function alternarBloqueioLoginDireto(
   bloqueado: boolean
 ): Promise<ResultadoLoginDireto> {
   // A RPC já exige admin; aqui a checagem vem antes do espelhamento com chave de serviço.
+  if (typeof modulo !== "string" || !Object.hasOwn(MODULOS, modulo) || typeof bloqueado !== "boolean") {
+    return { sucesso: false, erro: "Pedido inválido." };
+  }
   try {
     await exigirAdminHub();
   } catch {
