@@ -49,6 +49,9 @@ type Item = GrupoLista & { cor: string };
  * abas por dimensão e, abaixo, a pizza ao lado do ranking. Clicar numa fatia, linha ou aba aplica o filtro na lista;
  * cada visão ignora o próprio filtro para sempre mostrar todas as opções.
  */
+/** Linhas do ranking antes do "Ver todos" (sem rolagem interna, o scroll do mouse sempre move a página). */
+const LIMITE_LINHAS = 7;
+
 export function PainelLista({
   emendas,
   resumos,
@@ -69,6 +72,8 @@ export function PainelLista({
   const catalogo = useCatalogo();
   const [visao, setVisao] = React.useState<Visao>("etapa");
   const [medida, setMedida] = React.useState<Medida>("n");
+  /** Aba cuja lista está expandida (sem rolagem interna: o scroll do mouse sempre move a página). */
+  const [expandida, setExpandida] = React.useState<string | null>(null);
 
   const filtradas = filtrarEmendasLista(emendas, resumos, f);
   const tot = somar(filtradas, resumos);
@@ -143,6 +148,9 @@ export function PainelLista({
 
   const valorDe = (i: GrupoLista) => i[medida];
   const total = itens.reduce((s, i) => s + valorDe(i), 0);
+  // abre sozinha se o grupo escolhido estiver além do limite, para o filtro ativo nunca ficar escondido
+  const posSelecionada = selecionada ? itens.findIndex((i) => i.chave === selecionada) : -1;
+  const mostrarTodos = expandida === visao || posSelecionada >= LIMITE_LINHAS;
   const maximo = Math.max(1, ...itens.map(valorDe));
   const dinheiro = medida !== "n";
   const fmt = (v: number) => (dinheiro ? brlCurto(v) : String(v));
@@ -373,14 +381,15 @@ export function PainelLista({
           {medida === "pago" && "Valor pago: quanto já foi pago nas emendas de cada grupo."}
           {visao === "financeiro" && " Totalmente paga = pago igual ao valor da emenda; paga em parte = pagou algo, mas menos que o valor; empenhada, sem pagamento = reservada, nada pago."}
         </p>
-        <ul className="max-h-72 overflow-y-auto overscroll-contain py-1 lg:max-h-[16rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="py-1" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
-          {itens.map((i) => {
+          {itens.map((i, pos) => {
             const v = valorDe(i);
             const ativo = selecionada === i.chave;
+            const oculto = !mostrarTodos && pos >= LIMITE_LINHAS;
             const detalhe = `${i.n} emendas, ${brlCurto(i.valor)} indicados, ${brlCurto(i.pago)} pagos${i.comPendencia ? `, ${i.comPendencia} com pendência` : ""}`;
             return (
-              <li key={i.chave}>
+              <li key={i.chave} className={oculto ? "hidden print:list-item" : undefined}>
                 <button
                   type="button"
                   aria-pressed={ativo}
@@ -402,6 +411,18 @@ export function PainelLista({
               </li>
             );
           })}
+          {itens.length > LIMITE_LINHAS && posSelecionada < LIMITE_LINHAS && (
+            <li className="px-6 pb-1 pt-1 print:hidden">
+              <button
+                type="button"
+                onClick={() => setExpandida(mostrarTodos && expandida === visao ? null : visao)}
+                className="min-h-11 rounded-md px-2 text-sm font-medium text-[color:var(--modulo-tinta)] hover:bg-slate-50 sm:min-h-8"
+                aria-expanded={mostrarTodos}
+              >
+                {mostrarTodos ? "Mostrar menos" : `Ver todos (${itens.length})`}
+              </button>
+            </li>
+          )}
           {visao === "pendencia" && itens.length > 0 && (
             <li className="px-6 pb-1 pt-2 text-xs text-slate-600">Uma emenda com mais de uma pendência conta em cada assunto. Para o detalhe, abra a aba Pendências.</li>
           )}

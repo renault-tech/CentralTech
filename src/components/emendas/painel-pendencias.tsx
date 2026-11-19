@@ -61,6 +61,9 @@ const doGrupo = (g: Grupo, cor: string): Item => ({ chave: g.chave, rotulo: g.ro
  * ranking. Tudo responde aos mesmos filtros da lista, e escolher uma fatia/linha filtra a lista. Cada visão ignora o
  * próprio filtro para sempre mostrar todas as opções.
  */
+/** Linhas do ranking antes do "Ver todos" (sem rolagem interna, o scroll do mouse sempre move a página). */
+const LIMITE_LINHAS = 7;
+
 export function PainelPendencias({
   linhas,
   docs,
@@ -87,6 +90,8 @@ export function PainelPendencias({
   const [visao, setVisao] = React.useState<Visao>("area");
   const [medida, setMedida] = React.useState<"n" | "valor">("n");
   const [abertos, setAbertos] = React.useState<Set<string>>(new Set());
+  /** Aba cuja lista está expandida (sem rolagem interna: o scroll do mouse sempre move a página). */
+  const [expandida, setExpandida] = React.useState<string | null>(null);
 
   const sem = (...c: ChaveFiltro[]) => filtrarPendencias(linhas, f, c);
   const filtradas = filtrarPendencias(linhas, f);
@@ -138,6 +143,9 @@ export function PainelPendencias({
   const selecionada = param ? f[param] : "";
   const valorDe = (i: Item) => (medida === "n" ? i.n : i.valor);
   const total = itens.reduce((s, i) => s + valorDe(i), 0);
+  // abre sozinha se o grupo escolhido estiver além do limite, para o filtro ativo nunca ficar escondido
+  const posSelecionada = selecionada ? itens.findIndex((i) => i.chave === selecionada) : -1;
+  const mostrarTodos = expandida === visao || posSelecionada >= LIMITE_LINHAS;
   const maximo = Math.max(1, ...itens.map(valorDe));
   const escolher = (chave: string) => {
     if (!param) return;
@@ -290,16 +298,17 @@ export function PainelPendencias({
           <Pizza fatias={fatias} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
         </div>
 
-        <ul className="max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="py-2" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
-          {itens.map((i) => {
+          {itens.map((i, pos) => {
             const v = valorDe(i);
             const ativo = selecionada === i.chave;
+            const oculto = !mostrarTodos && pos >= LIMITE_LINHAS;
             const aberto = abertos.has(i.chave);
             const clicavel = !!param || !!i.emendas;
             const detalhe = `${i.n} ${visao === "documentos" ? "emendas" : "pendências"}${param ? ` (${i.alta} altas, ${i.media} médias, ${i.baixa} baixas)` : ""}, ${brlCurto(i.valor)}`;
             return (
-              <li key={i.chave}>
+              <li key={i.chave} className={oculto ? "hidden print:list-item" : undefined}>
                 <button
                   type="button"
                   disabled={!clicavel}
@@ -350,6 +359,18 @@ export function PainelPendencias({
               </li>
             );
           })}
+          {itens.length > LIMITE_LINHAS && posSelecionada < LIMITE_LINHAS && (
+            <li className="px-6 pb-1 pt-1 print:hidden">
+              <button
+                type="button"
+                onClick={() => setExpandida(mostrarTodos && expandida === visao ? null : visao)}
+                className="min-h-11 rounded-md px-2 text-sm font-medium text-[color:var(--modulo-tinta)] hover:bg-slate-50 sm:min-h-8"
+                aria-expanded={mostrarTodos}
+              >
+                {mostrarTodos ? "Mostrar menos" : `Ver todos (${itens.length})`}
+              </button>
+            </li>
+          )}
           {visao === "motivo" && (
             <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">
               A causa específica de cada assunto (por exemplo, quais datas estão fora de ordem). Uma pendência pode ter mais de um motivo e conta em cada um; assuntos com causa única não aparecem aqui.

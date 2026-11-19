@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-19",
+    titulo: "Emendas e Pendências: o scroll do mouse funciona sobre os gráficos",
+    descricao:
+      "A lista ao lado da pizza deixou de ter rolagem própria, que prendia o scroll do mouse. Agora ela mostra os 7 primeiros itens e um botão \"Ver todos\" abre o resto; a página rola normalmente em qualquer ponto e os cliques nos filtros continuam iguais.",
+  },
+  {
+    data: "2026-11-19",
     titulo: "Busca de emendas mostra primeiro a que você digitou",
     descricao:
       "Ao buscar na lista de Emendas e em Pendências, a emenda cujo número é exatamente o digitado aparece no topo, seguida das que começam com ele, das que o contêm e das que combinam pelo texto (objeto, beneficiário, vereador, secretaria). Escolhendo outra ordem em “Ordenar por”, a ordem escolhida vale.",

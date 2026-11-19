@@ -2181,3 +2181,8 @@ Medido nos logs da Vercel (projeto `centraltech`, produção): cada aba (Painel,
 ## Entrada de documentos novos do Drive (19/11/2026)
 
 Procedimento fixo, decidido com o dono, em `docs/procedimento-documentos-novos.md`: ler o documento e identificar a emenda; tarjar (PyMuPDF, CPF/RG) e subir a cópia na pasta PUBLICIDADE com o nome padrão (`E{NNN} - TERMO - {NNN}-2026 (versao publica).pdf`, etc.); ligar **a cópia da PUBLICIDADE** em `emendas.documentos_drive`; mover o original para "Já adicionados a plataforma" (subpasta da secretaria). Extrato não leva tarja. Projeto Superação fica parado; o contrato de rateio do Cisum não é o instrumento das emendas 93, 126 e 162 (objeto = custeio do consórcio; a cláusula 12.3 exclui exames e consultas extra cota, pagos por nota fiscal), então não se tarja nem se liga. 19/11: E020 (termo 70) e E176 (termo 71) feitos; extrato do termo 157 (R$ 40.206,83) aguarda o dono indicar a emenda.
+
+## Rolagem sobre os gráficos de Emendas e Pendências (19/11/2026)
+
+O ranking ao lado da pizza (`painel-lista.tsx`, `painel-pendencias.tsx`) tinha `overflow-y-auto overscroll-contain` com altura máxima: o mouse sobre a lista prendia o scroll e a página não andava. Agora **não há rolagem interna**: `LIMITE_LINHAS = 7` linhas e um botão "Ver todos (N)" / "Mostrar menos" (estado `expandida` = aba aberta; abre sozinho se o grupo escolhido estiver além do limite). As linhas além do limite usam `hidden print:list-item` (a impressão sai completa). **Lista nova ao lado de gráfico = sem `overflow-y` com altura fixa**; o scroll do mouse tem que sempre mover a página. Não verificado no navegador (sandbox sem sessão).
+
