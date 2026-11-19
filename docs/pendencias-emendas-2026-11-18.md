@@ -7,6 +7,8 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 ## Feito em 19/11/2026
 - **E020 (termo 70/2026, R$ 10.000) e E176 (termo 71/2026, R$ 15.000)**, Esporte Clube São José: termos tarjados (CPF/RG), cópias na PUBLICIDADE/TERMO e ligados na plataforma; originais movidos para "Já adicionados a plataforma / Esporte". Faltam plano e extrato das duas.
 - Procedimento padrão de entrada de documentos salvo e lista de documentos faltando gerada (73 emendas com falta, 177 documentos).
+- Informado pelo dono: **notificações às entidades enviadas** para abrirem conta em instituição pública (A12/C13; as contas novas serão necessárias para corrigir cadastro, termos e documentos, item C16 da planilha); **extratos do A25 ajustados**; **botões de conciliação definidos** para D08, para o item dos arredondamentos e para N2 (o gestor ainda precisa registrar nas emendas: hoje 0 conciliações no banco).
+- Planilha da CGM atualizada: `docs/pendencias-em-aberto-cgm-2026-11-19.xlsx` (A12 aguardando as entidades; C13, A25, arredondamentos e N2 resolvidos; D08 em andamento; novos C16 e D22).
 
 ## A. Documentos (Drive e plataforma)
 1. **Extrato do E168 (termo 110/2026)**: o recorte recebido veio cortado (sem dotação, data e assinatura), inclusive o que está em "Extrato termo 125.pdf" (recorte misto com o E169, que já tem extrato próprio). Pedir o recorte completo da edição de 30/08/2026.
