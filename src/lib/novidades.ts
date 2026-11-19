@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-19",
+    titulo: "Emendas: filtro Beneficiário, Panorama e Conformidade mais claros",
+    descricao:
+      "A aba “Beneficiário” do painel da lista de Emendas voltou a mostrar as categorias (OSC, Saúde/SUS, consórcio, ente público, órgão municipal, pessoa física): a lista não trazia essa informação. O Panorama aproveita melhor a tela, com os quatro quadros lado a lado e o quadro por secretaria, vereador ou tipo em abas. A Conformidade ganhou uma explicação do que a tela faz e como usar, e as emendas mostram o nome do item que falta em vez do número romano.",
+  },
+  {
+    data: "2026-11-19",
     titulo: "Telas de emenda e de imóvel abrem mais rápido",
     descricao:
       "Os detalhes da emenda e do imóvel passaram a buscar o que precisam de uma vez só, em vez de uma coisa depois da outra. Também ficaram mais firmes as validações dos pedidos de acesso e do login direto, e saiu código sem uso.",

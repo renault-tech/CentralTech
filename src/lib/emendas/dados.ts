@@ -121,7 +121,7 @@ export async function resolverExercicio(anoParam?: string | null): Promise<{ exe
 const COLUNAS_RESUMO =
   "id,ano,numero,numero_vereador,objeto,valor,saude,modalidade,tipo_execucao,etapa,situacao,etapa_atualizada_em,criado_em,atualizado_em," +
   "funcional_programatica,natureza_despesa,dotacao_texto,ficha,vereador_id,vereador_numero,vereador_nome," +
-  "beneficiario_id,beneficiario_nome,beneficiario_cnpj,unidade_id,unidade_codigo,unidade_nome,secretaria_id,secretaria_nome," +
+  "beneficiario_id,beneficiario_nome,beneficiario_cnpj,beneficiario_categoria,unidade_id,unidade_codigo,unidade_nome,secretaria_id,secretaria_nome," +
   "empenhado,liquidado,pago,ultimo_pagamento,remanejada,impedimentos_abertos";
 
 /** `comDescricao` só para a exportação; nas telas `descricao` vem vazia. */
