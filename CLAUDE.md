@@ -2177,3 +2177,7 @@ Medido nos logs da Vercel (projeto `centraltech`, produção): cada aba (Painel,
 ## Busca por relevância (19/11/2026)
 
 `pontuarBusca` (`lib/emendas/painel-lista.ts`, testada em `busca-relevancia.test.ts`): número igual ao digitado (1000) > começa com (700) > contém (450) > começo de palavra no objeto (300) / em beneficiário, vereador, secretaria, unidade, ficha (200) > meio de palavra (100/50); várias palavras somam. A lista de Emendas (ordem padrão "Número") e Pendências ordenam por isso quando há texto na busca; empate cai na ordem de antes. Outra ordem escolhida em "Ordenar por" prevalece. Busca nova em outra tela = reutilizar `pontuarBusca`.
+
+## Entrada de documentos novos do Drive (19/11/2026)
+
+Procedimento fixo, decidido com o dono, em `docs/procedimento-documentos-novos.md`: ler o documento e identificar a emenda; tarjar (PyMuPDF, CPF/RG) e subir a cópia na pasta PUBLICIDADE com o nome padrão (`E{NNN} - TERMO - {NNN}-2026 (versao publica).pdf`, etc.); ligar **a cópia da PUBLICIDADE** em `emendas.documentos_drive`; mover o original para "Já adicionados a plataforma" (subpasta da secretaria). Extrato não leva tarja. Projeto Superação fica parado; o contrato de rateio do Cisum não é o instrumento das emendas 93, 126 e 162 (objeto = custeio do consórcio; a cláusula 12.3 exclui exames e consultas extra cota, pagos por nota fiscal), então não se tarja nem se liga. 19/11: E020 (termo 70) e E176 (termo 71) feitos; extrato do termo 157 (R$ 40.206,83) aguarda o dono indicar a emenda.
