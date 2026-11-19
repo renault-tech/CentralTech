@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 
 import { TipoSelo } from "@/components/emendas/tipo-selo";
@@ -10,7 +9,7 @@ import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelPendencias } from "@/components/emendas/painel-pendencias";
 import { filtrarPendencias, lerFiltros, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
-import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
+import { useFiltrosUrl } from "@/components/emendas/use-filtros-url";
 import { brl, dataBr } from "@/lib/emendas/regras";
 
 export type { LinhaPendencia };
@@ -21,15 +20,13 @@ const ESTILO_CAMPO =
 const POR_PAGINA = 40;
 
 export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { linhas: LinhaPendencia[]; docs: LinhaDocFaltando[]; emendas: EmendaPainel[]; secretarias: { id: string; nome: string }[]; ano: number }) {
-  const params = useSearchParams();
-  const pathname = usePathname();
+  const { params, definir: definirUrl } = useFiltrosUrl("emendas-pendencias", String(ano));
   const [limite, setLimite] = React.useState(POR_PAGINA);
-  const [busca, setBusca] = React.useState(params.get("q") ?? "");
-  const pausaUrl = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const busca = params.get("q") ?? "";
   const f = lerFiltros((k) => params.get(k));
   const definir = (m: Record<string, string>) => {
     setLimite(POR_PAGINA);
-    atualizarFiltrosNaUrl(params, m, pathname, () => {});
+    definirUrl(m);
   };
 
   const totalJustificadas = linhas.filter((l) => l.justificativa).length;
@@ -42,7 +39,6 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   })();
 
   function limparTudo() {
-    setBusca("");
     definir({ t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" });
   }
 
@@ -59,12 +55,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
           placeholder="Buscar nº, objeto ou secretaria"
           className={`${ESTILO_CAMPO} w-full pl-9`}
           onChange={(e) => {
-            setBusca(e.target.value);
             setLimite(POR_PAGINA);
-            // o filtro local é imediato; só a gravação na URL espera uma pausa na digitação
-            const texto = e.target.value.trim();
-            if (pausaUrl.current) clearTimeout(pausaUrl.current);
-            pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
+            definirUrl({ q: e.target.value }, true);
           }}
         />
       </label>
