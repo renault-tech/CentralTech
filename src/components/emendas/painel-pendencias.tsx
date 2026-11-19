@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { FiltrosAtivos, type FiltroAtivo } from "@/components/emendas/filtros-ativos";
 import { Pizza, PALETA, CINZA } from "@/components/emendas/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
@@ -69,6 +70,7 @@ export function PainelPendencias({
   definir,
   ano,
   controles,
+  aoLimparTudo,
 }: {
   linhas: LinhaPendencia[];
   docs: LinhaDocFaltando[];
@@ -79,6 +81,7 @@ export function PainelPendencias({
   ano: number;
   /** Linha de filtros (selects, busca, exportar), desenhada pela lista para dividir o mesmo estado. */
   controles: React.ReactNode;
+  aoLimparTudo: () => void;
 }) {
   const f = filtros;
   const [visao, setVisao] = React.useState<Visao>("area");
@@ -174,7 +177,22 @@ export function PainelPendencias({
         <span style={{ width: `${filtradas.length ? (baixa / filtradas.length) * 100 : 0}%`, backgroundColor: COR.baixa }} />
       </div>
 
-      <div className="border-b border-slate-200 px-3 py-2.5 print:hidden">{controles}</div>
+      <div className="border-b border-slate-200 px-4 py-3 print:hidden">{controles}</div>
+      <FiltrosAtivos
+        filtros={
+          [
+            f.t && { chave: "t", rotulo: `Tipo: ${TIPOS_EXECUCAO[f.t as keyof typeof TIPOS_EXECUCAO]?.nome ?? f.t}` },
+            f.g && { chave: "g", rotulo: `Gravidade: ${NOME_GRAVIDADE[f.g as Gravidade] ?? f.g}` },
+            f.s && { chave: "s", rotulo: `Secretaria: ${secretarias.find((x) => x.id === f.s)?.nome ?? f.s}` },
+            f.a && { chave: "a", rotulo: `Área: ${f.a}` },
+            f.r && { chave: "r", rotulo: `Assunto: ${nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r })}` },
+            f.m && { chave: "m", rotulo: `Motivo: ${linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo ?? f.m}` },
+            f.j === "1" && { chave: "j", rotulo: "Com justificadas" },
+          ].filter(Boolean) as FiltroAtivo[]
+        }
+        aoRemover={(k) => definir({ [k]: "", ...(k === "a" ? { r: "", m: "" } : k === "r" ? { m: "" } : {}) })}
+        aoLimparTudo={aoLimparTudo}
+      />
       <p className="hidden border-b border-slate-200 px-4 py-2 text-xs text-slate-600 print:block">
         Exercício {ano} · Filtros: {descricao} · Gerado em {new Date().toLocaleDateString("pt-BR")}
       </p>
@@ -241,7 +259,7 @@ export function PainelPendencias({
                 aria-controls="painel-pend-corpo"
                 tabIndex={ativa ? 0 : -1}
                 onClick={() => setVisao(v.chave)}
-                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
+                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[0.8125rem] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
                   ativa ? "text-cataguases-marinho" : "text-slate-600 hover:text-cataguases-marinho"
                 } ${ativa ? "print:block" : "print:hidden"}`}
               >
@@ -299,12 +317,12 @@ export function PainelPendencias({
                         return n;
                       });
                   }}
-                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] ${visao === "motivo" ? "sm:grid-cols-[10px_minmax(0,22rem)_minmax(0,1fr)_auto_40px]" : "sm:grid-cols-[10px_minmax(0,14rem)_minmax(0,1fr)_auto_40px]"} items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
+                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] ${visao === "motivo" ? "sm:grid-cols-[10px_minmax(9rem,24rem)_minmax(0,1fr)_auto_40px]" : "sm:grid-cols-[10px_minmax(9rem,16rem)_minmax(0,1fr)_auto_40px]"} items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
-                  <span className="truncate text-[13px] text-cataguases-marinho">{i.rotulo}</span>
+                  <span className="text-sm leading-snug text-cataguases-marinho">{i.rotulo}</span>
                   <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
                     {param && medida === "n" ? (
                       (["alta", "media", "baixa"] as const).map((g) => <span key={g} style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
@@ -312,7 +330,7 @@ export function PainelPendencias({
                       <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                     )}
                   </span>
-                  <span className="whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
+                  <span className="whitespace-nowrap text-right text-[0.8125rem] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                 </button>
                 {i.emendas && aberto && (

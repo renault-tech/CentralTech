@@ -116,7 +116,7 @@ export function ImportadorAjustes({ anos }: { anos: number[] }) {
 
             {c.alteradas.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full min-w-[640px] border-collapse text-[13px]">
+                <table className="w-full min-w-[640px] border-collapse text-[0.8125rem]">
                   <caption className="bg-slate-50 px-3 py-2 text-left text-xs font-semibold text-slate-700">Emendas alteradas</caption>
                   <tbody>
                     {c.alteradas.map((a) => (

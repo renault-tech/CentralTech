@@ -38,9 +38,9 @@ export default async function PaginaVereadores({ searchParams }: { searchParams:
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <span className="font-mono text-xs text-slate-500">nº {numeroVereador(l.numero)}</span>
-                  <h2 className="text-[15px] font-semibold text-cataguases-marinho group-hover:text-[#4C3494]">{l.nome}</h2>
+                  <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho group-hover:text-[#4C3494]">{l.nome}</h2>
                 </div>
-                <span className={cn("rounded-full px-2 py-0.5 text-[11px]", ok ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900")}>
+                <span className={cn("rounded-full px-2 py-0.5 text-[0.6875rem]", ok ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900")}>
                   Saúde {pct(l.saude / exercicio.cota_por_vereador, 0)}
                 </span>
               </div>

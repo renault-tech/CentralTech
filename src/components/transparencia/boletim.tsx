@@ -35,12 +35,12 @@ export function CadastroBoletim({ vereadores, vereadorAtual }: { vereadores: str
             <Mail className="h-5 w-5" aria-hidden />
           </span>
           <h2 className="portal-titulo-secao mt-4">Receba as novidades por e-mail</h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-[var(--p-tinta-2)]">
+          <p className="mt-2 text-[0.9375rem] leading-relaxed text-[var(--p-tinta-2)]">
             Uma vez por dia, só quando algo muda: nova emenda, empenho, pagamento ou mudança de fase. De todas as emendas ou só das de um vereador.
           </p>
         </div>
         {resp?.ok ? (
-          <p role="status" className="rounded-2xl bg-[var(--p-acento-suave)] p-5 text-[15px] font-medium text-[var(--p-tinta)]">
+          <p role="status" className="rounded-2xl bg-[var(--p-acento-suave)] p-5 text-[0.9375rem] font-medium text-[var(--p-tinta)]">
             {resp.mensagem}
           </p>
         ) : (
@@ -62,14 +62,14 @@ export function CadastroBoletim({ vereadores, vereadorAtual }: { vereadores: str
                 </select>
               </label>
             </div>
-            <label className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--p-tinta-2)]">
+            <label className="flex items-start gap-2.5 text-[0.8125rem] leading-snug text-[var(--p-tinta-2)]">
               <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[var(--p-acento)]" />
               <span>
                 Autorizo o uso do meu e-mail somente para o envio deste boletim. Posso cancelar a qualquer momento pelo link em cada mensagem (Lei 13.709/2018 — LGPD).
               </span>
             </label>
             {resp && !resp.ok && (
-              <p role="alert" className="text-[13px] font-medium text-[var(--e-impedida)]">
+              <p role="alert" className="text-[0.8125rem] font-medium text-[var(--e-impedida)]">
                 {resp.mensagem}
               </p>
             )}

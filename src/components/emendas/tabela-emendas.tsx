@@ -3,23 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { PainelLista } from "@/components/emendas/painel-lista";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
-import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import { atualizarFiltrosNaUrl } from "@/lib/filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
-import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador, SITUACOES_FINANCEIRAS } from "@/lib/emendas/regras";
+import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
 import { filtrarEmendasLista, lerFiltrosLista } from "@/lib/emendas/painel-lista";
-import { ASSUNTO_DA_REGRA } from "@/lib/emendas/pendencias";
 import { cn } from "@/lib/utils";
-import type { EmendaResumo, Secretaria, Vereador } from "@/types/emendas";
+import type { EmendaResumo } from "@/types/emendas";
 
 const ESTILO_CAMPO =
   "h-[38px] min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -46,18 +45,15 @@ function RegraFases({ resumo, cor }: { resumo?: ResumoLinha; cor: string }) {
  * por linha. A planilha antiga, só que viva. */
 export function TabelaEmendas({
   emendas,
-  vereadores,
-  secretarias,
   resumos,
   ano,
-  anos,
+  podeCriar,
 }: {
   emendas: EmendaResumo[];
   resumos: Record<string, ResumoLinha>;
-  vereadores: Vereador[];
-  secretarias: Secretaria[];
   ano: number;
-  anos: number[];
+  /** Gestor: mostra "Nova emenda" na linha do título (antes ficava sozinho numa linha da faixa de abas). */
+  podeCriar: boolean;
 }) {
   const catalogo = useCatalogo();
   const router = useRouter();
@@ -104,136 +100,45 @@ export function TabelaEmendas({
   }
   if (busca.trim()) exportar.set("q", busca.trim());
 
-  const controles = (
-    <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600 sm:max-w-sm">
-          Buscar
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setLimite(POR_PAGINA);
-              // grava na URL (para o link reproduzir a busca) depois de uma pausa; o filtro local é imediato
-              const texto = e.target.value.trim();
-              if (pausaUrl.current) clearTimeout(pausaUrl.current);
-              pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
-            }}
-            placeholder="Objeto, beneficiário, vereador, nº ou ficha"
-            className={ESTILO_CAMPO}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Exercício
-          <select className={ESTILO_CAMPO} value={String(ano)} onChange={(e) => definir({ ano: e.target.value })}>
-            {anos.map((a) => (
-              <option key={a}>{a}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Vereador
-          <select className={ESTILO_CAMPO} value={f.v} onChange={(e) => definir({ v: e.target.value })}>
-            <option value="">Todos</option>
-            {vereadores.map((v) => (
-              <option key={v.id} value={v.id}>
-                {numeroVereador(v.numero)} · {v.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Secretaria
-          <select className={ESTILO_CAMPO} value={f.s} onChange={(e) => definir({ s: e.target.value })}>
-            <option value="">Todas</option>
-            {secretarias.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Situação
-          <select className={ESTILO_CAMPO} value={f.situacao} onChange={(e) => definir({ situacao: e.target.value })}>
-            <option value="">Todas</option>
-            <option value="normal">Normal</option>
-            <option value="impedida">Impedidas</option>
-            <option value="cancelada">Canceladas</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Pendências
-          <select className={ESTILO_CAMPO} value={f.p} onChange={(e) => definir({ p: e.target.value })}>
-            <option value="">Todas</option>
-            <option value="1">Só com pendência</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Situação financeira
-          <select className={ESTILO_CAMPO} value={f.fin} onChange={(e) => definir({ fin: e.target.value })}>
-            <option value="">Todas</option>
-            {SITUACOES_FINANCEIRAS.map(([k, nome]) => (
-              <option key={k} value={k}>
-                {nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Pendência de
-          <select className={ESTILO_CAMPO} value={f.pe} onChange={(e) => definir({ pe: e.target.value })}>
-            <option value="">Qualquer assunto</option>
-            {Object.entries(ASSUNTO_DA_REGRA)
-              .map(([k, a]) => [k, a.nome, emendas.filter((r) => (resumos[r.id]?.regras ?? []).includes(k)).length] as const)
-              .filter(([, , n]) => n > 0)
-              .sort((a, b) => a[1].localeCompare(b[1]))
-              .map(([k, nome, n]) => (
-                <option key={k} value={k}>
-                  {nome} ({n})
-                </option>
-              ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Categoria do beneficiário
-          <select className={ESTILO_CAMPO} value={f.cat} onChange={(e) => definir({ cat: e.target.value })}>
-            <option value="">Todas</option>
-            {CATEGORIAS.map((c) => (
-              <option key={c} value={c}>
-                {INFO_CATEGORIA[c].nome} ({emendas.filter((r) => r.beneficiario_categoria === c).length})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Saúde
-          <select className={ESTILO_CAMPO} value={f.sd} onChange={(e) => definir({ sd: e.target.value })}>
-            <option value="">Todas</option>
-            <option value="1">Só Saúde</option>
-            <option value="0">Fora da Saúde</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Remanejamento
-          <select className={ESTILO_CAMPO} value={f.rem} onChange={(e) => definir({ rem: e.target.value })}>
-            <option value="">Todas</option>
-            <option value="1">Remanejadas</option>
-            <option value="0">Não remanejadas</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Ordenar por
-          <select className={ESTILO_CAMPO} value={f.ordem} onChange={(e) => definir({ ordem: e.target.value === "numero" ? "" : e.target.value })}>
-            <option value="numero">Número</option>
-            <option value="valor">Maior valor</option>
-            <option value="vereador">Vereador</option>
-            <option value="etapa">Etapa (mais adiantadas)</option>
-            <option value="parada">Há mais tempo sem mudança</option>
-          </select>
-        </label>
+  // Barra enxuta: só o que o gráfico não faz (buscar texto e ordenar). Todo o resto se filtra clicando no painel.
+  const barra = (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <label className="relative min-w-[14rem] flex-1">
+        <span className="sr-only">Buscar emendas</span>
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden />
+        <input
+          type="search"
+          value={busca}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setLimite(POR_PAGINA);
+            // grava na URL (para o link reproduzir a busca) depois de uma pausa; o filtro local é imediato
+            const texto = e.target.value.trim();
+            if (pausaUrl.current) clearTimeout(pausaUrl.current);
+            pausaUrl.current = setTimeout(() => atualizarFiltrosNaUrl(new URLSearchParams(window.location.search), { q: texto }, pathname, () => {}), 250);
+          }}
+          placeholder="Buscar objeto, beneficiário ou vereador"
+          className={`${ESTILO_CAMPO} w-full pl-9`}
+        />
+      </label>
+      <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+        Ordenar por
+        <select className={`${ESTILO_CAMPO} w-auto`} value={f.ordem} onChange={(e) => definir({ ordem: e.target.value === "numero" ? "" : e.target.value })}>
+          <option value="numero">Número</option>
+          <option value="valor">Maior valor</option>
+          <option value="vereador">Vereador</option>
+          <option value="etapa">Etapa (mais adiantadas)</option>
+          <option value="parada">Há mais tempo sem mudança</option>
+        </select>
+      </label>
     </div>
   );
+
+  function limparTudo() {
+    setBusca("");
+    setLimite(POR_PAGINA);
+    definir({ v: "", s: "", etapa: "", p: "", situacao: "", fin: "", sd: "", cat: "", rem: "", pe: "", numeros: "", q: "" });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -244,12 +149,20 @@ export function TabelaEmendas({
             {filtradas.length} emendas · {brl(total)} indicados · {brl(pago)} pagos
           </p>
         </div>
-        <MenuExportar
-          opcoes={[
-            { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
-            { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
+          <MenuExportar
+            opcoes={[
+              { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
+              { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
+            ]}
+          />
+          {podeCriar && (
+            <Link href="/emendas/nova" className={CLASSE_BOTAO}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nova emenda
+            </Link>
+          )}
+        </div>
       </div>
 
       <div role="tablist" aria-label="Tipo de execução" className="flex flex-wrap gap-1 border-b border-slate-300">
@@ -273,19 +186,10 @@ export function TabelaEmendas({
         ))}
       </div>
 
-      <PainelLista emendas={emendas} resumos={resumos} filtros={f} definir={definir} controles={controles} />
-
-      {f.numeros.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900">
-          Mostrando só as emendas do alerta ({f.numeros.length}).
-          <button type="button" onClick={() => definir({ numeros: "" })} className="ml-auto inline-flex items-center gap-1 font-medium hover:underline">
-            <X className="h-3.5 w-3.5" aria-hidden /> Ver todas
-          </button>
-        </div>
-      )}
+      <PainelLista emendas={emendas} resumos={resumos} filtros={f} definir={definir} barra={barra} aoLimparTudo={limparTudo} />
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[1000px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1000px] border-collapse text-[0.8125rem]">
           <thead>
             <tr className="bg-slate-50 text-left text-slate-600">
               <th scope="col" className="w-14 px-3.5 py-2.5 font-medium">Nº</th>
@@ -343,7 +247,7 @@ export function TabelaEmendas({
         {filtradas.length === 0 && <p className="p-8 text-center text-sm text-slate-500">Nenhuma emenda encontrada com esses filtros.</p>}
       </div>
 
-      <div className="flex items-center justify-center gap-3 text-[13px] text-slate-600">
+      <div className="flex items-center justify-center gap-3 text-[0.8125rem] text-slate-600">
         <span>
           Mostrando {Math.min(limite, filtradas.length)} de {filtradas.length}
         </span>

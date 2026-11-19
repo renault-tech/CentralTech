@@ -42,7 +42,7 @@ export function Cartao({
     <section className={cn("overflow-hidden rounded-xl border border-slate-200 bg-white", className)}>
       {(titulo || apoio || acao) && (
         <div className={cn("flex flex-wrap items-baseline justify-between gap-2 p-4 sm:px-5", semPadding ? "pb-3" : "pb-0")}>
-          {titulo && <h2 className="text-[15px] font-semibold text-cataguases-marinho">{titulo}</h2>}
+          {titulo && <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">{titulo}</h2>}
           {apoio && <span className="text-xs text-slate-500">{apoio}</span>}
           {acao}
         </div>
@@ -110,7 +110,7 @@ export function TituloPagina({ titulo, subtitulo, acao }: { titulo: string; subt
 export function Campo({ rotulo, htmlFor, children, dica, className }: { rotulo: string; htmlFor: string; children: ReactNode; dica?: ReactNode; className?: string }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", className)}>
-      <label htmlFor={htmlFor} className="text-[13px] font-semibold text-slate-700">
+      <label htmlFor={htmlFor} className="text-[0.8125rem] font-semibold text-slate-700">
         {rotulo}
       </label>
       {children}

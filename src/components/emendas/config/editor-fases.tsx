@@ -62,8 +62,8 @@ export function EditorFases({
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-[15px] font-semibold text-cataguases-marinho">Fases do fluxo das emendas</h2>
-        <p className="mt-0.5 max-w-3xl text-[13px] text-slate-600">
+        <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">Fases do fluxo das emendas</h2>
+        <p className="mt-0.5 max-w-3xl text-[0.8125rem] text-slate-600">
           Cada modalidade tem o seu fluxo. As fases com cadeado (Indicada, Empenhada, Liquidada, Paga e Concluída) alimentam os totais
           de empenhado e pago, por isso só podem ser renomeadas e recoloridas. As demais você move, desativa ou cria. Desativar tira a
           fase das novas opções sem perder o histórico; só uma fase que nunca foi usada pode ser excluída. O nome e a cor de uma fase

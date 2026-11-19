@@ -169,7 +169,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
         <aside className="flex flex-[1_1_300px] flex-col gap-4">
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-3 text-sm font-semibold text-cataguases-marinho">Dados orçamentários</h2>
-            <dl className="flex flex-col gap-2.5 text-[13px]">
+            <dl className="flex flex-col gap-2.5 text-[0.8125rem]">
               {[
                 ["Funcional programática", emenda.funcional_programatica],
                 ["Natureza da despesa", emenda.natureza_despesa ? `${emenda.natureza_despesa} · ${NOME_MODALIDADE[emenda.modalidade].toLowerCase()}` : null],
@@ -192,9 +192,9 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
           {tipo !== "direta" && vinculo}
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-cataguases-marinho">Descrição completa</h2>
-            <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-700">{emenda.descricao}</p>
+            <p className="whitespace-pre-line text-[0.8125rem] leading-relaxed text-slate-700">{emenda.descricao}</p>
           </section>
-          <section className="rounded-xl border border-slate-200 bg-white p-4 text-[13px] text-slate-600">
+          <section className="rounded-xl border border-slate-200 bg-white p-4 text-[0.8125rem] text-slate-600">
             <h2 className="mb-1.5 text-sm font-semibold text-cataguases-marinho">Quem pode mexer</h2>
             Registram a execução: gestores e a equipe de <strong className="text-cataguases-marinho">{emenda.secretaria_nome}</strong> com permissão de
             edição. Valor e dotação mudam por remanejamento (com ato e motivo) ou em “Corrigir cadastro”, feitos pelo gestor.

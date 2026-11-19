@@ -30,7 +30,7 @@ export function CabecalhoPagina({
     <div
       className={cn(
         "tema-fixo cab-pagina relative w-full overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#0C1D33,#132C4C_55%,#0E2440)] shadow-[0_10px_30px_rgba(9,17,31,0.18)]",
-        grande ? "px-5 py-5 sm:px-7 sm:py-6" : "px-5 py-4 sm:px-6 sm:py-5"
+        grande ? "px-5 py-5 sm:px-7 sm:py-6" : "px-5 py-3 sm:px-6 sm:py-3.5"
       )}
     >
       {/* logo.png tem o texto "Cataguases Prefeitura" no terço inferior —
@@ -57,7 +57,7 @@ export function CabecalhoPagina({
           <span
             aria-hidden
             className={cn(
-              "cab-regua mb-2 block rounded-full bg-cataguases-dourado",
+              "cab-regua mb-1.5 block rounded-full bg-cataguases-dourado",
               grande ? "h-[3px] w-9" : "h-[3px] w-7"
             )}
           />
@@ -65,7 +65,7 @@ export function CabecalhoPagina({
             {titulo}
           </h1>
           {subtitulo && (
-            <p className={cn("cab-sub mt-0.5 text-[rgba(180,199,224,0.85)]", grande ? "text-sm" : "text-[13px]")}>
+            <p className={cn("cab-sub mt-0.5 text-[rgba(180,199,224,0.85)]", grande ? "text-sm" : "text-[0.8125rem]")}>
               {subtitulo}
             </p>
           )}

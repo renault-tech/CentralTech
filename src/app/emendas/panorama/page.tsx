@@ -144,7 +144,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
                   >
                     <span className="text-xs text-slate-600">{i.nome}</span>
                     <span className="mt-0.5 block text-lg font-semibold tabular-nums" style={{ color: COR_TOM[i.tom ?? "neutro"] }}>{brl(tot.valor)}</span>
-                    <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">{tot.quantidade} emenda(s) · {i.apoio}</span>
+                    <span className="mt-0.5 block text-[0.6875rem] leading-snug text-slate-500">{tot.quantidade} emenda(s) · {i.apoio}</span>
                   </Link>
                 </li>
               );
@@ -162,7 +162,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
           {lista.length === 0 ? (
             <p className="p-4 text-sm text-slate-600">Nenhuma emenda nesse recorte.</p>
           ) : (
-            <table className="w-full min-w-[860px] border-collapse text-[13px]">
+            <table className="w-full min-w-[860px] border-collapse text-[0.8125rem]">
               <thead>
                 <tr className="bg-slate-50 text-left text-slate-600">
                   <th scope="col" className="px-3.5 py-2.5 font-medium">Emenda</th>
@@ -189,7 +189,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
                     <td className="px-3.5 py-2">
                       {l.encerramento ? (
                         <>
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${COR_SITUACAO[l.encerramento].selo}`}>{rotuloSituacao(l.encerramento, l.tipo_execucao)}</span>
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${COR_SITUACAO[l.encerramento].selo}`}>{rotuloSituacao(l.encerramento, l.tipo_execucao)}</span>
                           <div className="mt-0.5 text-xs text-slate-500">em {dataBr(l.encerradaEm)}{l.devolucao ? ` · devolvido ${brl(l.devolucao)}` : ""}</div>
                         </>
                       ) : (
@@ -206,7 +206,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
 
       {restosAnteriores.length > 0 && (
         <section className="overflow-x-auto rounded-xl border border-blue-200 bg-white" aria-label="Restos a pagar de exercícios anteriores">
-          <table className="w-full min-w-[640px] border-collapse text-[13px]">
+          <table className="w-full min-w-[640px] border-collapse text-[0.8125rem]">
             <caption className="border-b border-slate-100 px-3.5 py-2.5 text-left text-sm font-semibold text-cataguases-marinho">
               Restos a pagar de exercícios anteriores · {brl(restosAnteriores.reduce((s, l) => s + l.aPagar, 0))} em {restosAnteriores.length} emenda(s)
               <span className="mt-0.5 block text-xs font-normal text-slate-500">Continuam pertencendo ao exercício de origem; os pagamentos feitos agora são lançados nelas. Quando o empenho for todo pago, passam sozinhas a cumpridas.</span>
@@ -248,7 +248,7 @@ function Quadro({ titulo, linhas }: { titulo: string; linhas: ReturnType<typeof 
   if (linhas.length === 0) return null;
   return (
     <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white" aria-label={titulo}>
-      <table className="w-full min-w-[760px] border-collapse text-[13px]">
+      <table className="w-full min-w-[760px] border-collapse text-[0.8125rem]">
         <caption className="border-b border-slate-100 px-3.5 py-2.5 text-left text-sm font-semibold text-cataguases-marinho">{titulo}</caption>
         <thead>
           <tr className="bg-slate-50 text-left text-slate-600">

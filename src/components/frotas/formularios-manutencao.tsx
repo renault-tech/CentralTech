@@ -240,8 +240,8 @@ function CartaoEtapa({
           </span>
         )}
       </header>
-      {estado === "feita" && !editando && <p className="mt-1.5 break-words pl-8 text-[13px] text-slate-700">{resumo}</p>}
-      {estado === "bloqueada" && <p className="mt-1.5 pl-8 text-[13px] text-slate-500">{bloqueio}</p>}
+      {estado === "feita" && !editando && <p className="mt-1.5 break-words pl-8 text-[0.8125rem] text-slate-700">{resumo}</p>}
+      {estado === "bloqueada" && <p className="mt-1.5 pl-8 text-[0.8125rem] text-slate-500">{bloqueio}</p>}
       {aberto && <div className="mt-3">{children(() => setEditando(false))}</div>}
     </section>
   );

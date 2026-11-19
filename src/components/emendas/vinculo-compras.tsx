@@ -62,7 +62,7 @@ export function VinculoCompras({
         />
       </h2>
       {processo ? (
-        <div className="flex flex-col gap-1.5 text-[13px]">
+        <div className="flex flex-col gap-1.5 text-[0.8125rem]">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium text-cataguases-marinho">Processo {processo.numero}</span>
             {processo.numero_licitacao && <span className="text-slate-600">· Licitação {processo.numero_licitacao}</span>}
@@ -79,7 +79,7 @@ export function VinculoCompras({
           </a>
         </div>
       ) : (
-        <p className="text-[13px] text-slate-600">
+        <p className="text-[0.8125rem] text-slate-600">
           {numeroLivre ? `Número informado: ${numeroLivre} (sem vínculo).` : "Nenhum processo ligado."} Informe o número para trazer os dados do Compras.
         </p>
       )}

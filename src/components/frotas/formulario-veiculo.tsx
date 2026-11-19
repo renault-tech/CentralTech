@@ -108,7 +108,7 @@ export function FormularioVeiculo({
     <form onSubmit={salvar} className="flex flex-col gap-3.5">
       {avisos.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-[13px] font-semibold text-amber-900">Dados a revisar neste veículo</p>
+          <p className="text-[0.8125rem] font-semibold text-amber-900">Dados a revisar neste veículo</p>
           <ul className="mt-1.5 flex flex-col gap-1.5">
             {avisos.map((a) => (
               <li key={a.codigo} className="flex flex-wrap items-center justify-between gap-2 text-sm text-amber-900">

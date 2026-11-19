@@ -31,7 +31,7 @@ export default async function PaginaRelatorios({ searchParams }: { searchParams:
       {tabelas.map((t, i) => (
         <section key={t.titulo} className="rounded-xl border border-slate-200 bg-white p-4 print:break-inside-avoid print:border-0">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-semibold text-cataguases-marinho">{t.titulo}</h2>
+            <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">{t.titulo}</h2>
             <MenuExportar
               compacto
               opcoes={[
@@ -41,7 +41,7 @@ export default async function PaginaRelatorios({ searchParams }: { searchParams:
             />
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-[13px]">
+            <table className="w-full min-w-[560px] border-collapse text-[0.8125rem]">
               <thead>
                 <tr className="bg-slate-50 text-left text-slate-600">
                   {t.colunas.map((c, j) => (

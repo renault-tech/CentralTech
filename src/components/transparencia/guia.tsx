@@ -9,8 +9,8 @@ import { SeloSituacao } from "./selos";
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-[var(--p-linha)] py-5 first:border-t-0 first:pt-0">
-      <h3 className="mb-2 text-[17px] font-semibold tracking-tight text-[var(--p-tinta)]">{titulo}</h3>
-      <div className="flex flex-col gap-2 text-[14.5px] leading-relaxed text-[var(--p-tinta-2)]">{children}</div>
+      <h3 className="mb-2 text-[1.0625rem] font-semibold tracking-tight text-[var(--p-tinta)]">{titulo}</h3>
+      <div className="flex flex-col gap-2 text-[0.90625rem] leading-relaxed text-[var(--p-tinta-2)]">{children}</div>
     </section>
   );
 }

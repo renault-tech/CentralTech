@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
 
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
+import { FiltrosAtivos, type FiltroAtivo } from "@/components/emendas/filtros-ativos";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
 import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
-import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import {
   agruparLista,
   CLASSES_FINANCEIRAS,
@@ -23,50 +22,53 @@ import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { brlCurto, etapasEmOrdem, infoEtapa, numeroVereador, pct } from "@/lib/emendas/regras";
 import type { EmendaResumo } from "@/types/emendas";
 
-type Visao = "etapa" | "tipo" | "vereador" | "secretaria" | "financeiro" | "categoria" | "saude" | "pendencia";
+type Visao = "etapa" | "vereador" | "secretaria" | "financeiro" | "categoria" | "saude" | "pendencia" | "situacao" | "remanejada";
+/** Toda dimensão de filtro da lista é uma aba: não há mais uma caixa de seletores repetindo o que o gráfico faz. */
 const VISOES: { chave: Visao; rotulo: string; param: ChaveLista }[] = [
   { chave: "etapa", rotulo: "Etapa", param: "etapa" },
-  { chave: "tipo", rotulo: "Tipo", param: "t" },
   { chave: "vereador", rotulo: "Vereador", param: "v" },
   { chave: "secretaria", rotulo: "Secretaria", param: "s" },
   { chave: "financeiro", rotulo: "Situação financeira", param: "fin" },
   { chave: "categoria", rotulo: "Beneficiário", param: "cat" },
   { chave: "saude", rotulo: "Saúde", param: "sd" },
   { chave: "pendencia", rotulo: "Pendência", param: "pe" },
+  { chave: "situacao", rotulo: "Situação", param: "situacao" },
+  { chave: "remanejada", rotulo: "Remanejamento", param: "rem" },
 ];
 
 const COR_FINANCEIRA: Record<string, string> = { paga: "#563A9E", paga_parcial: "#9479DD", empenhada_sem_pagamento: "#C4B5F0", sem_empenho: "#94A3B8" };
 const ZERO = { n: 0, valor: 0, empenhado: 0, pago: 0, comPendencia: 0 };
+const NOME_SITUACAO: Record<string, string> = { normal: "Normal", impedida: "Impedida", cancelada: "Cancelada" };
+const COR_SITUACAO: Record<string, string> = { normal: "#5C7A1F", impedida: "#B45309", cancelada: "#94A3B8" };
 
 type Medida = "n" | "valor" | "pago";
 type Item = GrupoLista & { cor: string };
 
 /**
- * Dashboard da lista de Emendas, na mesma caixa dos filtros: indicadores, abas por dimensão e, abaixo, a pizza
- * ao lado do ranking. Responde a TODOS os filtros da lista (e escolher uma fatia ou linha aplica o mesmo filtro).
- * Cada visão ignora o próprio filtro para sempre mostrar todas as opções.
+ * Dashboard da lista de Emendas, numa caixa só: barra enxuta (busca e ordem), filtros ativos em chips, indicadores,
+ * abas por dimensão e, abaixo, a pizza ao lado do ranking. Clicar numa fatia, linha ou aba aplica o filtro na lista;
+ * cada visão ignora o próprio filtro para sempre mostrar todas as opções.
  */
 export function PainelLista({
   emendas,
   resumos,
   filtros,
   definir,
-  controles,
+  barra,
+  aoLimparTudo,
 }: {
   emendas: EmendaResumo[];
   resumos: Record<string, ResumoLinha>;
   filtros: FiltrosLista;
   definir: (m: Record<string, string>) => void;
-  /** Linha de filtros e busca, desenhada pela lista para dividir o mesmo estado. */
-  controles: React.ReactNode;
+  /** Busca e ordem, desenhadas pela lista para dividir o mesmo estado. */
+  barra: React.ReactNode;
+  aoLimparTudo: () => void;
 }) {
   const f = filtros;
   const catalogo = useCatalogo();
   const [visao, setVisao] = React.useState<Visao>("etapa");
   const [medida, setMedida] = React.useState<Medida>("n");
-  const [filtrosAbertos, setFiltrosAbertos] = React.useState(false);
-  // quantos filtros estão valendo (o exercício e a ordem não contam: não restringem a lista)
-  const ativos = [f.v, f.s, f.etapa, f.t, f.p, f.situacao, f.fin, f.sd, f.cat, f.rem, f.pe, f.q].filter(Boolean).length + (f.numeros.length ? 1 : 0);
 
   const filtradas = filtrarEmendasLista(emendas, resumos, f);
   const tot = somar(filtradas, resumos);
@@ -95,10 +97,6 @@ export function PainelLista({
         const fora = gs.filter((g) => !emOrdem.some((x) => x.chave === g.chave)).map((g) => ({ ...g, cor: CINZA }));
         return [...emOrdem, ...fora];
       }
-      case "tipo": {
-        const gs = por((e) => [{ chave: tipoDaEmenda(e), rotulo: TIPOS_EXECUCAO[tipoDaEmenda(e)].nome }]);
-        return ORDEM_TIPOS.map((t) => ({ ...achar(gs, t, TIPOS_EXECUCAO[t].nome), cor: TIPOS_EXECUCAO[t].cor }));
-      }
       case "vereador":
         return colorir(ordenarPor(por((e) => [{ chave: e.vereador_id, rotulo: `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}` }])));
       case "secretaria":
@@ -126,9 +124,18 @@ export function PainelLista({
       }
       case "pendencia":
         // uma emenda com duas pendências conta em cada assunto: a soma passa do número de emendas
-        return colorir(
-          ordenarPor(por((e) => (resumos[e.id]?.regras ?? []).map((r) => ({ chave: r, rotulo: ASSUNTO_DA_REGRA[r]?.nome ?? r }))))
-        );
+        return colorir(ordenarPor(por((e) => (resumos[e.id]?.regras ?? []).map((r) => ({ chave: r, rotulo: ASSUNTO_DA_REGRA[r]?.nome ?? r })))));
+      case "situacao": {
+        const gs = por((e) => [{ chave: e.situacao, rotulo: NOME_SITUACAO[e.situacao] ?? e.situacao }]);
+        return Object.keys(NOME_SITUACAO).map((k) => ({ ...achar(gs, k, NOME_SITUACAO[k]), cor: COR_SITUACAO[k] }));
+      }
+      case "remanejada": {
+        const gs = por((e) => [{ chave: e.remanejada ? "1" : "0", rotulo: e.remanejada ? "Remanejadas" : "Não remanejadas" }]);
+        return [
+          { ...achar(gs, "1", "Remanejadas"), cor: "#6B4FBB" },
+          { ...achar(gs, "0", "Não remanejadas"), cor: CINZA },
+        ];
+      }
     }
     // `f` entra pelos campos que ele tem; `def.param` já sai de `visao`
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,6 +158,25 @@ export function PainelLista({
     if (i && valorDe(i) > 0) fatias.splice(fatias.length - 1, 0, { chave: i.chave, rotulo: i.rotulo, v: valorDe(i), cor: i.cor, clicavel: true });
   }
 
+  // Filtros ativos em chips (o tipo de execução já é mostrado pelas abas acima do painel; a busca, pela própria barra).
+  const nomeDe = (campo: "vereador_id" | "secretaria_id", nome: (e: EmendaResumo) => string, id: string) => {
+    const e = emendas.find((x) => x[campo] === id);
+    return e ? nome(e) : id;
+  };
+  const chips = [
+    f.v && { chave: "v", rotulo: `Vereador: ${nomeDe("vereador_id", (e) => `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`, f.v)}` },
+    f.s && { chave: "s", rotulo: `Secretaria: ${nomeDe("secretaria_id", (e) => e.secretaria_nome, f.s)}` },
+    f.etapa && { chave: "etapa", rotulo: `Etapa: ${infoEtapa(f.etapa, catalogo).nome}` },
+    f.fin && { chave: "fin", rotulo: `Financeiro: ${CLASSES_FINANCEIRAS.find(([k]) => k === f.fin)?.[1] ?? "Paga, sem data de pagamento"}` },
+    f.cat && { chave: "cat", rotulo: `Beneficiário: ${INFO_CATEGORIA[f.cat as keyof typeof INFO_CATEGORIA]?.nome ?? f.cat}` },
+    f.sd && { chave: "sd", rotulo: f.sd === "1" ? "Só Saúde" : "Fora da Saúde" },
+    f.pe && { chave: "pe", rotulo: `Pendência: ${ASSUNTO_DA_REGRA[f.pe]?.nome ?? f.pe}` },
+    f.p && { chave: "p", rotulo: "Só com pendência" },
+    f.situacao && { chave: "situacao", rotulo: `Situação: ${NOME_SITUACAO[f.situacao] ?? f.situacao}` },
+    f.rem && { chave: "rem", rotulo: f.rem === "1" ? "Remanejadas" : "Não remanejadas" },
+    f.numeros.length > 0 && { chave: "numeros", rotulo: `Só as emendas do alerta (${f.numeros.length})` },
+  ].filter(Boolean) as FiltroAtivo[];
+
   const celula = "min-w-0 px-5 py-3.5";
   const numero = "whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl";
   const parte = (v: number) => (faixaTotal ? `${(v / faixaTotal) * 100}%` : "0%");
@@ -168,33 +194,24 @@ export function PainelLista({
         <span style={{ width: parte(faixa.semEmpenho), backgroundColor: COR_FINANCEIRA.sem_empenho }} />
       </div>
 
-      <div className="border-b border-slate-200 px-4 py-3.5">
-        {/* no celular os filtros ficam recolhidos para os números aparecerem primeiro; do tablet para cima ficam sempre à mostra */}
-        <button
-          type="button"
-          aria-expanded={filtrosAbertos}
-          aria-controls="filtros-lista"
-          onClick={() => setFiltrosAbertos((a) => !a)}
-          className="flex min-h-11 w-full items-center justify-between rounded-lg text-sm font-medium text-cataguases-marinho sm:hidden"
-        >
-          <span>
-            Filtros{ativos > 0 && <span className="ml-2 rounded-full bg-[color:var(--modulo-texto)] px-2 py-px text-xs font-medium text-white">{ativos}</span>}
-          </span>
-          <ChevronDown className={`h-4 w-4 transition-transform motion-reduce:transition-none ${filtrosAbertos ? "rotate-180" : ""}`} aria-hidden />
-        </button>
-        <div id="filtros-lista" className={`${filtrosAbertos ? "mt-2 block" : "hidden"} sm:mt-0 sm:block`}>
-          {controles}
-        </div>
-      </div>
+      <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>
+      <FiltrosAtivos filtros={chips} aoRemover={(k) => definir({ [k]: "" })} aoLimparTudo={aoLimparTudo} />
 
       <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x">
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Emendas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{tot.n}</span>
-            <span className="text-xs tabular-nums text-slate-600">
-              de {todas.n} · {tot.comPendencia} com pendência
-            </span>
+            <span className="text-xs tabular-nums text-slate-600">de {todas.n}</span>
+            <button
+              type="button"
+              aria-pressed={f.p === "1"}
+              onClick={() => definir({ p: f.p === "1" ? "" : "1" })}
+              title={f.p === "1" ? "Mostrar todas" : "Mostrar só as que têm pendência"}
+              className={`min-h-7 rounded-md px-1.5 text-xs font-medium tabular-nums underline-offset-2 hover:underline ${f.p === "1" ? "bg-[color-mix(in_srgb,var(--modulo)_14%,transparent)]" : ""} text-[color:var(--modulo-tinta)]`}
+            >
+              {tot.comPendencia} com pendência
+            </button>
           </dd>
         </div>
         <div className={celula}>
@@ -247,7 +264,7 @@ export function PainelLista({
                 aria-controls="painel-lista-corpo"
                 tabIndex={ativa ? 0 : -1}
                 onClick={() => setVisao(v.chave)}
-                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
+                className={`relative inline-flex min-h-11 items-center gap-1.5 px-2.5 text-sm font-medium transition-colors motion-reduce:transition-none sm:min-h-10 sm:px-3 ${
                   ativa ? "text-cataguases-marinho" : "text-slate-600 hover:text-cataguases-marinho"
                 }`}
               >
@@ -273,7 +290,7 @@ export function PainelLista({
         </div>
       </div>
 
-      <div id="painel-lista-corpo" role="tabpanel" aria-labelledby={`aba-lista-${visao}`} className="grid lg:grid-cols-[280px_1fr]">
+      <div id="painel-lista-corpo" role="tabpanel" aria-labelledby={`aba-lista-${visao}`} className="grid lg:grid-cols-[17.5rem_1fr]">
         <div className="flex items-center justify-center p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
           <Pizza
             fatias={fatias}
@@ -284,7 +301,7 @@ export function PainelLista({
           />
         </div>
 
-        <ul className="max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="max-h-72 overflow-y-auto overscroll-contain py-2 lg:max-h-[18.5rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -298,16 +315,16 @@ export function PainelLista({
                   aria-label={`${i.rotulo}: ${detalhe}`}
                   title={detalhe}
                   onClick={() => escolher(ativo ? "" : i.chave)}
-                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 sm:grid-cols-[10px_minmax(0,14rem)_minmax(0,1fr)_auto_40px] ${
+                  className={`grid min-h-11 w-full grid-cols-[0.625rem_minmax(0,1fr)_auto_2.25rem] items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-10 sm:grid-cols-[0.625rem_minmax(9rem,16rem)_minmax(0,1fr)_auto_2.5rem] ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
-                  <span className="truncate text-[13px] text-cataguases-marinho">{i.rotulo}</span>
+                  <span className="text-sm leading-snug text-cataguases-marinho">{i.rotulo}</span>
                   <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
                     <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                   </span>
-                  <span className="whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-cataguases-marinho">{fmt(v)}</span>
+                  <span className="whitespace-nowrap text-right text-sm font-semibold tabular-nums text-cataguases-marinho">{fmt(v)}</span>
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                 </button>
               </li>

@@ -95,7 +95,7 @@ function EscolherColunas({
                     const visivel = !escondidas.includes(c);
                     const visiveis = colunas.length - escondidas.length;
                     return (
-                      <label key={c} className="flex min-h-9 cursor-pointer items-center gap-2 text-[13px] text-slate-800">
+                      <label key={c} className="flex min-h-9 cursor-pointer items-center gap-2 text-[0.8125rem] text-slate-800">
                         <input
                           type="checkbox"
                           checked={visivel}

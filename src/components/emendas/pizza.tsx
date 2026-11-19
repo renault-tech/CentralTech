@@ -42,7 +42,7 @@ export function Pizza({
   const corta = (t: string) => (t.length > 17 ? `${t.slice(0, 16)}…` : t);
 
   return (
-    <svg viewBox="0 0 100 100" className="h-[196px] w-[196px] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
+    <svg viewBox="0 0 100 100" className="h-[12.25rem] w-[12.25rem] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
       {total === 0 ? (
         <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
       ) : (

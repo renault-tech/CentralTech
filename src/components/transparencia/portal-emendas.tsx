@@ -203,7 +203,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         Pular para o conteúdo
       </a>
       {previa && (
-        <div className="sticky top-0 z-[60] flex items-center justify-center gap-2 bg-[#E9A63B] px-4 py-2 text-center text-[13px] font-semibold text-[#2a1a00]">
+        <div className="sticky top-0 z-[60] flex items-center justify-center gap-2 bg-[#E9A63B] px-4 py-2 text-center text-[0.8125rem] font-semibold text-[#2a1a00]">
           <Eye className="h-4 w-4" aria-hidden /> Prévia da gestão — {meta.publicadoEm ? "este exercício já está publicado" : "este exercício ainda NÃO está publicado"}. O público não vê este aviso.
         </div>
       )}
@@ -222,11 +222,11 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
               </span>
               <div className="min-w-0 leading-tight">
                 <span aria-hidden className="mb-1.5 block h-[3px] w-8 rounded-full bg-[#E9A63B]" />
-                <p className="text-[17px] font-semibold tracking-tight text-white sm:text-[22px]">Prefeitura de Cataguases</p>
-                <p className="mt-0.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#B4C7E0] sm:text-[13px]">Portal da Transparência</p>
+                <p className="text-[1.0625rem] font-semibold tracking-tight text-white sm:text-[1.375rem]">Prefeitura de Cataguases</p>
+                <p className="mt-0.5 text-[0.75rem] font-medium uppercase tracking-[0.14em] text-[#B4C7E0] sm:text-[0.8125rem]">Portal da Transparência</p>
               </div>
             </div>
-            <span className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white/85 ring-1 ring-white/10 md:inline-flex" title="Os dados se atualizam sozinhos, sem recarregar a página">
+            <span className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[0.75rem] font-medium text-white/85 ring-1 ring-white/10 md:inline-flex" title="Os dados se atualizam sozinhos, sem recarregar a página">
               <span className="portal-pulso" aria-hidden /> Ao vivo · {hora(geradoAgora)}
             </span>
             <button type="button" onClick={() => setGuia(true)} className="portal-botao-vidro" data-tour="portal-ajuda">
@@ -240,15 +240,15 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
 
         <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-12 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[1.35fr_1fr] lg:items-end lg:pb-16">
           <div className="portal-revela">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#F6D79C]">Emendas impositivas · {ano}</p>
+            <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.16em] text-[#F6D79C]">Emendas impositivas · {ano}</p>
             <h1 className="mt-3 max-w-2xl text-[clamp(1.75rem,4.2vw,3rem)] font-semibold leading-[1.06] tracking-[-0.035em] text-white">
               Cada real indicado pelos vereadores, do orçamento ao pagamento.
             </h1>
-            <p className="mt-6 text-[13px] font-medium text-white/60">{ativos.length ? "Valor indicado no recorte" : "Valor total indicado"}</p>
+            <p className="mt-6 text-[0.8125rem] font-medium text-white/60">{ativos.length ? "Valor indicado no recorte" : "Valor total indicado"}</p>
             <p className="portal-numero-heroi portal-gradiente-texto mt-1" aria-live="polite">
               {brl(valorAnimado)}
             </p>
-            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/70">
+            <p className="mt-3 max-w-xl text-[0.9375rem] leading-relaxed text-white/70">
               {t.quantidade} emenda{t.quantidade === 1 ? "" : "s"}
               {!ativos.length && ` de ${nVereadores} vereadores`}
               {meta.leiLoa ? ` · ${meta.leiLoa}` : ""}
@@ -261,19 +261,19 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
               <Anel valor={t.pago / (t.total || 1)} rotulo={`${pct(t.pago / (t.total || 1))} do valor já foi pago`} />
               <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
                 <div>
-                  <p className="text-[28px] font-semibold tracking-tight text-white tabular-nums">{pct(t.pago / (t.total || 1), 0)}</p>
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-white/60">pago</p>
+                  <p className="text-[1.75rem] font-semibold tracking-tight text-white tabular-nums">{pct(t.pago / (t.total || 1), 0)}</p>
+                  <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-white/60">pago</p>
                 </div>
               </div>
             </div>
             <dl className="flex min-w-0 flex-1 flex-col gap-3">
               {SERIES.map((s) => (
                 <div key={s.chave} {...dica(<p className="max-w-[240px]"><strong>{s.nome}:</strong> {s.explica}</p>)} tabIndex={0} className="rounded-lg outline-offset-4">
-                  <dt className="flex items-center gap-2 text-[12px] text-white/65">
+                  <dt className="flex items-center gap-2 text-[0.75rem] text-white/65">
                     <span aria-hidden className={`h-2 w-2 rounded-[3px] ${s.classe}`} />
                     {s.nome}
                   </dt>
-                  <dd className="text-[19px] font-semibold tracking-tight text-white tabular-nums">{brlCurto(t[s.chave])}</dd>
+                  <dd className="text-[1.1875rem] font-semibold tracking-tight text-white tabular-nums">{brlCurto(t[s.chave])}</dd>
                 </div>
               ))}
             </dl>
@@ -284,7 +284,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <Legenda claro />
               {cotaTotal > 0 && (
-                <p className="text-[13px] text-white/65" {...dica(<p className="max-w-[260px]">Valor das emendas de saúde sobre a soma das cotas dos vereadores. O mínimo legal é {String(meta.saudeMinPct).replace(".", ",")}% (CF, art. 166, § 9º).</p>)} tabIndex={0}>
+                <p className="text-[0.8125rem] text-white/65" {...dica(<p className="max-w-[260px]">Valor das emendas de saúde sobre a soma das cotas dos vereadores. O mínimo legal é {String(meta.saudeMinPct).replace(".", ",")}% (CF, art. 166, § 9º).</p>)} tabIndex={0}>
                   Saúde: <strong className="font-semibold text-white">{pct(saudeTotal / cotaTotal)}</strong> das cotas · mínimo {String(meta.saudeMinPct).replace(".", ",")}%
                 </p>
               )}
@@ -339,9 +339,9 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
                       )}
                     >
                       <Icone className="h-5 w-5" style={{ color: COR_SITUACAO[s.chave] }} aria-hidden />
-                      <span className="mt-1 text-[26px] font-semibold leading-none tracking-tight tabular-nums">{d.quantidade}</span>
-                      <span className="text-[13px] font-medium text-[var(--p-tinta)]">{s.nome}</span>
-                      <span className="text-[12px] tabular-nums text-[var(--p-tinta-3)]">{brlCurto(d.valor)}</span>
+                      <span className="mt-1 text-[1.625rem] font-semibold leading-none tracking-tight tabular-nums">{d.quantidade}</span>
+                      <span className="text-[0.8125rem] font-medium text-[var(--p-tinta)]">{s.nome}</span>
+                      <span className="text-[0.75rem] tabular-nums text-[var(--p-tinta-3)]">{brlCurto(d.valor)}</span>
                     </button>
                   </li>
                 );
@@ -382,8 +382,8 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
                       )}
                     >
                       <span aria-hidden className="h-3 w-3 rounded-full" style={{ background: `var(--t-${x})` }} />
-                      <span className="text-[14px] font-medium">{TIPOS_EXECUCAO[x].nome}</span>
-                      <span className="text-right text-[13px] tabular-nums text-[var(--p-tinta-2)]">
+                      <span className="text-[0.875rem] font-medium">{TIPOS_EXECUCAO[x].nome}</span>
+                      <span className="text-right text-[0.8125rem] tabular-nums text-[var(--p-tinta-2)]">
                         <strong className="text-[var(--p-tinta)]">{pct(g.total / tot, 0)}</strong> · {brlCurto(g.total)}
                       </span>
                       <span className="col-span-3 pl-6">
@@ -419,19 +419,19 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
             <Cabecalho rotulo="Ritmo dos pagamentos" titulo={`Pago ao longo de ${ano}`} ajuda="Soma acumulada dos pagamentos, mês a mês. Passe o mouse ou use as setas do teclado." />
             <dl className="flex gap-8">
               <div>
-                <dt className="text-[12px] text-[var(--p-tinta-3)]">Pago no ano</dt>
-                <dd className="text-[22px] font-semibold tracking-tight tabular-nums">{brlCurto(curva.pontos.at(-1)?.acumulado ?? 0)}</dd>
+                <dt className="text-[0.75rem] text-[var(--p-tinta-3)]">Pago no ano</dt>
+                <dd className="text-[1.375rem] font-semibold tracking-tight tabular-nums">{brlCurto(curva.pontos.at(-1)?.acumulado ?? 0)}</dd>
               </div>
               <div>
-                <dt className="text-[12px] text-[var(--p-tinta-3)]">Falta pagar</dt>
-                <dd className="text-[22px] font-semibold tracking-tight tabular-nums">{brlCurto(t.total - t.pago)}</dd>
+                <dt className="text-[0.75rem] text-[var(--p-tinta-3)]">Falta pagar</dt>
+                <dd className="text-[1.375rem] font-semibold tracking-tight tabular-nums">{brlCurto(t.total - t.pago)}</dd>
               </div>
             </dl>
           </div>
           <div className="mt-5">
             <CurvaPagamentos pontos={curva.pontos} total={t.total} ano={ano} mesAtual={hojeMes} />
           </div>
-          {curva.semData > 0.005 && <p className="mt-2 text-[12px] text-[var(--p-tinta-3)]">{brl(curva.semData)} em pagamentos sem data informada ou de outro ano não aparecem na curva, mas entram no total pago.</p>}
+          {curva.semData > 0.005 && <p className="mt-2 text-[0.75rem] text-[var(--p-tinta-3)]">{brl(curva.semData)} em pagamentos sem data informada ou de outro ano não aparecem na curva, mas entram no total pago.</p>}
         </section>
 
         {/* ——— Lista ——— */}
@@ -468,12 +468,12 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
                     <span aria-hidden className="h-full min-h-10 w-1 rounded-full" style={{ background: `var(--t-${l.tipo})` }} />
                     <span className="min-w-0">
                       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="font-mono text-[12px] text-[var(--p-tinta-3)]">nº {l.numero}</span>
+                        <span className="font-mono text-[0.75rem] text-[var(--p-tinta-3)]">nº {l.numero}</span>
                         <SeloSituacao s={situacaoPublica(l)} pequeno />
-                        {l.saude && <span className="rounded-full bg-[var(--p-superficie-2)] px-2 py-0.5 text-[11.5px] font-medium text-[var(--p-tinta-2)]">Saúde</span>}
+                        {l.saude && <span className="rounded-full bg-[var(--p-superficie-2)] px-2 py-0.5 text-[0.71875rem] font-medium text-[var(--p-tinta-2)]">Saúde</span>}
                       </span>
-                      <span className="mt-1 block truncate text-[15.5px] font-semibold tracking-tight text-[var(--p-tinta)]">{l.objeto}</span>
-                      <span className="mt-0.5 block truncate text-[13px] text-[var(--p-tinta-3)]">
+                      <span className="mt-1 block truncate text-[0.96875rem] font-semibold tracking-tight text-[var(--p-tinta)]">{l.objeto}</span>
+                      <span className="mt-0.5 block truncate text-[0.8125rem] text-[var(--p-tinta-3)]">
                         {l.vereador} · {l.beneficiario ?? l.secretaria}
                       </span>
                       <span className="mt-2 block max-w-md">
@@ -482,8 +482,8 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
                     </span>
                     <span className="flex items-center gap-2 text-right">
                       <span>
-                        <span className="block text-[15.5px] font-semibold tabular-nums">{brlCurto(l.valor)}</span>
-                        <span className="block text-[12px] tabular-nums text-[var(--p-tinta-3)]">{pct(p.pago / (p.total || 1), 0)} pago</span>
+                        <span className="block text-[0.96875rem] font-semibold tabular-nums">{brlCurto(l.valor)}</span>
+                        <span className="block text-[0.75rem] tabular-nums text-[var(--p-tinta-3)]">{pct(p.pago / (p.total || 1), 0)} pago</span>
                       </span>
                       <ChevronRight className="h-4 w-4 text-[var(--p-tinta-3)] transition-transform group-hover:translate-x-0.5" aria-hidden />
                     </span>
@@ -493,7 +493,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
             })}
             {filtradas.length === 0 && (
               <li className="p-12 text-center">
-                <p className="text-[16px] font-semibold">Nenhuma emenda neste recorte</p>
+                <p className="text-[1rem] font-semibold">Nenhuma emenda neste recorte</p>
                 <button type="button" onClick={limpar} className="portal-botao-sec mt-4">
                   Limpar filtros
                 </button>
@@ -512,7 +512,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         <CadastroBoletim vereadores={vereadores} vereadorAtual={f.vereador} />
 
         {/* ——— Rodapé ——— */}
-        <footer className="grid gap-8 pb-8 pt-4 text-[13px] leading-relaxed text-[var(--p-tinta-2)] md:grid-cols-3">
+        <footer className="grid gap-8 pb-8 pt-4 text-[0.8125rem] leading-relaxed text-[var(--p-tinta-2)] md:grid-cols-3">
           <div>
             <p className="portal-rotulo mb-2">Dados abertos</p>
             <p className="mb-3">Todas as emendas do exercício {ano}, com os mesmos campos desta página, para baixar e analisar.</p>
@@ -553,7 +553,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         rotulo={emendaAberta ? `Emenda nº ${emendaAberta.numero}` : "Emenda"}
         subtitulo={
           emendaAberta && (
-            <span className="flex items-center gap-2 text-[12px] font-medium text-[var(--p-tinta-3)]">
+            <span className="flex items-center gap-2 text-[0.75rem] font-medium text-[var(--p-tinta-3)]">
               <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `var(--t-${emendaAberta.tipo})` }} />
               Emenda nº {emendaAberta.numero}/{emendaAberta.ano} · {TIPOS_EXECUCAO[emendaAberta.tipo].nome}
             </span>
@@ -579,8 +579,8 @@ function Cabecalho({ rotulo, titulo, ajuda }: { rotulo: string; titulo: string; 
   return (
     <div>
       <p className="portal-rotulo">{rotulo}</p>
-      <h2 className="mt-1 text-[21px] font-semibold leading-tight tracking-tight text-[var(--p-tinta)]">{titulo}</h2>
-      {ajuda && <p className="mt-1 text-[13px] text-[var(--p-tinta-3)]">{ajuda}</p>}
+      <h2 className="mt-1 text-[1.3125rem] font-semibold leading-tight tracking-tight text-[var(--p-tinta)]">{titulo}</h2>
+      {ajuda && <p className="mt-1 text-[0.8125rem] text-[var(--p-tinta-3)]">{ajuda}</p>}
     </div>
   );
 }

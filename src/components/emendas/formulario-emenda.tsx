@@ -298,7 +298,7 @@ export function FormularioEmenda({
 
 function Campo({ rotulo, dica, children }: { rotulo: string; dica?: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1.5 text-[13px] font-medium text-cataguases-marinho">
+    <label className="flex flex-col gap-1.5 text-[0.8125rem] font-medium text-cataguases-marinho">
       {rotulo}
       {children}
       {dica && <span className="text-xs font-normal text-slate-500">{dica}</span>}

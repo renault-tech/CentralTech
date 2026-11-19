@@ -145,7 +145,7 @@ export function PainelConfiguracoes({
       <div className="mt-1 max-h-[65vh] overflow-auto rounded-md border border-slate-100">
         <table className="w-full table-fixed text-sm">
           <thead className="sticky top-0 z-10 bg-white">
-            <tr className="text-left text-[11px] text-slate-400">
+            <tr className="text-left text-[0.6875rem] text-slate-400">
               <th className="w-0 p-0" />
               <th
                 colSpan={TODOS_MODULOS.length}
@@ -158,7 +158,7 @@ export function PainelConfiguracoes({
             <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
               <th className="w-0 p-0" aria-label="Usuário" />
               {TODOS_MODULOS.map((m) => (
-                <th key={m.chave} className="px-0.5 py-1.5 text-center text-[10px] font-medium [overflow-wrap:anywhere]" title={m.nome}>
+                <th key={m.chave} className="px-0.5 py-1.5 text-center text-[0.625rem] font-medium [overflow-wrap:anywhere]" title={m.nome}>
                   <span
                     className="inline-flex h-1.5 w-1.5 rounded-full align-middle"
                     style={{ backgroundColor: m.cor }}
@@ -226,7 +226,7 @@ export function PainelConfiguracoes({
                     <td className="px-1 py-2 text-center">
                       {u.adminHub ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-[rgba(233,166,59,0.14)] px-2 py-0.5 text-[11px] font-medium text-[#9C6A17]"
+                          className="inline-flex items-center gap-1 rounded-full bg-[rgba(233,166,59,0.14)] px-2 py-0.5 text-[0.6875rem] font-medium text-[#9C6A17]"
                           title="Administrador do Hub"
                         >
                           <ShieldCheck className="h-3 w-3" aria-hidden />
@@ -242,8 +242,8 @@ export function PainelConfiguracoes({
                       <span
                         className={
                           u.ativo
-                            ? "inline-block rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700"
-                            : "inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500"
+                            ? "inline-block rounded-full bg-green-50 px-2 py-0.5 text-[0.6875rem] font-medium text-green-700"
+                            : "inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[0.6875rem] font-medium text-slate-500"
                         }
                       >
                         {u.ativo ? "Ativo" : "Inativo"}
@@ -435,7 +435,7 @@ function FormularioAcesso({
                 />
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: m.cor }} aria-hidden />
                 <span className={marcado ? "font-medium text-slate-700" : undefined}>{m.nome}</span>
-                {!marcado && adminHub && <span className="ml-auto text-[11px] text-slate-500">acesso pleno de administrador</span>}
+                {!marcado && adminHub && <span className="ml-auto text-[0.6875rem] text-slate-500">acesso pleno de administrador</span>}
               </label>
             );
           })}
@@ -540,7 +540,7 @@ function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string;
 
   return (
     <div className="mt-1 max-w-sm">
-      <p className="text-[11px] font-medium text-amber-700">
+      <p className="text-[0.6875rem] font-medium text-amber-700">
         Ainda não acessou{link ? " — envie este link de primeiro acesso (vale para todos os módulos):" : ""}
       </p>
       {link ? (
@@ -550,7 +550,7 @@ function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string;
           type="button"
           onClick={gerar}
           disabled={gerando}
-          className="mt-0.5 text-[11px] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
+          className="mt-0.5 text-[0.6875rem] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
         >
           {gerando ? "Gerando…" : "Gerar link de primeiro acesso"}
         </button>
@@ -559,12 +559,12 @@ function PrimeiroAcessoPendente({ usuarioId, linkInicial }: { usuarioId: string;
         type="button"
         onClick={enviarPorEmail}
         disabled={enviando}
-        className="mt-1 text-[11px] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
+        className="mt-1 text-[0.6875rem] font-medium text-cataguases-azul hover:underline disabled:opacity-50"
       >
         {enviando ? "Enviando…" : link ? "Reenviar por e-mail" : "Enviar por e-mail"}
       </button>
-      {enviadoPara && <p className="mt-0.5 text-[11px] text-green-700">Enviado para {enviadoPara}.</p>}
-      {erro && <p className="mt-0.5 text-[11px] text-red-700">{erro}</p>}
+      {enviadoPara && <p className="mt-0.5 text-[0.6875rem] text-green-700">Enviado para {enviadoPara}.</p>}
+      {erro && <p className="mt-0.5 text-[0.6875rem] text-red-700">{erro}</p>}
     </div>
   );
 }
@@ -576,7 +576,7 @@ function LinkCopiavel({ link }: { link: string }) {
       <input
         readOnly
         value={link}
-        className="flex-1 truncate rounded border border-green-300 bg-white px-2 py-1 text-[11px] text-slate-600"
+        className="flex-1 truncate rounded border border-green-300 bg-white px-2 py-1 text-[0.6875rem] text-slate-600"
         onFocus={(e) => e.currentTarget.select()}
       />
       <button

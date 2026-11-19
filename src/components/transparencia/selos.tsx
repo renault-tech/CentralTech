@@ -23,7 +23,7 @@ export function SeloSituacao({ s, pequeno }: { s: SituacaoPublica; pequeno?: boo
   const nome = SITUACOES_PUBLICAS.find((x) => x.chave === s)!.nome;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${pequeno ? "px-2 py-0.5 text-[12px]" : "px-2.5 py-1 text-[13px]"}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${pequeno ? "px-2 py-0.5 text-[0.75rem]" : "px-2.5 py-1 text-[0.8125rem]"}`}
       style={{ color: COR_SITUACAO[s], background: `color-mix(in srgb, ${COR_SITUACAO[s]} 12%, transparent)` }}
     >
       <Icone className={pequeno ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />

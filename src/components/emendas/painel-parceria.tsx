@@ -119,7 +119,7 @@ export function PainelParceria({
         </ul>
       )}
 
-      <dl className="flex flex-col gap-2.5 text-[13px]">
+      <dl className="flex flex-col gap-2.5 text-[0.8125rem]">
         {linhas.map(([k, v]) => (
           <div key={k}>
             <dt className="text-xs text-slate-500">{k}</dt>
@@ -191,7 +191,7 @@ function DialogoParceria({
   }
 
   const convenio = c.instrumento === "convenio";
-  const rotulo = "flex flex-col gap-1.5 text-[13px] font-medium text-cataguases-marinho";
+  const rotulo = "flex flex-col gap-1.5 text-[0.8125rem] font-medium text-cataguases-marinho";
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent>

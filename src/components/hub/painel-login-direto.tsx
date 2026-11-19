@@ -43,7 +43,7 @@ export async function PainelLoginDireto() {
 
               <InterruptorBloqueio modulo={a.modulo} bloqueadoInicial={a.bloqueado} />
               {a.modulo === "numera" && (
-                <p className="mt-2 text-[11px] text-slate-400">
+                <p className="mt-2 text-[0.6875rem] text-slate-400">
                   Numera tem projeto Supabase próprio — este interruptor grava lá também
                   (`app_config.loginDiretoBloqueado`), separado do bookkeeping do Hub.
                 </p>

@@ -167,7 +167,7 @@ export function EditorPareceres({
         </select>
       </label>
       {prazo && (
-        <p className="mb-3 text-[13px] text-slate-600">
+        <p className="mb-3 text-[0.8125rem] text-slate-600">
           Prazo: <strong>{dataBr(prazo)}</strong>
           {prazo < hoje && " (vencido)"}
         </p>
@@ -265,7 +265,7 @@ function ImpedimentosEmLote({ ano, secretariaId, protocolo, lista }: { ano: numb
       </button>
       {aberto && (
         <div className="mt-2 flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto text-[13px]">
+          <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto text-[0.8125rem]">
             {lista.map((e) => (
               <li key={e.id} className="flex items-start gap-2">
                 <input

@@ -85,7 +85,7 @@ export function CampoProcesso({
       />
       {aberto && (
         <ul id={rotuloId} role="listbox" className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[30rem] max-w-[calc(100vw-2rem)] overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
-          <li className="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-400" aria-hidden>
+          <li className="px-3 py-1 text-[0.6875rem] uppercase tracking-wide text-slate-400" aria-hidden>
             {valor.trim() ? "Resultados" : "Sugeridos pelo objeto da emenda"}
           </li>
           {itens.map((s, i) => (
@@ -97,11 +97,11 @@ export function CampoProcesso({
                 onClick={() => escolher(s)}
                 className={`flex w-full flex-col px-3 py-2 text-left hover:bg-slate-50 ${i === ativo ? "bg-slate-100" : ""}`}
               >
-                <span className="text-[13px] font-medium text-cataguases-marinho">
+                <span className="text-[0.8125rem] font-medium text-cataguases-marinho">
                   {s.numero}
                   {s.numero_licitacao ? ` · licitação ${s.numero_licitacao}` : ""}
                 </span>
-                <span className="ml-2 text-[11px] text-slate-500">{NOME_STATUS[s.status] ?? s.status}</span>
+                <span className="ml-2 text-[0.6875rem] text-slate-500">{NOME_STATUS[s.status] ?? s.status}</span>
                 <span className="mt-0.5 line-clamp-3 text-xs leading-snug text-slate-600">{s.objeto}</span>
               </button>
             </li>

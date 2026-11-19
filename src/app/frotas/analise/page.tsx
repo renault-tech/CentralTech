@@ -134,7 +134,7 @@ export default async function PaginaAnalise() {
                       <span className="block bg-[#3F5A12]" style={{ width: `${(g.manutencao / maior) * 100}%` }} />
                       <span className="block bg-[#9DB7DB]" style={{ width: `${(g.combustivel / maior) * 100}%` }} />
                     </span>
-                    <span className="text-[13px] tabular-nums text-slate-700">
+                    <span className="text-[0.8125rem] tabular-nums text-slate-700">
                       Manut. {brl(g.manutencao)} · Comb. {brl(g.combustivel)}
                     </span>
                   </li>
@@ -165,7 +165,7 @@ export default async function PaginaAnalise() {
           </Cartao>
 
           <Cartao titulo="Como ler estes números">
-            <ul className="flex list-disc flex-col gap-2 pl-5 text-[13px] text-slate-700">
+            <ul className="flex list-disc flex-col gap-2 pl-5 text-[0.8125rem] text-slate-700">
               <li>O valor do veículo é o da tabela FIPE do mês, pelo modelo e ano. Máquinas e veículos fora da tabela têm o valor informado pelo setor.</li>
               <li>Manutenção entra pela NF registrada ou, enquanto ela não chega, pelo valor da OC (ou do orçamento liberado). Orçamento recusado não conta.</li>
               <li>Combustível aparece por secretaria, porque a NF é da secretaria. Consumo por veículo depende dos dados do sistema de abastecimento.</li>

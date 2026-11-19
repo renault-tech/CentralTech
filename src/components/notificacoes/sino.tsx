@@ -83,7 +83,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
       >
         <Bell className={cn("h-5 w-5", novo && "animate-pulse motion-reduce:animate-none")} aria-hidden strokeWidth={1.8} />
         {total > 0 && (
-          <span className="absolute right-0.5 top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cataguases-vermelho px-1 text-[11px] font-semibold leading-none text-white">
+          <span className="absolute right-0.5 top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-cataguases-vermelho px-1 text-[0.6875rem] font-semibold leading-none text-white">
             {total > 99 ? "99+" : total}
           </span>
         )}
@@ -109,7 +109,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
           {compras > 0 && (
             <a
               href={destinoDoAviso("compras", null)}
-              className="flex items-center gap-2 border-b border-slate-100 bg-teal-50/60 px-4 py-2.5 text-[13px] hover:bg-teal-50"
+              className="flex items-center gap-2 border-b border-slate-100 bg-teal-50/60 px-4 py-2.5 text-[0.8125rem] hover:bg-teal-50"
             >
               <span className="h-2 w-2 flex-none rounded-full" style={{ backgroundColor: COR_APP_AVISO.compras }} />
               <span className="flex-1">
@@ -139,14 +139,14 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
                     aria-hidden
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <span className="flex items-center gap-2 text-[0.6875rem] text-slate-500">
                       <span className="font-semibold" style={{ color: COR_APP_AVISO[n.app] }}>
                         {NOME_APP_AVISO[n.app]}
                       </span>
                       <span>{haQuanto(n.criado_em)}</span>
                       {!n.lida_em && <span className="sr-only">não lido</span>}
                     </span>
-                    <span className={cn("mt-0.5 block text-[13px]", !n.lida_em ? "font-semibold text-cataguases-marinho" : "text-slate-700")}>
+                    <span className={cn("mt-0.5 block text-[0.8125rem]", !n.lida_em ? "font-semibold text-cataguases-marinho" : "text-slate-700")}>
                       {n.titulo}
                     </span>
                     {n.mensagem && <span className="mt-0.5 block truncate text-xs text-slate-500">{n.mensagem}</span>}
@@ -167,7 +167,7 @@ export function SinoNotificacoes({ usuarioId }: { usuarioId: string }) {
         >
           <span className="mt-1 h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: COR_APP_AVISO[novo.app] }} aria-hidden />
           <button type="button" onClick={() => abrir(novo)} className="min-w-0 flex-1 text-left">
-            <span className="block text-[11px] font-semibold" style={{ color: COR_APP_AVISO[novo.app] }}>
+            <span className="block text-[0.6875rem] font-semibold" style={{ color: COR_APP_AVISO[novo.app] }}>
               Novo aviso · {NOME_APP_AVISO[novo.app]}
             </span>
             <span className="mt-0.5 block text-sm font-semibold text-cataguases-marinho">{novo.titulo}</span>

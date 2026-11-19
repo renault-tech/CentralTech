@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Inbox, LogOut, Settings } from "lucide-react";
 
 import { Brasao } from "@/components/brasao";
 import { AlternarTema } from "@/components/layout/alternar-tema";
+import { ControleZoom } from "@/components/layout/controle-zoom";
 import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 import { sair } from "@/lib/actions/auth";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
@@ -27,8 +29,11 @@ import type { UsuarioHub } from "@/types/database";
 export async function CabecalhoHub({
   usuario,
   modulo,
+  contexto,
 }: {
   usuario: UsuarioHub;
+  /** Controle do contexto do módulo (ex.: exercício), à direita do nome dele. */
+  contexto?: ReactNode;
   /** Módulo interno (Emendas, Frotas): faixa do topo na cor dele e o nome do módulo ao lado de
    * "← Central" — mesmo padrão de header de todos os apps (faixa de 3px na cor do app). */
   modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" | "imoveis" };
@@ -49,6 +54,7 @@ export async function CabecalhoHub({
       <CabecalhoVisual
         usuario={usuario}
         modulo={modulo}
+        contexto={contexto}
         pendentes={pendentes}
         gerenciaFeedback={gerenciaFeedback}
         feedbackNovos={gerenciaFeedback ? feedbackContado : 0}
@@ -61,12 +67,14 @@ export async function CabecalhoHub({
 export function CabecalhoVisual({
   usuario,
   modulo,
+  contexto,
   pendentes,
   gerenciaFeedback,
   feedbackNovos,
 }: {
   usuario: Pick<UsuarioHub, "id" | "nome" | "admin_hub">;
   modulo?: { nome: string; cor: string; app?: "emendas" | "frotas" | "imoveis" };
+  contexto?: ReactNode;
   pendentes: number;
   gerenciaFeedback: boolean;
   feedbackNovos: number;
@@ -85,7 +93,7 @@ export function CabecalhoVisual({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 sm:px-6">
         {modulo ? (
           /* Dentro de um módulo: brasão, "← Central" (volta à Central) e o nome do módulo com a cor dele. */
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
             <Link href="/" aria-label="Central Cataguases, início" className="rounded-lg p-0.5 transition-opacity duration-200 hover:opacity-85" data-tour="marca-hub">
               <Brasao tamanho={32} />
             </Link>
@@ -98,13 +106,19 @@ export function CabecalhoVisual({
               <span aria-hidden className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: modulo.cor }} />
               <span className="truncate">{modulo.nome}</span>
             </p>
+            {contexto && (
+              <>
+                <span aria-hidden className="hidden h-6 w-px bg-white/20 sm:block" />
+                {contexto}
+              </>
+            )}
           </div>
         ) : (
           <Link href="/" className="flex items-center gap-3 rounded-lg transition-opacity duration-200 hover:opacity-85" data-tour="marca-hub">
             <Brasao tamanho={32} />
             <div>
               <p className="text-sm font-semibold leading-tight">Central Cataguases</p>
-              <p className="text-[11px] leading-tight text-slate-300">Prefeitura de Cataguases</p>
+              <p className="text-[0.6875rem] leading-tight text-slate-300">Prefeitura de Cataguases</p>
             </div>
           </Link>
         )}
@@ -150,6 +164,7 @@ export function CabecalhoVisual({
           <BotaoFeedback appInicial={modulo?.app ?? "hub"} />
           <BotaoAjuda />
           <AlternarTema />
+          <ControleZoom />
           <span aria-hidden className="mx-1 hidden h-6 w-px bg-white/15 sm:block" />
           <Link href="/conta" className={`${CLASSE_LINK_CABECALHO} hidden max-w-[14rem] sm:inline-flex`} title="Minha conta">
             <span className="truncate">{usuario.nome}</span>

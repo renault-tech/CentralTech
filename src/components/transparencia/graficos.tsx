@@ -71,7 +71,7 @@ export function BarraExecucao({ p, altura = 10, titulo, rotuloAria }: { p: Parte
 
 export function Legenda({ claro }: { claro?: boolean }) {
   return (
-    <ul className={`flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] ${claro ? "text-white/80" : "text-[var(--p-tinta-2)]"}`}>
+    <ul className={`flex flex-wrap gap-x-5 gap-y-1.5 text-[0.8125rem] ${claro ? "text-white/80" : "text-[var(--p-tinta-2)]"}`}>
       {SERIES.map((s) => (
         <li key={s.chave} className="flex items-center gap-2">
           <span aria-hidden className={`inline-block h-2.5 w-2.5 rounded-[3px] ${s.classe}`} />
@@ -131,11 +131,11 @@ export function BarrasPorGrupo({
                   )
                 )}
               >
-                <span className="truncate text-[14px] font-medium text-[var(--p-tinta)]">
+                <span className="truncate text-[0.875rem] font-medium text-[var(--p-tinta)]">
                   {g.nome}
-                  {g.detalhe && <span className="ml-1.5 text-[12px] font-normal text-[var(--p-tinta-3)]">{g.detalhe}</span>}
+                  {g.detalhe && <span className="ml-1.5 text-[0.75rem] font-normal text-[var(--p-tinta-3)]">{g.detalhe}</span>}
                 </span>
-                <span className="text-right text-[13px] tabular-nums text-[var(--p-tinta-2)]">
+                <span className="text-right text-[0.8125rem] tabular-nums text-[var(--p-tinta-2)]">
                   <span className="font-semibold text-[var(--p-tinta)]">{pct(g.pago / (g.total || 1), 0)}</span> pago · {brlCurto(g.total)}
                 </span>
                 <span className="col-span-2 block" style={{ width: `${largura}%` }}>

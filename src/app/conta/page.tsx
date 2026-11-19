@@ -16,7 +16,7 @@ export default async function PaginaMinhaConta() {
     <div className="min-h-dvh bg-slate-50">
       <CabecalhoHub usuario={usuario} />
 
-      <main id="conteudo" className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <main id="conteudo" className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
         <CabecalhoPagina titulo="Minha conta" subtitulo={`Olá, ${usuario.nome}.`} />
 
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

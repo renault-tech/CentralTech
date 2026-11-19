@@ -69,7 +69,7 @@ export function MenuExportar({ opcoes, compacto = false, rotulo = "Exportar" }: 
           {opcoes.map((o) => {
             const conteudo = (
               <>
-                <span className="block text-[13px] font-medium text-cataguases-marinho">{o.rotulo}</span>
+                <span className="block text-[0.8125rem] font-medium text-cataguases-marinho">{o.rotulo}</span>
                 {o.detalhe && <span className="block text-xs text-slate-500">{o.detalhe}</span>}
               </>
             );

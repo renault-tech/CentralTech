@@ -21,7 +21,7 @@ export function EtapasEntrega({ entrega }: { entrega: Entrega | null }) {
           <span className={`z-[1] grid h-7 w-7 place-items-center rounded-full border-2 text-xs font-bold ${ESTILO[e.estado]}`}>{e.estado === "feita" ? "✓" : i + 1}</span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-cataguases-marinho">{e.nome}</p>
-            <p className="text-[13px] text-slate-600">
+            <p className="text-[0.8125rem] text-slate-600">
               {e.data ? formatarData(e.data) : "—"}
               {e.detalhe ? ` · ${e.detalhe}` : ""}
             </p>

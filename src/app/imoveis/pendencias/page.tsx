@@ -79,9 +79,9 @@ export default async function PendenciasImoveis({ searchParams }: { searchParams
                 <li key={`${p.imovelId}-${p.chave}`} className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-200 border-l-4 px-3 py-2.5 ${j ? "border-l-slate-300 opacity-80" : p.nivel === "critico" ? "border-l-red-600" : "border-l-amber-500"}`}>
                   <div className="min-w-0 flex-1 basis-72">
                     <p className="text-sm"><b>{im.nome}</b> · {p.titulo}</p>
-                    <p className="text-[13px] text-slate-600">{p.detalhe}</p>
+                    <p className="text-[0.8125rem] text-slate-600">{p.detalhe}</p>
                     <p className="text-xs text-slate-500">{nomeSec.get(im.secretaria_id) ?? ""}</p>
-                    {j && <p className="mt-1 text-[13px] text-slate-700"><b>Justificada</b> em {formatarData(j.em.slice(0, 10))}: {j.justificativa}</p>}
+                    {j && <p className="mt-1 text-[0.8125rem] text-slate-700"><b>Justificada</b> em {formatarData(j.em.slice(0, 10))}: {j.justificativa}</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {!j && <SeloGravidade nivel={p.nivel} />}

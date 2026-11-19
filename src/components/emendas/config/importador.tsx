@@ -55,8 +55,8 @@ export function Importador({ anos }: { anos: number[] }) {
   return (
     <div className="flex flex-col gap-5">
       <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-[15px] font-semibold text-cataguases-marinho">Importar planilha de acompanhamento</h2>
-        <p className="mt-1 max-w-3xl text-[13px] text-slate-600">
+        <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">Importar planilha de acompanhamento</h2>
+        <p className="mt-1 max-w-3xl text-[0.8125rem] text-slate-600">
           Mesmo formato da planilha usada até aqui (colunas Emenda, ID, Vereador, Descrição, Valor, Destinação, Dotação, Nova dotação, Secretaria,
           Saúde e STATUS). Se ela tiver duas abas — a original e a de depois dos remanejamentos —, a mais recente vira a situação atual e a
           diferença entra no histórico de cada emenda. “EXECUTADA - EMP: nº - DP: data” vira empenho e pagamento.
@@ -113,7 +113,7 @@ export function Importador({ anos }: { anos: number[] }) {
 
       {previa && (
         <section className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-[15px] font-semibold text-cataguases-marinho">2. Revise antes de gravar</h2>
+          <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">2. Revise antes de gravar</h2>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3 text-sm">
             {[
               ["Emendas", String(previa.linhas.length)],
@@ -151,7 +151,7 @@ export function Importador({ anos }: { anos: number[] }) {
             <div>
               <h3 className="text-sm font-semibold text-cataguases-marinho">Situações que precisam de conferência ({pendentes.length})</h3>
               <p className="text-xs text-slate-600">Entram assim mesmo; depois dá para completar nº de empenho/data no detalhe de cada emenda (aparecem nos alertas do painel).</p>
-              <ul className="mt-2 flex flex-col gap-1.5 text-[13px]">
+              <ul className="mt-2 flex flex-col gap-1.5 text-[0.8125rem]">
                 {pendentes.map((l) => (
                   <li key={l.numero} className="flex flex-wrap gap-2">
                     <span className="font-mono text-slate-500">nº {l.numero}</span>
@@ -164,7 +164,7 @@ export function Importador({ anos }: { anos: number[] }) {
           )}
 
           <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full min-w-[860px] text-[13px]">
+            <table className="w-full min-w-[860px] text-[0.8125rem]">
               <thead>
                 <tr className="bg-slate-50 text-left text-slate-600">
                   <th className="px-3 py-2 font-medium">Nº</th>
@@ -182,7 +182,7 @@ export function Importador({ anos }: { anos: number[] }) {
                     <td className="px-3 py-2">{String(l.vereador_numero).padStart(2, "0")} · {l.vereador_nome}</td>
                     <td className="max-w-[320px] truncate px-3 py-2" title={l.objeto}>
                       {l.objeto}
-                      {l.remanejamento && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-[11px] text-amber-900">remanejada</span>}
+                      {l.remanejamento && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-[0.6875rem] text-amber-900">remanejada</span>}
                     </td>
                     <td className="px-3 py-2">{l.unidade_codigo}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{brl(l.valor)}</td>

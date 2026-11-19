@@ -3,7 +3,9 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 import { AtualizarSozinho } from "@/components/layout/atualizar-sozinho";
+import { ControleZoom } from "@/components/layout/controle-zoom";
 import { SCRIPT_TEMA_INICIAL } from "@/lib/tema";
+import { SCRIPT_ZOOM_INICIAL } from "@/lib/zoom";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -39,10 +41,14 @@ export default function RootLayout({
       <head>
         {/* Aplica o tema salvo (ou o do sistema) antes da pintura, sem piscar. */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
+        {/* Aplica o zoom salvo (limitado pela largura da tela) antes da pintura. */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_ZOOM_INICIAL }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         {children}
         <AtualizarSozinho />
+        {/* Só aparece onde não há cabeçalho (login, portal público…); com cabeçalho o botão é o dele. */}
+        <ControleZoom variante="flutuante" />
       </body>
     </html>
   );

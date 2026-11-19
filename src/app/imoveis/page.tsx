@@ -133,7 +133,7 @@ export default async function PainelImoveis() {
                   <p className="text-sm">
                     <b>{nomeImovel.get(p.imovelId)}</b> · {p.titulo}
                   </p>
-                  <p className="text-[13px] text-slate-600">{p.detalhe}</p>
+                  <p className="text-[0.8125rem] text-slate-600">{p.detalhe}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <SeloGravidade nivel={p.nivel} />

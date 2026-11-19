@@ -18,7 +18,7 @@ export function EtiquetaApp({ app }: { app: FeedbackComAnexos["app"] }) {
   const a = APPS_FEEDBACK[app];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[0.6875rem] font-semibold"
       style={{ color: a.corTexto, borderColor: `${a.cor}55`, backgroundColor: `${a.cor}14` }}
     >
       <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: a.cor }} />
@@ -37,18 +37,18 @@ export function CartaoFeedback({ item, gerir }: { item: FeedbackComAnexos; gerir
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
         <EtiquetaApp app={item.app} />
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{ROTULO_TIPO[item.tipo]}</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.6875rem] font-medium text-slate-600">{ROTULO_TIPO[item.tipo]}</span>
         {gerir && <span className="font-medium text-slate-700">{item.autor_nome}</span>}
         <span>{dataHora(item.criado_em)}</span>
         {gerir && item.pagina && <span className="truncate">· {item.pagina}</span>}
-        <span className="ml-auto rounded-full border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+        <span className="ml-auto rounded-full border border-slate-200 px-2 py-0.5 text-[0.6875rem] font-medium text-slate-600">
           {ROTULO_STATUS[item.status]}
         </span>
       </div>
       <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">{item.mensagem}</p>
       {item.resposta && (
         <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-          <p className="text-[11px] font-semibold text-emerald-800">
+          <p className="text-[0.6875rem] font-semibold text-emerald-800">
             Resposta da equipe
             {item.respondido_em ? ` · ${dataHora(item.respondido_em)}` : ""}
             {gerir && item.respondido_por ? ` · ${item.respondido_por}` : ""}
@@ -70,7 +70,7 @@ export function CartaoFeedback({ item, gerir }: { item: FeedbackComAnexos; gerir
             ) : (
               <a key={c} href={url} target="_blank" rel="noreferrer" className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100">
                 <FileText className="h-5 w-5" aria-hidden />
-                <span className="text-[10px]">Arquivo</span>
+                <span className="text-[0.625rem]">Arquivo</span>
               </a>
             );
           })}

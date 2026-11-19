@@ -110,7 +110,7 @@ function FecharAnterior({ dados }: { dados: DadosAssistente }) {
       <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-cataguases-marinho">
         {a.situacao === "encerrado" ? <Lock className="h-4 w-4 text-slate-500" aria-hidden /> : <LockOpen className="h-4 w-4 text-amber-600" aria-hidden />}
         6. Fechar o exercício {a.ano}
-        <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", a.situacao === "encerrado" ? "bg-slate-100 text-slate-700" : "bg-amber-50 text-amber-900")}>{a.situacao === "encerrado" ? "encerrado" : "aberto"}</span>
+        <span className={cn("rounded-full px-2 py-0.5 text-[0.6875rem] font-medium", a.situacao === "encerrado" ? "bg-slate-100 text-slate-700" : "bg-amber-50 text-amber-900")}>{a.situacao === "encerrado" ? "encerrado" : "aberto"}</span>
       </p>
       <p className="text-xs text-slate-600">
         {a.semSituacao > 0 ? `${a.semSituacao} emenda(s) de ${a.ano} ainda sem situação de encerramento. ` : `Todas as emendas de ${a.ano} têm situação definida. `}

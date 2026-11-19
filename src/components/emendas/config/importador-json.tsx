@@ -21,8 +21,8 @@ export function ImportadorJson() {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="text-[15px] font-semibold text-cataguases-marinho">Importar o controle de execução (JSON)</h2>
-      <p className="mt-1 max-w-3xl text-[13px] text-slate-600">
+      <h2 className="text-[0.9375rem] font-semibold text-cataguases-marinho">Importar o controle de execução (JSON)</h2>
+      <p className="mt-1 max-w-3xl text-[0.8125rem] text-slate-600">
         Arquivo exportado pelo HTML de controle (formato <code>centraltech.emendas.execucao/v1</code>): termo, vigência, extrato, conta, gestores, fases e checklist.
         Nada é gravado direto: cada diferença vira uma proposta para você aprovar. Campo vazio no arquivo nunca apaga dado do sistema.
       </p>

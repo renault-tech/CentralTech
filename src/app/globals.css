@@ -637,8 +637,8 @@ html.dark body {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  html.dark .text-\[10px\] { font-size: 11px; }
-  html.dark .text-\[11px\] { font-size: 12px; }
+  html.dark .text-\[0\.625rem\] { font-size: 0.6875rem; }
+  html.dark .text-\[0\.6875rem\] { font-size: 0.75rem; }
 }
 
 /* Início do Hub: fundo próprio (claro com manchas; escuro marinho), nunca cor fixa inline. */
@@ -654,3 +654,10 @@ html.dark .hub-home-fundo {
 }
 html.dark .hub-home-fundo [class*="text-[#8A5A00]"] { color: #f0b04f; }
 html.dark .hub-home-fundo [class*="text-[#0A5FD0]"] { color: #6aa6ee; }
+
+/* Zoom (tamanho do texto): a impressão sempre sai no tamanho normal, e o botão flutuante só existe onde não há
+   cabeçalho da Central (com cabeçalho, o botão é o do próprio cabeçalho). */
+@media print {
+  html { font-size: 100% !important; }
+}
+body:has(.cabecalho-escuro) .zoom-flutuante { display: none; }
