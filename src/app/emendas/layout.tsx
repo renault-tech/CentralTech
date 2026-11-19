@@ -3,21 +3,20 @@ import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo } from "@/components/modulo/tema";
-import { CLASSE_BOTAO } from "@/components/modulo/ui";
+import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
-import { SeletorExercicio } from "@/components/emendas/seletor-exercicio";
+import { AvisoExercicioEncerrado, SeletorExercicio } from "@/components/emendas/seletor-exercicio";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
 import { anosDoPortal, metaDoPortal, pacoteDoPortal } from "@/lib/emendas/portal";
 import { contarPorGravidade, verificarPortal } from "@/lib/emendas/portal-verificacao";
 
 export const dynamic = "force-dynamic";
+
 
 export const metadata = { title: "Emendas Impositivas · Central Cataguases" };
 
@@ -87,25 +86,22 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
 
   return (
     <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
-      <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
-      <NavModulo
-        itens={itens}
-        rotuloAria="Seções do módulo Emendas"
-        tour="nav-emendas"
-        ocultarAcaoEm="/emendas/pendencias"
-        acao={
-          gestor && (
-            <Link href="/emendas/nova" className={CLASSE_BOTAO}>
-              <Plus className="h-4 w-4" aria-hidden />
-              Nova emenda
-            </Link>
+      <CabecalhoHub
+        usuario={ctx.usuario}
+        modulo={modulo}
+        contexto={
+          exercicioAtual && (
+            <React.Suspense fallback={null}>
+              <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+            </React.Suspense>
           )
         }
       />
-      <main id="conteudo" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+      <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" tour="nav-emendas" largura={LARGURA_MODULO} />
+      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
         {exercicioAtual && (
           <React.Suspense fallback={null}>
-            <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+            <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
           </React.Suspense>
         )}
         <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>

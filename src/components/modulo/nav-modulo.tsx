@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { LARGURA_MODULO } from "@/components/modulo/tema";
 import { cn } from "@/lib/utils";
 
 export type ItemNav = {
@@ -30,6 +31,7 @@ export function NavModulo({
   tour,
   acao,
   ocultarAcaoEm,
+  largura = LARGURA_MODULO,
 }: {
   itens: ItemNav[];
   rotuloAria: string;
@@ -37,12 +39,14 @@ export function NavModulo({
   acao?: ReactNode;
   /** Prefixo de rota onde a ação sai da faixa (a própria tela a mostra junto do título). */
   ocultarAcaoEm?: string;
+  /** Largura máxima do conteúdo da faixa; deve ser a mesma do `<main>` do módulo. */
+  largura?: string;
 }) {
   const pathname = usePathname();
 
   return (
     <div className="border-b border-slate-300 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] print:hidden">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 px-3 py-1.5 sm:px-5">
+      <div className={cn("mx-auto flex flex-wrap items-center justify-between gap-x-3 px-3 py-1.5 sm:px-5", largura)}>
         <nav className="flex flex-wrap gap-1" aria-label={rotuloAria} data-tour={tour}>
           {itens.map((item) => {
             if (item.externo) {

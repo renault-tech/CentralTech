@@ -17,3 +17,11 @@ export function estiloModulo(m: Pick<InfoModulo, "cor" | "corTexto" | "corTextoE
     "--modulo-tinta-escuro": m.corTextoEscuro,
   } as CSSProperties;
 }
+
+/**
+ * Largura útil e margens do conteúdo dos módulos internos (Emendas, Frotas, Imóveis) e da faixa de abas deles: uma só
+ * definição, para a faixa e a página ficarem alinhadas. 90rem (1440 px em tamanho normal) aproveita monitores largos sem
+ * esticar leitura corrida, porque as telas dos módulos são tabelas e painéis.
+ */
+export const LARGURA_MODULO = "max-w-[90rem]";
+export const MARGENS_MODULO = "px-4 py-5 sm:px-6 sm:py-6";

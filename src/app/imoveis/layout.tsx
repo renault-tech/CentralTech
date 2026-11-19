@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo } from "@/components/modulo/tema";
+import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
 import { carregarTudo } from "@/lib/imoveis/carregar";
 import { obterContextoImoveis } from "@/lib/imoveis/dados";
 import { COR_MODULO } from "@/lib/imoveis/regras";
@@ -62,7 +62,7 @@ export default async function LayoutImoveis({ children }: { children: React.Reac
     <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.imoveis)}>
       <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
       <NavModulo itens={itens} rotuloAria="Seções do módulo Imóveis e Consumo" tour="nav-imoveis" />
-      <main id="conteudo" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
         {children}
       </main>
     </div>

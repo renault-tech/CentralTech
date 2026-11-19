@@ -29,6 +29,7 @@ Visão do exercício: régua do ano, um cartão por tipo de execução (direta, 
 ## 4. Emendas (lista e detalhe)
 
 - **Lista:** abas Consolidado / Direta / OSC / Ente, filtros que valem na hora (sem botão "filtrar"), faixa colorida pelo tipo, selo da categoria do beneficiário. Exporta Excel e PDF com os mesmos filtros.
+- **Painel da lista (gráficos):** acima da tabela, indicadores (emendas, valor indicado, empenhado, pago) e pizza com ranking. As abas do painel são os filtros: etapa, vereador, secretaria, situação financeira, beneficiário, Saúde, pendência, situação e remanejamento; a medida é nº de emendas, valor ou pago. Clicar numa fatia, linha ou aba aplica o filtro; os filtros ativos aparecem em chips (✕ tira um, "Limpar tudo" tira todos). A busca e a ordem ficam numa barra acima. O exercício se escolhe no cabeçalho.
 - **Tamanho do texto (zoom):** botão "Aa" no cabeçalho de toda a plataforma (ao lado do modo escuro) e em Minha conta → Aparência. Seis passos, de 100% a 200%; a escolha fica neste navegador e é limitada pela largura da tela (no celular, até 125%).
 - **Detalhe da emenda:** abas **Fases**, **Documentação**, **Pendências**, **Financeiro**, **Andamentos** e **Histórico**.
 - **Tipos de execução:** *direta* (a Prefeitura compra/executa), *OSC* (repasse a organização da sociedade civil por termo de fomento) e *ente* (repasse a hospital, consórcio, outro ente). Cada tipo tem o seu caminho de fases e a sua lista de documentos.

@@ -29,7 +29,7 @@ export default async function PaginaPainelEmendas({
   searchParams: Promise<{ ano?: string }>;
 }) {
   const { ano } = await searchParams;
-  const { exercicio, exercicios } = await medir("painel:exercicio", () => resolverExercicio(ano));
+  const { exercicio } = await medir("painel:exercicio", () => resolverExercicio(ano));
 
   if (!exercicio) {
     return (
@@ -90,7 +90,6 @@ export default async function PaginaPainelEmendas({
                 emendas.some((e) => e.secretaria_id === s.id),
               )}
               exercicio={exercicio}
-              anos={exercicios.map((e) => e.ano)}
               hoje={hoje}
             />
           </Suspense>

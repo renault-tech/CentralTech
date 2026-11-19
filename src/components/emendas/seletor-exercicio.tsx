@@ -16,11 +16,8 @@ function gravarCookie(ano: number) {
   }
 }
 
-/**
- * Seletor de exercício do módulo: vale para TODAS as telas (Painel, Emendas, Pendências, Panorama, Relatórios, Portal, Configurações).
- * A escolha vai para a URL (`?ano=`) e para um cookie, então abrir outra tela mantém o ano. Exercício encerrado mostra o aviso de consulta.
- */
-export function SeletorExercicio({ exercicios, atual }: { exercicios: Item[]; atual: number }) {
+/** Ano em vigor na tela (URL, senão o exercício aberto) e a troca dele; a escolha vai para a URL e para um cookie. */
+function useExercicio(exercicios: Item[], atual: number) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -33,38 +30,53 @@ export function SeletorExercicio({ exercicios, atual }: { exercicios: Item[]; at
     if (exercicios.some((e) => e.ano === doUrl)) gravarCookie(doUrl);
   }, [doUrl, exercicios]);
 
-  if (exercicios.length === 0) return null;
-
   function trocar(novo: number) {
     gravarCookie(novo);
     const p = new URLSearchParams(params.toString());
     p.set("ano", String(novo));
     router.replace(`${pathname}?${p.toString()}`, { scroll: false });
   }
+  return { ano, item, trocar };
+}
+
+/**
+ * Seletor de exercício do módulo, no cabeçalho escuro, ao lado do nome do módulo (antes ocupava uma linha inteira
+ * só para ele). Vale para TODAS as telas (Painel, Emendas, Pendências, Panorama, Relatórios, Portal, Configurações).
+ */
+export function SeletorExercicio({ exercicios, atual }: { exercicios: Item[]; atual: number }) {
+  const { ano, item, trocar } = useExercicio(exercicios, atual);
+  if (exercicios.length === 0) return null;
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-end gap-2 print:hidden">
-      {item?.situacao === "encerrado" && (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900" role="status">
-          <Lock className="h-3 w-3" aria-hidden /> Exercício encerrado (restos a pagar ainda recebem pagamentos)
-        </span>
-      )}
-      <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-        <CalendarRange className="h-4 w-4 text-[#5B3FA8]" aria-hidden />
-        Exercício
-        <select
-          value={ano}
-          onChange={(e) => trocar(Number(e.target.value))}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-medium text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB] sm:h-[34px]"
-        >
-          {exercicios.map((e) => (
-            <option key={e.ano} value={e.ano}>
-              {e.ano}
-              {e.situacao === "encerrado" ? " (encerrado)" : ""}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
+    <label className="inline-flex items-center gap-1.5 text-sm text-slate-200 print:hidden">
+      <CalendarRange className="h-4 w-4 flex-none" aria-hidden />
+      <span className="hidden sm:inline">Exercício</span>
+      <select
+        aria-label="Exercício"
+        value={ano}
+        onChange={(e) => trocar(Number(e.target.value))}
+        title={item?.situacao === "encerrado" ? "Exercício encerrado: só consulta e restos a pagar" : undefined}
+        className="h-11 cursor-pointer rounded-lg border border-white/25 bg-white/10 px-2.5 text-sm font-semibold text-white outline-none transition-colors hover:bg-white/15 focus-visible:border-[#E9A63B] sm:h-10 [&>option]:text-slate-900"
+      >
+        {exercicios.map((e) => (
+          <option key={e.ano} value={e.ano}>
+            {e.ano}
+            {e.situacao === "encerrado" ? " (encerrado)" : ""}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Aviso (só quando o exercício está encerrado): consulta e restos a pagar. Fica na página, não no cabeçalho. */
+export function AvisoExercicioEncerrado({ exercicios, atual }: { exercicios: Item[]; atual: number }) {
+  const { item } = useExercicio(exercicios, atual);
+  if (item?.situacao !== "encerrado") return null;
+  return (
+    <p className="mb-4 inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 print:hidden" role="status">
+      <Lock className="h-4 w-4 flex-none" aria-hidden />
+      Exercício encerrado: os restos a pagar ainda recebem pagamentos.
+    </p>
   );
 }

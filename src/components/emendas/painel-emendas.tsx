@@ -51,7 +51,6 @@ export function PainelEmendas({
   vereadores,
   secretarias,
   exercicio,
-  anos,
   hoje,
 }: {
   emendas: EmendaResumo[];
@@ -59,7 +58,6 @@ export function PainelEmendas({
   vereadores: Vereador[];
   secretarias: Secretaria[];
   exercicio: Exercicio;
-  anos: number[];
   /** AAAA-MM-DD, do servidor (evita divergência de hidratação). */
   hoje: string;
 }) {
@@ -134,15 +132,6 @@ export function PainelEmendas({
   return (
     <div className="flex flex-col gap-5">
       <section aria-label="Filtros" className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5" data-tour="filtros-emendas">
-        <Campo rotulo="Exercício">
-          <select className={ESTILO_SELECT} value={String(exercicio.ano)} onChange={(e) => definir({ ano: e.target.value })}>
-            {anos.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </Campo>
         <Campo rotulo="Vereador">
           <select className={cn(ESTILO_SELECT, "min-w-[220px]")} value={f.v} onChange={(e) => definir({ v: e.target.value })}>
             <option value="">Todos os vereadores</option>

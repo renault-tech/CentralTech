@@ -47,7 +47,7 @@ export default async function PaginaFeedback({ searchParams }: { searchParams: P
   return (
     <div className="min-h-dvh bg-slate-50">
       <CabecalhoHub usuario={usuario} />
-      <main id="conteudo" className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <main id="conteudo" className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <CabecalhoPagina
           titulo="Feedback"
           subtitulo={aba === "gestao" ? "Sugestões e pedidos de suporte de todos os aplicativos." : "O que você enviou e como está cada pedido."}
