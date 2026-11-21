@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-21",
+    titulo: "Emendas: clique na linha para abrir a emenda, e gráficos e tabelas com movimento",
+    descricao:
+      "Na lista de Emendas (e no Panorama e na página do vereador) basta clicar em qualquer ponto da linha para abrir a emenda; Ctrl ou Cmd + clique abre em outra aba. Ao passar o mouse, a linha acende, o título destaca e aparece uma seta. Os gráficos agora se desenham ao abrir (barras que enchem, pizza que abre fatia por fatia, curva que traça, percentual que conta), as linhas das tabelas entram em sequência, e ao passar o mouse num item do ranking ele se destaca, os outros recuam e a fatia correspondente da pizza cresce. Botões sobem levemente ao passar o mouse e afundam ao clicar. Quem prefere menos movimento no sistema operacional não vê as animações.",
+  },
+  {
+    data: "2026-11-21",
     titulo: "Emendas com visual novo: menu lateral, andamento em % e comparação entre anos",
     descricao:
       "O módulo Emendas ganhou um menu lateral com as seções agrupadas (em telas pequenas continua a faixa de abas), títulos e cartões no mesmo padrão em todas as abas e movimento suave ao abrir e trocar de tela. Na lista, cada emenda mostra um anel com o percentual de andamento (fases concluídas ÷ fases do tipo), a fase seguinte e dá para ordenar por maior ou menor andamento; o mesmo anel aparece no detalhe da emenda e há um indicador de andamento médio no topo da lista. No Painel há um quadro de comparação entre exercícios, que compara valor indicado, empenhado, pago e a curva de pagamentos assim que existir mais de um ano. Nada mudou nas regras, permissões e fluxos.",

@@ -47,7 +47,7 @@ export default async function PaginaVereadores({ searchParams }: { searchParams:
               <div className="flex h-3 overflow-hidden rounded bg-slate-100" aria-hidden>
                 {[3, 2, 1, 0].map((g) =>
                   l.grupos[g] > 0 ? (
-                    <span key={g} style={{ width: `${(l.grupos[g] / exercicio.cota_por_vereador) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
+                    <span key={g} className="emd-preenche" style={{ width: `${(l.grupos[g] / exercicio.cota_por_vereador) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
                   ) : null
                 )}
               </div>

@@ -71,7 +71,7 @@ function Curvas({ anoAtual, anoAnterior, atual, anterior, mesAtual }: { anoAtual
           </text>
         ))}
         <path d={caminho(anterior, 12)} fill="none" className="stroke-slate-400" strokeWidth={2} strokeDasharray="5 4" strokeLinecap="round" />
-        <path d={caminho(atual, nAtual)} fill="none" stroke="var(--modulo)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} className="emd-barra" style={{ strokeDasharray: 1 }} />
+        <path d={caminho(atual, nAtual)} fill="none" stroke="var(--modulo)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} className="emd-traco" />
         <circle cx={x(nAtual - 1)} cy={y(ultimo)} r={4} fill="var(--modulo)" stroke="white" strokeWidth={2} />
       </svg>
       <figcaption className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">

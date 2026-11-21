@@ -15,14 +15,18 @@ export function Pizza({
   aoEscolher,
   dinheiro,
   rotuloTotal,
+  destaque = null,
 }: {
   fatias: { chave: string; rotulo: string; v: number; cor: string; clicavel: boolean }[];
   selecionada: string;
   aoEscolher: (chave: string) => void;
   dinheiro: boolean;
   rotuloTotal: string;
+  /** Fatia a realçar vinda de fora (a linha do ranking sob o cursor). */
+  destaque?: string | null;
 }) {
-  const [sobre, setSobre] = React.useState<string | null>(null);
+  const [sobreLocal, setSobre] = React.useState<string | null>(null);
+  const sobre = sobreLocal ?? destaque;
   const R = 38;
   const C = 2 * Math.PI * R;
   const total = fatias.reduce((s, f) => s + f.v, 0);
@@ -46,7 +50,7 @@ export function Pizza({
       {total === 0 ? (
         <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
       ) : (
-        arcos.map((a) => {
+        arcos.map((a, idx) => {
           const ativa = a.chave === selecionada;
           const apagada = (selecionada || sobre) && !ativa && a.chave !== sobre;
           return (
@@ -62,7 +66,8 @@ export function Pizza({
               strokeDashoffset={-a.inicio}
               transform="rotate(-90 50 50)"
               opacity={apagada ? 0.4 : 1}
-              className={`outline-none transition-[stroke-width,opacity] duration-150 motion-reduce:transition-none ${a.clicavel ? "cursor-pointer" : ""}`}
+              className={`emd-fatia outline-none transition-[stroke-width,opacity,filter] duration-200 motion-reduce:transition-none ${a.clicavel ? "cursor-pointer" : ""}`}
+              style={{ animationDelay: `${idx * 70}ms` }}
               role={a.clicavel ? "button" : undefined}
               tabIndex={a.clicavel ? 0 : undefined}
               aria-pressed={a.clicavel ? ativa : undefined}

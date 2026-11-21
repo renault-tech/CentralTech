@@ -246,7 +246,7 @@ export function PainelEmendas({
                   <span className="flex h-3.5 overflow-hidden rounded bg-slate-100">
                     {[3, 2, 1, 0].map((g) =>
                       l.grupos[g] > 0 ? (
-                        <span key={g} style={{ width: `${(l.grupos[g] / maxV) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
+                        <span key={g} className="emd-preenche" style={{ width: `${(l.grupos[g] / maxV) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
                       ) : null
                     )}
                   </span>
@@ -287,7 +287,7 @@ export function PainelEmendas({
                       {etapa.nome}
                     </span>
                     <span className="h-[18px] overflow-hidden rounded bg-slate-50">
-                      <span className="block h-[18px] rounded" style={{ width: `${(valor / totalFunil) * 100}%`, backgroundColor: etapa.cor }} />
+                      <span className="emd-preenche block h-[18px] rounded" style={{ width: `${(valor / totalFunil) * 100}%`, backgroundColor: etapa.cor }} />
                     </span>
                     <span className="text-right text-xs tabular-nums text-slate-700">
                       <strong>{quantidade}</strong> · {brlCurto(valor)}
@@ -391,8 +391,8 @@ export function PainelEmendas({
                 >
                   <span className="truncate text-[0.8125rem] text-cataguases-marinho">{l.nome}</span>
                   <span className="relative h-4 overflow-hidden rounded bg-slate-50">
-                    <span className="absolute inset-y-0 left-0 rounded bg-[#DDD6F7]" style={{ width: `${(l.total / maxS) * 100}%` }} />
-                    <span className="absolute inset-y-0 left-0 rounded bg-[#563A9E]" style={{ width: `${(l.pago / maxS) * 100}%` }} />
+                    <span className="emd-preenche absolute inset-y-0 left-0 rounded bg-[#DDD6F7]" style={{ width: `${(l.total / maxS) * 100}%` }} />
+                    <span className="emd-preenche absolute inset-y-0 left-0 rounded bg-[#563A9E]" style={{ width: `${(l.pago / maxS) * 100}%` }} />
                   </span>
                   <span className="text-right text-xs tabular-nums text-slate-700">
                     {brlCurto(l.total)} · <strong>{pct(l.pago / l.total, 0)}</strong>
@@ -464,7 +464,7 @@ function Divisao({ a, b, va, vb, cor, apoioA, apoioB }: { a: string; b: string; 
         </span>
       </div>
       <div className="flex h-3 overflow-hidden rounded-full bg-slate-200" aria-hidden>
-        <span style={{ width: `${(va / total) * 100}%`, backgroundColor: cor }} />
+        <span className="emd-preenche" style={{ width: `${(va / total) * 100}%`, backgroundColor: cor }} />
       </div>
       <div className="mt-1 flex justify-between text-xs text-slate-500">
         <span>{apoioA}</span>
@@ -514,7 +514,7 @@ function Curva({ acumulado, total, mesHoje }: { acumulado: number[]; total: numb
       )}
       <polyline points={`${mx(0)},${my(0)} ${mx(12)},${my(total)}`} fill="none" stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 4" />
       <polygon points={area} fill="rgba(107,79,187,0.12)" />
-      <polyline points={linha} fill="none" stroke="#563A9E" strokeWidth={2.5} strokeLinejoin="round" />
+      <polyline points={linha} fill="none" stroke="#563A9E" strokeWidth={2.5} strokeLinejoin="round" pathLength={1} className="emd-traco" />
       {pontos.slice(1).map((p) => (
         <circle key={p.m} cx={p.x} cy={p.y} r={3.5} fill="#FFFFFF" stroke="#563A9E" strokeWidth={2}>
           <title>{`Até ${MESES[p.m - 1]}: ${brl(p.v)}`}</title>

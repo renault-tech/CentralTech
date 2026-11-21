@@ -56,7 +56,7 @@ export function AnelAndamento({
         )}
       </svg>
       <span className="absolute inset-0 flex items-center justify-center font-semibold tabular-nums tracking-tight text-cataguases-marinho" style={{ fontSize: tamanho * 0.28 }} aria-hidden>
-        {p}
+        <span className="emd-conta" style={{ ["--emd-n" as string]: p }} />
         <span className="font-medium text-slate-500" style={{ fontSize: tamanho * 0.2 }}>%</span>
       </span>
     </span>

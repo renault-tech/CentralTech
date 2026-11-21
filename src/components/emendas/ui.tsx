@@ -62,7 +62,7 @@ export function Kpi({
   comparacao?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 sm:p-[1.125rem]">
+    <div className="emd-ergue flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 sm:p-[1.125rem]">
       <span className="flex items-center gap-2 text-[0.8125rem] font-medium text-slate-600">
         {Icone && (
           <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)] text-[color:var(--modulo-tinta)]">

@@ -70,6 +70,8 @@ export function PainelLista({
   const catalogo = useCatalogo();
   const [visao, setVisao] = React.useState<Visao>("etapa");
   const [medida, setMedida] = React.useState<Medida>("n");
+  /** Linha do ranking sob o cursor: realça a fatia correspondente da pizza. */
+  const [sobreChave, setSobreChave] = React.useState<string | null>(null);
 
   const filtradas = filtrarEmendasLista(emendas, resumos, f);
   const tot = somar(filtradas, resumos);
@@ -235,9 +237,9 @@ export function PainelLista({
         role="img"
         aria-label={`Do valor indicado: ${brlCurto(faixa.pago)} pagos, ${brlCurto(faixa.aPagar)} empenhados a pagar, ${brlCurto(faixa.semEmpenho)} sem empenho`}
       >
-        <span style={{ width: parte(faixa.pago), backgroundColor: COR_FINANCEIRA.paga }} />
-        <span style={{ width: parte(faixa.aPagar), backgroundColor: COR_FINANCEIRA.paga_parcial }} />
-        <span style={{ width: parte(faixa.semEmpenho), backgroundColor: COR_FINANCEIRA.sem_empenho }} />
+        <span className="emd-preenche" style={{ width: parte(faixa.pago), backgroundColor: COR_FINANCEIRA.paga }} />
+        <span className="emd-preenche" style={{ width: parte(faixa.aPagar), backgroundColor: COR_FINANCEIRA.paga_parcial }} />
+        <span className="emd-preenche" style={{ width: parte(faixa.semEmpenho), backgroundColor: COR_FINANCEIRA.sem_empenho }} />
       </div>
 
       <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>
@@ -379,6 +381,7 @@ export function PainelLista({
             selecionada={selecionada}
             aoEscolher={escolher}
             dinheiro={dinheiro}
+            destaque={sobreChave}
             rotuloTotal={medida === "valor" ? "indicados" : medida === "pago" ? "pagos" : visao === "pendencia" ? "pendências" : "emendas"}
           />
         </div>
@@ -390,7 +393,7 @@ export function PainelLista({
           {medida === "pago" && "Valor pago: quanto já foi pago nas emendas de cada grupo."}
           {visao === "financeiro" && " Totalmente paga = pago igual ao valor da emenda; paga em parte = pagou algo, mas menos que o valor; empenhada, sem pagamento = reservada, nada pago."}
         </p>
-        <ul className="max-h-72 overflow-y-auto overscroll-contain py-1 lg:max-h-[16rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="emd-foco max-h-72 overflow-y-auto overscroll-contain py-1 lg:max-h-[16rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -404,6 +407,10 @@ export function PainelLista({
                   aria-label={`${i.rotulo}: ${detalhe}`}
                   title={detalhe}
                   onClick={() => escolher(ativo ? "" : i.chave)}
+                  onMouseEnter={() => setSobreChave(i.chave)}
+                  onMouseLeave={() => setSobreChave(null)}
+                  onFocus={() => setSobreChave(i.chave)}
+                  onBlur={() => setSobreChave(null)}
                   className={`grid min-h-11 w-full grid-cols-[0.625rem_minmax(0,1fr)_auto_2.25rem] items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-10 sm:grid-cols-[0.625rem_minmax(9rem,16rem)_minmax(0,1fr)_auto_2.5rem] ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
@@ -411,7 +418,7 @@ export function PainelLista({
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
                   <span className="text-sm leading-snug text-cataguases-marinho">{i.rotulo}</span>
                   <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
-                    <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
+                    <span className="emd-preenche" style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                   </span>
                   <span className="whitespace-nowrap text-right text-sm font-semibold tabular-nums text-cataguases-marinho">{fmt(v)}</span>
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>

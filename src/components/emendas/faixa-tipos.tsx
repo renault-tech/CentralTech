@@ -58,7 +58,7 @@ export function FaixaTipos({
               </div>
               <p className="mt-1 text-xl font-semibold tabular-nums text-cataguases-marinho">{brlCurto(valor)}</p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={`${pct(pago / (valor || 1))} pago`}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (pago / (valor || 1)) * 100)}%`, backgroundColor: t.cor }} />
+                <div className="emd-preenche h-full rounded-full" style={{ width: `${Math.min(100, (pago / (valor || 1)) * 100)}%`, backgroundColor: t.cor }} />
               </div>
               <p className="mt-1.5 text-xs text-slate-600">
                 {pct(pago / (valor || 1))} pago ·{" "}

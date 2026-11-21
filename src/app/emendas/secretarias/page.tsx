@@ -38,7 +38,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
                 <span className="text-sm font-semibold text-[#4C3494]">{pct(l.pago / l.total, 0)} pago</span>
               </div>
               <div className="relative h-2.5 rounded-full bg-[#DDD6F7]" aria-hidden>
-                <div className="h-2.5 rounded-full bg-[#563A9E]" style={{ width: `${(l.pago / l.total) * 100}%` }} />
+                <div className="emd-preenche h-2.5 rounded-full bg-[#563A9E]" style={{ width: `${(l.pago / l.total) * 100}%` }} />
               </div>
               <dl className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="rounded-lg bg-slate-50 p-2">

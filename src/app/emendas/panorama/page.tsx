@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinhaLink } from "@/components/emendas/linha-link";
 import { Download, Gauge } from "lucide-react";
 
 import { Vazio } from "@/components/emendas/ui";
@@ -185,7 +186,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
               </thead>
               <tbody>
                 {lista.map((l) => (
-                  <tr key={l.id} className="border-t border-slate-100 align-top">
+                  <LinhaLink key={l.id} href={`/emendas/${l.id}?aba=financeiro`} className="border-t border-slate-100 align-top">
                     <td className="px-3.5 py-2">
                       <Link href={`/emendas/${l.id}?aba=financeiro`} className="font-medium text-[#5B3FA8] underline-offset-2 hover:underline">Nº {l.numero}</Link>
                       <div className="max-w-[280px] truncate text-xs text-slate-500" title={l.objeto}>{l.secretaria_nome} · {l.beneficiario_nome || l.objeto}</div>
@@ -205,7 +206,7 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
                         <span className="text-xs text-slate-500">Sem situação definida</span>
                       )}
                     </td>
-                  </tr>
+                  </LinhaLink>
                 ))}
               </tbody>
             </table>
@@ -232,14 +233,14 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
             </thead>
             <tbody>
               {restosAnteriores.map((l) => (
-                <tr key={l.id} className="border-t border-slate-100">
+                <LinhaLink key={l.id} href={`/emendas/${l.id}?aba=financeiro`} className="border-t border-slate-100">
                   <td className="px-3.5 py-2 tabular-nums">{l.ano}</td>
                   <td className="px-3.5 py-2"><Link href={`/emendas/${l.id}?aba=financeiro`} className="font-medium text-[#5B3FA8] underline-offset-2 hover:underline">Nº {l.numero}</Link></td>
                   <td className="px-3.5 py-2">{l.secretaria_nome}</td>
                   <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.empenhado)}</td>
                   <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.pago)}</td>
                   <td className="px-3.5 py-2 text-right tabular-nums">{brl(l.aPagar)}</td>
-                </tr>
+                </LinhaLink>
               ))}
             </tbody>
           </table>

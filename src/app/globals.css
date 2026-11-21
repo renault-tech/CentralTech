@@ -723,3 +723,64 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 
 /* Títulos de tela do módulo Emendas: um só tamanho e ritmo em todas as abas (as telas antigas têm o próprio <h1>). */
 .emd h1 { font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+
+/* ===== Emendas — gráficos, tabelas e botões vivos ===== */
+@property --emd-n { syntax: "<integer>"; initial-value: 0; inherits: false; }
+@keyframes emd-conta { from { --emd-n: 0; } }
+@keyframes emd-preenche { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes emd-traco { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes emd-fatia { from { stroke-dasharray: 0 240; } }
+@keyframes emd-linha { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Número que "conta" até o valor (anel de andamento). Sem suporte a @property, aparece direto o valor final. */
+.emd-conta { counter-reset: emd-n var(--emd-n); animation: emd-conta 1.1s var(--emd-curva) 0.1s both; }
+.emd-conta::before { content: counter(emd-n); }
+
+/* Barras que enchem da esquerda para a direita; ao mudar de valor (filtro), a largura desliza em vez de pular. */
+.emd-preenche { animation: emd-preenche 0.85s var(--emd-curva) 0.1s both; transition: width 0.6s var(--emd-curva), filter 0.2s ease; }
+/* Linha do gráfico que se desenha, e fatias da pizza que abrem em sequência. */
+.emd-traco { stroke-dasharray: 1; animation: emd-traco 1.5s var(--emd-curva) 0.15s both; }
+.emd-fatia { animation: emd-fatia 0.9s var(--emd-curva) both; }
+
+/* Linhas de tabela entram em sequência (as 14 primeiras; o resto junto). */
+.emd tbody tr { animation: emd-linha 0.45s var(--emd-curva) both; }
+.emd tbody tr:nth-child(2) { animation-delay: 25ms; }
+.emd tbody tr:nth-child(3) { animation-delay: 50ms; }
+.emd tbody tr:nth-child(4) { animation-delay: 75ms; }
+.emd tbody tr:nth-child(5) { animation-delay: 100ms; }
+.emd tbody tr:nth-child(6) { animation-delay: 125ms; }
+.emd tbody tr:nth-child(7) { animation-delay: 150ms; }
+.emd tbody tr:nth-child(8) { animation-delay: 175ms; }
+.emd tbody tr:nth-child(9) { animation-delay: 200ms; }
+.emd tbody tr:nth-child(10) { animation-delay: 225ms; }
+.emd tbody tr:nth-child(n + 11) { animation-delay: 250ms; }
+
+/* Linha clicável: realce na cor do módulo (camada por cima do fundo do tipo, que é inline) e título que acende. */
+.emd tr.emd-linha-clic { transition: background-color 0.2s var(--emd-curva), background-image 0.2s var(--emd-curva); }
+.emd tr.emd-linha-clic:hover {
+  background-image: linear-gradient(color-mix(in srgb, var(--modulo) 9%, transparent), color-mix(in srgb, var(--modulo) 9%, transparent));
+}
+.emd tr.emd-linha-clic:hover a:first-of-type { color: var(--modulo-tinta); text-decoration: underline; text-underline-offset: 3px; }
+.emd tr.emd-linha-clic:active { background-image: linear-gradient(color-mix(in srgb, var(--modulo) 15%, transparent), color-mix(in srgb, var(--modulo) 15%, transparent)); }
+.emd tbody tr:not(.emd-linha-clic):hover { background-image: linear-gradient(rgb(var(--slate-500) / 0.07), rgb(var(--slate-500) / 0.07)); }
+
+/* Botões: sobem 1 px com sombra ao passar o mouse e afundam ao clicar. */
+.emd .btn-ui, .emd button[role="tab"], .emd button[aria-pressed] {
+  transition: transform 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva), background-color 0.2s ease, filter 0.2s ease, color 0.2s ease;
+}
+@media (hover: hover) {
+  .emd .btn-ui:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 16px -8px rgb(15 23 42 / 0.4); }
+  .emd .btn-ui:not(:disabled):active { transform: translateY(0) scale(0.98); box-shadow: none; }
+  .emd button[role="tab"]:hover { transform: translateY(-1px); }
+
+  /* Gráficos: o item sob o cursor se destaca e os vizinhos recuam. */
+  .emd .emd-foco > li { transition: opacity 0.2s ease; }
+  .emd .emd-foco:hover > li:not(:hover):not(:focus-within) { opacity: 0.55; }
+  .emd .emd-foco > li:hover .emd-preenche { filter: brightness(1.12) saturate(1.15); }
+  .emd .emd-foco > li button:hover > span:first-child { transform: scale(1.35); }
+  .emd .emd-foco > li button > span:first-child { transition: transform 0.2s var(--emd-curva); }
+  .emd circle[role="button"]:hover { filter: brightness(1.1); }
+  .emd .emd-ergue { transition: transform 0.25s var(--emd-curva), box-shadow 0.25s var(--emd-curva); }
+  .emd .emd-ergue:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgb(15 23 42 / 0.05), 0 14px 28px -12px rgb(15 23 42 / 0.2); }
+}
+@media print { .emd tbody tr { animation: none !important; } .emd-preenche, .emd-traco, .emd-fatia { animation: none !important; } }

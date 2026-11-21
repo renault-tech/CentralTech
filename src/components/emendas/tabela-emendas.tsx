@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { PainelLista } from "@/components/emendas/painel-lista";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
+import { LinhaLink } from "@/components/emendas/linha-link";
 import { AnelAndamento, percentualAndamento } from "@/components/emendas/anel-andamento";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
@@ -212,7 +213,7 @@ export function TabelaEmendas({
           </thead>
           <tbody>
             {ordenadas.slice(0, limite).map((r) => (
-              <tr key={r.id} className="emd-linha border-t border-slate-100 align-middle hover:bg-[color-mix(in_srgb,var(--modulo)_5%,transparent)]" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}0A` }}>
+              <LinhaLink key={r.id} href={`/emendas/${r.id}`} className="border-t border-slate-100 align-middle" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}0A` }}>
                 <td className="py-3 pl-3 pr-3.5 font-mono tabular-nums text-slate-500" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
                   {r.numero}
                 </td>
@@ -242,9 +243,14 @@ export function TabelaEmendas({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3 text-right font-medium tabular-nums">{brl(r.valor)}</td>
                 <td className="px-3.5 py-3">
-                  <CelulaAndamento resumo={resumos[r.id]} etapa={r.etapa} situacao={r.situacao} ultimoPagamento={r.ultimo_pagamento} catalogo={catalogo} />
+                  <div className="flex items-center gap-1">
+                    <div className="min-w-0 flex-1">
+                      <CelulaAndamento resumo={resumos[r.id]} etapa={r.etapa} situacao={r.situacao} ultimoPagamento={r.ultimo_pagamento} catalogo={catalogo} />
+                    </div>
+                    <ChevronRight className="h-4 w-4 flex-none -translate-x-1 text-slate-400 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:text-[color:var(--modulo-tinta)] group-hover:opacity-100" aria-hidden />
+                  </div>
                 </td>
-              </tr>
+              </LinhaLink>
             ))}
           </tbody>
         </table>

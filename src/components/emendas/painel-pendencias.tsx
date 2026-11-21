@@ -86,6 +86,8 @@ export function PainelPendencias({
   const f = filtros;
   const [visao, setVisao] = React.useState<Visao>("area");
   const [medida, setMedida] = React.useState<"n" | "valor">("n");
+  /** Linha do ranking sob o cursor: realça a fatia correspondente da pizza. */
+  const [sobreChave, setSobreChave] = React.useState<string | null>(null);
   const [abertos, setAbertos] = React.useState<Set<string>>(new Set());
 
   const sem = (...c: ChaveFiltro[]) => filtrarPendencias(linhas, f, c);
@@ -172,9 +174,9 @@ export function PainelPendencias({
     <section aria-label="Visão geral das pendências" className="rounded-xl border border-slate-200 bg-white">
       {/* proporção de gravidade da seleção atual, como um fio no topo da caixa */}
       <div className="flex h-1 overflow-hidden rounded-t-xl bg-slate-100" aria-hidden>
-        <span style={{ width: `${filtradas.length ? (alta / filtradas.length) * 100 : 0}%`, backgroundColor: COR.alta }} />
-        <span style={{ width: `${filtradas.length ? (media / filtradas.length) * 100 : 0}%`, backgroundColor: COR.media }} />
-        <span style={{ width: `${filtradas.length ? (baixa / filtradas.length) * 100 : 0}%`, backgroundColor: COR.baixa }} />
+        <span className="emd-preenche" style={{ width: `${filtradas.length ? (alta / filtradas.length) * 100 : 0}%`, backgroundColor: COR.alta }} />
+        <span className="emd-preenche" style={{ width: `${filtradas.length ? (media / filtradas.length) * 100 : 0}%`, backgroundColor: COR.media }} />
+        <span className="emd-preenche" style={{ width: `${filtradas.length ? (baixa / filtradas.length) * 100 : 0}%`, backgroundColor: COR.baixa }} />
       </div>
 
       <div className="border-b border-slate-200 px-4 py-3 print:hidden">{controles}</div>
@@ -287,10 +289,10 @@ export function PainelPendencias({
 
       <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid lg:grid-cols-[280px_1fr]">
         <div className="flex items-center justify-center p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
-          <Pizza fatias={fatias} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
+          <Pizza fatias={fatias} destaque={sobreChave} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
         </div>
 
-        <ul className="max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="emd-foco max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -307,6 +309,10 @@ export function PainelPendencias({
                   aria-expanded={i.emendas ? aberto : undefined}
                   aria-label={`${i.rotulo}: ${detalhe}`}
                   title={detalhe}
+                  onMouseEnter={() => setSobreChave(i.chave)}
+                  onMouseLeave={() => setSobreChave(null)}
+                  onFocus={() => setSobreChave(i.chave)}
+                  onBlur={() => setSobreChave(null)}
                   onClick={() => {
                     if (param) escolher(ativo ? "" : i.chave);
                     else if (i.emendas)
@@ -325,9 +331,9 @@ export function PainelPendencias({
                   <span className="text-sm leading-snug text-cataguases-marinho">{i.rotulo}</span>
                   <span className="hidden h-2 overflow-hidden rounded-full bg-slate-100 sm:flex" aria-hidden>
                     {param && medida === "n" ? (
-                      (["alta", "media", "baixa"] as const).map((g) => <span key={g} style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
+                      (["alta", "media", "baixa"] as const).map((g) => <span key={g} className="emd-preenche" style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
                     ) : (
-                      <span style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
+                      <span className="emd-preenche" style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
                     )}
                   </span>
                   <span className="whitespace-nowrap text-right text-[0.8125rem] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
