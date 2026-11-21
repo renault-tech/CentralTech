@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { TituloTela } from "@/components/emendas/titulo-tela";
 import { Vazio } from "@/components/emendas/ui";
 import { listarEmendasEmCache, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, brlCurto, infoEtapa, pct, porSecretaria } from "@/lib/emendas/regras";
@@ -18,7 +18,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina titulo="Secretarias" subtitulo={`Exercício ${exercicio.ano} · execução das emendas por secretaria responsável`} />
+      <TituloTela titulo="Secretarias" subtitulo={`Exercício ${exercicio.ano} · execução das emendas por secretaria responsável`} />
       {linhas.length === 0 && <Vazio>Nenhuma emenda visível para você neste exercício.</Vazio>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {linhas.map((l) => {

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { TituloTela } from "@/components/emendas/titulo-tela";
 import { FormularioEmenda } from "@/components/emendas/formulario-emenda";
 import { Vazio } from "@/components/emendas/ui";
 import {
@@ -33,7 +33,7 @@ export default async function PaginaNovaEmenda({ searchParams }: { searchParams:
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina titulo="Nova emenda" subtitulo={`Exercício ${exercicio.ano}`} />
+      <TituloTela titulo="Nova emenda" subtitulo={`Exercício ${exercicio.ano}`} />
       <FormularioEmenda
         exercicio={exercicio}
         emendasDoAno={emendas}

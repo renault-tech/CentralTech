@@ -5,7 +5,8 @@ import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import Link from "next/link";
 
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
+import { BarraLateral } from "@/components/emendas/barra-lateral";
+import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
@@ -85,7 +86,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   ];
 
   return (
-    <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
+    <div className="emd min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
       <CabecalhoHub
         usuario={ctx.usuario}
         modulo={modulo}
@@ -97,15 +98,25 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
           )
         }
       />
-      <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" tour="nav-emendas" largura={LARGURA_MODULO} />
-      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
-        {exercicioAtual && (
-          <React.Suspense fallback={null}>
-            <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
-          </React.Suspense>
-        )}
-        <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
-      </main>
+      {/* Telas estreitas: a faixa de abas de sempre. Telas largas: barra lateral (mesmos itens, agrupados). */}
+      <div className="lg:hidden">
+        <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" largura={LARGURA_MODULO} />
+      </div>
+      <div className={`mx-auto flex ${LARGURA_MODULO} gap-6 px-4 py-5 sm:px-6 sm:py-6 print:block print:max-w-none print:p-0`}>
+        <BarraLateral
+          itens={itens.map((i) => ({ ...i, selos: i.href === "/emendas/portal" ? ("alerta" as const) : undefined }))}
+          rotuloAria="Seções do módulo Emendas"
+          tour="nav-emendas"
+        />
+        <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
+          {exercicioAtual && (
+            <React.Suspense fallback={null}>
+              <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+            </React.Suspense>
+          )}
+          <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
+        </main>
+      </div>
     </div>
   );
 }

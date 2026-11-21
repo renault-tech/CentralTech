@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { FiltrosAtivos, type FiltroAtivo } from "@/components/emendas/filtros-ativos";
+import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
 import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import {
@@ -216,6 +217,12 @@ export function PainelLista({
     if (c === "paga" || c === "paga_parcial") pagoPorClasse[c] += e.pago;
   }
 
+  // Andamento médio: fases concluídas ÷ fases aplicáveis de cada emenda, em média simples (cada emenda pesa igual).
+  const comFases = filtradas.filter((e) => (resumos[e.id]?.total ?? 0) > 0);
+  const fasesFeitas = comFases.reduce((s, e) => s + resumos[e.id].concluidas / resumos[e.id].total, 0);
+  const andamentoMedio = comFases.length ? Math.round((fasesFeitas / comFases.length) * 100) : 0;
+  const completas = comFases.filter((e) => resumos[e.id].concluidas === resumos[e.id].total).length;
+
   const celula = "min-w-0 px-5 py-3.5";
   const numero = "whitespace-nowrap text-xl font-semibold leading-tight tabular-nums text-cataguases-marinho sm:text-2xl";
   const parte = (v: number) => (faixaTotal ? `${(v / faixaTotal) * 100}%` : "0%");
@@ -236,7 +243,7 @@ export function PainelLista({
       <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>
       <FiltrosAtivos filtros={chips} aoRemover={(k) => definir({ [k]: "" })} aoLimparTudo={aoLimparTudo} />
 
-      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x">
+      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-5 lg:divide-x">
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Emendas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
@@ -279,6 +286,16 @@ export function PainelLista({
                 {pagoPorClasse.paga_parcial > 0 && <>{brlCurto(pagoPorClasse.paga_parcial)} de emendas pagas em parte</>}
               </span>
             )}
+          </dd>
+        </div>
+        <div className={celula}>
+          <dt className="text-xs font-medium text-slate-600">Andamento médio</dt>
+          <dd className="flex items-center gap-3">
+            <AnelAndamento concluidas={andamentoMedio} total={100} tamanho={48} />
+            <span className="text-xs leading-snug text-slate-600">
+              <span className="block">das fases cumpridas</span>
+              <span className="block tabular-nums">{completas} completas</span>
+            </span>
           </dd>
         </div>
       </dl>

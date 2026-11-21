@@ -13,7 +13,8 @@ import { buscarProcessoPorId } from "@/lib/emendas/compras";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { calcularEmendas } from "@/lib/emendas/resumo";
-import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
+import { TIPOS_EXECUCAO, progresso, tipoDaEmenda } from "@/lib/emendas/fases";
+import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import {
   listarBeneficiarios,
   listarFasesCatalogo,
@@ -112,6 +113,8 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   // Fases acompanhadas pela planilha de cumprimento: o dado vem do bloco de parceria.
   if (execucao?.numero_termo && !rotulos.termo_parceria) rotulos.termo_parceria = `nº ${execucao.numero_termo}`;
 
+  const andamento = progresso(calculo.fases);
+
   return (
     <div className="flex flex-col gap-5">
       <LinkVoltar href={`/emendas/lista?ano=${emenda.ano}`}>Voltar para a lista</LinkVoltar>
@@ -138,7 +141,18 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
               · {emenda.numero_vereador}ª emenda dele(a)
             </p>
           </div>
-          <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
+          <div className="flex items-center gap-4">
+            {andamento.total > 0 && (
+              <div className="flex items-center gap-2.5" title={`${andamento.concluidas} de ${andamento.total} fases concluídas`}>
+                <AnelAndamento concluidas={andamento.concluidas} total={andamento.total} tamanho={56} espessura={5} />
+                <span className="text-xs leading-snug text-slate-600">
+                  <span className="block font-medium text-cataguases-marinho">Andamento</span>
+                  <span className="block tabular-nums">{andamento.concluidas}/{andamento.total} fases</span>
+                </span>
+              </div>
+            )}
+            <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
+          </div>
         </div>
         <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} fases={calculo.fases} catalogo={catalogo} />
       </section>

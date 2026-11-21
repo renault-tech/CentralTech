@@ -9,6 +9,7 @@ import { PainelLista } from "@/components/emendas/painel-lista";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
+import { AnelAndamento, percentualAndamento } from "@/components/emendas/anel-andamento";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
@@ -24,17 +25,22 @@ const ESTILO_CAMPO =
 
 const POR_PAGINA = 25;
 
-/** Progresso das fases do tipo: barra na cor do tipo + fase atual. */
-function RegraFases({ resumo, cor }: { resumo?: ResumoLinha; cor: string }) {
-  if (!resumo || resumo.total === 0) return <span className="text-xs text-slate-400">—</span>;
-  const pct = Math.round((resumo.concluidas / resumo.total) * 100);
+/** Andamento da emenda: anel com o percentual de fases concluídas, a etapa atual e a próxima fase a cumprir. */
+function CelulaAndamento({ resumo, etapa, situacao, ultimoPagamento, catalogo }: { resumo?: ResumoLinha; etapa: EmendaResumo["etapa"]; situacao: EmendaResumo["situacao"]; ultimoPagamento: string | null; catalogo: ReturnType<typeof useCatalogo> }) {
+  const concluida = !!resumo && resumo.total > 0 && resumo.concluidas === resumo.total;
   return (
-    <div title={resumo.faseAtual ? `Próxima fase: ${resumo.faseAtual}` : "Todas as fases concluídas"}>
-      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={`${resumo.concluidas} de ${resumo.total} fases`}>
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cor }} />
-      </div>
-      <div className="mt-1 truncate text-xs text-slate-600">
-        <span className="font-medium tabular-nums">{resumo.concluidas}/{resumo.total}</span> · {resumo.faseAtual ?? "Concluída"}
+    <div className="flex items-center gap-3" title={resumo?.faseAtual ? `Próxima fase: ${resumo.faseAtual}` : concluida ? "Todas as fases concluídas" : undefined}>
+      {resumo && resumo.total > 0 ? <AnelAndamento concluidas={resumo.concluidas} total={resumo.total} /> : <span className="flex h-11 w-11 flex-none items-center justify-center text-xs text-slate-400">—</span>}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <SeloEtapa etapa={etapa} situacao={situacao} catalogo={catalogo} />
+          {infoEtapa(etapa, catalogo).grupo === 3 && ultimoPagamento && <span className="text-xs text-slate-500">pago {dataBr(ultimoPagamento)}</span>}
+        </div>
+        {resumo && resumo.total > 0 && (
+          <p className="mt-1 truncate text-xs text-slate-600">
+            <span className="font-medium tabular-nums">{resumo.concluidas}/{resumo.total}</span> fases · {concluida ? "completa" : `próxima: ${resumo.faseAtual ?? "—"}`}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -82,6 +88,10 @@ export function TabelaEmendas({
         return todasEtapas.findIndex((e) => e.chave === b.etapa) - todasEtapas.findIndex((e) => e.chave === a.etapa) || a.numero - b.numero;
       case "parada":
         return a.etapa_atualizada_em.localeCompare(b.etapa_atualizada_em);
+      case "andamento":
+        return (percentualAndamento(resumos[b.id]) ?? -1) - (percentualAndamento(resumos[a.id]) ?? -1) || a.numero - b.numero;
+      case "atrasadas":
+        return (percentualAndamento(resumos[a.id]) ?? 101) - (percentualAndamento(resumos[b.id]) ?? 101) || a.numero - b.numero;
       default: {
         // Com texto na busca (e a ordem padrão), o que mais combina vem primeiro: o número digitado, depois os parecidos.
         if (f.q) {
@@ -121,13 +131,15 @@ export function TabelaEmendas({
           className={`${ESTILO_CAMPO} w-full pl-9`}
         />
       </label>
-      <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+      <label className="flex w-full min-w-0 items-center gap-2 text-sm text-slate-600 sm:inline-flex sm:w-auto">
         Ordenar por
-        <select className={`${ESTILO_CAMPO} w-auto`} value={f.ordem} onChange={(e) => definir({ ordem: e.target.value === "numero" ? "" : e.target.value })}>
-          <option value="numero">Número (na busca, as mais parecidas primeiro)</option>
+        <select className={`${ESTILO_CAMPO} min-w-0 flex-1 sm:w-auto sm:flex-none`} value={f.ordem} onChange={(e) => definir({ ordem: e.target.value === "numero" ? "" : e.target.value })}>
+          <option value="numero">Número (busca: mais parecidas)</option>
           <option value="valor">Maior valor</option>
           <option value="vereador">Vereador</option>
           <option value="etapa">Etapa (mais adiantadas)</option>
+          <option value="andamento">Maior % de andamento</option>
+          <option value="atrasadas">Menor % de andamento</option>
           <option value="parada">Há mais tempo sem mudança</option>
         </select>
       </label>
@@ -189,19 +201,19 @@ export function TabelaEmendas({
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full min-w-[1000px] border-collapse text-[0.8125rem]">
           <thead>
-            <tr className="bg-slate-50 text-left text-slate-600">
+            <tr className="bg-slate-50/80 text-left text-slate-600">
               <th scope="col" className="w-14 px-3.5 py-2.5 font-medium">Nº</th>
               <th scope="col" className="px-3.5 py-2.5 font-medium">Vereador</th>
               <th scope="col" className="px-3.5 py-2.5 font-medium">Objeto e beneficiário</th>
               <th scope="col" className="px-3.5 py-2.5 font-medium">Secretaria</th>
               <th scope="col" className="px-3.5 py-2.5 text-right font-medium">Valor</th>
-              <th scope="col" className="w-60 px-3.5 py-2.5 font-medium">Andamento</th>
+              <th scope="col" className="w-[19rem] px-3.5 py-2.5 font-medium">Andamento</th>
             </tr>
           </thead>
           <tbody>
             {ordenadas.slice(0, limite).map((r) => (
-              <tr key={r.id} className="border-t border-slate-100 align-top hover:brightness-95" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}12` }}>
-                <td className="py-3 pl-3 pr-3.5 font-mono text-slate-500" style={{ borderLeft: `8px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
+              <tr key={r.id} className="emd-linha border-t border-slate-100 align-middle hover:bg-[color-mix(in_srgb,var(--modulo)_5%,transparent)]" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}0A` }}>
+                <td className="py-3 pl-3 pr-3.5 font-mono tabular-nums text-slate-500" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
                   {r.numero}
                 </td>
                 <td className="px-3.5 py-3">
@@ -230,13 +242,7 @@ export function TabelaEmendas({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3 text-right font-medium tabular-nums">{brl(r.valor)}</td>
                 <td className="px-3.5 py-3">
-                  <RegraFases resumo={resumos[r.id]} cor={TIPOS_EXECUCAO[tipoDaEmenda(r)].cor} />
-                  <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
-                    <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
-                    <span className="text-slate-500">
-                      {infoEtapa(r.etapa, catalogo).grupo === 3 && r.ultimo_pagamento ? `pago ${dataBr(r.ultimo_pagamento)}` : ""}
-                    </span>
-                  </div>
+                  <CelulaAndamento resumo={resumos[r.id]} etapa={r.etapa} situacao={r.situacao} ultimoPagamento={r.ultimo_pagamento} catalogo={catalogo} />
                 </td>
               </tr>
             ))}

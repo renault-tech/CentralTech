@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-21",
+    titulo: "Emendas com visual novo: menu lateral, andamento em % e comparação entre anos",
+    descricao:
+      "O módulo Emendas ganhou um menu lateral com as seções agrupadas (em telas pequenas continua a faixa de abas), títulos e cartões no mesmo padrão em todas as abas e movimento suave ao abrir e trocar de tela. Na lista, cada emenda mostra um anel com o percentual de andamento (fases concluídas ÷ fases do tipo), a fase seguinte e dá para ordenar por maior ou menor andamento; o mesmo anel aparece no detalhe da emenda e há um indicador de andamento médio no topo da lista. No Painel há um quadro de comparação entre exercícios, que compara valor indicado, empenhado, pago e a curva de pagamentos assim que existir mais de um ano. Nada mudou nas regras, permissões e fluxos.",
+  },
+  {
     data: "2026-11-19",
     titulo: "Busca de emendas mostra primeiro a que você digitou",
     descricao:

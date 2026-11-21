@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { TituloTela } from "@/components/emendas/titulo-tela";
 import { Vazio } from "@/components/emendas/ui";
 import { listarEmendasEmCache, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { GRUPOS_EXECUCAO, brl, brlCurto, cumpreSaude, numeroVereador, pct, porVereador } from "@/lib/emendas/regras";
@@ -22,7 +22,7 @@ export default async function PaginaVereadores({ searchParams }: { searchParams:
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina
+      <TituloTela
         titulo="Vereadores"
         subtitulo={`Exercício ${exercicio.ano} · cota de ${brl(exercicio.cota_por_vereador)} por vereador · mínimo de ${exercicio.percentual_saude_min}% na Saúde`}
       />
