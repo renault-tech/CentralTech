@@ -21,6 +21,7 @@ import { brl } from "@/lib/emendas/regras";
 import { carregarPanorama } from "@/lib/emendas/panorama-dados";
 import { totaisPorCartao } from "@/lib/emendas/encerramento";
 import { dataNoFuso } from "@/lib/fuso";
+import { usarNovoDesign } from "@/lib/emendas/design";
 import { ComparacaoExercicios } from "@/components/emendas/comparacao-exercicios";
 import { anoParaComparar, curvaPercentual, pagoAte, totaisDoExercicio } from "@/lib/emendas/comparacao";
 import type { MovimentoResumo } from "@/lib/emendas/dados";
@@ -59,6 +60,7 @@ export default async function PaginaPainelEmendas({
   const resumos: Record<string, ResumoLinha> = {};
   for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);
   const hoje = dataNoFuso(new Date());
+  const novo = await usarNovoDesign();
   const vereadoresAtivos = vereadores.filter(
     (v) => v.ativo || emendas.some((e) => e.vereador_id === v.id),
   );
@@ -66,7 +68,7 @@ export default async function PaginaPainelEmendas({
   return (
     <div className="flex flex-col gap-5">
       <TituloTela
-        titulo="Painel das emendas"
+        titulo="Painel das emendas" tituloOriginal="Painel das emendas impositivas"
         selo={`Exercício ${exercicio.ano}`}
         subtitulo={`${vereadoresAtivos.length} vereadores · cota individual de ${brl(exercicio.cota_por_vereador)} · ${emendas.length} emendas${exercicio.numero_lei_loa ? ` · ${exercicio.numero_lei_loa}` : ""}`}
       />
@@ -87,16 +89,18 @@ export default async function PaginaPainelEmendas({
           <Suspense>
             <CartaoPanorama ano={exercicio.ano} />
           </Suspense>
-          <Suspense>
-            <CartaoComparacao
-              exercicio={exercicio}
-              emendas={emendas}
-              movimentos={movimentos}
-              anos={exercicios.map((e) => e.ano)}
-              comparar={comparar}
-              hoje={hoje}
-            />
-          </Suspense>
+          {novo && (
+            <Suspense>
+              <CartaoComparacao
+                exercicio={exercicio}
+                emendas={emendas}
+                movimentos={movimentos}
+                anos={exercicios.map((e) => e.ano)}
+                comparar={comparar}
+                hoje={hoje}
+              />
+            </Suspense>
+          )}
           <Suspense>
             <PainelEmendas
               emendas={emendas}

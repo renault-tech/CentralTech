@@ -1,6 +1,7 @@
 "use client";
 
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
+import { useNovoDesign } from "@/components/emendas/design-emendas";
 import * as React from "react";
 import Link from "next/link";
 import { Coins, FileCheck2, HeartPulse, Hourglass, Landmark, OctagonAlert } from "lucide-react";
@@ -74,6 +75,7 @@ export function PainelEmendas({
   const alternar = (k: keyof Filtros, valor: string) => definir({ [k]: f[k] === valor ? "" : valor });
 
   const catalogo = useCatalogo();
+  const novo = useNovoDesign();
   const temFiltro = CHAVES.some((k) => f[k]);
   const recorteSoVereadorOuNada = !f.s && !f.saude && !f.mod && !f.etapa;
 
@@ -189,17 +191,17 @@ export function PainelEmendas({
         </span>
       </section>
 
-      <section aria-label="Indicadores" className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6" data-tour="indicadores-emendas">
-        <Kpi icone={Landmark} rotulo="Total indicado" valor={brlCurto(ind.total)} apoio={`${ind.quantidade} emendas no recorte`} barra={1} corBarra="#0C1D33" />
-        <Kpi icone={FileCheck2} rotulo="Empenhado" valor={brlCurto(ind.empenhado)} apoio={`${pct(ind.empenhado / (ind.total || 1))} do indicado`} barra={ind.empenhado / (ind.total || 1)} corBarra="#9479DD" />
-        <Kpi icone={Coins} rotulo="Pago" valor={brlCurto(ind.pago)} apoio={`${ind.quantidadePagas} emendas pagas`} barra={ind.pago / (ind.total || 1)} corBarra="#563A9E" corValor="#4C3494" />
-        <Kpi icone={Hourglass} rotulo="A executar" valor={brlCurto(ind.aExecutar)} apoio={`${ind.quantidade - ind.quantidadePagas} emendas em aberto`} barra={ind.aExecutar / (ind.total || 1)} corBarra="#CBD5E1" />
+      <section aria-label="Indicadores" className={novo ? "grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6" : "grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3"} data-tour="indicadores-emendas">
+        <Kpi icone={novo ? Landmark : undefined} rotulo="Total indicado" valor={brlCurto(ind.total)} apoio={`${ind.quantidade} emendas no recorte`} barra={1} corBarra="#0C1D33" />
+        <Kpi icone={novo ? FileCheck2 : undefined} rotulo="Empenhado" valor={brlCurto(ind.empenhado)} apoio={`${pct(ind.empenhado / (ind.total || 1))} do indicado`} barra={ind.empenhado / (ind.total || 1)} corBarra="#9479DD" />
+        <Kpi icone={novo ? Coins : undefined} rotulo="Pago" valor={brlCurto(ind.pago)} apoio={`${ind.quantidadePagas} emendas pagas`} barra={ind.pago / (ind.total || 1)} corBarra="#563A9E" corValor="#4C3494" />
+        <Kpi icone={novo ? Hourglass : undefined} rotulo="A executar" valor={brlCurto(ind.aExecutar)} apoio={`${ind.quantidade - ind.quantidadePagas} emendas em aberto`} barra={ind.aExecutar / (ind.total || 1)} corBarra="#CBD5E1" />
         {(() => {
           const p = ind.total ? ind.saude / ind.total : 0;
           const ok = p * 100 + 0.0001 >= exercicio.percentual_saude_min;
           return (
             <Kpi
-              icone={HeartPulse}
+              icone={novo ? HeartPulse : undefined}
               rotulo="Na Saúde"
               ajuda={<BaseLegalDica chave="saude" />}
               valor={pct(p)}
@@ -210,7 +212,7 @@ export function PainelEmendas({
             />
           );
         })()}
-        <Kpi icone={OctagonAlert} rotulo="Impedidas" valor={String(ind.impedidas)} apoio={`${ind.remanejadas} com remanejamento no histórico`} barra={ind.quantidade ? ind.impedidas / ind.quantidade : 0} corBarra="#D97706" />
+        <Kpi icone={novo ? OctagonAlert : undefined} rotulo="Impedidas" valor={String(ind.impedidas)} apoio={`${ind.remanejadas} com remanejamento no histórico`} barra={ind.quantidade ? ind.impedidas / ind.quantidade : 0} corBarra="#D97706" />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">

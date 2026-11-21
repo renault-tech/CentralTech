@@ -9,6 +9,7 @@ import { PainelLista } from "@/components/emendas/painel-lista";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
+import { useNovoDesign } from "@/components/emendas/design-emendas";
 import { LinhaLink } from "@/components/emendas/linha-link";
 import { AnelAndamento, percentualAndamento } from "@/components/emendas/anel-andamento";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
@@ -25,6 +26,22 @@ const ESTILO_CAMPO =
   "h-[38px] min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 
 const POR_PAGINA = 25;
+
+/** Visual original: barra fina com fases concluídas e a próxima fase. */
+function RegraFases({ resumo, cor }: { resumo?: ResumoLinha; cor: string }) {
+  if (!resumo || resumo.total === 0) return <span className="text-xs text-slate-400">—</span>;
+  const pct = Math.round((resumo.concluidas / resumo.total) * 100);
+  return (
+    <div title={resumo.faseAtual ? `Próxima fase: ${resumo.faseAtual}` : "Todas as fases concluídas"}>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={`${resumo.concluidas} de ${resumo.total} fases`}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cor }} />
+      </div>
+      <div className="mt-1 truncate text-xs text-slate-600">
+        <span className="font-medium tabular-nums">{resumo.concluidas}/{resumo.total}</span> · {resumo.faseAtual ?? "Concluída"}
+      </div>
+    </div>
+  );
+}
 
 /** Andamento da emenda: anel com o percentual de fases concluídas, a etapa atual e a próxima fase a cumprir. */
 function CelulaAndamento({ resumo, etapa, situacao, ultimoPagamento, catalogo }: { resumo?: ResumoLinha; etapa: EmendaResumo["etapa"]; situacao: EmendaResumo["situacao"]; ultimoPagamento: string | null; catalogo: ReturnType<typeof useCatalogo> }) {
@@ -62,6 +79,7 @@ export function TabelaEmendas({
   podeCriar: boolean;
 }) {
   const catalogo = useCatalogo();
+  const novo = useNovoDesign();
   const { params, definir: definirUrl } = useFiltrosUrl("emendas-lista", String(ano));
   const busca = params.get("q") ?? "";
   const [limite, setLimite] = React.useState(POR_PAGINA);
@@ -139,8 +157,8 @@ export function TabelaEmendas({
           <option value="valor">Maior valor</option>
           <option value="vereador">Vereador</option>
           <option value="etapa">Etapa (mais adiantadas)</option>
-          <option value="andamento">Maior % de andamento</option>
-          <option value="atrasadas">Menor % de andamento</option>
+          {novo && <option value="andamento">Maior % de andamento</option>}
+          {novo && <option value="atrasadas">Menor % de andamento</option>}
           <option value="parada">Há mais tempo sem mudança</option>
         </select>
       </label>
@@ -208,13 +226,13 @@ export function TabelaEmendas({
               <th scope="col" className="px-3.5 py-2.5 font-medium">Objeto e beneficiário</th>
               <th scope="col" className="px-3.5 py-2.5 font-medium">Secretaria</th>
               <th scope="col" className="px-3.5 py-2.5 text-right font-medium">Valor</th>
-              <th scope="col" className="w-[19rem] px-3.5 py-2.5 font-medium">Andamento</th>
+              <th scope="col" className={`${novo ? "w-[19rem]" : "w-60"} px-3.5 py-2.5 font-medium`}>Andamento</th>
             </tr>
           </thead>
           <tbody>
             {ordenadas.slice(0, limite).map((r) => (
-              <LinhaLink key={r.id} href={`/emendas/${r.id}`} className="border-t border-slate-100 align-middle" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}0A` }}>
-                <td className="py-3 pl-3 pr-3.5 font-mono tabular-nums text-slate-500" style={{ borderLeft: `4px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
+              <LinhaLink key={r.id} href={`/emendas/${r.id}`} className="border-t border-slate-100 align-middle" style={{ backgroundColor: `${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}${novo ? "0A" : "12"}` }}>
+                <td className="py-3 pl-3 pr-3.5 font-mono tabular-nums text-slate-500" style={{ borderLeft: `${novo ? 4 : 8}px solid ${TIPOS_EXECUCAO[tipoDaEmenda(r)].cor}` }}>
                   {r.numero}
                 </td>
                 <td className="px-3.5 py-3">
@@ -243,12 +261,22 @@ export function TabelaEmendas({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3 text-right font-medium tabular-nums">{brl(r.valor)}</td>
                 <td className="px-3.5 py-3">
-                  <div className="flex items-center gap-1">
-                    <div className="min-w-0 flex-1">
-                      <CelulaAndamento resumo={resumos[r.id]} etapa={r.etapa} situacao={r.situacao} ultimoPagamento={r.ultimo_pagamento} catalogo={catalogo} />
+                  {novo ? (
+                    <div className="flex items-center gap-1">
+                      <div className="min-w-0 flex-1">
+                        <CelulaAndamento resumo={resumos[r.id]} etapa={r.etapa} situacao={r.situacao} ultimoPagamento={r.ultimo_pagamento} catalogo={catalogo} />
+                      </div>
+                      <ChevronRight className="h-4 w-4 flex-none -translate-x-1 text-slate-400 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:text-[color:var(--modulo-tinta)] group-hover:opacity-100" aria-hidden />
                     </div>
-                    <ChevronRight className="h-4 w-4 flex-none -translate-x-1 text-slate-400 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:text-[color:var(--modulo-tinta)] group-hover:opacity-100" aria-hidden />
-                  </div>
+                  ) : (
+                    <>
+                      <RegraFases resumo={resumos[r.id]} cor={TIPOS_EXECUCAO[tipoDaEmenda(r)].cor} />
+                      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
+                        <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
+                        <span className="text-slate-500">{infoEtapa(r.etapa, catalogo).grupo === 3 && r.ultimo_pagamento ? `pago ${dataBr(r.ultimo_pagamento)}` : ""}</span>
+                      </div>
+                    </>
+                  )}
                 </td>
               </LinhaLink>
             ))}

@@ -139,7 +139,7 @@ export function SeloEtapa({
         color: info.grupo === 0 ? "#334155" : "#3B2A7A",
       }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: info.cor === "#CBD5E1" ? "#94A3B8" : info.cor }} aria-hidden />
+      <span className="emd-ponto h-1.5 w-1.5 rounded-full" style={{ backgroundColor: info.cor === "#CBD5E1" ? "#94A3B8" : info.cor }} aria-hidden />
       {info.nome}
     </span>
   );

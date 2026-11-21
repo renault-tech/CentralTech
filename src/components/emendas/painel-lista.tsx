@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { FiltrosAtivos, type FiltroAtivo } from "@/components/emendas/filtros-ativos";
+import { useNovoDesign } from "@/components/emendas/design-emendas";
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
 import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
@@ -68,6 +69,7 @@ export function PainelLista({
 }) {
   const f = filtros;
   const catalogo = useCatalogo();
+  const novo = useNovoDesign();
   const [visao, setVisao] = React.useState<Visao>("etapa");
   const [medida, setMedida] = React.useState<Medida>("n");
   /** Linha do ranking sob o cursor: realça a fatia correspondente da pizza. */
@@ -245,7 +247,7 @@ export function PainelLista({
       <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>
       <FiltrosAtivos filtros={chips} aoRemover={(k) => definir({ [k]: "" })} aoLimparTudo={aoLimparTudo} />
 
-      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-5 lg:divide-x">
+      <dl className={`grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 ${novo ? "lg:grid-cols-5" : "lg:grid-cols-4"} lg:divide-x`}>
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Emendas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
@@ -290,6 +292,7 @@ export function PainelLista({
             )}
           </dd>
         </div>
+        {novo && (
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Andamento médio</dt>
           <dd className="flex items-center gap-3">
@@ -300,6 +303,7 @@ export function PainelLista({
             </span>
           </dd>
         </div>
+        )}
       </dl>
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-slate-200 px-5 py-2 text-xs text-slate-600">
