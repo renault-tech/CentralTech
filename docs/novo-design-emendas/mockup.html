@@ -1,0 +1,637 @@
+<title>Emendas: Novo Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sidebar marinho fixa (256px) + topbar branca + área de trabalho clara com cartões. Proposta do documento "Sistema de Design CentralTech", adaptada à plataforma real. */
+:root{
+  --sidebar:#0B2536; --sidebar-ativo:#163A50; --sidebar-muted:#94A3B8;
+  --canvas:#F3F6F8; --surface:#FFFFFF; --surface-2:#F8FAFC; --border:#E2E8F0; --border-2:#F1F5F9;
+  --tx:#0F172A; --tx-2:#475569; --tx-3:#64748B;
+  --acc:#6B4FBB; --acc-h:#5B3FA8; --acc-soft:#EFEBFA; --acc-tx:#5B3FA8; --barra:#10B981;
+  --ok-bg:#DCFCE7; --ok-tx:#166534; --ok:#10B981;
+  --info-bg:#DBEAFE; --info-tx:#1E40AF; --info:#3B82F6;
+  --warn-bg:#FEF3C7; --warn-tx:#92400E; --warn:#F59E0B;
+  --crit-bg:#FEE2E2; --crit-tx:#B91C1C; --crit:#EF4444;
+  --neu-bg:#F1F5F9; --neu-tx:#475569; --neu:#94A3B8;
+  --g-emp:#0B2536; --g-pago:#10B981; --tooltip:#0F172A;
+  --sombra:0 1px 2px 0 rgb(0 0 0 / .05);
+  --f:"Inter","Plus Jakarta Sans",system-ui,sans-serif;
+}
+:root[data-acento="esmeralda"]{--acc:#107E68;--acc-h:#0D6654;--acc-soft:#E6F4F0;--acc-tx:#0D6654}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#0B1220; --surface:#111A2B; --surface-2:#0E1626; --border:#22304A; --border-2:#1A263B;
+  --tx:#E5EAF2; --tx-2:#B4C0D3; --tx-3:#8D9AB0; --acc-soft:#2A2350; --acc-tx:#B9A6F0;
+  --ok-bg:#0F3A2A; --ok-tx:#7CE3B0; --info-bg:#132B55; --info-tx:#9CC3FF; --warn-bg:#3B2A0A; --warn-tx:#F8CF7A;
+  --crit-bg:#3E1518; --crit-tx:#FCA5A5; --neu-bg:#1C2738; --neu-tx:#B4C0D3; --g-emp:#7C93B5; --tooltip:#020617; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#0B1220; --surface:#111A2B; --surface-2:#0E1626; --border:#22304A; --border-2:#1A263B;
+  --tx:#E5EAF2; --tx-2:#B4C0D3; --tx-3:#8D9AB0; --acc-soft:#2A2350; --acc-tx:#B9A6F0;
+  --ok-bg:#0F3A2A; --ok-tx:#7CE3B0; --info-bg:#132B55; --info-tx:#9CC3FF; --warn-bg:#3B2A0A; --warn-tx:#F8CF7A;
+  --crit-bg:#3E1518; --crit-tx:#FCA5A5; --neu-bg:#1C2738; --neu-tx:#B4C0D3; --g-emp:#7C93B5; --tooltip:#020617; color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-acento="esmeralda"]:not([data-theme="light"]){--acc-soft:#0F3A30;--acc-tx:#6FD6BB}}
+:root[data-theme="dark"][data-acento="esmeralda"]{--acc-soft:#0F3A30;--acc-tx:#6FD6BB}
+
+*{box-sizing:border-box}
+body{background:var(--canvas);color:var(--tx);font-family:var(--f);font-size:14px;-webkit-font-smoothing:antialiased;margin:0}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+a{color:inherit}
+
+/* Faixa de aviso do mockup */
+.aviso{background:var(--acc);color:#fff;font-size:12.5px;padding-block:7px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.aviso b{font-weight:600}
+.aviso .opc{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.aviso .opc button{background:rgb(255 255 255 / .14);border:1px solid rgb(255 255 255 / .3);color:#fff;border-radius:999px;padding:3px 10px;cursor:pointer;font-size:12px}
+.aviso .opc button[aria-pressed="true"]{background:#fff;color:#0B2536}
+
+.app{display:flex;min-height:calc(100dvh - 34px)}
+/* Sidebar */
+.side{width:256px;flex:none;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;padding-left:env(safe-area-inset-left,0px)}
+.marca{height:64px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid rgb(255 255 255 / .08)}
+.logo{width:30px;height:30px;border-radius:50%;background:var(--acc);display:grid;place-items:center;font-weight:700;font-size:13px;box-shadow:0 0 0 3px rgb(255 255 255 / .08)}
+.marca .nome{font-weight:700;font-size:15px;line-height:1.1}
+.marca .nome span{color:#C9B8F0}
+:root[data-acento="esmeralda"] .marca .nome span{color:#34D399}
+.marca small{display:block;font-weight:500;font-size:11px;color:var(--sidebar-muted);margin-top:2px}
+.volta{margin:12px 12px 0;display:flex;align-items:center;gap:8px;border:1px solid rgb(255 255 255 / .16);border-radius:8px;padding:7px 10px;color:var(--sidebar-muted);text-decoration:none;font-size:12.5px}
+.volta:hover{color:#fff;border-color:rgb(255 255 255 / .3)}
+nav.menu{padding:12px;overflow:auto;flex:1}
+.grupo{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#64809A;font-weight:600;padding:14px 10px 6px}
+.item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:#CBD5E1;text-decoration:none;font-size:13.5px;cursor:pointer;border:0;background:none;width:100%;text-align:left}
+.item svg{width:18px;height:18px;stroke:var(--sidebar-muted);flex:none}
+.item:hover{background:rgb(255 255 255 / .05);color:#fff}
+.item[aria-current="page"]{background:var(--sidebar-ativo);color:#fff;font-weight:500;box-shadow:inset 0 0 0 1px rgb(255 255 255 / .1)}
+.item[aria-current="page"] svg{stroke:#fff}
+.item .selo{margin-left:auto;background:#EF4444;color:#fff;border-radius:999px;font-size:10.5px;font-weight:600;padding:1px 7px}
+.item .selo.n{background:rgb(255 255 255 / .12);color:#CBD5E1}
+.user{border-top:1px solid rgb(255 255 255 / .1);padding:14px 16px;display:flex;align-items:center;gap:10px}
+.av{width:36px;height:36px;border-radius:50%;background:var(--neu-bg);color:var(--neu-tx);display:grid;place-items:center;font-weight:600;font-size:12px;flex:none;border:1px solid var(--border)}
+.user .av{background:rgb(255 255 255 / .1);color:#fff;border-color:rgb(255 255 255 / .15)}
+.user b{font-size:13px;font-weight:500;display:block}
+.user small{font-size:11.5px;color:var(--sidebar-muted)}
+
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:64px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ico.hamb{display:none}
+.crumb{font-size:13px;color:var(--tx-3);display:flex;gap:6px;align-items:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--tx);font-weight:500}
+.top .dir{margin-left:auto;display:flex;align-items:center;gap:6px}
+.busca{display:flex;align-items:center;gap:8px;width:240px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--tx-3);font-size:13px}
+.busca svg{width:16px;height:16px;stroke:currentColor}
+.ex{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;background:var(--surface)}
+.ex i{width:7px;height:7px;border-radius:50%;background:var(--acc)}
+.ico{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;border:0;background:none;color:var(--tx-2);cursor:pointer;position:relative}
+.ico:hover{background:var(--surface-2)}
+.ico svg{width:18px;height:18px;stroke:currentColor}
+.ico .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--surface)}
+
+.conteudo{padding:24px;display:flex;flex-direction:column;gap:24px;max-width:1440px;width:100%}
+@media (min-width:1024px){.conteudo{padding:32px}}
+.cab{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.cab .t{flex:1;min-width:240px}
+h1{font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em;margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;text-wrap:balance}
+.sub{color:var(--tx-3);font-size:13.5px;margin:4px 0 0}
+h2{font-size:16px;line-height:24px;font-weight:600;margin:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill.neu{background:var(--neu-bg);color:var(--neu-tx)}
+.acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 14px;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--tx);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn svg{width:16px;height:16px;stroke:currentColor}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{background:var(--acc-h)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sombra)}
+.card.p5{padding:20px}.card.p6{padding:24px}
+.card-h{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap}
+.card-h p{margin:2px 0 0;color:var(--tx-3);font-size:12.5px}
+
+.kpis{display:grid;gap:16px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi .lb{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--tx-2)}
+.kpi .lb i{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc-tx)}
+.kpi .lb i svg{width:16px;height:16px;stroke:currentColor}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:12px;line-height:32px}
+.kpi .s{font-size:12.5px;color:var(--tx-3);margin-top:6px}
+.prog{display:flex;align-items:center;gap:10px;margin-top:10px}
+.prog .tr{flex:1;height:8px;border-radius:999px;background:var(--neu-bg);overflow:hidden;display:flex}
+.prog .tr span{display:block;height:100%}
+.prog b{font-size:12.5px;font-weight:600}
+.kpi.alerta .lb i{background:var(--warn-bg);color:var(--warn-tx)}
+.tag-acao{display:inline-flex;margin-top:8px;background:var(--warn-bg);color:var(--warn-tx);border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:600}
+
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.badge i{width:6px;height:6px;border-radius:50%}
+.t-ok{background:var(--ok-bg);color:var(--ok-tx)}.t-ok i{background:var(--ok)}
+.t-info{background:var(--info-bg);color:var(--info-tx)}.t-info i{background:var(--info)}
+.t-warn{background:var(--warn-bg);color:var(--warn-tx)}.t-warn i{background:var(--warn)}
+.t-crit{background:var(--crit-bg);color:var(--crit-tx)}.t-crit i{background:var(--crit)}
+.t-neu{background:var(--neu-bg);color:var(--neu-tx)}.t-neu i{background:var(--neu)}
+
+.g12{display:grid;gap:24px;grid-template-columns:repeat(12,minmax(0,1fr))}
+.c7{grid-column:span 7}.c5{grid-column:span 5}.c6{grid-column:span 6}.c8{grid-column:span 8}.c4{grid-column:span 4}.c12{grid-column:span 12}
+.c7,.c5,.c6,.c8,.c4{min-width:0}
+
+/* gráficos */
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tx-2)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:10px;height:10px;border-radius:3px}
+svg text{fill:var(--tx-3);font-size:11px;font-family:var(--f)}
+.grade{stroke:var(--border-2)}
+.tip{position:fixed;pointer-events:none;background:var(--tooltip);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;z-index:50;box-shadow:0 8px 24px rgb(0 0 0 / .2);line-height:1.5}
+.tip b{font-weight:600}
+.donut-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.donut-leg{flex:1;min-width:180px;display:flex;flex-direction:column;gap:6px}
+.donut-leg div{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.donut-leg i{width:10px;height:10px;border-radius:3px;flex:none}
+.donut-leg span{flex:1;color:var(--tx-2);min-width:0}
+.donut-leg b{font-weight:600}
+.donut-leg em{font-style:normal;color:var(--tx-3);width:40px;text-align:right}
+
+.rank{display:flex;flex-direction:column}
+.rank .l{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border-2)}
+.rank .l:first-child{border-top:0}
+.rank .nm{font-weight:500;font-size:13.5px}
+.rank .nm small{display:block;color:var(--tx-3);font-weight:400;font-size:12px}
+.rank .vl{text-align:right;font-weight:600;font-size:13.5px}
+.rank .vl small{display:block;color:var(--tx-3);font-weight:400;font-size:12px}
+.mini{height:6px;border-radius:999px;background:var(--neu-bg);margin-top:6px;overflow:hidden}
+.mini span{display:block;height:100%;border-radius:999px}
+
+.feed{display:flex;flex-direction:column;gap:0}
+.feed .e{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:12px;padding:10px 0;position:relative}
+.feed .e:before{content:"";position:absolute;left:9px;top:28px;bottom:-10px;width:2px;background:var(--border-2)}
+.feed .e:last-child:before{display:none}
+.feed .m{width:12px;height:12px;border-radius:50%;margin:4px 0 0 4px;box-shadow:0 0 0 3px var(--surface)}
+.feed p{margin:0;font-size:13.5px}
+.feed small{color:var(--tx-3);font-size:12px}
+
+/* filtros e tabela */
+.filtros{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px}
+.fbusca{flex:1;min-width:240px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:0 10px;background:var(--surface)}
+.fbusca svg{width:16px;height:16px;stroke:var(--tx-3);flex:none}
+.fbusca input{border:0;outline:0;background:none;padding:9px 0;width:100%;font-size:13.5px}
+.filtros select{border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface);font-size:13px;min-width:140px;max-width:220px;color:var(--tx-2)}
+.limpar{border:0;background:none;color:var(--acc-tx);font-weight:500;cursor:pointer;font-size:13px}
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 14px;overflow-x:auto}
+.aba{border:0;background:none;padding:12px 12px;font-size:13.5px;font-weight:500;color:var(--tx-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.aba[aria-selected="true"]{color:var(--tx);border-bottom-color:var(--acc)}
+.aba .cnt{background:var(--neu-bg);color:var(--neu-tx);border-radius:999px;padding:0 7px;font-size:11.5px}
+.aba .fx{width:8px;height:8px;border-radius:2px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{background:var(--surface-2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-3);padding:10px 12px;text-align:left;white-space:nowrap}
+thead th.r,td.r{text-align:right}
+thead th button{all:unset;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+tbody td{padding:12px 12px;border-top:1px solid var(--border-2);vertical-align:middle;color:var(--tx-2)}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.clic{cursor:pointer}
+.cod{font-weight:600;color:var(--tx)}
+.cod small{display:block;color:var(--tx-3);font-weight:400;font-size:12px}
+.autor{display:flex;gap:10px;align-items:center;min-width:170px}
+.autor .av{width:32px;height:32px;font-size:11px}
+.autor b{font-weight:500;color:var(--tx);display:block;font-size:13.5px}
+.autor small{color:var(--tx-3);font-size:12px}
+.obj{max-width:300px;min-width:200px}
+.obj b{font-weight:500;color:var(--tx);display:block;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.obj small{color:var(--tx-3);font-size:12px;display:block;margin-top:2px}
+.tipo-fx{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap}
+.tipo-fx i{width:8px;height:8px;border-radius:2px}
+.acs{display:flex;gap:2px;justify-content:flex-end}
+.acs button{width:32px;height:32px;border-radius:8px;border:0;background:none;color:var(--tx-3);cursor:pointer;display:grid;place-items:center}
+.acs button:hover{background:var(--neu-bg);color:var(--tx)}
+.acs svg{width:16px;height:16px;stroke:currentColor}
+.pag{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--tx-3);flex-wrap:wrap}
+.pag .bt{display:flex;gap:6px;align-items:center}
+.pag select{border:1px solid var(--border);border-radius:8px;padding:5px 8px;background:var(--surface)}
+.pag button{border:1px solid var(--border);border-radius:8px;padding:5px 10px;background:var(--surface);cursor:pointer}
+.pag button:disabled{opacity:.4;cursor:default}
+.vazio{text-align:center;padding:48px 16px;color:var(--tx-3)}
+.vazio .c{width:48px;height:48px;border-radius:50%;background:var(--neu-bg);display:grid;place-items:center;margin:0 auto 12px}
+.vazio b{display:block;color:var(--tx);font-weight:600;margin-bottom:8px}
+
+/* detalhe */
+.stepper{display:flex;overflow-x:auto;padding:6px 2px 4px}
+.passo{flex:1;min-width:88px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 4px}
+.passo:before{content:"";position:absolute;top:15px;left:-50%;right:50%;height:2px;background:var(--border)}
+.passo:first-child:before{display:none}
+.passo.feito:before,.passo.atual:before{background:var(--ok)}
+.bola{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;position:relative;z-index:1;background:var(--neu-bg);border:2px solid var(--surface)}
+.bola svg{width:16px;height:16px;stroke:#fff}
+.feito .bola{background:var(--ok)}
+.presum .bola{background:var(--surface);border:2px dashed var(--ok)}
+.presum .bola svg{stroke:var(--ok)}
+.atual .bola{background:var(--surface);border:2px solid var(--info);box-shadow:0 0 0 4px var(--info-bg)}
+.atual .bola:after{content:"";width:10px;height:10px;border-radius:50%;background:var(--info)}
+.na .bola{background:var(--surface);border:1px dashed var(--border)}
+.passo b{font-size:12px;font-weight:600;margin-top:8px;line-height:1.3;color:var(--tx)}
+.passo.pend b,.passo.na b{color:var(--tx-3);font-weight:500}
+.passo small{font-size:11px;color:var(--tx-3);margin-top:2px}
+.fin{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fin>div{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface-2)}
+.fin span{font-size:12px;color:var(--tx-3);font-weight:500;display:flex;gap:6px;align-items:center}
+.fin b{display:block;font-size:18px;font-weight:700;margin-top:6px}
+.fin small{color:var(--tx-3);font-size:11.5px}
+.kv{display:flex;flex-direction:column}
+.kv div{padding:10px 0;border-top:1px solid var(--border-2);display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px;font-size:13px}
+.kv div:first-child{border-top:0;padding-top:0}
+.kv dt{color:var(--tx-3)}
+.kv dd{margin:0;color:var(--tx);font-weight:500;overflow-wrap:anywhere}
+.doc{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-top:8px}
+.doc:hover{background:var(--surface-2)}
+.doc svg{width:18px;height:18px;stroke:var(--tx-3);flex:none}
+.doc span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.drop{border:2px dashed var(--border);border-radius:12px;background:var(--surface-2);padding:16px;text-align:center;font-size:12.5px;color:var(--tx-3);margin-top:12px}
+.dabas{display:flex;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto;margin-bottom:16px}
+.alerta-l{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--warn-bg);color:var(--warn-tx);font-size:13px}
+.alerta-l svg{width:18px;height:18px;stroke:currentColor;flex:none;margin-top:1px}
+
+/* relatório */
+.rel{max-width:980px}
+.rel h3{font-size:15px;margin:0 0 10px}
+.rel table td,.rel table th{padding:9px 12px}
+.rel ul{margin:0;padding-left:18px;color:var(--tx-2);line-height:1.6}
+.rel p{color:var(--tx-2);line-height:1.6;margin:0 0 10px;max-width:72ch}
+.sev{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+
+.placeholder{display:grid;place-items:center;text-align:center;padding:64px 24px;color:var(--tx-3)}
+.placeholder b{color:var(--tx);display:block;font-size:16px;margin-bottom:6px}
+
+@media (max-width:1279px){.c7,.c5,.c6,.c8,.c4{grid-column:span 12}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1023px){
+  .side{position:fixed;left:0;top:0;z-index:40;transform:translateX(-100%);transition:transform .2s}
+  .side.aberta{transform:none;box-shadow:0 0 0 100vmax rgb(2 6 23 / .45)}
+  .ico.hamb{display:grid}
+  .busca{display:none}
+}
+@media (max-width:640px){.kpis{grid-template-columns:1fr}.fin{grid-template-columns:repeat(2,minmax(0,1fr))}.conteudo{padding:16px}.top .ocultar{display:none}.kv div{grid-template-columns:1fr;gap:2px}.ex{display:none}.acoes{align-items:flex-start!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="aviso">
+  <span><b>Mockup</b> · dados reais do exercício 2026 (somente leitura, 21/11/2026). Nada aqui grava no sistema.</span>
+  <div class="opc" role="group" aria-label="Cor de destaque">
+    <span>Cor de destaque:</span>
+    <button type="button" data-acento="violeta" aria-pressed="true">Violeta do módulo</button>
+    <button type="button" data-acento="esmeralda" aria-pressed="false">Verde do documento</button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="Navegação do módulo">
+    <div class="marca"><div class="logo">CT</div><div><div class="nome">Central<span>Tech</span></div><small>Emendas Impositivas</small></div></div>
+    <a class="volta" href="#painel" onclick="return false">← Voltar para a Central</a>
+    <nav class="menu" id="menu"></nav>
+    <div class="user"><div class="av">RC</div><div><b>Administrador</b><small>Admin da Central</small></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <button class="ico hamb" id="hamb" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="crumb" id="crumb"></div>
+      <div class="dir">
+        <div class="busca ocultar"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar emenda, vereador, entidade…</div>
+        <div class="ex" title="Exercício"><i></i>Exercício 2026</div>
+        <button class="ico" aria-label="Avisos"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
+        <button class="ico ocultar" aria-label="Enviar feedback"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
+        <button class="ico ocultar" aria-label="Ajuda"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg></button>
+        <button class="ico" id="tema" aria-label="Alternar modo escuro"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+        <button class="ico ocultar" aria-label="Tamanho do texto" style="font-weight:700;font-size:13px">Aa</button>
+      </div>
+    </header>
+    <main class="conteudo" id="conteudo"></main>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const EMENDAS=[[1,"Repasse ao Hospital de Cataguases",171916.34,1,"ente","paga",2,"Antônio Gilmar de Oliveira","Hospital de Cataguases","saude_sus","Saúde",171916.34,171916.34,0,0],[2,"Repasse de recursos ao Esporte Clube Cataguases",101916.33,0,"osc","indicada",2,"Antônio Gilmar de Oliveira","Esporte Clube Cataguases","osc","Esporte",0,0,0,0],[3,"Aquisição de materiais de construção para realizar pequenas reformas e reparos na Escola M",20000,0,"direta","indicada",2,"Antônio Gilmar de Oliveira","Escola M. Manoel Dutra de Siqueira","orgao_municipal","Educação",0,0,0,0],[4,"Aquisição de materiais de construção cujo intuito será de realização de pequena reforma no",20000,0,"direta","indicada",2,"Antônio Gilmar de Oliveira","Escola M. Francisco Rodrigues de Almeida","orgao_municipal","Educação",0,0,0,0],[5,"Aquisição de materiais de construção cujo intuito será de construção de um pequeno telhado",10000,0,"direta","paga",2,"Antônio Gilmar de Oliveira","Sede Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",8519.2,8519.2,0,0],[6,"Repasse de recursos à Associação dos Moradores do Bairro Sol Nascente",20000,0,"osc","analise",2,"Antônio Gilmar de Oliveira","Associação dos Moradores Bairro Sol Nascente","osc","Administração",0,0,0,0],[7,"Aquisição de materiais de consumo para o Centro Municipal de Fisioterapia",7000,1,"direta","empenhada",4,"Felipe Ramos Vilas Souza","Centro de Fisioterapia","orgao_municipal","Saúde",83.76,83.76,0,0],[8,"Aquisição de materiais de consumo para o Núcleo de Atendimento Humanizado para Pessoas com",11000,1,"direta","indicada",4,"Felipe Ramos Vilas Souza","GAIA","orgao_municipal","Saúde",0,0,0,0],[9,"Aquisição de brinquedos, jogos e itens de atividades lúdicas para o Núcleo de Atendimento ",10000,1,"direta","processo_compra",4,"Felipe Ramos Vilas Souza","GAIA","orgao_municipal","Saúde",0,0,0,0],[10,"Aquisição de itens de cozinha para o Núcleo de Atendimento Humanizado para Pessoas com Tra",2000,1,"direta","indicada",4,"Felipe Ramos Vilas Souza","GAIA","orgao_municipal","Saúde",0,0,0,0],[11,"Aquisição de livros pedagógicos e lúdicos para o Núcleo de Atendimento Humanizado para Pes",5000,1,"direta","indicada",4,"Felipe Ramos Vilas Souza","GAIA","orgao_municipal","Saúde",0,0,0,0],[12,"Aquisição de equipamentos e material permanente para Centro Municipal de Fisioterapia",18000,1,"direta","empenhada",4,"Felipe Ramos Vilas Souza","Centro de Fisioterapia","orgao_municipal","Saúde",1851,22.21,0,0],[13,"Aquisição de equipamentos e material permanente para o Núcleo de Atendimento Humanizado pa",20832.67,1,"direta","indicada",4,"Felipe Ramos Vilas Souza","GAIA","orgao_municipal","Saúde",0,0,0,0],[14,"Aquisição de equipamentos e material permanente para o Centro de Especialidades Odontológi",70000,1,"direta","empenhada",4,"Felipe Ramos Vilas Souza","CEO - Centro de Especialidades Odontológicas","orgao_municipal","Saúde",3702,44.42,0,0],[15,"Repasse de recursos ao Projeto Superação",30000,1,"osc","indicada",4,"Felipe Ramos Vilas Souza","Projeto Superação","osc","Saúde",0,0,0,0],[16,"Repasse de recursos à Liga Esportiva de Cataguases – LEC",20000,0,"osc","paga",4,"Felipe Ramos Vilas Souza","LEC - Liga Esportiva de Cataguases","osc","Esporte",20000,20000,0,0],[17,"Aquisição de materiais esportivos para a Secretaria Municipal de Esportes, conforme demand",20000,0,"direta","paga",4,"Felipe Ramos Vilas Souza","Secretaria de Esportes","orgao_municipal","Esporte",19998.53,19068.53,0,0],[18,"Contratação de transporte terceirizado para a Secretaria Municipal de Esportes",10000,0,"direta","empenhada",4,"Felipe Ramos Vilas Souza","Secretaria de Esportes","orgao_municipal","Esporte",9999.95,0,0,0],[19,"Repasse de recursos ao Esporte Clube São José",20000,0,"osc","paga",4,"Felipe Ramos Vilas Souza","Esporte Clube São José","osc","Esporte",20000,20000,0,0],[20,"Repasse de recursos ao Esporte Clube São José",10000,0,"osc","indicada",4,"Felipe Ramos Vilas Souza","Esporte Clube São José","osc","Esporte",0,0,0,0],[21,"Reforço da dotação da Secretaria Municipal de Serviços Urbanos para aquisição de materiais",40000,0,"direta","empenhada",4,"Felipe Ramos Vilas Souza","Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",39999.7,0,0,0],[22,"Reforço da dotação da Secretaria Municipal de Cultura e Turismo para fomentar eventos cult",40000,0,"direta","processo_compra",4,"Felipe Ramos Vilas Souza","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",2588,0,0,0],[23,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",10000,0,"osc","empenhada",4,"Felipe Ramos Vilas Souza","AMAF","osc","Administração",10000,0,0,0],[24,"Repasse de recursos à Obra Unida Lar São Vicente de Paulo",10000,0,"osc","paga",3,"Carlos Magno de Melo Nóbrega","Obra Unida Lar São Vicente de Paulo","osc","Administração",10000,10000,0,0],[25,"A aquisição de equipamentos e material permanente para o CAPS 1 – Casa dos Amigos",10000,1,"direta","indicada",3,"Carlos Magno de Melo Nóbrega","Caps I","orgao_municipal","Saúde",0,0,0,0],[26,"A aquisição de equipamentos e material permanente para o CAPS Álcool/Drogas “Pastor Iracin",10000,1,"direta","empenhada",3,"Carlos Magno de Melo Nóbrega","Caps Ad","orgao_municipal","Saúde",824,0,0,0],[27,"Repasse de recursos ao Projeto Superação",20000,1,"osc","indicada",3,"Carlos Magno de Melo Nóbrega","Projeto Superação","osc","Saúde",0,0,0,0],[28,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",10000,1,"direta","indicada",3,"Carlos Magno de Melo Nóbrega","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[29,"Repasse de recursos à Escolinha de Futebol Joias da Taquara",5000,0,"osc","indicada",3,"Carlos Magno de Melo Nóbrega","Escolinha de Futebol Joias da Taquara","osc","Esporte",0,0,0,0],[30,"Repasse ao Hospital de Cataguases",101916.34,1,"ente","paga",3,"Carlos Magno de Melo Nóbrega","Hospital de Cataguases","saude_sus","Saúde",101916.34,101916.34,0,0],[31,"Aquisição de materiais esportivos para a Secretaria Municipal de Esportes, conforme demand",30000,0,"direta","empenhada",3,"Carlos Magno de Melo Nóbrega","Secretaria de Esportes","orgao_municipal","Esporte",29999.94,0,0,0],[32,"Repasse de recursos à Associação Cristo Vive em Cataguases",20000,0,"osc","plano_trabalho",3,"Carlos Magno de Melo Nóbrega","Associação Cristo Vive em Cataguases","osc","Administração",0,0,0,0],[33,"Repasse de recursos à Associação de Moradores do Bairro Ibraim Mendonça e Bairro Iracema",10000,0,"osc","indicada",3,"Carlos Magno de Melo Nóbrega","Associação dos Moradores do Bairro Ibraim Mendonça e Iracema","osc","Administração",0,0,0,0],[34,"Repasse de recursos à Associação Cristo Vive em Cataguases",10000,0,"osc","plano_trabalho",3,"Carlos Magno de Melo Nóbrega","Associação Cristo Vive em Cataguases","osc","Administração",10000,0,0,0],[35,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",22000,0,"osc","indicada",3,"Carlos Magno de Melo Nóbrega","AMAF","osc","Administração",0,0,0,0],[36,"Repasse de recursos à Associação Desportiva e Cultural Ivair de Sousa",5000,0,"osc","paga",3,"Carlos Magno de Melo Nóbrega","Associação Desportiva e Cultural Ivair de Sousa","osc","Esporte",5000,5000,0,0],[37,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",25000,0,"osc","plano_trabalho",3,"Carlos Magno de Melo Nóbrega","AMAF","osc","Administração",25000,0,0,0],[38,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",24916.33,0,"osc","plano_trabalho",3,"Carlos Magno de Melo Nóbrega","AMAF","osc","Administração",24916.33,0,0,0],[39,"A aquisição de equipamentos e material permanente para o Núcleo de Atendimento Humanizado ",20000,1,"direta","empenhada",3,"Carlos Magno de Melo Nóbrega","GAIA","orgao_municipal","Saúde",1873.21,22.21,0,0],[40,"Repasse de recursos à Associação Monsenhor Antônio Xavier Rodrigues",10000,0,"osc","paga",3,"Carlos Magno de Melo Nóbrega","Associação Monsenhor Antônio Xavier Rodrigues (Projeto Ricar","osc","Administração",10000,10000,0,0],[41,"Repasse de recursos à Associação Monsenhor Antônio Xavier Rodrigues",31916.33,0,"osc","paga",7,"Giovana Aparecida Costa","Associação Monsenhor Antônio Xavier Rodrigues (Projeto Ricar","osc","Administração",31916.33,31916.33,0,0],[42,"Repasse de recursos ao Projeto Superação",10000,1,"osc","indicada",7,"Giovana Aparecida Costa","Projeto Superação","osc","Saúde",0,0,0,0],[43,"Repasse de recursos à Associação de Moradores do Bairro Ibraim Mendonça e Bairro Iracema",50000,0,"osc","paga",7,"Giovana Aparecida Costa","Associação dos Moradores do Bairro Ibraim Mendonça e Iracema","osc","Administração",50000,50000,0,0],[44,"Repasse ao Hospital de Cataguases",61916.34,1,"ente","paga",7,"Giovana Aparecida Costa","Hospital de Cataguases","saude_sus","Saúde",61916.34,61916.34,0,0],[45,"Aquisição de equipamentos e material permanente para o Setor do CAPS AD “Pastor Iracino Cy",30000,1,"direta","indicada",7,"Giovana Aparecida Costa","Caps Ad","orgao_municipal","Saúde",0,0,0,0],[46,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",50000,1,"direta","indicada",7,"Giovana Aparecida Costa","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[47,"Repasse de recursos ao Centro Espírita Jota Lacerda",30000,0,"osc","plano_trabalho",7,"Giovana Aparecida Costa","Centro Espírita Jota Lacerda","osc","Administração",30000,0,0,0],[48,"Repasse de recursos à associação “Mulheres Unidas Contra Violência – MUV”",10000,0,"osc","indicada",7,"Giovana Aparecida Costa","Associação Mulheres Unidas Contra a Violência","osc","Administração",0,0,0,0],[49,"Repasse de recursos ao Centro Espírita Jota Lacerda",20000,0,"osc","empenhada",7,"Giovana Aparecida Costa","Centro Espírita Jota Lacerda","osc","Administração",20000,0,0,0],[50,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",20000,0,"osc","plano_trabalho",7,"Giovana Aparecida Costa","AMAF","osc","Administração",20000,0,0,0],[51,"Repasse de recursos à Comunidade Social Missão Barsanulfo de Cataguases – MG",10000,0,"osc","paga",7,"Giovana Aparecida Costa","Comunidade Social Missão Barsanulfo de Cataguases","osc","Administração",10000,10000,0,0],[52,"Repasse de recursos ao Projeto Superação",20000,1,"osc","indicada",7,"Giovana Aparecida Costa","Projeto Superação","osc","Saúde",0,0,0,0],[53,"Aquisição de materiais de consumo em geral para a Escola Municipal Monsenhor Solindo",30000,0,"direta","indicada",12,"Marco da Costa Garcia","Escola M. Monsenhor Solindo","orgao_municipal","Educação",0,0,0,0],[54,"Repasse de recursos à Obra Unida Lar São Vicente de Paulo",20000,0,"osc","paga",12,"Marco da Costa Garcia","Obra Unida Lar São Vicente de Paulo","osc","Administração",20000,20000,0,0],[55,"Aquisição de um terreno no Bairro Thomé, em local a ser determinado conforme especificidad",151916.34,1,"direta","indicada",12,"Marco da Costa Garcia","Posto Thomé","orgao_municipal","Saúde",0,0,0,0],[56,"Repasse de recursos para o Conselho de Desenvolvimento Comunitário do Distrito de Cataguar",5000,0,"osc","indicada",12,"Marco da Costa Garcia","Conselho de Desenvolvimento Comunitário do Distrito de Catag","osc","Agricultura e Meio Ambiente",0,0,0,0],[57,"Aquisição de materiais para fabricação de massa asfáltica para a Secretaria Municipal de S",86916.33,0,"direta","paga",12,"Marco da Costa Garcia","Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",86903.96,86903.96,0,0],[58,"Aquisição e instalação de um parquinho infantil (playground) através da Secretaria Municip",10000,0,"direta","processo_compra",12,"Marco da Costa Garcia","Parquinho infantil para Sebastião Adolfo","orgao_municipal","Serviços Urbanos",0,0,0,0],[59,"Repasse de recursos para ao Projeto Superação",10000,1,"osc","indicada",12,"Marco da Costa Garcia","Projeto Superação","osc","Saúde",0,0,0,0],[60,"Repasse ao Hospital de Cataguases",10000,1,"ente","paga",12,"Marco da Costa Garcia","Hospital de Cataguases","saude_sus","Saúde",10000,10000,0,0],[61,"Repasse de recursos para à Associação dos Surdos de Cataguases",10000,0,"osc","indicada",12,"Marco da Costa Garcia","Associação de Surdos de Cataguases","osc","Administração",0,0,0,0],[62,"Repasse de recursos para ONG Ação Minas",10000,0,"osc","plano_trabalho",12,"Marco da Costa Garcia","ONG Ação Minas","osc","Administração",0,0,0,0],[63,"Reforço da dotação da Casa da Criança para aquisição de brinquedos",11000,0,"direta","processo_compra",8,"Giovanni Gropo","Casa da Criança","orgao_municipal","Desenvolvimento Social",8381.3,0,0,0],[64,"Reforço da dotação da Secretaria Municipal de Esportes para aquisição de materiais esporti",15000,0,"direta","empenhada",8,"Giovanni Gropo","Secretaria de Esportes","orgao_municipal","Esporte",14999.16,0,0,0],[65,"Compor recursos para aquisição de materiais de construção cujo intuito será de pequenos re",5000,0,"direta","indicada",8,"Giovanni Gropo","Escola M. Professor Antônio Amaro","orgao_municipal","Educação",0,0,0,0],[66,"Repasse de recursos à Associação de Moradores dos Bairros Izabel Tavares e Fátima",12000,0,"osc","indicada",8,"Giovanni Gropo","Associação dos Moradores Bairro Izabel Tavares e Fátima","osc","Administração",0,0,0,0],[67,"Repasse de recursos ao Colinas Esporte Clube",2000,0,"osc","indicada",8,"Giovanni Gropo","Colinas Esporte Clube","osc","Esporte",0,0,0,0],[68,"Aquisição de insumos para fabricação de massa asfáltica para a Secretaria Municipal de Ser",44000,0,"direta","paga",8,"Giovanni Gropo","Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",43999.96,43999.93,0,0],[69,"Repasse de recursos ao Rotary Club de Cataguases",3000,0,"osc","plano_trabalho",8,"Giovanni Gropo","Rotary Club de Cataguases","osc","Administração",0,0,0,0],[70,"Repasse de recursos ao Instituto Estadual de Florestas",11000,0,"ente","indicada",8,"Giovanni Gropo","IEF","ente_publico","Agricultura e Meio Ambiente",0,0,0,0],[71,"Repasse de recursos ao Projeto Superação",11000,1,"osc","indicada",8,"Giovanni Gropo","Projeto Superação","osc","Saúde",0,0,0,0],[72,"Repasse de recursos ao Lar Ana Nery",4916.33,0,"osc","paga",8,"Giovanni Gropo","Lar Ana Nery","osc","Educação",4916.33,4916.33,0,0],[73,"Repasse de recursos ao Hospital de Cataguases",111916.34,1,"ente","empenhada",8,"Giovanni Gropo","Hospital de Cataguases","saude_sus","Saúde",111916.34,0,0,0],[74,"Aquisição de equipamentos e material permanente para o posto de saúde “ESF Guanabara”",8000,1,"direta","empenhada",8,"Giovanni Gropo","Posto Guanabara","orgao_municipal","Saúde",5553,0,0,0],[75,"Aquisição de equipamentos e material permanente para o setor da Defesa Civil, cuja demanda",6000,0,"direta","processo_compra",8,"Giovanni Gropo","Defesa Civil","orgao_municipal","Gabinete",5940,0,0,0],[76,"Aquisição de materiais de construção para o posto de saúde “Centro de Saúde Dr. Jaime Afon",15000,1,"direta","indicada",8,"Giovanni Gropo","Posto Granjaria","orgao_municipal","Saúde",0,0,0,0],[77,"Aquisição de material para pintura do posto de saúde “ESF Dr. Dalmo Peixoto Gomes”",7000,1,"direta","processo_compra",8,"Giovanni Gropo","Posto Beira Rio","orgao_municipal","Saúde",2026.5,2026.5,0,0],[78,"Reforço da dotação da Secretaria Municipal de Cultura para custeio da realização de evento",25000,0,"direta","empenhada",8,"Giovanni Gropo","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",3172,0,0,0],[79,"Aquisição de equipamentos e material permanente para o Núcleo de Atendimento Humanizado pa",8000,1,"direta","indicada",8,"Giovanni Gropo","GAIA","orgao_municipal","Saúde",0,0,0,0],[80,"Repasse de recursos à Associação Desportiva e Cultural Ivair de Souza",3000,0,"osc","paga",8,"Giovanni Gropo","Associação Desportiva e Cultural Ivair de Sousa","osc","Esporte",3000,3000,0,0],[81,"Reforço da dotação da Secretaria Municipal de Esportes para custeio da realização de event",30000,0,"direta","empenhada",8,"Giovanni Gropo","Secretaria de Esportes","orgao_municipal","Esporte",12740,0,0,0],[82,"Repasse ao Hospital de Cataguases",11000,1,"ente","paga",8,"Giovanni Gropo","Hospital de Cataguases","saude_sus","Saúde",11000,11000,0,0],[83,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito do Glória de Ca",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito do Glóri","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[84,"Repasse de recursos ao Projeto Superação",20000,1,"osc","indicada",5,"Fernando Medeiros Pereira","Projeto Superação","osc","Saúde",0,0,0,0],[85,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário da Comunidade de Aracati",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito de Araca","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[86,"Aquisição de um veículo leve, tipo caminhonete, com capacidade de pelo menos 1,5 toneladas",117916.33,0,"direta","processo_compra",5,"Fernando Medeiros Pereira","Veículo para uso no Distrito de Sereno","orgao_municipal","Administração",0,0,0,0],[87,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito de Cataguarino",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito de Catag","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[88,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito Sereno",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito de Seren","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[89,"Repasse de recursos à Associação de Mulheres Rurais de Cataguases",8000,0,"osc","indicada",5,"Fernando Medeiros Pereira","Associação de Mulheres Rurais de Cataguases","osc","Agricultura e Meio Ambiente",0,0,0,0],[90,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito de Vista Alegre",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito de Vista","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[91,"Repasse de recursos ao Caixa Escolar Walter Resende Peres",15000,0,"osc","paga",5,"Fernando Medeiros Pereira","Caixa Escolar - Escola Dr. Astolpho Rezende","osc","Educação",15000,15000,0,0],[92,"Repasse de recursos à Associação de Mulheres Rurais de Cataguases",1000,0,"osc","indicada",5,"Fernando Medeiros Pereira","Associação de Mulheres Rurais de Cataguases","osc","Agricultura e Meio Ambiente",0,0,0,0],[93,"Compor recursos destinados à realização de procedimentos, exames, cirurgias diversas e con",39399.34,1,"ente","paga",5,"Fernando Medeiros Pereira","Cisum","consorcio","Saúde",33698.36,33698.36,0,0],[94,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito Sereno",5000,0,"osc","paga",5,"Fernando Medeiros Pereira","Conselho de Desenvolvimento Comunitário do Distrito de Seren","osc","Agricultura e Meio Ambiente",5000,5000,0,0],[95,"Repasse de recursos ao Hospital de Cataguases",25000,1,"ente","paga",5,"Fernando Medeiros Pereira","Hospital de Cataguases","saude_sus","Saúde",25000,25000,0,0],[96,"Construção de telhado e pintura da unidade básica de saúde do Distrito de Sereno “Posto de",87517,1,"direta","processo_compra",5,"Fernando Medeiros Pereira","Posto Sereno","orgao_municipal","Obras",0,0,0,0],[97,"Aquisição de insumos para fabricação de massa asfáltica para a Secretaria de Serviços Urba",171916.33,0,"direta","paga",9,"Henrique Silva Oliveira","Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",171900.59,164259.03,0,0],[98,"Repasse de recursos ao projeto Superação",21916.34,1,"osc","indicada",9,"Henrique Silva Oliveira","Projeto Superação","osc","Saúde",0,0,0,0],[99,"Reforma no Centro de Especialidades Odontológicas – CEO Marília Guimarães Costa",80000,1,"direta","indicada",9,"Henrique Silva Oliveira","CEO - Centro de Especialidades Odontológicas","orgao_municipal","Saúde",0,0,0,0],[100,"Aquisição de equipamentos e material permanente para o Centro de Especialidades Odontológi",70000,1,"direta","indicada",9,"Henrique Silva Oliveira","CEO - Centro de Especialidades Odontológicas","orgao_municipal","Saúde",0,0,0,0],[101,"Repasse de recursos à Associação de Mulheres Rurais de Cataguases",1916.33,0,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Associação de Mulheres Rurais de Cataguases","osc","Agricultura e Meio Ambiente",1916.33,1916.33,0,0],[102,"Compor recursos para a Secretaria Municipal de Cultura",23500,0,"direta","empenhada",14,"Vinicius Machado Costa de Oliveira","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",10878,0,1,0],[103,"Repasse de recursos à Escolinha de Futebol Joias da Taquara",11500,0,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Escolinha de Futebol Joias da Taquara","osc","Esporte",11500,11500,0,0],[104,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito de Cataguarino",10000,0,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Conselho de Desenvolvimento Comunitário do Distrito de Catag","osc","Agricultura e Meio Ambiente",10000,10000,0,0],[105,"A realização das festividades do 44º Aniversário do Bairro Taquara, através da Secretaria ",40000,0,"direta","processo_compra",14,"Vinicius Machado Costa de Oliveira","Festa da Taquara Preta","orgao_municipal","Cultura e Turismo",36793,0,0,0],[106,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito do Glória de Ca",20000,0,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Conselho de Desenvolvimento Comunitário do Distrito do Glóri","osc","Agricultura e Meio Ambiente",20000,20000,0,0],[107,"Aquisição de equipamentos e material permanente para o Setor da Defesa Civil de Cataguases",33000,0,"direta","processo_compra",14,"Vinicius Machado Costa de Oliveira","Defesa Civil","orgao_municipal","Gabinete",33000,0,0,0],[108,"Repasse de recursos ao Esporte Clube Taquara Preta",20000,0,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Esporte Clube Taquara Preta","osc","Esporte",20000,20000,0,0],[109,"Aquisição de materiais de consumo para o Setor da Defesa Civil de Cataguases",2000,0,"direta","processo_compra",14,"Vinicius Machado Costa de Oliveira","Defesa Civil","orgao_municipal","Gabinete",1982,0,0,0],[110,"Repasse de recursos ao caixa Escolar Manoel Ignácio Peixoto",5000,0,"osc","indicada",14,"Vinicius Machado Costa de Oliveira","Caixa Escolar Manoel Ignácio Peixoto (Escola Professora Carm","osc","Educação",0,0,0,0],[111,"A construção de dois banheiros para o Posto de Saúde “Vereador José L. Costa”",35000,1,"direta","processo_compra",14,"Vinicius Machado Costa de Oliveira","Posto Aracati","orgao_municipal","Obras",0,0,0,0],[112,"Repasse de recursos ao Projeto Superação",20000,1,"osc","indicada",14,"Vinicius Machado Costa de Oliveira","Projeto Superação","osc","Saúde",0,0,0,0],[113,"Repasse de recursos à Associação de Pais e Amigos dos Excepcionais – APAE",20000,1,"osc","paga",14,"Vinicius Machado Costa de Oliveira","Associação de Pais e Amigos dos Excepcionais – APAE","osc","Saúde",20000,20000,0,0],[114,"Repasse de recursos ao caixa Escolar Conceição Aparecida do Carmo",5000,0,"osc","indicada",14,"Vinicius Machado Costa de Oliveira","Caixa Escolar - CMEI Rosa Maria de Oliveira","osc","Educação",0,0,0,0],[115,"Reforma do posto de saúde “ESF Doutor Hugo Sodré Lanna”",96916.34,1,"direta","processo_compra",14,"Vinicius Machado Costa de Oliveira","Posto Taquara Preta","orgao_municipal","Obras",0,0,0,0],[116,"Repasse de recursos à ONG Ação Minas",10916.33,0,"osc","indicada",10,"Josimar Branquinho de Almeida","ONG Ação Minas","osc","Administração",0,0,0,0],[117,"Repasse de recursos ao Projeto Superação",20000,1,"osc","indicada",10,"Josimar Branquinho de Almeida","Projeto Superação","osc","Saúde",0,0,0,0],[118,"Repasse de recursos ao Hospital de Cataguases",50000,1,"ente","paga",10,"Josimar Branquinho de Almeida","Hospital de Cataguases","saude_sus","Saúde",50000,50000,0,0],[119,"Aquisição de materiais esportivos para a Secretaria Municipal de Esportes, cuja demanda se",15000,0,"direta","empenhada",10,"Josimar Branquinho de Almeida","Secretaria de Esportes","orgao_municipal","Esporte",14999.62,0,0,0],[120,"Custeio de transporte para a Secretaria Municipal de Cultura",10000,0,"direta","empenhada",10,"Josimar Branquinho de Almeida","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",6580.45,0,0,0],[121,"Reconstrução de um escadão, localizado ao lado da Escola Municipal Vigário Cassimiro",60000,0,"direta","processo_compra",10,"Josimar Branquinho de Almeida","Escadão ao lado da Escola Vigário Cassimiro","orgao_municipal","Obras",0,0,0,0],[122,"Aquisição de equipamentos e material permanente para atender a demanda do posto de saúde “",10000,1,"direta","empenhada",10,"Josimar Branquinho de Almeida","Posto Haidee","orgao_municipal","Saúde",5091,0,0,0],[123,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",10000,1,"direta","indicada",10,"Josimar Branquinho de Almeida","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[124,"Aquisição de materiais de pintura para o Setor da Catrans, conforme demanda a ser apresent",5000,0,"direta","indicada",10,"Josimar Branquinho de Almeida","Catrans","orgao_municipal","Serviços Urbanos/CATRANS",0,0,0,0],[125,"Repasse ao Hospital de Cataguases",20000,1,"ente","paga",10,"Josimar Branquinho de Almeida","Hospital de Cataguases","saude_sus","Saúde",20000,20000,0,0],[126,"Realização de exames, consultas e cirurgias diversas, através do CISUM, conforme demanda d",41916.34,1,"ente","paga",10,"Josimar Branquinho de Almeida","Cisum","consorcio","Saúde",36303.08,36303.08,0,0],[127,"Aquisição de um parquinho infantil (playground) para ser instalado na Praça Paulo Viana",19000,0,"direta","indicada",10,"Josimar Branquinho de Almeida","Parquinho infantil para Ana Carrara","orgao_municipal","Serviços Urbanos",0,0,0,0],[128,"Aquisição de equipamentos e material permanente para a Escola Municipal Vigário Cassimiro",10000,0,"direta","paga",10,"Josimar Branquinho de Almeida","Escola M. Vigário Cassimiro","orgao_municipal","Educação",10000,10000,0,0],[129,"Aquisição de equipamentos e material permanente para o posto de saúde “ESF Dr. José Franci",13000,1,"direta","processo_compra",10,"Josimar Branquinho de Almeida","Posto Bandeirantes","orgao_municipal","Saúde",0,0,0,0],[130,"Repasse de recursos à Associação Mineira de Apoio às Família - AMAF",15000,0,"osc","plano_trabalho",10,"Josimar Branquinho de Almeida","AMAF","osc","Administração",15000,0,0,0],[131,"Aquisição de materiais de consumo para o posto de saúde “ESF Dr. José Francisco Junqueira ",7000,1,"direta","empenhada",10,"Josimar Branquinho de Almeida","Posto Bandeirantes","orgao_municipal","Saúde",6995.7,6995.7,0,0],[132,"Aquisição de um parquinho infantil (playground) a ser instalado na Colônia Major Vieira, Z",17000,0,"direta","indicada",10,"Josimar Branquinho de Almeida","Parquinho infantil para Colônia Major Vieira","orgao_municipal","Serviços Urbanos",0,0,0,0],[133,"Repasse de recursos à Associação Monsenhor Antônio Xavier Rodrigues “Projeto Ricardinho”",10000,0,"osc","paga",10,"Josimar Branquinho de Almeida","Associação Monsenhor Antônio Xavier Rodrigues (Projeto Ricar","osc","Administração",10000,10000,0,0],[134,"Repasse de recursos ao Operário Futebol Clube",171916.33,0,"osc","empenhada",13,"Ricardo Geraldo Dias","Operário Futebol Clube","osc","Esporte",171916.33,0,0,0],[135,"Repasse de recursos ao Projeto Superação",10000,1,"osc","indicada",13,"Ricardo Geraldo Dias","Projeto Superação","osc","Saúde",0,0,0,0],[136,"Repasse de recursos ao Hospital de Cataguases",151916.34,1,"ente","paga",13,"Ricardo Geraldo Dias","Hospital de Cataguases","saude_sus","Saúde",151916.34,151916.34,0,0],[137,"Repasse de recursos à Associação de Pais e Amigos dos Excepcionais - APAE",10000,1,"osc","paga",13,"Ricardo Geraldo Dias","Associação de Pais e Amigos dos Excepcionais – APAE","osc","Saúde",10000,10000,0,0],[138,"Repasse de recursos ao Projeto Superação",6000,1,"osc","indicada",11,"Júnio Valentim","Projeto Superação","osc","Saúde",0,0,0,0],[139,"Repasse de recursos ao Caixa Escolar Lysis Brandão da Rocha",5000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar Lysis Brandão da Rocha (CAIC)","osc","Educação",5000,5000,0,0],[140,"Repasse ao Hospital de Cataguases",12000,1,"ente","paga",11,"Júnio Valentim","Hospital de Cataguases","saude_sus","Saúde",12000,12000,0,0],[141,"Aquisição de equipamentos e material permanentes para o posto de saúde “ESF Dr. Sebastião ",30000,1,"direta","empenhada",11,"Júnio Valentim","Posto Leonardo","orgao_municipal","Saúde",6235.99,0,0,0],[142,"Repasse de recursos ao Caixa Escolar José Francisco Mendes Del Peloso",22000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar José Francisco Mendes Del Peloso (Escola Maria","osc","Educação",22000,22000,0,0],[143,"Repasse de recursos ao Lar Ana Nery",5000,0,"osc","paga",11,"Júnio Valentim","Lar Ana Nery","osc","Educação",5000,5000,0,0],[144,"Repasse de recursos ao Caixa Escolar Vicente de Paulo Dias",5000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar Vicente de Paulo Dias (Escola Enedina Prata)","osc","Educação",5000,5000,0,0],[145,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",65916.34,1,"direta","indicada",11,"Júnio Valentim","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[146,"Repasse de recursos ao Hospital de Cataguases",50000,1,"ente","paga",11,"Júnio Valentim","Hospital de Cataguases","saude_sus","Saúde",50000,50000,0,0],[147,"Aquisição de equipamentos e material permanente para o posto de saúde “ESF Guanabara”",8000,1,"direta","empenhada",11,"Júnio Valentim","Posto Guanabara","orgao_municipal","Saúde",8000,0,0,0],[148,"Repasse de recursos ao Caixa Escolar Prefeito José Esteves",5000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar - Escola Prefeito José Esteves","osc","Educação",5000,5000,0,0],[149,"Repasse de recursos à Vila Leonardo Futebol Clube de Cataguases – MG",5000,0,"osc","indicada",11,"Júnio Valentim","Vila Leonardo Futebol Clube de Cataguases","osc","Esporte",0,0,0,0],[150,"Repasse de recursos ao Caixa Escolar Nadya Maria Santos Shelb",5000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar Nadya Maria Santos Schelb (Escola Professor An","osc","Educação",5000,5000,0,0],[151,"Repasse de recursos ao Conselho Central de Cataguases da Sociedade de São Vicente de Paulo",5000,0,"osc","indicada",11,"Júnio Valentim","Conselho Central de Cataguases da Sociedade São Vicente de P","osc","Administração",0,0,0,0],[152,"Repasse de recursos à Associação da Economia Solidária de Cataguases",4000,0,"osc","paga",11,"Júnio Valentim","Associação da Economia Solidária de Cataguases","osc","Administração",4000,4000,0,0],[153,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário de Cataguarino",10000,0,"osc","indicada",11,"Júnio Valentim","Conselho de Desenvolvimento Comunitário do Distrito de Catag","osc","Agricultura e Meio Ambiente",0,0,0,0],[154,"Aquisição de material de consumo para fabricação de massa asfáltica para a Secretaria de S",70000,0,"direta","empenhada",11,"Júnio Valentim","Secretaria de Serviços Urbanos","orgao_municipal","Serviços Urbanos",69952.04,0,0,0],[155,"Aquisição equipamentos e material permanente para o Centro de Convivência da Terceira Idad",5000,0,"direta","processo_compra",11,"Júnio Valentim","Pró Idoso","orgao_municipal","Desenvolvimento Social",0,0,0,0],[156,"Repasse de recursos ao Caixa Escolar Virgínia Silva Tiago",5000,0,"osc","paga",11,"Júnio Valentim","Caixa Escolar Virgínia Silva Tiago (Escola Manoel Paes Tiago","osc","Educação",5000,5000,0,0],[157,"Repasse de recursos para a Associação Mineira de Apoio à Família – AMAF",1500,0,"osc","empenhada",11,"Júnio Valentim","AMAF","osc","Administração",1500,0,0,0],[158,"Repasse de recursos à Associação de Moradores dos Bairros Izabel Tavares e Fátima",6500,0,"osc","indicada",11,"Júnio Valentim","Associação dos Moradores Bairro Izabel Tavares e Fátima","osc","Administração",0,0,0,0],[159,"Repasse de recursos à Associação Monsenhor Antônio Xavier Rodrigues “Projeto Ricardinho”",10000,0,"osc","paga",11,"Júnio Valentim","Associação Monsenhor Antônio Xavier Rodrigues (Projeto Ricar","osc","Administração",10000,10000,0,0],[160,"Repasse de recursos ao Conselho Central de Cataguases da Sociedade de São Vicente de Paulo",2916.33,0,"osc","indicada",11,"Júnio Valentim","Conselho Central de Cataguases da Sociedade São Vicente de P","osc","Administração",0,0,0,0],[161,"Aquisição de materiais de construção para o posto de saúde “ESF Dr. Dalmo Peixoto Gomes”",20000,1,"direta","empenhada",1,"Ana Cristina Dos Santos Romão","Posto Beira Rio","orgao_municipal","Saúde",19999.4,73.99,0,0],[162,"Realização de exames de qualquer natureza, através do CISUM, conforme demanda da população",61916.34,1,"ente","paga",1,"Ana Cristina Dos Santos Romão","Cisum","consorcio","Saúde",60606.53,60606.53,0,0],[163,"Aquisição de equipamentos e material permanente para o posto de saúde “ESF Dr. Antônio Hél",15000,1,"direta","indicada",1,"Ana Cristina Dos Santos Romão","Posto Primavera","orgao_municipal","Saúde",0,0,0,0],[164,"Repasse de recursos à Associação de Pais e Amigos de Pessoas com Autismo de Cataguases “La",10000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Associação de Pais e Amigos de Pessoas com Autismo de Catagu","osc","Administração",0,0,0,0],[165,"Repasse de recursos à Associação Esportiva Social Cultural Casaca",12000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Associação Esportiva Social Cultural Casaca","osc","Esporte",0,0,0,0],[166,"Aquisição de materiais esportivos para a Secretaria Municipal de Esportes, conforme demand",30000,0,"direta","empenhada",1,"Ana Cristina Dos Santos Romão","Secretaria de Esportes","orgao_municipal","Esporte",29999.91,0,0,0],[167,"Repasse ao Projeto Superação",10000,1,"osc","paga",1,"Ana Cristina Dos Santos Romão","Projeto Superação","osc","Saúde",10000,10000,0,0],[168,"Repasse à Associação Monsenhor Antônio Xavier Rodrigues “Projeto Ricardinho”",10000,0,"osc","paga",1,"Ana Cristina Dos Santos Romão","Associação Monsenhor Antônio Xavier Rodrigues (Projeto Ricar","osc","Administração",10000,10000,0,0],[169,"Repasse de recursos à Associação Desportiva e Cultural Ivair de Sousa",15000,0,"osc","paga",1,"Ana Cristina Dos Santos Romão","Associação Desportiva e Cultural Ivair de Sousa","osc","Esporte",15000,15000,0,0],[170,"Aquisição de material de consumo em geral para posto de saúde “ESF Dr. Antônio Hélcio Pere",5000,1,"direta","empenhada",1,"Ana Cristina Dos Santos Romão","Posto Primavera","orgao_municipal","Saúde",4962.94,0,0,0],[171,"Repasse de recursos à Associação Cultural de Canto e Dança Afro Justino e São Vicente",10000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Associação Cultural de Canto e Dança Afro Justino e São Vice","osc","Cultura e Turismo",0,0,0,0],[172,"Aquisição de material de consumo para o CAPS I",10000,1,"direta","indicada",1,"Ana Cristina Dos Santos Romão","Caps I","orgao_municipal","Saúde",0,0,0,0],[173,"Reforço da dotação da Secretaria Municipal de Cultura para custeio de eventos culturais",40000,0,"direta","processo_compra",1,"Ana Cristina Dos Santos Romão","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",5188,0,0,0],[174,"Repasse de recursos à Associação de Mulheres Rurais de Cataguases",6000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Associação de Mulheres Rurais de Cataguases","osc","Agricultura e Meio Ambiente",0,0,0,0],[175,"Repasse de recursos à Associação “Copa Verão Futebol de Cataguases MG”",3916.33,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Copa Verão Futebol de Cataguases","osc","Esporte",0,0,0,0],[176,"Repasse de recursos ao Esporte Clube São José",15000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Esporte Clube São José","osc","Esporte",0,0,0,0],[177,"Repasse de recursos ao Hospital de Cataguases",20000,1,"ente","paga",1,"Ana Cristina Dos Santos Romão","Hospital de Cataguases","saude_sus","Saúde",20000,20000,0,0],[178,"Aquisição de instrumentos musicais para o CAPS AD “Pastor Iracino Cyrino da Silva”",10000,1,"direta","indicada",1,"Ana Cristina Dos Santos Romão","Caps Ad","orgao_municipal","Saúde",0,0,0,0],[179,"Repasse de recursos à associação “Mulheres Unidas Contra a Violência – MUV”",10000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Associação Mulheres Unidas Contra a Violência","osc","Administração",0,0,0,0],[180,"Repasse de recursos ao Conselho de Desenvolvimento Comunitário do Distrito de Cataguarino",10000,0,"osc","indicada",1,"Ana Cristina Dos Santos Romão","Conselho de Desenvolvimento Comunitário do Distrito de Catag","osc","Agricultura e Meio Ambiente",0,0,0,0],[181,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",20000,1,"direta","indicada",1,"Ana Cristina Dos Santos Romão","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[182,"Repasse à Associação da Economia Solidária de Cataguases",3000,0,"osc","paga",6,"Flávio Alves de Sousa","Associação da Economia Solidária de Cataguases","osc","Administração",3000,3000,0,0],[183,"Repasse à Folia de Reis Cataguases MG Mensageiros de Jesus",10000,0,"osc","indicada",6,"Flávio Alves de Sousa","Folia de Reis de Cataguases - Mensageiros de Jesus","osc","Cultura e Turismo",0,0,0,0],[184,"Repasse à Folia de Reis União dos Amigos",10000,0,"osc","indicada",6,"Flávio Alves de Sousa","Folia de Reis - União dos Amigos","osc","Cultura e Turismo",0,0,0,0],[185,"Aquisição de materiais de construção para a Secretaria Municipal de Serviços Urbanos",24000,0,"direta","processo_compra",6,"Flávio Alves de Sousa","Construção de guaritas","orgao_municipal","Obras",23928.35,0,0,0],[186,"Reforço da dotação da Associação de Moradores do Bairro Izabel Tavares e Fátima para custe",10000,0,"osc","indicada",6,"Flávio Alves de Sousa","Associação dos Moradores Bairro Izabel Tavares e Fátima","osc","Administração",0,0,0,0],[187,"Repasse de recursos ao Caixa Escolar José Francisco Mendes Del Peloso",17000,0,"osc","paga",6,"Flávio Alves de Sousa","Caixa Escolar José Francisco Mendes Del Peloso (Escola Maria","osc","Educação",17000,17000,0,0],[188,"A aquisição de materiais esportivos para a Secretaria Municipal de Esportes, conforme dema",47000,0,"direta","empenhada",6,"Flávio Alves de Sousa","Secretaria de Esportes","orgao_municipal","Esporte",46999.98,10000,0,0],[189,"Repasse de recursos à Associação de Moradores do Bairro São Vicente",40916.33,0,"osc","paga",6,"Flávio Alves de Sousa","Associação dos Moradores do Bairro São Vicente","osc","Administração",40916.33,40916.33,0,0],[190,"Aquisição de materiais de pintura para o Setor da Catrans, conforme demanda a ser apresent",10000,0,"direta","indicada",6,"Flávio Alves de Sousa","Catrans","orgao_municipal","Serviços Urbanos/CATRANS",0,0,0,0],[191,"Repasse de recursos ao Projeto Superação",12200,1,"osc","indicada",6,"Flávio Alves de Sousa","Projeto Superação","osc","Saúde",0,0,0,0],[192,"Aquisição e instalação de uma caixa d’água e uma janela para o Posto de Saúde Vereador L. ",5000,1,"direta","empenhada",6,"Flávio Alves de Sousa","Posto de Aracati","orgao_municipal","Saúde",199.99,0,0,0],[193,"Repasse de recursos ao Hospital de Cataguases",100000,1,"ente","paga",6,"Flávio Alves de Sousa","Hospital de Cataguases","saude_sus","Saúde",100000,100000,0,0],[194,"Aquisição de equipamentos e material permanente para o Laboratório Municipal. Caberá ao re",34716.34,1,"direta","indicada",6,"Flávio Alves de Sousa","Laboratório Municipal","orgao_municipal","Saúde",0,0,0,0],[195,"Aquisição de materiais de consumo em geral para o Laboratório Municipal. Caberá ao respons",20000,1,"direta","empenhada",6,"Flávio Alves de Sousa","Laboratório Municipal","orgao_municipal","Saúde",3032.22,0,0,0],[196,"Construção de calçadas na Avenida Maria Fernandes de Barros e Rua Tenente Pires, ambas sit",80000,0,"direta","processo_compra",15,"Willian Jose Lourenço Jeronimo","Construção de calçadas","orgao_municipal","Obras",0,0,0,0],[197,"Compor recursos para a Secretaria Municipal de Cultura",9000,0,"direta","processo_compra",15,"Willian Jose Lourenço Jeronimo","Secretaria de Cultura","orgao_municipal","Cultura e Turismo",0,0,1,0],[198,"Aquisição de materiais esportivos para a Secretaria Municipal de Esportes, conforme demand",9000,0,"direta","empenhada",15,"Willian Jose Lourenço Jeronimo","Secretaria de Esportes","orgao_municipal","Esporte",8999.4,0,0,0],[199,"Repasse de recursos à Associação Cultural de Canto e Dança Afro",2416.33,0,"osc","indicada",15,"Willian Jose Lourenço Jeronimo","Associação Cultural de Canto e Dança Afro Justino e São Vice","osc","Cultura e Turismo",0,0,0,0],[200,"Aquisição de materiais de consumo em geral, para o posto de saúde “ESF Dr. José Queiroz Pe",10000,1,"direta","indicada",15,"Willian Jose Lourenço Jeronimo","Posto Vila Reis","orgao_municipal","Saúde",0,0,0,0],[201,"Repasse de recursos ao Hospital de Cataguases",30000,1,"ente","paga",15,"Willian Jose Lourenço Jeronimo","Hospital de Cataguases","saude_sus","Saúde",30000,30000,0,0],[202,"Aquisição de um veículo de pequeno porte para o Centro de Especialidades Odontológicas – C",90000,1,"direta","indicada",15,"Willian Jose Lourenço Jeronimo","CEO - Centro de Especialidades Odontológicas","orgao_municipal","Saúde",0,0,0,0],[203,"Aquisição de materiais de consumo para a Secretaria Municipal de Saúde, conforme demanda a",10000,1,"direta","indicada",15,"Willian Jose Lourenço Jeronimo","Secretaria de Saúde","orgao_municipal","Saúde",0,0,1,0],[204,"Repasse de recursos ao Hospital de Cataguases",20000,1,"ente","paga",15,"Willian Jose Lourenço Jeronimo","Hospital de Cataguases","saude_sus","Saúde",20000,20000,0,0],[205,"Repasse de recursos à Associação de Moradores do Bairro Vila Reis",10000,0,"osc","indicada",15,"Willian Jose Lourenço Jeronimo","Associação dos Moradores do Bairro Vila Reis","osc","Administração",0,0,0,0],[206,"Repasse de recursos ao Caixa Escolar Lysis Brandão da Rocha",10000,0,"osc","paga",15,"Willian Jose Lourenço Jeronimo","Caixa Escolar Lysis Brandão da Rocha (CAIC)","osc","Educação",10000,10000,0,0],[207,"Repasse de recursos ao Esporte Clube Vila Reis",10000,0,"osc","indicada",15,"Willian Jose Lourenço Jeronimo","Esporte Clube Vila Reis","osc","Esporte",0,0,0,0],[208,"Repasse ao Hospital de Cataguases",11916.34,1,"ente","paga",15,"Willian Jose Lourenço Jeronimo","Hospital de Cataguases","saude_sus","Saúde",11916.34,11916.34,0,0],[209,"Repasse de recursos ao Caixa Escolar Manoel Ignácio Peixoto",15000,0,"osc","paga",15,"Willian Jose Lourenço Jeronimo","Caixa Escolar Manoel Ignácio Peixoto (Escola Professora Carm","osc","Educação",15000,15000,0,0],[210,"Repasse de recursos à Associação da Economia Solidária de Cataguases",5000,0,"osc","paga",15,"Willian Jose Lourenço Jeronimo","Associação da Economia Solidária de Cataguases","osc","Administração",5000,5000,0,0],[211,"Repasse de recursos à Associação Fraterna de Assistência aos Necessitados – AFAN",3000,0,"osc","indicada",15,"Willian Jose Lourenço Jeronimo","AFAN","osc","Administração",0,0,0,0],[212,"Aquisição de materiais de consumo em geral para o Centro de Referência da Assistência Soci",3500,0,"direta","processo_compra",15,"Willian Jose Lourenço Jeronimo","CRAS - São Vicente","orgao_municipal","Desenvolvimento Social",3491.84,0,0,0],[213,"Repasse de recursos à Associação Mineira de Apoio à Família – AMAF",4000,0,"osc","plano_trabalho",15,"Willian Jose Lourenço Jeronimo","AMAF","osc","Administração",4000,0,0,0],[214,"Repasse de recursos à Liga Esportiva de Cataguases – LEC",8000,0,"osc","paga",15,"Willian Jose Lourenço Jeronimo","LEC - Liga Esportiva de Cataguases","osc","Esporte",8000,8000,0,0],[215,"Repasse de recursos ao Projeto Superação",3000,1,"osc","indicada",15,"Willian Jose Lourenço Jeronimo","Projeto Superação","osc","Saúde",0,0,0,0]];
+
+const COTA=343832.67, SAUDE_MIN=50;
+const VEREADORES=[[1,"Ana Cristina Dos Santos Romão","PT",1],[2,"Antônio Gilmar de Oliveira","PDT",1],[3,"Carlos Magno de Melo Nóbrega","Republicanos",1],[4,"Felipe Ramos Vilas Souza","Avante",1],[5,"Fernando Medeiros Pereira","AGIR",1],[6,"Flávio Alves de Sousa","Avante",1],[7,"Giovana Aparecida Costa","MDB",1],[8,"Giovanni Gropo","Avante",1],[9,"Henrique Silva Oliveira","MDB",1],[10,"Josimar Branquinho de Almeida","MDB",1],[11,"Júnio Valentim","PDT",1],[12,"Marco da Costa Garcia","PSD",1],[13,"Ricardo Geraldo Dias","PV",0],[14,"Vinicius Machado Costa de Oliveira","AGIR",1],[15,"Willian Jose Lourenço Jeronimo","PL",1],[16,"Alex Leite de Freitas","PT",1]];
+const PARTIDO=Object.fromEntries(VEREADORES.map(v=>[v[0],v[2]]));
+const MENSAL={"01":[231905.7,0],"02":[18000,42564.79],"03":[994431.43,817581.7],"04":[139301.21,118825.09],"05":[290299.84,25814.82],"06":[80132.48,25928.1],"07":[241545.33,318404.76],"08":[330664.27,373535.5],"09":[67983.67,12162.83],"10":[317038.11,127884.34],"11":[184645.33,672.5]};
+const ETAPAS={indicada:["Indicada",0],analise:["Viabilidade técnica",1],plano_trabalho:["Plano de trabalho",1],processo_compra:["Processo de compra",1],termo_parceria:["Termo de parceria",1],empenhada:["Empenhada",2],envio_pagamento:["Enviada para pagamento",2],liquidada:["Liquidada",2],paga:["Paga",3],prestacao_contas:["Prestação de contas",3],concluida:["Concluída",3]};
+const TOM_GRUPO=["t-neu","t-warn","t-info","t-ok"];
+const TIPOS={direta:["Execução direta","#1D6A8A"],osc:["Parceria com OSC","#9A5A0E"],ente:["Repasse a ente","#962A52"]};
+const CORES=["#0B2536","#10B981","#6B4FBB","#F59E0B","#3B82F6","#962A52","#94A3B8"];
+const E=EMENDAS.map(r=>({n:r[0],obj:r[1],v:r[2],saude:r[3],tipo:r[4],etapa:r[5],vn:r[6],ver:r[7],ben:r[8],bcat:r[9],sec:r[10],emp:r[11],pago:r[12],rem:r[13],imp:r[14]}));
+
+const brl=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const brlC=v=>v>=1e6?"R$ "+(v/1e6).toLocaleString("pt-BR",{maximumFractionDigits:2,minimumFractionDigits:2})+" mi":v>=1e3?"R$ "+(v/1e3).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mil":brl(v);
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const ini=n=>{const p=n.replace(/ d[aeo]s? /gi," ").split(" ").filter(Boolean);return (p[0][0]+(p.length>1?p[p.length-1][0]:"")).toUpperCase()};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const I={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ land:'<path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 20 7H4z"/>',
+ alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4M12 17h.01"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
+ coins:'<circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M8 17V9M13 17V5M18 17v-6"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ build:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M8 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+ globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/>',
+ doc:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+ eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+ pen:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+ more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ down:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+ sort:'<path d="m21 16-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ trend:'<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+ clip:'<path d="m21.4 11-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
+ upload:'<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2M12 12v9M8 16l4-4 4 4"/>',
+ swap:'<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'
+};
+const ic=(k,w)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"${w?` width="${w}" height="${w}"`:""}>${I[k]}</svg>`;
+
+const MENU=[
+ ["Acompanhamento",[["painel","Painel","grid"],["lista","Emendas","land"],["pendencias","Pendências","alert"],["conformidade","Conformidade","shield"],["panorama","Panorama","coins"]]],
+ ["Gestão",[["aprovacoes","Aprovações","check"],["relatorios","Relatórios","chart"],["portal","Portal público","globe"]]],
+ ["Cadastros",[["vereadores","Vereadores","users"],["secretarias","Secretarias","build"],["configuracoes","Configurações","gear"]]],
+ ["Avaliação",[["analise","O que muda","doc"]]]
+];
+const NOMES=Object.fromEntries(MENU.flatMap(g=>g[1]).map(i=>[i[0],i[1]]));
+
+function badgeEtapa(k){const [nome,g]=ETAPAS[k]||[k,0];return `<span class="badge ${TOM_GRUPO[g]}"><i></i>${esc(nome)}</span>`}
+function tipoFx(t){const [n,c]=TIPOS[t]||[t,"#999"];return `<span class="tipo-fx"><i style="background:${c}"></i>${n}</span>`}
+
+/* ---------- PAINEL ---------- */
+function painel(){
+ const tot=E.reduce((a,x)=>a+x.v,0), emp=E.reduce((a,x)=>a+x.emp,0), pago=E.reduce((a,x)=>a+x.pago,0);
+ const saude=E.filter(x=>x.saude).reduce((a,x)=>a+x.v,0);
+ const semAnd=E.filter(x=>x.etapa==="indicada");
+ const pagas=E.filter(x=>x.etapa==="paga").length;
+ const porVer={};E.forEach(x=>{const o=porVer[x.vn]??={n:x.vn,nome:x.ver,v:0,c:0,pago:0};o.v+=x.v;o.c++;o.pago+=x.pago});
+ const top=Object.values(porVer).sort((a,b)=>b.v-a.v).slice(0,6);
+ const porSec={};E.forEach(x=>porSec[x.sec]=(porSec[x.sec]||0)+x.v);
+ let sec=Object.entries(porSec).sort((a,b)=>b[1]-a[1]);
+ const outros=sec.slice(6).reduce((a,x)=>a+x[1],0);sec=sec.slice(0,6);if(outros)sec.push(["Outras secretarias",outros]);
+ return `
+ <div class="cab"><div class="t"><h1>Painel de Controle <span class="pill neu">Exercício 2026</span></h1><p class="sub">Execução das emendas impositivas · LOA: Lei Ordinária nº 5.165/2025</p></div>
+  <div class="acoes"><button class="btn">${ic("down")}Exportar</button><button class="btn pri">${ic("plus")}Nova emenda</button></div></div>
+ <section class="kpis">
+  <div class="card p5 kpi"><div class="lb"><i>${ic("land")}</i>Total de recursos</div><div class="v num">${brlC(tot)}</div>
+   <div class="s num">${E.length} emendas · ${brlC(COTA)} por vereador</div>
+   <div class="s num">Saúde: <b style="color:var(--ok-tx)">${(saude/tot*100).toLocaleString("pt-BR",{maximumFractionDigits:1})}%</b> (mínimo ${SAUDE_MIN}%)</div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("doc")}</i>Empenhado</div><div class="v num">${brlC(emp)}</div>
+   <div class="prog"><div class="tr"><span style="width:${pct(emp,tot)}%;background:var(--g-emp)"></span></div><b class="num">${pct(emp,tot)}%</b></div><div class="s">do valor indicado</div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("coins")}</i>Execução financeira (pago)</div><div class="v num">${brlC(pago)}</div>
+   <div class="prog"><div class="tr"><span style="width:${pct(pago,tot)}%;background:var(--barra)"></span></div><b class="num">${pct(pago,tot)}%</b></div><div class="s num">${pagas} emendas pagas · ${pct(pago,emp)}% do empenhado</div></div>
+  <div class="card p5 kpi alerta"><div class="lb"><i>${ic("alert")}</i>Sem andamento</div><div class="v num">${semAnd.length} emendas</div>
+   <div class="s num">${brlC(semAnd.reduce((a,x)=>a+x.v,0))} ainda na etapa "Indicada"</div><span class="tag-acao">Ação recomendada</span></div>
+ </section>
+ <section class="g12">
+  <div class="card p6 c7"><div class="card-h"><div><h2>Evolução mensal · Empenhado × Pago</h2><p>Lançamentos por mês (data do documento). Anulações de novembro: ${brl(107977.79)}.</p></div>
+   <div class="leg"><span><i style="background:var(--g-emp)"></i>Empenhado</span><span><i style="background:var(--g-pago)"></i>Pago</span><span><i style="background:none;border:2px solid var(--acc);border-radius:50%;width:9px;height:9px"></i>Pago acumulado (escala à direita)</span></div></div>
+   <div id="gMensal"></div></div>
+  <div class="card p6 c5"><div class="card-h"><div><h2>Recursos por secretaria</h2><p>Valor indicado em 2026</p></div></div>
+   <div class="donut-wrap"><div id="gDonut"></div><div class="donut-leg">${sec.map((s,i)=>`<div><i style="background:${CORES[i]}"></i><span>${esc(s[0])}</span><em class="num">${pct(s[1],tot)}%</em></div>`).join("")}</div></div></div>
+ </section>
+ <section class="g12">
+  <div class="card p6 c6"><div class="card-h"><div><h2>Vereadores · volume indicado</h2><p>Barra = uso da cota individual (${brl(COTA)})</p></div><button class="btn" onclick="ir('vereadores')">Ver todos</button></div>
+   <div class="rank">${top.map(o=>{const u=o.v/COTA*100;return `<div class="l"><div class="av">${ini(o.nome)}</div><div><div class="nm">${esc(o.nome)}<small>${PARTIDO[o.n]||""} · ${o.c} emendas</small></div><div class="mini"><span style="width:${Math.min(100,u)}%;background:${u>100.01?"var(--crit)":u>=99.9?"var(--barra)":"var(--warn)"}"></span></div></div><div class="vl num">${brl(o.v)}<small>${u.toLocaleString("pt-BR",{maximumFractionDigits:1})}% da cota</small></div></div>`}).join("")}</div></div>
+  <div class="card p6 c6"><div class="card-h"><div><h2>Últimas atividades e alertas</h2><p>Registros mais recentes do sistema</p></div></div>
+   <div class="feed">
+    ${[["var(--info)","Emenda nº 9 avançou para <b>Processo de compra</b>","19/11/2026"],
+       ["var(--ok)","Pagamento de <b>"+brl(28581.26)+"</b> lançado na emenda nº 162","17/11/2026"],
+       ["var(--info)","Emendas nº 93, 126 e 162 (Cisum) marcadas como <b>Paga</b>","17/11/2026"],
+       ["var(--ok)","Empenhos de <b>"+brl(3980)+"</b> e <b>"+brl(398)+"</b> na emenda nº 102","18/11/2026"],
+       ["var(--crit)","<b>"+semAnd.length+" emendas</b> continuam sem andamento registrado","Alerta do sistema"]
+      ].map(f=>`<div class="e"><span class="m" style="background:${f[0]}"></span><p>${f[1]}</p><small>${f[2]}</small></div>`).join("")}
+   </div></div>
+ </section>`;
+}
+function grafMensal(){
+ const el=document.getElementById("gMensal");if(!el)return;
+ const meses=["01","02","03","04","05","06","07","08","09","10","11"],rot=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov"];
+ const W=640,H=260,L=56,R=52,T=12,B=28,max=1e6,cw=(W-L-R)/meses.length,bw=cw*0.3;
+ let ac=0,pts=[];const maxAc=2e6;
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Empenhado e pago por mês em 2026">`;
+ for(let i=0;i<=4;i++){const y=T+(H-T-B)*(1-i/4);s+=`<text x="${W-R+8}" y="${y+4}" style="fill:var(--acc-tx)">${(i*0.5).toLocaleString("pt-BR")} mi</text><line class="grade" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-8}" y="${y+4}" text-anchor="end">${i===0?"0":i===4?"R$ 1 mi":(i*250)+" mil"}</text>`}
+ meses.forEach((m,i)=>{const [e,p]=MENSAL[m];const x=L+i*cw+cw/2;const he=(H-T-B)*e/max,hp=(H-T-B)*p/max;
+  s+=`<rect data-t="${rot[i]}|${e}|${p}" x="${x-bw-1}" y="${H-B-he}" width="${bw}" height="${he}" rx="3" fill="var(--g-emp)"/><rect data-t="${rot[i]}|${e}|${p}" x="${x+1}" y="${H-B-hp}" width="${bw}" height="${hp}" rx="3" fill="var(--g-pago)"/><text x="${x}" y="${H-8}" text-anchor="middle">${rot[i]}</text>`;
+  ac+=p;pts.push([x,T+(H-T-B)*(1-ac/maxAc)]);});
+ s+=`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-dasharray="4 3"/>`;
+ const u=pts[pts.length-1];s+=`<circle cx="${u[0]}" cy="${u[1]}" r="4" fill="var(--acc)"/><text x="${u[0]-6}" y="${u[1]+18}" text-anchor="end" style="fill:var(--acc-tx);font-weight:600">${brlC(ac)}</text>`;
+ s+=`</svg>`;
+ el.innerHTML=s;
+ el.querySelectorAll("rect[data-t]").forEach(r=>{r.addEventListener("mousemove",ev=>{const [m,e,p]=r.dataset.t.split("|");dica(ev,`<b>${m}/2026</b><br>Empenhado: ${brl(+e)}<br>Pago: ${brl(+p)}`)});r.addEventListener("mouseleave",semDica)});
+}
+function grafDonut(){
+ const el=document.getElementById("gDonut");if(!el)return;
+ const tot=E.reduce((a,x)=>a+x.v,0);const porSec={};E.forEach(x=>porSec[x.sec]=(porSec[x.sec]||0)+x.v);
+ let sec=Object.entries(porSec).sort((a,b)=>b[1]-a[1]);const outros=sec.slice(6).reduce((a,x)=>a+x[1],0);sec=sec.slice(0,6);if(outros)sec.push(["Outras secretarias",outros]);
+ const r=62,c=2*Math.PI*r;let off=0;
+ let s=`<svg viewBox="0 0 170 170" width="170" height="170" role="img" aria-label="Distribuição por secretaria">`;
+ sec.forEach((x,i)=>{const len=c*x[1]/tot;s+=`<circle data-t="${esc(x[0])}|${x[1]}" cx="85" cy="85" r="${r}" fill="none" stroke="${CORES[i]}" stroke-width="22" stroke-dasharray="${len-1.5} ${c-len+1.5}" stroke-dashoffset="${-off}" transform="rotate(-90 85 85)"/>`;off+=len});
+ s+=`<text x="85" y="80" text-anchor="middle" style="font-size:11px">Total</text><text x="85" y="98" text-anchor="middle" style="fill:var(--tx);font-weight:700;font-size:15px">${brlC(tot)}</text></svg>`;
+ el.innerHTML=s;
+ el.querySelectorAll("circle[data-t]").forEach(k=>{k.addEventListener("mousemove",ev=>{const [n,v]=k.dataset.t.split("|");dica(ev,`<b>${n}</b><br>${brl(+v)} · ${pct(+v,tot)}%`)});k.addEventListener("mouseleave",semDica)});
+}
+const tip=document.getElementById("tip");
+function dica(ev,h){tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(ev.clientX+14,innerWidth-200)+"px";tip.style.top=(ev.clientY+14)+"px"}
+function semDica(){tip.hidden=true}
+
+/* ---------- LISTA ---------- */
+const F={q:"",tipo:"",etapa:"",ver:"",sec:"",ord:"n",dir:1,pag:1,pp:10};
+function filtrar(){
+ const q=F.q.toLowerCase();
+ return E.filter(x=>(!F.tipo||x.tipo===F.tipo)&&(!F.etapa||x.etapa===F.etapa)&&(!F.ver||String(x.vn)===F.ver)&&(!F.sec||x.sec===F.sec)&&
+  (!q||String(x.n)===q||(x.obj+" "+x.ver+" "+x.ben+" "+x.sec).toLowerCase().includes(q)))
+  .sort((a,b)=>(a[F.ord]>b[F.ord]?1:a[F.ord]<b[F.ord]?-1:0)*F.dir);
+}
+function lista(){
+ const tot=E.reduce((a,x)=>a+x.v,0),emp=E.reduce((a,x)=>a+x.emp,0),pago=E.reduce((a,x)=>a+x.pago,0);
+ const semAnd=E.filter(x=>x.etapa==="indicada").length;
+ const vers=[...new Map(E.map(x=>[x.vn,x.ver])).entries()].sort((a,b)=>a[0]-b[0]);
+ const secs=[...new Set(E.map(x=>x.sec))].sort();
+ return `
+ <div class="cab"><div class="t"><h1>Emendas impositivas <span class="pill neu num">${E.length} cadastradas</span></h1><p class="sub">Indicações dos vereadores ao orçamento de 2026, da indicação à prestação de contas.</p></div>
+  <div class="acoes" style="flex-direction:column;align-items:flex-end"><button class="btn pri">${ic("plus")}Nova emenda</button><div class="acoes"><button class="btn">${ic("down")}Exportar</button></div></div></div>
+ <section class="kpis">
+  <div class="card p5 kpi"><div class="lb"><i>${ic("land")}</i>Total de recursos</div><div class="v num">${brl(tot)}</div><div class="s">soma das ${E.length} emendas</div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("coins")}</i>Pago</div><div class="v num">${brl(pago)}</div><div class="prog"><div class="tr"><span style="width:${pct(pago,tot)}%;background:var(--barra)"></span></div><b class="num">${pct(pago,tot)}%</b></div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("doc")}</i>Empenhado</div><div class="v num">${brl(emp)}</div><div class="s num">${brl(emp-pago)} empenhados a pagar</div></div>
+  <div class="card p5 kpi alerta"><div class="lb"><i>${ic("alert")}</i>Sem andamento</div><div class="v num">${semAnd} emendas</div><button class="tag-acao" style="border:0;cursor:pointer" onclick="F.etapa='indicada';F.pag=1;render()">Filtrar estas</button></div>
+ </section>
+ <section class="card">
+  <div class="abas" role="tablist">${[["","Consolidado"],["direta"],["osc"],["ente"]].map(([k,n])=>`<button class="aba" role="tab" aria-selected="${F.tipo===k}" onclick="F.tipo='${k}';F.pag=1;render()">${k?`<i class="fx" style="background:${TIPOS[k][1]}"></i>${TIPOS[k][0]}`:n}<span class="cnt num">${k?E.filter(x=>x.tipo===k).length:E.length}</span></button>`).join("")}</div>
+  <div class="filtros">
+   <label class="fbusca">${ic("search")}<input id="fq" placeholder="Buscar por número, objeto, vereador, entidade…" value="${esc(F.q)}" aria-label="Buscar"></label>
+   <select id="fe" aria-label="Etapa"><option value="">Todas as etapas</option>${Object.entries(ETAPAS).filter(([k])=>E.some(x=>x.etapa===k)).map(([k,v])=>`<option value="${k}" ${F.etapa===k?"selected":""}>${v[0]}</option>`).join("")}</select>
+   <select id="fv" aria-label="Vereador"><option value="">Todos os vereadores</option>${vers.map(([n,nm])=>`<option value="${n}" ${F.ver===String(n)?"selected":""}>${esc(nm)}</option>`).join("")}</select>
+   <select id="fs" aria-label="Secretaria"><option value="">Todas as secretarias</option>${secs.map(s=>`<option ${F.sec===s?"selected":""}>${esc(s)}</option>`).join("")}</select>
+   ${F.q||F.etapa||F.ver||F.sec?`<button class="limpar" onclick="Object.assign(F,{q:'',etapa:'',ver:'',sec:'',pag:1});render()">Limpar filtros</button>`:""}
+  </div>
+  <div id="tabela"></div>
+ </section>`;
+}
+function tabela(){
+ const el=document.getElementById("tabela");if(!el)return;
+ const d=filtrar(),ini0=(F.pag-1)*F.pp,pg=d.slice(ini0,ini0+F.pp),np=Math.max(1,Math.ceil(d.length/F.pp));
+ const th=(k,n,cl="")=>`<th class="${cl}"><button onclick="F.dir=F.ord==='${k}'?-F.dir:1;F.ord='${k}';tabela()">${n}${ic("sort",12)}</button></th>`;
+ if(!d.length){el.innerHTML=`<div class="vazio"><div class="c">${ic("search",20)}</div><b>Nenhuma emenda encontrada para os filtros atuais</b><button class="btn" onclick="Object.assign(F,{q:'',etapa:'',ver:'',sec:'',tipo:'',pag:1});render()">Limpar filtros</button></div>`;return}
+ el.innerHTML=`<div class="tbl-wrap"><table><thead><tr>${th("n","Nº/Ano")}${th("ver","Autor")}<th>Destinação / objeto</th><th>Tipo</th>${th("v","Valor","r")}${th("pago","Pago","r")}<th>Etapa</th><th class="r">Ações</th></tr></thead><tbody>
+ ${pg.map(x=>`<tr class="clic" onclick="abrir(${x.n})"><td><div class="cod num">${String(x.n).padStart(3,"0")}<small>2026</small></div></td>
+  <td><div class="autor"><div class="av">${ini(x.ver)}</div><div><b>${esc(x.ver)}</b><small>${PARTIDO[x.vn]||""}</small></div></div></td>
+  <td><div class="obj"><b title="${esc(x.obj)}">${esc(x.obj)}</b><small>${esc(x.ben||"—")} · ${esc(x.sec)}${x.saude&&x.sec!=="Saúde"?" · Saúde":""}${x.rem?" · remanejada":""}</small></div></td>
+  <td>${tipoFx(x.tipo)}</td><td class="r num" style="color:var(--tx);font-weight:500">${brl(x.v)}</td>
+  <td class="r num">${x.pago?brl(x.pago):'<span style="color:var(--tx-3)">—</span>'}</td><td>${badgeEtapa(x.etapa)}</td>
+  <td><div class="acs" onclick="event.stopPropagation()"><button aria-label="Ver emenda ${x.n}" title="Ver" onclick="abrir(${x.n})">${ic("eye")}</button><button aria-label="Editar emenda ${x.n}" title="Editar">${ic("pen")}</button><button aria-label="Mais ações" title="Mais ações">${ic("more")}</button></div></td></tr>`).join("")}
+ </tbody></table></div>
+ <div class="pag"><span class="num">Mostrando ${ini0+1}–${Math.min(ini0+F.pp,d.length)} de ${d.length} resultados · ${brl(d.reduce((a,x)=>a+x.v,0))}</span>
+  <div class="bt"><label>Por página <select onchange="F.pp=+this.value;F.pag=1;tabela()">${[10,25,50].map(n=>`<option ${F.pp===n?"selected":""}>${n}</option>`).join("")}</select></label>
+  <button ${F.pag<=1?"disabled":""} onclick="F.pag--;tabela()">Anterior</button><span class="num">${F.pag} / ${np}</span><button ${F.pag>=np?"disabled":""} onclick="F.pag++;tabela()">Próxima</button></div></div>`;
+}
+function ligarFiltros(){
+ const q=document.getElementById("fq");if(!q)return;let t;
+ q.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>{F.q=q.value.trim();F.pag=1;tabela()},250)});
+ [["fe","etapa"],["fv","ver"],["fs","sec"]].forEach(([id,k])=>document.getElementById(id).addEventListener("change",e=>{F[k]=e.target.value;F.pag=1;render()}));
+}
+
+/* ---------- DETALHE ---------- */
+let atual=43, abaDet="fases";
+const DET43={termo:"085/2026",vig:"20/07/2026 a 20/07/2027",extrato:"04/10/2026",envio:"21/07/2026",gOsc:"Nilton Antônio de Paula",gPmc:"Emilia de Sousa Menta",local:"Rua José Esteves, 355, Bairro Ibraim Mendonça",cnpj:"21.188.628/0001-32",ficha:"2.027.0703 - EP07 - Repasse Associação dos Moradores Bairro Ibraim Mendonça e Iracema",nat:"3.3.50.43",func:"04.122.0002.2027",
+ movs:[["21/07/2026","Empenho","NE 8677",50000,"t-ok","Empenhado"],["29/07/2026","Pagamento","OB 39827351",50000,"t-ok","Pago"]],
+ docs:["E043 - TERMO - 085-2026.pdf","E043 - PLANO - plano (versao publica).pdf","E043 - EXTRATO - termo 085-2026.docx"]};
+const FLUXO={osc:[["Indicada na LOA","indicada"],["Análise de viabilidade","analise"],["Documentação da OSC","plano_trabalho"],["Plano de trabalho","plano_trabalho"],["Pareceres","plano_trabalho"],["Termo assinado","plano_trabalho"],["Extrato publicado","plano_trabalho"],["Empenho","empenhada"],["Repasse","paga"],["Execução","paga"],["Prestação de contas","prestacao_contas"],["Encerramento","concluida"]],
+ direta:[["Indicada na LOA","indicada"],["Análise de viabilidade","analise"],["Demanda (DFD/ETP/TR)","processo_compra"],["Pesquisa de preços","processo_compra"],["Contratação","processo_compra"],["Empenho","empenhada"],["Pagamento","paga"],["Encerramento","concluida"]],
+ ente:[["Indicada na LOA","indicada"],["Análise de viabilidade","analise"],["Plano de trabalho","plano_trabalho"],["Termo / convênio","plano_trabalho"],["Extrato publicado","plano_trabalho"],["Empenho","empenhada"],["Repasse","paga"],["Prestação de contas","prestacao_contas"],["Encerramento","concluida"]]};
+const ORDEM=["indicada","analise","plano_trabalho","processo_compra","termo_parceria","empenhada","envio_pagamento","liquidada","paga","prestacao_contas","concluida"];
+function abrir(n){atual=n;abaDet="fases";ir("detalhe")}
+function stepper(x){
+ const f=FLUXO[x.tipo],pos=ORDEM.indexOf(x.etapa);
+ const datas43={0:"23/12/2025",5:"20/07/2026",6:"04/10/2026",7:"21/07/2026",8:"29/07/2026"};
+ let atualI=f.findIndex(p=>ORDEM.indexOf(p[1])>pos);if(atualI<0)atualI=f.length;
+ return `<div class="stepper">${f.map((p,i)=>{let cl="pend",sub="Pendente",ico="";
+  if(i<atualI){const real=x.n===43&&datas43[i];cl=real?"feito":"presum";sub=real?datas43[i]:"Presumida";ico=ic("check")}
+  else if(i===atualI){cl="atual";sub="Em andamento"}
+  if(x.n===43&&i===6){sub="04/10/2026 ⚠"}
+  return `<div class="passo ${cl}"><div class="bola">${ico}</div><b>${p[0]}</b><small class="num">${sub}</small></div>`}).join("")}</div>`;
+}
+function detalhe(){
+ const x=E.find(e=>e.n===atual)||E[0];const d=x.n===43?DET43:null;
+ const aPagar=x.emp-x.pago,sem=Math.max(0,x.v-x.emp);
+ const abas=[["fases","Fases"],["fin","Financeiro"],["doc","Documentação"],["pend","Pendências"],["and","Andamentos"],["hist","Histórico"]];
+ return `
+ <div class="cab"><div class="t"><h1>Emenda nº ${String(x.n).padStart(3,"0")}/2026 ${badgeEtapa(x.etapa)}</h1>
+  <p class="sub num">${esc(x.ver)} (${PARTIDO[x.vn]||""}) · ${brl(x.v)} · ${TIPOS[x.tipo][0]}${x.saude?" · Saúde":""}</p></div>
+  <div class="acoes"><button class="btn">${ic("swap")}Remanejar</button><button class="btn">${ic("more")}Ações</button><button class="btn pri">${ic("pen")}Editar emenda</button></div></div>
+ <section class="card p6"><div class="card-h"><div><h2>Fluxo de etapas</h2><p>${TIPOS[x.tipo][0]} · ${FLUXO[x.tipo].length} fases. Verde cheio = dado registrado; contorno tracejado = presumida pela etapa atual.</p></div></div>${stepper(x)}</section>
+ <section class="g12">
+  <div class="c8" style="display:flex;flex-direction:column;gap:24px;min-width:0">
+   <div class="card p6"><div class="card-h"><h2>Gestão financeira</h2></div>
+    <div class="fin">
+     <div><span>Empenhado</span><b class="num">${brl(x.emp)}</b><div class="mini"><span style="width:${pct(x.emp,x.v)}%;background:var(--g-emp)"></span></div><small class="num">${pct(x.emp,x.v)}% do valor</small></div>
+     <div><span>Pago</span><b class="num">${brl(x.pago)}</b><div class="mini"><span style="width:${pct(x.pago,x.emp||1)}%;background:var(--barra)"></span></div><small class="num">${pct(x.pago,x.emp||1)}% do empenhado</small></div>
+     <div><span>A pagar</span><b class="num">${brl(aPagar)}</b><small>empenhado − pago</small></div>
+     <div><span>Sem empenhar</span><b class="num">${brl(sem)}</b><small>valor − empenhado</small></div>
+    </div></div>
+   <div class="card p6"><div class="dabas" role="tablist">${abas.map(a=>`<button class="aba" role="tab" aria-selected="${abaDet===a[0]}" onclick="abaDet='${a[0]}';render()">${a[1]}${a[0]==="pend"&&x.n===43?'<span class="cnt">1</span>':""}</button>`).join("")}</div>
+    ${abaDet==="fin"||abaDet==="fases"?`<div class="card-h" style="margin-bottom:12px"><h2>Histórico de lançamentos</h2><button class="btn pri">${ic("plus")}Novo lançamento</button></div>
+    ${d?`<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Documento</th><th class="r">Valor (R$)</th><th>Status</th><th class="r">Ações</th></tr></thead><tbody>${d.movs.map(m=>`<tr><td class="num">${m[0]}</td><td>${m[1]}</td><td class="num">${m[2]}</td><td class="r num" style="color:var(--tx);font-weight:500">${brl(m[3])}</td><td><span class="badge ${m[4]}"><i></i>${m[5]}</span></td><td><div class="acs"><button aria-label="Anexo">${ic("clip")}</button><button aria-label="Mais ações">${ic("more")}</button></div></td></tr>`).join("")}</tbody></table></div>`
+     :`<p class="sub">No mockup, os lançamentos detalhados aparecem só na emenda nº 043. Os totais acima são reais.</p>`}`:
+    abaDet==="pend"?(d?`<div class="alerta-l">${ic("alert")}<div><b>Datas fora de ordem</b> · o extrato do termo foi publicado em 04/10/2026, depois do repasse (29/07/2026). Lei 13.019/2014, art. 38. <br><button class="limpar" style="padding:0;margin-top:6px">Justificar</button></div></div>`:`<p class="sub">As pendências reais continuam calculadas como hoje.</p>`):
+    `<div class="placeholder" style="padding:32px"><b>${abas.find(a=>a[0]===abaDet)[1]}</b>Conteúdo atual mantido, com os novos cartões, tabelas e selos.</div>`}
+   </div>
+  </div>
+  <div class="c4" style="display:flex;flex-direction:column;gap:24px;min-width:0">
+   <div class="card p6"><div class="card-h"><h2>Informações gerais</h2></div><dl class="kv">
+    <div><dt>Beneficiário</dt><dd>${esc(x.ben||"—")}${d?`<br><span class="num" style="color:var(--tx-3);font-weight:400">CNPJ ${d.cnpj}</span>`:""}</dd></div>
+    <div><dt>Objeto</dt><dd style="font-weight:400">${esc(x.obj)}</dd></div>
+    <div><dt>Secretaria</dt><dd>${esc(x.sec)}</dd></div>
+    ${d?`<div><dt>Termo de fomento</dt><dd class="num">${d.termo}<br><span style="color:var(--tx-3);font-weight:400">vigência ${d.vig}</span></dd></div>
+    <div><dt>Ficha / dotação</dt><dd class="num" style="font-weight:400">${d.ficha}</dd></div>
+    <div><dt>Natureza</dt><dd class="num">${d.nat} · ${d.func}</dd></div>
+    <div><dt>Localidade</dt><dd style="font-weight:400">${d.local}</dd></div>
+    <div><dt>Gestores</dt><dd style="font-weight:400">OSC: ${d.gOsc}<br>Prefeitura: ${d.gPmc}</dd></div>`:""}
+   </dl></div>
+   <div class="card p6"><div class="card-h"><h2>Documentos e anexos</h2></div>
+    ${d?d.docs.map(n=>`<div class="doc">${ic("doc")}<span title="${n}">${n}</span><button class="ico" style="width:30px;height:30px" aria-label="Baixar ${n}">${ic("down")}</button></div>`).join(""):`<p class="sub">Documentos reais aparecem aqui (só a nº 043 no mockup).</p>`}
+    <div class="drop">${ic("upload",22)}<div style="margin-top:6px"><b style="color:var(--tx)">Ligar documento do Drive</b> ou arraste um PDF</div><div>PDF até 10 MB</div></div>
+   </div>
+  </div>
+ </section>`;
+}
+
+/* ---------- VEREADORES ---------- */
+function vereadores(){
+ const m={};E.forEach(x=>{const o=m[x.vn]??={v:0,c:0,pago:0,emp:0,s:0};o.v+=x.v;o.c++;o.pago+=x.pago;o.emp+=x.emp;if(x.saude)o.s+=x.v});
+ const partidos=new Set(VEREADORES.map(v=>v[2]));const ativos=VEREADORES.filter(v=>v[3]).length;
+ return `<div class="cab"><div class="t"><h1>Vereadores</h1><p class="sub">Cota individual de ${brl(COTA)} em 2026 · mínimo de ${SAUDE_MIN}% na Saúde</p></div><div class="acoes"><button class="btn pri">${ic("plus")}Novo vereador</button></div></div>
+ <section class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+  <div class="card p5 kpi"><div class="lb"><i>${ic("users")}</i>Vereadores</div><div class="v num">${ativos} ativos</div><div class="s">${VEREADORES.length} cadastrados (1 mandato cassado, 1 suplente)</div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("land")}</i>Partidos</div><div class="v num">${partidos.size}</div><div class="s">representados nas emendas</div></div>
+  <div class="card p5 kpi"><div class="lb"><i>${ic("trend")}</i>Média por autor</div><div class="v num">${brl(E.reduce((a,x)=>a+x.v,0)/Object.keys(m).length)}</div><div class="s num">${Object.keys(m).length} autores com emendas</div></div>
+ </section>
+ <section class="card"><div class="tbl-wrap"><table><thead><tr><th>Parlamentar</th><th>Recursos / cota</th><th class="r">Empenhado</th><th class="r">Pago</th><th>Saúde</th><th>Situação</th></tr></thead><tbody>
+ ${VEREADORES.map(v=>{const o=m[v[0]]||{v:0,c:0,pago:0,emp:0,s:0};const u=o.v/COTA*100;const sp=o.v?o.s/o.v*100:0;
+  return `<tr><td><div class="autor"><div class="av">${ini(v[1])}</div><div><b>${esc(v[1])}</b><small>${v[2]} · ${o.c} emendas</small></div></div></td>
+  <td style="min-width:200px"><b class="num" style="color:var(--tx)">${brl(o.v)}</b><div class="mini"><span style="width:${Math.min(100,u)}%;background:${u>100.01?"var(--crit)":"var(--barra)"}"></span></div><small class="num" style="color:var(--tx-3)">Cota: ${u.toLocaleString("pt-BR",{maximumFractionDigits:1})}%</small></td>
+  <td class="r num">${brl(o.emp)}</td><td class="r num">${brl(o.pago)}</td>
+  <td>${o.v?`<span class="badge ${sp>=SAUDE_MIN?"t-ok":"t-warn"}"><i></i><span class="num">${sp.toLocaleString("pt-BR",{maximumFractionDigits:0})}%</span></span>`:"—"}</td>
+  <td>${v[3]?`<span class="badge t-ok"><i></i>Ativo</span>`:`<span class="badge t-crit"><i></i>Afastado</span>`}</td></tr>`}).join("")}
+ </tbody></table></div></section>`;
+}
+
+/* ---------- O QUE MUDA ---------- */
+function analise(){
+ const L=(s,t)=>`<span class="sev ${s}">${t}</span>`;
+ return `<div class="rel" style="display:flex;flex-direction:column;gap:24px">
+ <div class="cab"><div class="t"><h1>O que muda com o novo design</h1><p class="sub">Comparação entre o documento proposto, a plataforma real e este mockup.</p></div></div>
+ <section class="card p6"><h3>Perdas de funcionalidade ou visualização se o documento for seguido ao pé da letra</h3>
+ <div class="tbl-wrap"><table><thead><tr><th>Item do documento</th><th>O que a plataforma tem hoje</th><th>Risco</th><th>Proposta no mockup</th></tr></thead><tbody>
+ <tr><td>Barra de filtros com selects (FilterBar)</td><td>Painel clicável na lista (pizza + ranking por 9 dimensões, chips de filtro, filtro lembrado por aba)</td><td>${L("t-crit","Perda")}</td><td>Manter o painel clicável da lista; a barra fica só com busca e 2 a 3 seletores rápidos</td></tr>
+ <tr><td>Stepper de 5 nós (Cadastrada → Prestação)</td><td>Fluxo por tipo (8 a 12 fases), editável, com fase presumida, "não se aplica" e datas reais</td><td>${L("t-crit","Perda")}</td><td>Stepper com as fases reais do tipo da emenda, rolagem lateral e estado "presumida"</td></tr>
+ <tr><td>Status com 5 cores fixas (Paga, Empenhada…)</td><td>11 etapas editáveis em Configurações</td><td>${L("t-warn","Atenção")}</td><td>Cor pelo grupo da etapa (sem andamento, em preparo, empenhada, paga); nome vem do catálogo</td></tr>
+ <tr><td>Cartão "Liquidado"</td><td>Liquidação deixou de ser fase (decisão de 13/11); cartões: valor, empenhado, pago, a pagar, sem empenhar</td><td>${L("t-warn","Regressão")}</td><td>Trocado por "A pagar" e "Sem empenhar"; ações de conciliação e encerramento seguem sob os cartões</td></tr>
+ <tr><td>"+14,5% vs ano anterior"</td><td>Só existe o exercício 2026</td><td>${L("t-neu","Sem dado")}</td><td>Removido; volta quando houver 2027</td></tr>
+ <tr><td>Foto do parlamentar</td><td>Não há campo de foto</td><td>${L("t-neu","Sem dado")}</td><td>Iniciais (fallback previsto no próprio documento)</td></tr>
+ <tr><td>Selo "Regular / Pendente de doc." no beneficiário</td><td>Categoria (OSC, SUS, consórcio…), CNPJ validado, documentos faltando por emenda</td><td>${L("t-neu","Sem dado")}</td><td>Derivar o selo dos documentos faltando; não existe certidão de regularidade no banco</td></tr>
+ <tr><td>Navegação lateral só do módulo</td><td>Cabeçalho único da Central (sino, feedback, ajuda, tema, zoom, voltar à Central) igual em 6 módulos</td><td>${L("t-warn","Atenção")}</td><td>Barra superior mantém todos esses controles; "Voltar para a Central" no topo da barra lateral</td></tr>
+ <tr><td>Só tema claro, tamanhos em px</td><td>Modo escuro, estilo Apple/Clássico e zoom do texto (tudo em rem)</td><td>${L("t-warn","Atenção")}</td><td>Tokens com versão escura (botão da lua no topo); a implementação deve usar rem</td></tr>
+ <tr><td>Recharts</td><td>Gráficos próprios em SVG (sem biblioteca)</td><td>${L("t-neu","Escolha")}</td><td>Seguir com SVG próprio: mesmo visual, sem 100 kB a mais</td></tr>
+ <tr><td>Wizard de 4 passos na nova emenda</td><td>Formulário único com validação de cota, modalidade e sugestão pela categoria</td><td>${L("t-ok","Ganho")}</td><td>Viável sem perda, desde que cada passo rode as mesmas validações</td></tr>
+ </tbody></table></div></section>
+ <section class="card p6"><h3>O que se ganha</h3><ul>
+ <li>Menu lateral com grupos: hoje as 11 abas do topo quebram linha em telas menores.</li>
+ <li>Cartões de indicadores no mesmo formato em todas as telas, com barra de progresso e alerta "ação recomendada".</li>
+ <li>Tabela com paginação, ordenação e contagem "Mostrando 1–10 de 215" (hoje a lista é toda carregada de uma vez).</li>
+ <li>Detalhe da emenda com fluxo visível no topo e informações gerais fixas na coluna lateral.</li>
+ <li>Status com significado imediato (cinza, âmbar, azul, verde) em vez de tons de violeta parecidos.</li></ul></section>
+ <section class="card p6"><h3>Decisões para você</h3><ul>
+ <li><b>Cor de destaque</b>: violeta (identidade do módulo, igual à faixa do card na Central) ou o verde do documento. Use os botões na faixa do topo para comparar. Recomendo o violeta: o verde-azulado já é a cor do Compras.</li>
+ <li><b>Só Emendas ou todos os módulos</b>: a regra da plataforma é um visual único. Se a barra lateral for aprovada, o ideal é levá-la depois a Frotas e Imóveis.</li>
+ <li><b>Filtros</b>: manter o painel clicável (recomendado) ou voltar à barra de seletores do documento.</li></ul></section>
+ <section class="card p6"><h3>Nada muda por baixo</h3><p>O design atua só na apresentação. Rotas, permissões por secretaria (RLS), propostas de alteração, conciliação, encerramento, portal público, exportações e regras do banco continuam iguais. Este mockup usou os dados reais de 2026 apenas para leitura.</p></section>
+ </div>`;
+}
+
+/* ---------- roteador ---------- */
+function ir(r){location.hash=r}
+function rota(){const h=location.hash.slice(1);return NOMES[h]||h==="detalhe"?h:"painel"}
+function render(){
+ const r=rota();
+ document.getElementById("menu").innerHTML=MENU.map(([g,its])=>`<div class="grupo">${g}</div>`+its.map(([k,n,i,o])=>`<a class="item" href="#${k}" ${r===k||(r==="detalhe"&&k==="lista")?'aria-current="page"':""}>${ic(i)}${n}</a>`).join("")).join("");
+ const crumb={painel:["Painel"],lista:["Emendas"],detalhe:["Emendas","Detalhes nº "+String(atual).padStart(3,"0")+"/2026"],vereadores:["Vereadores"],analise:["O que muda"]}[r]||[NOMES[r]];
+ document.getElementById("crumb").innerHTML=(r==="detalhe"?`<a href="#lista" style="text-decoration:none;color:var(--tx-2);margin-right:6px">← Voltar</a>`:"")+["Início","Emendas Impositivas",...crumb].map((c,i,a)=>i===a.length-1?`<b>${esc(c)}</b>`:esc(c)).join(" › ");
+ const c=document.getElementById("conteudo");
+ c.innerHTML=r==="painel"?painel():r==="lista"?lista():r==="detalhe"?detalhe():r==="vereadores"?vereadores():r==="analise"?analise():
+  `<div class="cab"><div class="t"><h1>${esc(NOMES[r])}</h1><p class="sub">Fora do mockup.</p></div></div><section class="card placeholder"><div><b>Tela mantida como hoje, com o novo visual</b>O mockup cobre Painel, Emendas, Detalhe, Vereadores e a avaliação "O que muda".</div></section>`;
+ grafMensal();grafDonut();tabela();ligarFiltros();
+ document.getElementById("side").classList.remove("aberta");
+}
+addEventListener("hashchange",()=>{render();scrollTo(0,0)});
+document.getElementById("hamb").onclick=()=>document.getElementById("side").classList.toggle("aberta");
+document.getElementById("tema").onclick=()=>{const d=document.documentElement;const esc=d.dataset.theme==="dark"||(!d.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);d.dataset.theme=esc?"light":"dark"};
+document.querySelectorAll("[data-acento]").forEach(b=>b.onclick=()=>{document.documentElement.dataset.acento=b.dataset.acento;document.querySelectorAll("[data-acento]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+render();
+</script>
