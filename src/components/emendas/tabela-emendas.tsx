@@ -11,14 +11,15 @@ import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { useNovoDesign } from "@/components/emendas/design-emendas";
 import { LinhaLink } from "@/components/emendas/linha-link";
-import { AnelAndamento, percentualAndamento } from "@/components/emendas/anel-andamento";
+import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
-import { filtrarEmendasLista, lerFiltrosLista, pontuarBusca } from "@/lib/emendas/painel-lista";
+import { ordenarEmendasLista } from "@/lib/emendas/ordenacao-lista";
+import { filtrarEmendasLista, lerFiltrosLista } from "@/lib/emendas/painel-lista";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
@@ -97,31 +98,7 @@ export function TabelaEmendas({
   const porTipo = (t: string) => semTipo.filter((r) => tipoDaEmenda(r) === t);
   const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
 
-  const ordenadas = filtradas.slice().sort((a, b) => {
-    switch (f.ordem) {
-      case "valor":
-        return b.valor - a.valor;
-      case "vereador":
-        return a.vereador_numero - b.vereador_numero || a.numero_vereador - b.numero_vereador;
-      case "etapa":
-        return todasEtapas.findIndex((e) => e.chave === b.etapa) - todasEtapas.findIndex((e) => e.chave === a.etapa) || a.numero - b.numero;
-      case "parada":
-        return a.etapa_atualizada_em.localeCompare(b.etapa_atualizada_em);
-      case "andamento":
-        return (percentualAndamento(resumos[b.id]) ?? -1) - (percentualAndamento(resumos[a.id]) ?? -1) || a.numero - b.numero;
-      case "atrasadas":
-        return (percentualAndamento(resumos[a.id]) ?? 101) - (percentualAndamento(resumos[b.id]) ?? 101) || a.numero - b.numero;
-      default: {
-        // Com texto na busca (e a ordem padrão), o que mais combina vem primeiro: o número digitado, depois os parecidos.
-        if (f.q) {
-          const pa = pontuarBusca({ numero: a.numero, objeto: a.objeto, outros: [a.beneficiario_nome ?? "", a.vereador_nome, a.secretaria_nome, a.unidade_codigo, a.ficha ?? ""] }, f.q);
-          const pb = pontuarBusca({ numero: b.numero, objeto: b.objeto, outros: [b.beneficiario_nome ?? "", b.vereador_nome, b.secretaria_nome, b.unidade_codigo, b.ficha ?? ""] }, f.q);
-          if (pa !== pb) return pb - pa;
-        }
-        return a.numero - b.numero;
-      }
-    }
-  });
+  const ordenadas = ordenarEmendasLista(filtradas, f.ordem, f.q, resumos, todasEtapas.map((e) => e.chave));
   const total = filtradas.reduce((t, r) => t + r.valor, 0);
   const pago = filtradas.reduce((t, r) => t + r.pago, 0);
 

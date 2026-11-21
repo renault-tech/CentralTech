@@ -16,6 +16,7 @@ export function Pizza({
   dinheiro,
   rotuloTotal,
   destaque = null,
+  className = "h-[12.25rem] w-[12.25rem]",
 }: {
   fatias: { chave: string; rotulo: string; v: number; cor: string; clicavel: boolean }[];
   selecionada: string;
@@ -24,6 +25,8 @@ export function Pizza({
   rotuloTotal: string;
   /** Fatia a realçar vinda de fora (a linha do ranking sob o cursor). */
   destaque?: string | null;
+  /** Tamanho do anel (classes de largura e altura). */
+  className?: string;
 }) {
   const [sobreLocal, setSobre] = React.useState<string | null>(null);
   const sobre = sobreLocal ?? destaque;
@@ -46,7 +49,7 @@ export function Pizza({
   const corta = (t: string) => (t.length > 17 ? `${t.slice(0, 16)}…` : t);
 
   return (
-    <svg viewBox="0 0 100 100" className="h-[12.25rem] w-[12.25rem] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
+    <svg viewBox="0 0 100 100" className={`${className} shrink-0 text-cataguases-marinho`} role="group" aria-label="Gráfico de pizza">
       {total === 0 ? (
         <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
       ) : (

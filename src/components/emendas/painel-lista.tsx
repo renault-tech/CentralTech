@@ -46,6 +46,28 @@ const COR_SITUACAO: Record<string, string> = { normal: "#5C7A1F", impedida: "#B4
 type Medida = "n" | "valor" | "pago";
 type Item = GrupoLista & { cor: string };
 
+/** Chips dos filtros que estão valendo (o tipo de execução já aparece nas abas da tela; a busca, na própria barra). */
+export function chipsDosFiltros(f: FiltrosLista, emendas: EmendaResumo[], catalogo: ReturnType<typeof useCatalogo>): FiltroAtivo[] {
+  const nomeDe = (campo: "vereador_id" | "secretaria_id", nome: (e: EmendaResumo) => string, id: string) => {
+    const e = emendas.find((x) => x[campo] === id);
+    return e ? nome(e) : id;
+  };
+  const chips = [
+    f.v && { chave: "v", rotulo: `Vereador: ${nomeDe("vereador_id", (e) => `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`, f.v)}` },
+    f.s && { chave: "s", rotulo: `Secretaria: ${nomeDe("secretaria_id", (e) => e.secretaria_nome, f.s)}` },
+    f.etapa && { chave: "etapa", rotulo: `Etapa: ${infoEtapa(f.etapa, catalogo).nome}` },
+    f.fin && { chave: "fin", rotulo: `Financeiro: ${CLASSES_FINANCEIRAS.find(([k]) => k === f.fin)?.[1] ?? "Paga, sem data de pagamento"}` },
+    f.cat && { chave: "cat", rotulo: `Beneficiário: ${INFO_CATEGORIA[f.cat as keyof typeof INFO_CATEGORIA]?.nome ?? f.cat}` },
+    f.sd && { chave: "sd", rotulo: f.sd === "1" ? "Só Saúde" : "Fora da Saúde" },
+    f.pe && { chave: "pe", rotulo: `Pendência: ${ASSUNTO_DA_REGRA[f.pe]?.nome ?? f.pe}` },
+    f.p && { chave: "p", rotulo: "Só com pendência" },
+    f.situacao && { chave: "situacao", rotulo: `Situação: ${NOME_SITUACAO[f.situacao] ?? f.situacao}` },
+    f.rem && { chave: "rem", rotulo: f.rem === "1" ? "Remanejadas" : "Não remanejadas" },
+    f.numeros.length > 0 && { chave: "numeros", rotulo: `Só as emendas do alerta (${f.numeros.length})` },
+  ].filter(Boolean) as FiltroAtivo[];
+  return chips;
+}
+
 /**
  * Dashboard da lista de Emendas, numa caixa só: barra enxuta (busca e ordem), filtros ativos em chips, indicadores,
  * abas por dimensão e, abaixo, a pizza ao lado do ranking. Clicar numa fatia, linha ou aba aplica o filtro na lista;
@@ -58,6 +80,7 @@ export function PainelLista({
   definir,
   barra,
   aoLimparTudo,
+  compacto = false,
 }: {
   emendas: EmendaResumo[];
   resumos: Record<string, ResumoLinha>;
@@ -66,6 +89,8 @@ export function PainelLista({
   /** Busca e ordem, desenhadas pela lista para dividir o mesmo estado. */
   barra: React.ReactNode;
   aoLimparTudo: () => void;
+  /** Dentro da área de trabalho (painel estreito ao lado da lista): sem barra de busca nem chips (a lista os mostra), indicadores em 2 colunas. */
+  compacto?: boolean;
 }) {
   const f = filtros;
   const catalogo = useCatalogo();
@@ -163,24 +188,11 @@ export function PainelLista({
     if (i && valorDe(i) > 0) fatias.splice(fatias.length - 1, 0, { chave: i.chave, rotulo: i.rotulo, v: valorDe(i), cor: i.cor, clicavel: true });
   }
 
-  // Filtros ativos em chips (o tipo de execução já é mostrado pelas abas acima do painel; a busca, pela própria barra).
+  const chips = chipsDosFiltros(f, emendas, catalogo);
   const nomeDe = (campo: "vereador_id" | "secretaria_id", nome: (e: EmendaResumo) => string, id: string) => {
     const e = emendas.find((x) => x[campo] === id);
     return e ? nome(e) : id;
   };
-  const chips = [
-    f.v && { chave: "v", rotulo: `Vereador: ${nomeDe("vereador_id", (e) => `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`, f.v)}` },
-    f.s && { chave: "s", rotulo: `Secretaria: ${nomeDe("secretaria_id", (e) => e.secretaria_nome, f.s)}` },
-    f.etapa && { chave: "etapa", rotulo: `Etapa: ${infoEtapa(f.etapa, catalogo).nome}` },
-    f.fin && { chave: "fin", rotulo: `Financeiro: ${CLASSES_FINANCEIRAS.find(([k]) => k === f.fin)?.[1] ?? "Paga, sem data de pagamento"}` },
-    f.cat && { chave: "cat", rotulo: `Beneficiário: ${INFO_CATEGORIA[f.cat as keyof typeof INFO_CATEGORIA]?.nome ?? f.cat}` },
-    f.sd && { chave: "sd", rotulo: f.sd === "1" ? "Só Saúde" : "Fora da Saúde" },
-    f.pe && { chave: "pe", rotulo: `Pendência: ${ASSUNTO_DA_REGRA[f.pe]?.nome ?? f.pe}` },
-    f.p && { chave: "p", rotulo: "Só com pendência" },
-    f.situacao && { chave: "situacao", rotulo: `Situação: ${NOME_SITUACAO[f.situacao] ?? f.situacao}` },
-    f.rem && { chave: "rem", rotulo: f.rem === "1" ? "Remanejadas" : "Não remanejadas" },
-    f.numeros.length > 0 && { chave: "numeros", rotulo: `Só as emendas do alerta (${f.numeros.length})` },
-  ].filter(Boolean) as FiltroAtivo[];
 
   /** O que está escolhido numa aba (nome curto e cor), para a aba dizer sozinha que há filtro nela. */
   const filtroDaAba = (param: ChaveLista): { rotulo: string; cor: string } | null => {
@@ -232,7 +244,7 @@ export function PainelLista({
   const parte = (v: number) => (faixaTotal ? `${(v / faixaTotal) * 100}%` : "0%");
 
   return (
-    <section aria-label="Visão geral das emendas" className="rounded-xl border border-slate-200 bg-white">
+    <section aria-label="Visão geral das emendas" className={compacto ? "h-full overflow-y-auto overscroll-contain" : "rounded-xl border border-slate-200 bg-white"}>
       {/* quanto do valor indicado já foi pago, só empenhado e ainda sem empenho, como um fio no topo da caixa */}
       <div
         className="flex h-1 overflow-hidden rounded-t-xl bg-slate-100"
@@ -244,10 +256,59 @@ export function PainelLista({
         <span className="emd-preenche" style={{ width: parte(faixa.semEmpenho), backgroundColor: COR_FINANCEIRA.sem_empenho }} />
       </div>
 
-      <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>
-      <FiltrosAtivos filtros={chips} aoRemover={(k) => definir({ [k]: "" })} aoLimparTudo={aoLimparTudo} />
+      {!compacto && <div className="border-b border-slate-200 px-4 py-3 print:hidden">{barra}</div>}
+      {!compacto && <FiltrosAtivos filtros={chips} aoRemover={(k) => definir({ [k]: "" })} aoLimparTudo={aoLimparTudo} />}
 
-      <dl className={`grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 ${novo ? "lg:grid-cols-5" : "lg:grid-cols-4"} lg:divide-x`}>
+      {compacto ? (
+        <div className="border-b border-slate-200">
+          <dl className="grid grid-cols-4 divide-x divide-slate-200">
+            {(
+              [
+                ["Emendas", String(tot.n), `de ${todas.n}`],
+                ["Indicado", brlCurto(tot.valor), todas.valor ? `${pct(tot.valor / todas.valor, 0)} do exercício` : ""],
+                ["Empenhado", brlCurto(tot.empenhado), tot.valor ? `${pct(tot.empenhado / tot.valor, 0)} do indicado` : ""],
+                ["Pago", brlCurto(tot.pago), tot.valor ? `${pct(tot.pago / tot.valor, 0)} do indicado` : ""],
+              ] as const
+            ).map(([rotulo, valor, apoio]) => (
+              <div key={rotulo} className="min-w-0 px-3.5 py-3">
+                <dt className="text-xs font-medium text-slate-600">{rotulo}</dt>
+                <dd>
+                  <span className="block truncate text-lg font-semibold leading-tight tabular-nums text-cataguases-marinho">{valor}</span>
+                  <span className="block truncate text-xs tabular-nums text-slate-500">{apoio}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-t border-slate-200 px-3.5 py-2.5 text-xs text-slate-600">
+            <button
+              type="button"
+              aria-pressed={f.p === "1"}
+              onClick={() => definir({ p: f.p === "1" ? "" : "1" })}
+              className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 font-medium tabular-nums text-[color:var(--modulo-tinta)] ${f.p === "1" ? "bg-[color-mix(in_srgb,var(--modulo)_16%,transparent)]" : "hover:bg-[color-mix(in_srgb,var(--modulo)_10%,transparent)]"}`}
+              title={f.p === "1" ? "Mostrar todas" : "Mostrar só as que têm pendência"}
+            >
+              {tot.comPendencia} com pendência
+            </button>
+            {novo && (
+              <span className="inline-flex items-center gap-2">
+                <AnelAndamento concluidas={andamentoMedio} total={100} tamanho={34} espessura={4} />
+                <span className="leading-tight">Andamento médio<br />das fases cumpridas</span>
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50/50 px-3.5 py-2 text-xs text-slate-600">
+            <span className="font-medium">Do valor indicado:</span>
+            {([["paga", "pago", faixa.pago], ["paga_parcial", "a pagar", faixa.aPagar], ["sem_empenho", "sem empenho", faixa.semEmpenho]] as const).map(([k, nome, v]) => (
+              <span key={k} className="inline-flex items-center gap-1.5 tabular-nums">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: COR_FINANCEIRA[k] }} aria-hidden />
+                {nome} {faixaTotal ? pct(v / faixaTotal, 0) : "0%"}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+      <dl className={`grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 ${compacto ? "" : novo ? "lg:grid-cols-5" : "lg:grid-cols-4"} ${compacto ? "" : "lg:divide-x"}`}>
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Emendas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
@@ -293,7 +354,7 @@ export function PainelLista({
           </dd>
         </div>
         {novo && (
-        <div className={celula}>
+        <div className={`${celula} ${compacto ? "col-span-2 border-t border-slate-200" : ""}`}>
           <dt className="text-xs font-medium text-slate-600">Andamento médio</dt>
           <dd className="flex items-center gap-3">
             <AnelAndamento concluidas={andamentoMedio} total={100} tamanho={48} />
@@ -315,6 +376,8 @@ export function PainelLista({
           </span>
         ))}
       </p>
+        </>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 border-b border-slate-200 px-2">
         <div
@@ -378,14 +441,15 @@ export function PainelLista({
         </div>
       </div>
 
-      <div id="painel-lista-corpo" role="tabpanel" aria-labelledby={`aba-lista-${visao}`} className="grid lg:grid-cols-[17.5rem_1fr]">
-        <div className="flex items-center justify-center p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
+      <div id="painel-lista-corpo" role="tabpanel" aria-labelledby={`aba-lista-${visao}`} className={compacto ? "grid grid-cols-[9.5rem_1fr]" : "grid lg:grid-cols-[17.5rem_1fr]"}>
+        <div className={`flex items-center justify-center ${compacto ? "border-r border-slate-200 p-3" : "p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200"}`}>
           <Pizza
             fatias={fatias}
             selecionada={selecionada}
             aoEscolher={escolher}
             dinheiro={dinheiro}
             destaque={sobreChave}
+            className={compacto ? "h-[8.25rem] w-[8.25rem]" : undefined}
             rotuloTotal={medida === "valor" ? "indicados" : medida === "pago" ? "pagos" : visao === "pendencia" ? "pendências" : "emendas"}
           />
         </div>
@@ -397,7 +461,7 @@ export function PainelLista({
           {medida === "pago" && "Valor pago: quanto já foi pago nas emendas de cada grupo."}
           {visao === "financeiro" && " Totalmente paga = pago igual ao valor da emenda; paga em parte = pagou algo, mas menos que o valor; empenhada, sem pagamento = reservada, nada pago."}
         </p>
-        <ul className="emd-foco max-h-72 overflow-y-auto overscroll-contain py-1 lg:max-h-[16rem]" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className={`emd-foco py-1 ${compacto ? "" : "max-h-72 overflow-y-auto overscroll-contain lg:max-h-[16rem]"}`} aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
