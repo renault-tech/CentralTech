@@ -8,6 +8,7 @@ import { PanelLeftOpen, Plus, Search, SearchX, X } from "lucide-react";
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
+import { HoverAndamento } from "@/components/emendas/hover-andamento";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { FaixaIndicadores, GraficoFiltro } from "@/components/emendas/grafico-filtro";
@@ -294,7 +295,11 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
                     <span className="whitespace-nowrap text-[0.875rem] font-semibold tabular-nums text-cataguases-marinho">{brl(r.valor)}</span>
                     <div className="flex items-center gap-2">
                       <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
-                      {res && res.total > 0 && <AnelAndamento concluidas={res.concluidas} total={res.total} tamanho={34} espessura={4} />}
+                      {res && res.total > 0 && (
+                        <HoverAndamento emenda={r} resumo={res}>
+                          <AnelAndamento concluidas={res.concluidas} total={res.total} tamanho={34} espessura={4} />
+                        </HoverAndamento>
+                      )}
                     </div>
                   </div>
                 </div>

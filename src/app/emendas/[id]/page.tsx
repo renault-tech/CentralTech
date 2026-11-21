@@ -4,33 +4,17 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
-import { resumoDoProcesso } from "@/lib/emendas/compras";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
 import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
-import { buscarProcessoPorId } from "@/lib/emendas/compras";
+import { carregarDetalheCompleto } from "@/lib/emendas/detalhe-completo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
-import { calcularEmendas } from "@/lib/emendas/resumo";
-import { TIPOS_EXECUCAO, progresso, tipoDaEmenda } from "@/lib/emendas/fases";
+import { TIPOS_EXECUCAO, progresso } from "@/lib/emendas/fases";
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { usarNovoDesign } from "@/lib/emendas/design";
-import {
-  listarBeneficiarios,
-  listarFasesCatalogo,
-  listarPareceres,
-  listarUnidades,
-  listarVereadores,
-  obterCatalogoEtapas,
-  obterContextoEmendas,
-  obterDetalheEmenda,
-  podeEditarSecretaria,
-  resolverExercicio,
-} from "@/lib/emendas/dados";
-import { NOME_MODALIDADE, brl, dataBr, ehGestor, numeroVereador } from "@/lib/emendas/regras";
-import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
-import { criarClienteServidor } from "@/lib/supabase/server";
+import { NOME_MODALIDADE, brl, dataBr, numeroVereador } from "@/lib/emendas/regras";
 import type { EtapaEmenda } from "@/types/emendas";
 
 export const dynamic = "force-dynamic";
@@ -39,72 +23,12 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   const { id } = await params;
   const { aba } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  // O contexto (sessão, perfil) e as leituras que não dependem dele andam juntos: antes o detalhe só começava
-  // a buscar depois de o perfil voltar.
-  const promessaCtx = obterContextoEmendas();
-  const promessaBase = Promise.all([obterDetalheEmenda(id), obterCatalogoEtapas(), listarBeneficiarios(), listarUnidades(), listarFasesCatalogo(), listarVereadores()]);
-  promessaBase.catch(() => {}); // se o contexto mandar sair, o erro desta rodada não pode virar rejeição solta
-  const ctx = await promessaCtx;
-  if (ctx.situacao !== "ok") redirect("/emendas");
-
-  // A auditoria e as exclusões só são lidas por gestor.
-  const gestor = ehGestor(ctx.perfil);
-  const [[detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, vereadores], auditoria, exclusoes] = await Promise.all([
-    promessaBase,
-    gestor
-      ? criarClienteEmendas().then((c) =>
-          // Tudo o que mexeu nesta emenda: o cadastro (registro_id = emenda) e os registros filhos
-          // (lançamentos, andamentos, impedimentos, anexos, remanejamentos), que guardam a emenda no JSON.
-          c
-            .from("auditoria")
-            .select("*")
-            .or(`registro_id.eq.${id},antes->>emenda_id.eq.${id},depois->>emenda_id.eq.${id}`)
-            .order("em", { ascending: false })
-            .limit(300)
-        )
-      : Promise.resolve({ data: [] }),
-    gestor
-      ? criarClienteEmendas().then((c) =>
-          c.from("exclusoes_justificadas").select("em,usuario_id,justificativa,tipo").eq("emenda_id", id).order("em", { ascending: false })
-        )
-      : Promise.resolve({ data: [] }),
-  ]);
-  if (!detalhe) notFound();
+  const r = await carregarDetalheCompleto(id);
+  if (r.situacao === "sem_acesso") redirect("/emendas");
+  if (r.situacao === "nao_encontrada") notFound();
+  const { detalhe, catalogo, beneficiarios, unidades, auditoria: registros, exclusoes: listaExclusoes, nomesUsuarios, calculo, processoCompras, exercicio, podeEditar, gestor, tipo } = r;
   const { emenda, andamentos, movimentos, execucao } = detalhe;
-  const tipo = tipoDaEmenda(emenda);
-  const [processoCompras, { exercicio }, pareceres] = await Promise.all([
-    execucao?.processo_id ? buscarProcessoPorId(execucao.processo_id).catch(() => null) : Promise.resolve(null),
-    resolverExercicio(String(emenda.ano)),
-    listarPareceres(emenda.ano),
-  ]);
-  const calculo = calcularEmendas({
-    emendas: [emenda],
-    fasesCatalogo,
-    manuais: detalhe.fasesManuais,
-    movimentos,
-    compras: processoCompras && execucao?.processo_id ? new Map([[execucao.processo_id, resumoDoProcesso(processoCompras)]]) : undefined,
-    execucoes: execucao ? [execucao] : [],
-    exercicio,
-    pareceres,
-    justificadas: detalhe.justificadas,
-    catalogo,
-    documentos: detalhe.documentos.map((d) => ({ emenda_id: d.emenda_id, tipo: d.tipo, competencia: d.competencia ?? null })),
-    partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
-    hoje: new Date().toISOString().slice(0, 10),
-  }).get(emenda.id)!;
-  const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const vinculo = <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />;
-  const registros = auditoria.data ?? [];
-  const listaExclusoes = exclusoes.data ?? [];
-  const idsUsuarios = Array.from(
-    new Set([...registros.map((a) => a.usuario_id), ...listaExclusoes.map((e) => e.usuario_id)].filter((x): x is string => !!x))
-  );
-  const nomesUsuarios: Record<string, string> = {};
-  if (idsUsuarios.length) {
-    const hub = await criarClienteServidor();
-    const { data } = await hub.from("usuarios").select("id,nome").in("id", idsUsuarios);
-    for (const u of data ?? []) nomesUsuarios[u.id] = u.nome;
-  }
 
   const rotulos: Partial<Record<EtapaEmenda, string>> = { indicada: `LOA ${emenda.ano}` };
   for (const a of andamentos.slice().reverse()) rotulos[a.etapa] = dataBr(a.data);

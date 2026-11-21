@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-21",
+    titulo: "Emendas: painel da emenda com abas completas e resumo do andamento ao passar o mouse",
+    descricao:
+      "No painel que abre ao lado da lista de Emendas, o valor da emenda foi para dentro de “Execução financeira” e uma faixa de abas deu lugar ao que antes exigia abrir a emenda: Resumo, Fases, Documentação, Pendências, Financeiro, Andamentos, Parceria e Histórico, com os mesmos dados e as mesmas ações (registrar andamento ou impedimento, lançar movimento, ligar documentos). Os dados completos só são carregados na primeira vez que você abre uma aba (ou passa o mouse na faixa). O Resumo ficou com as duas colunas equilibradas, sem o grande espaço vazio. Na lista, ao passar o mouse sobre o percentual de andamento aparece uma caixa com os valores (empenhado, pago, a pagar, sem empenhar) e as etapas principais do fluxo.",
+  },
+  {
+    data: "2026-11-21",
     titulo: "Emendas: resumo da emenda sem rolagem longa e gráficos que se ajustam aos dados",
     descricao:
       "O resumo da emenda que abre ao lado da lista foi reorganizado para caber em notebooks: cabeçalho mais compacto, execução financeira e pendências numa coluna e o fluxo de fases na outra (quando há largura), sem a longa rolagem de antes. Nos dois gráficos de filtro, a altura de cada um passa a acompanhar a quantidade de linhas que tem (ex.: Beneficiário com poucas categorias ocupa menos espaço que Vereador com 16), e a rosca e as linhas crescem ou diminuem para preencher a área, sem faixa em branco em telas grandes e sem rolar nas pequenas.",
