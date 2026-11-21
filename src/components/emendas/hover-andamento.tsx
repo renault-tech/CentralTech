@@ -5,25 +5,12 @@ import { createPortal } from "react-dom";
 import { AlertTriangle, Check } from "lucide-react";
 
 import { corDoAndamento } from "@/components/emendas/anel-andamento";
+import { macrosDoResumo } from "@/components/emendas/barra-fases";
+import { indiceDaProxima } from "@/lib/emendas/fases-resumo";
 import { brl, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
-
-type Fase = NonNullable<ResumoLinha["fases"]>[number];
-
-/** Fases que contam a história da execução; com poucas fases aparecem todas, com muitas só as marcantes. */
-const IMPORTANTE = /empenh|pagament|encerr|termo|conv[eê]nio|licita|processo|contrata|prestaç/i;
-
-export function fasesMarcantes(fases: Fase[]): { fase: Fase; atual: boolean }[] {
-  const proxima = fases.findIndex((f) => f.estado !== "feita");
-  const ultimaFeita = fases.reduce((acc, f, i) => (f.estado === "feita" ? i : acc), -1);
-  const todas = fases.length <= 8;
-  return fases
-    .map((fase, i) => ({ fase, i, atual: i === proxima }))
-    .filter(({ fase, i, atual }) => todas || i === 0 || i === fases.length - 1 || atual || i === ultimaFeita || IMPORTANTE.test(fase.nome))
-    .map(({ fase, atual }) => ({ fase, atual }));
-}
 
 const LARGURA = 288; // 18 rem em tamanho normal; o cálculo de posição usa o tamanho real medido
 
@@ -88,8 +75,8 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
     };
   }, [aberta]);
 
-  const fases = resumo.fases ?? [];
-  const marcantes = fasesMarcantes(fases);
+  const macros = macrosDoResumo(resumo);
+  const proxima = indiceDaProxima(macros);
   const p = resumo.total > 0 ? Math.round((resumo.concluidas / resumo.total) * 100) : 0;
   const aPagar = Math.max(0, e.empenhado - e.pago);
   const semEmpenhar = Math.max(0, e.valor - e.empenhado);
@@ -143,41 +130,40 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
             </div>
 
             <div className="mt-2.5 space-y-2 border-t border-slate-100 pt-2.5">
-              {linha("Empenhado", e.empenhado, e.valor, "linear-gradient(90deg,#7C5CCF,#A592E0)", `${pct(e.valor ? e.empenhado / e.valor : 0, 0)} do valor da emenda`)}
-              {linha("Pago", e.pago, e.empenhado || e.valor, "linear-gradient(90deg,#4C3494,#7C5CCF)", e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : "sem empenho ainda")}
+              {linha("Empenhado", e.empenhado, e.valor, "#2563EB", `${pct(e.valor ? e.empenhado / e.valor : 0, 0)} do valor da emenda`)}
+              {linha("Pago", e.pago, e.empenhado || e.valor, "#059669", e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : "sem empenho ainda")}
               <div className="grid grid-cols-2 gap-2 text-[0.8125rem]">
                 <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="block text-[0.6875rem] text-slate-500">A pagar</span><span className="font-semibold tabular-nums">{brl(aPagar)}</span></div>
                 <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="block text-[0.6875rem] text-slate-500">Sem empenhar</span><span className="font-semibold tabular-nums">{brl(semEmpenhar)}</span></div>
               </div>
             </div>
 
-            {marcantes.length > 0 && (
+            {macros.length > 0 && (
               <div className="mt-2.5 border-t border-slate-100 pt-2.5">
-                <p className="mb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Etapas principais</p>
+                <p className="mb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Etapas</p>
                 <ol className="space-y-1">
-                  {marcantes.map(({ fase, atual }, i) => (
-                    <li key={`${fase.nome}-${i}`} className="flex items-center gap-2 text-[0.8125rem]">
+                  {macros.map((m, i) => (
+                    <li key={m.chave} className="flex items-center gap-2 text-[0.8125rem]">
                       <span
                         className={cn(
                           "flex h-4 w-4 flex-none items-center justify-center rounded-full border-2",
-                          fase.estado === "feita" && "border-emerald-500 bg-emerald-500 text-white",
-                          fase.estado === "parcial" && "border-amber-500 bg-white text-amber-600",
-                          fase.estado === "andamento" && "border-[#6B4FBB] bg-white",
-                          fase.estado === "pendente" && "border-slate-300 bg-white"
+                          m.estado === "feita" && "border-emerald-500 bg-emerald-500 text-white",
+                          m.estado === "andamento" && "border-[#6B4FBB] bg-white",
+                          m.estado === "pendente" && "border-slate-300 bg-white"
                         )}
                       >
-                        {(fase.estado === "feita" || fase.estado === "parcial") && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
-                        {fase.estado === "andamento" && <span className="h-1.5 w-1.5 rounded-full bg-[#6B4FBB]" />}
+                        {m.estado === "feita" && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
+                        {m.estado === "andamento" && <span className="h-1.5 w-1.5 rounded-full bg-[#6B4FBB]" />}
                       </span>
-                      <span className={cn("min-w-0 flex-1 truncate", fase.estado === "pendente" && !atual ? "text-slate-500" : "font-medium")}>{fase.nome}</span>
-                      {atual && <span className="flex-none rounded-full bg-violet-100 px-1.5 py-px text-[0.6875rem] font-semibold text-violet-800">próxima</span>}
-                      {fase.alerta && <AlertTriangle className="h-3.5 w-3.5 flex-none text-amber-500" aria-label="Com alerta" />}
+                      <span className={cn("min-w-0 flex-1 truncate", m.estado === "pendente" && i !== proxima ? "text-slate-500" : "font-medium")}>{m.nome}</span>
+                      {i === proxima && <span className="flex-none rounded-full bg-violet-100 px-1.5 py-px text-[0.6875rem] font-semibold text-violet-800">próxima</span>}
+                      {m.alerta && <AlertTriangle className="h-3.5 w-3.5 flex-none text-amber-500" aria-label="Com alerta" />}
                     </li>
                   ))}
                 </ol>
               </div>
             )}
-            <p className="mt-2 text-[0.6875rem] text-slate-400">Clique na emenda para ver tudo ao lado.</p>
+            <p className="mt-2 text-[0.6875rem] text-slate-400">Clique na emenda para ver as fases e os documentos ao lado.</p>
           </div>,
           document.body
         )}

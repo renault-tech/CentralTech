@@ -3,51 +3,42 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowUpRight, Check, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, MoreHorizontal, X } from "lucide-react";
 
-import { AnelAndamento } from "@/components/emendas/anel-andamento";
+import { corDoSegmento, macrosDoResumo } from "@/components/emendas/barra-fases";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
-import { DetalheEmendaCliente, type AbaEmenda } from "@/components/emendas/detalhe-emenda";
+import { DetalheEmendaCliente, type AbaEmenda, type ControleDetalhe } from "@/components/emendas/detalhe-emenda";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
+import { TipoSelo } from "@/components/emendas/tipo-selo";
+import { Chip } from "@/components/emendas/ui";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
 import { carregarPacoteDetalhe, type PacoteDetalhe } from "@/lib/emendas/actions-painel";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
-import { TipoSelo } from "@/components/emendas/tipo-selo";
-import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
+import { indiceDaProxima, proximoPasso } from "@/lib/emendas/fases-resumo";
 import { NOME_GRAVIDADE } from "@/lib/emendas/pendencias";
-import { brl, dataBr, numeroVereador, pct } from "@/lib/emendas/regras";
+import { brl, numeroVereador } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
 const COR_GRAVIDADE = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" } as const;
-
-function Barra({ rotulo, valor, total, cor, detalhe }: { rotulo: string; valor: number; total: number; cor: string; detalhe: string }) {
-  const p = total > 0 ? Math.min(1, Math.max(0, valor / total)) : 0;
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 text-[0.8125rem]">
-        <span className="text-slate-600">{rotulo}</span>
-        <span className="font-semibold tabular-nums text-cataguases-marinho">{brl(valor)}</span>
-      </div>
-      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-        <div className="emd-preenche h-full rounded-full" style={{ width: `${p * 100}%`, background: `linear-gradient(90deg, ${cor}, color-mix(in srgb, ${cor} 70%, white))` }} />
-      </div>
-      <p className="text-xs tabular-nums text-slate-500">{detalhe}</p>
-    </div>
-  );
-}
+// Cores do dinheiro: as mesmas na barra do painel e na caixa de andamento da lista.
+const COR_PAGO = "#059669";
+const COR_A_PAGAR = "#D97706";
+const COR_SEM_EMPENHO = "#94A3B8";
 
 type AbaPainel = "resumo" | "parceria" | Extract<AbaEmenda, "fases" | "documentacao" | "pendencias" | "financeiro" | "andamentos" | "historico">;
 
-const CLASSE_TITULO = "text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500";
+const CLASSE_TITULO = "text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-slate-600";
+const CLASSE_BOTAO_PRIMARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110 disabled:opacity-50";
+const CLASSE_BOTAO_SECUNDARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[0.8125rem] font-semibold text-cataguases-marinho hover:bg-slate-50";
 
 function Esqueleto() {
   return (
-    <div className="space-y-3 animate-pulse motion-reduce:animate-none" role="status" aria-label="Carregando os detalhes da emenda">
+    <div className="animate-pulse space-y-3 motion-reduce:animate-none" role="status" aria-label="Carregando os detalhes da emenda">
       <div className="h-4 w-1/3 rounded bg-slate-200/70" />
       <div className="h-24 rounded-xl bg-slate-100" />
       <div className="h-4 w-1/4 rounded bg-slate-200/70" />
@@ -56,26 +47,88 @@ function Esqueleto() {
   );
 }
 
+/** Menu suspenso: fecha ao clicar fora ou com Esc (devolvendo o foco ao botão que o abriu). */
+function Suspenso({
+  botao,
+  children,
+  alinhar = "left",
+  largura = "w-44",
+}: {
+  botao: (p: { aberto: boolean; alternar: () => void }) => React.ReactNode;
+  children: (fechar: () => void) => React.ReactNode;
+  alinhar?: "left" | "right";
+  largura?: string;
+}) {
+  const [aberto, setAberto] = React.useState(false);
+  const raiz = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!aberto) return;
+    const fora = (ev: PointerEvent) => {
+      if (!raiz.current?.contains(ev.target as Node)) setAberto(false);
+    };
+    const tecla = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape") return;
+      ev.stopPropagation();
+      setAberto(false);
+      raiz.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
+    };
+    document.addEventListener("pointerdown", fora);
+    document.addEventListener("keydown", tecla, true);
+    return () => {
+      document.removeEventListener("pointerdown", fora);
+      document.removeEventListener("keydown", tecla, true);
+    };
+  }, [aberto]);
+  return (
+    <div ref={raiz} className="relative flex-none">
+      {botao({ aberto, alternar: () => setAberto((v) => !v) })}
+      {aberto && (
+        <div role="menu" className={cn("absolute top-full z-20 mt-1 rounded-[0.75rem] border border-slate-200 bg-white p-1 shadow-[0_12px_28px_-10px_rgba(15,23,42,0.35)]", alinhar === "right" ? "right-0" : "left-0", largura)}>
+          {children(() => setAberto(false))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const CLASSE_ITEM_MENU = "flex w-full items-center rounded-md px-2.5 py-2 text-left text-[0.8125rem] font-medium text-cataguases-marinho hover:bg-slate-100";
+
 /**
- * Painel à direita da lista: a emenda escolhida sem sair da lista. A aba "Resumo" usa só o que a lista já carregou; as demais
- * (Fases, Documentação, Pendências, Financeiro, Andamentos, Parceria, Histórico) são as mesmas da página da emenda, carregadas
- * na primeira vez que se abre uma delas (ou ao passar o mouse na faixa de abas) e gravam pelas mesmas ações.
+ * Painel à direita da lista: a emenda escolhida sem sair da lista. O Resumo usa só o que a lista já carregou e diz o próximo
+ * passo; as demais abas (Financeiro, Fases, Documentos, Pendências e, em "Mais", Andamentos, Parceria e Histórico) são as mesmas
+ * da página da emenda, carregadas logo depois de abrir o painel, e gravam pelas mesmas ações. Remanejamento e impedimento não
+ * têm botão aqui (o remanejamento é feito em Configurações).
  */
-export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: EmendaResumo; resumo?: ResumoLinha; aoFechar: () => void }) {
-  const catalogo = useCatalogo();
+export function PainelDetalheEmenda({
+  emenda: e,
+  resumo,
+  aoFechar,
+  expandido,
+  aoExpandir,
+}: {
+  emenda: EmendaResumo;
+  resumo?: ResumoLinha;
+  aoFechar: () => void;
+  expandido: boolean;
+  aoExpandir: () => void;
+}) {
+  useCatalogo();
   const router = useRouter();
   const tipo = tipoDaEmenda(e);
   const cor = TIPOS_EXECUCAO[tipo].cor;
   const aPagar = Math.max(0, e.empenhado - e.pago);
   const semEmpenhar = Math.max(0, e.valor - e.empenhado);
-  const fases = resumo?.fases ?? [];
-  const proxima = fases.findIndex((f) => f.estado !== "feita");
+  const macros = React.useMemo(() => macrosDoResumo(resumo), [resumo]);
+  const iProxima = indiceDaProxima(macros);
+  const passo = React.useMemo(() => proximoPasso(e, macros), [e, macros]);
   const href = (aba?: string) => `/emendas/${e.id}${aba ? `?aba=${aba}` : ""}`;
 
   const [aba, setAba] = React.useState<AbaPainel>("resumo");
   const [pacote, setPacote] = React.useState<PacoteDetalhe | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
+  const [dadosAbertos, setDadosAbertos] = React.useState(false);
   const carregando = React.useRef(false);
+  const controle = React.useRef<ControleDetalhe>(null);
 
   const carregar = React.useCallback(async () => {
     if (carregando.current) return;
@@ -87,32 +140,44 @@ export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: E
     else setErro(r.erro);
   }, [e.id]);
 
-  // A primeira aba que precisa dos dados completos dispara a leitura (a partir do clique, não de um efeito).
+  // Os dados completos vêm logo depois de a emenda abrir (com uma pausa, para quem navega pela lista com as setas).
+  React.useEffect(() => {
+    const t = setTimeout(() => void carregar(), 350);
+    return () => clearTimeout(t);
+  }, [carregar]);
+
   const abrirAba = (destino: AbaPainel) => {
     setAba(destino);
     if (destino !== "resumo" && !pacote && !erro) void carregar();
   };
-
   const aoSucesso = React.useCallback(() => {
     void carregar();
     router.refresh(); // a lista e o resumo acompanham a gravação
   }, [carregar, router]);
+  const irParaAba = (destino: string) => {
+    if (["resumo", "fases", "documentacao", "pendencias", "financeiro", "andamentos", "parceria", "historico"].includes(destino)) abrirAba(destino as AbaPainel);
+    else if (destino === "execucao" || destino === "transparencia") abrirAba("parceria");
+  };
 
+  const abrirDialogo = React.useCallback<ControleDetalhe["abrir"]>((d, o) => controle.current?.abrir(d, o), []);
+  const podeGravar = !!pacote && pacote.podeEditar && e.situacao !== "cancelada";
   const abertas = resumo?.abertas ?? 0;
-  const abas: [AbaPainel, string][] = [
+  const fixas: [AbaPainel, string][] = [
     ["resumo", "Resumo"],
-    ["fases", resumo && resumo.total > 0 ? `Fases ${resumo.concluidas}/${resumo.total}` : "Fases"],
-    ["documentacao", "Documentação"],
-    ["pendencias", abertas ? `Pendências (${abertas})` : "Pendências"],
     ["financeiro", "Financeiro"],
+    ["fases", resumo && resumo.total > 0 ? `Fases ${resumo.concluidas}/${resumo.total}` : "Fases"],
+    ["documentacao", "Documentos"],
+    ["pendencias", abertas ? `Pendências (${abertas})` : "Pendências"],
+  ];
+  const extras: [AbaPainel, string][] = [
     ["andamentos", "Andamentos"],
     ["parceria", "Parceria"],
     ["historico", "Histórico"],
   ];
-  const irParaAba = (destino: string) => {
-    if (abas.some(([k]) => k === destino)) abrirAba(destino as AbaPainel);
-    else if (destino === "execucao" || destino === "transparencia") abrirAba("parceria");
-  };
+  const abaExtra = extras.find(([k]) => k === aba);
+
+  // Ação principal da aba aberta (uma só; o resto fica no menu "⋯").
+  const primaria: "movimento" | "andamento" | null = aba === "financeiro" ? "movimento" : aba === "resumo" || aba === "fases" || aba === "andamentos" ? "andamento" : null;
 
   const atalhos = pacote?.processoCompras
     ? { processo: pacote.processoCompras.numero, licitacao: pacote.processoCompras.numero_licitacao, contrato: pacote.processoCompras.contratos[0]?.numero ?? pacote.processoCompras.contrato_vinculado }
@@ -129,110 +194,158 @@ export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: E
     ] as [string, string | null][]
   ).filter(([, v]) => v);
 
+  const executarPasso = () => {
+    if (passo.acao === "andamento") abrirDialogo("andamento");
+    else if (passo.acao === "empenho") abrirDialogo("movimento", { tipoMovimento: "empenho" });
+    else if (passo.acao === "pagamento") abrirDialogo("movimento", { tipoMovimento: "pagamento" });
+  };
+
+  // Barra financeira: pago + a pagar = empenhado; o resto do valor ainda não foi empenhado.
+  const baseBarra = Math.max(e.valor, e.empenhado, 1);
+  const fatiaBarra = (v: number, c: string, nome: string) => (
+    <span key={nome} className="emd-preenche block h-full" title={`${nome}: ${brl(v)}`} style={{ flex: `${v} 0 0`, minWidth: v > 0 ? 4 : 0, backgroundColor: c }} />
+  );
+
   const blocoResumo = (
-    <div className="emd-cont">
-      <div className="emd-det-grade">
-        <div className="space-y-4">
-          <section aria-label="Execução financeira" className="space-y-2.5">
-            <h3 className={CLASSE_TITULO}>Execução financeira</h3>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[0.8125rem] text-slate-600">Valor da emenda</span>
-              <span className="text-[1.125rem] font-semibold leading-none tracking-tight tabular-nums text-cataguases-marinho">{brl(e.valor)}</span>
-            </div>
-            <Barra rotulo="Empenhado" valor={e.empenhado} total={e.valor} cor="#7C5CCF" detalhe={`${pct(e.valor ? e.empenhado / e.valor : 0, 0)} do valor da emenda`} />
-            <Barra rotulo="Pago" valor={e.pago} total={e.empenhado || e.valor} cor="#4C3494" detalhe={e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : "sem empenho ainda"} />
-            <div className="grid grid-cols-2 gap-2 text-[0.8125rem]">
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5"><span className="block text-xs text-slate-500">A pagar</span><span className="font-semibold tabular-nums text-cataguases-marinho">{brl(aPagar)}</span></div>
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5"><span className="block text-xs text-slate-500">Sem empenhar</span><span className="font-semibold tabular-nums text-cataguases-marinho">{brl(semEmpenhar)}</span></div>
-            </div>
-          </section>
-
-          {!!resumo?.pendencias?.length && (
-            <section aria-label="Pendências" className="space-y-2">
-              <h3 className={cn(CLASSE_TITULO, "flex items-center justify-between")}>
-                Pendências abertas
-                <button type="button" onClick={() => abrirAba("pendencias")} className="font-medium normal-case tracking-normal text-[color:var(--modulo-tinta)] hover:underline">ver todas ({resumo.abertas})</button>
-              </h3>
-              <ul className="space-y-1">
-                {resumo.pendencias.map((p, i) => (
-                  <li key={`${p.titulo}-${i}`} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white/60 px-2.5 py-1.5 text-[0.8125rem]">
-                    <span className="mt-1.5 h-2 w-2 flex-none rounded-full" style={{ backgroundColor: COR_GRAVIDADE[p.gravidade] }} aria-hidden />
-                    <span className="min-w-0 flex-1 leading-snug text-cataguases-marinho">{p.titulo}</span>
-                    <span className="flex-none text-xs font-medium" style={{ color: COR_GRAVIDADE[p.gravidade] }}>{NOME_GRAVIDADE[p.gravidade]}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+    <div className="space-y-4">
+      <section aria-label="Próximo passo" className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-[color-mix(in_srgb,var(--modulo)_9%,transparent)] px-4 py-3.5">
+        <div className="min-w-[14rem] flex-1">
+          <p className="text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-[color:var(--modulo-tinta)]">Próximo passo</p>
+          <p className="mt-0.5 text-[1.0625rem] font-semibold leading-snug tracking-tight text-cataguases-marinho">{passo.titulo}</p>
+          <p className="mt-0.5 text-[0.8125rem] leading-relaxed text-slate-700">{passo.texto}</p>
         </div>
+        {((passo.acao && (podeGravar || !pacote)) || passo.atalho) && (
+          <div className="flex flex-none flex-col gap-2 max-sm:w-full max-sm:flex-row">
+            {passo.acao && (podeGravar || !pacote) && (
+              <button type="button" disabled={!pacote} onClick={executarPasso} className={cn(CLASSE_BOTAO_PRIMARIO, "h-9")}>
+                {passo.rotuloAcao}
+              </button>
+            )}
+            {passo.atalho && (
+              <button type="button" onClick={() => abrirAba(passo.atalho!.aba)} className={cn(CLASSE_BOTAO_SECUNDARIO, "h-9 border-[color:var(--modulo)]/40 text-[color:var(--modulo-tinta)]")}>
+                {passo.atalho.rotulo}
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
-        <div className="space-y-4">
-          {fases.length > 0 && (
-            <section aria-label="Fases" className="space-y-2">
-              <h3 className={cn(CLASSE_TITULO, "flex items-center justify-between")}>
-                Fluxo de fases
-                <button type="button" onClick={() => abrirAba("fases")} className="font-medium normal-case tracking-normal text-[color:var(--modulo-tinta)] hover:underline">detalhar</button>
-              </h3>
-              <ol>
-                {fases.map((f, i) => {
-                  const atual = i === proxima;
-                  return (
-                    <li key={`${f.nome}-${i}`} className="relative flex items-center gap-2.5 py-[0.1875rem]">
-                      {i < fases.length - 1 && <span aria-hidden className="absolute left-[0.5625rem] top-[1.4rem] h-[calc(100%-0.9rem)] w-px" style={{ background: f.estado === "feita" ? "#10B981" : "rgb(203 213 225)" }} />}
-                      <span
-                        className={cn(
-                          "relative z-[1] flex h-[1.125rem] w-[1.125rem] flex-none items-center justify-center rounded-full border-2",
-                          f.estado === "feita" && "border-emerald-500 bg-emerald-500 text-white",
-                          f.estado === "parcial" && "border-amber-500 bg-white text-amber-600",
-                          f.estado === "andamento" && "border-[color:var(--modulo)] bg-white",
-                          f.estado === "pendente" && "border-slate-300 bg-white",
-                          atual && "emd-pulso"
-                        )}
-                      >
-                        {(f.estado === "feita" || f.estado === "parcial") && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
-                        {f.estado === "andamento" && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "var(--modulo)" }} />}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[0.8125rem] leading-snug" title={f.nome}>
-                        <span className={cn(f.estado === "pendente" && !atual ? "text-slate-500" : "font-medium text-cataguases-marinho")}>{f.nome}</span>
-                        {atual && <span className="ml-1.5 rounded-full bg-[color-mix(in_srgb,var(--modulo)_14%,transparent)] px-1.5 py-px text-[0.6875rem] font-semibold text-[color:var(--modulo-tinta)]">próxima</span>}
-                        {f.alerta && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-amber-500" aria-label="Com alerta" />}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          )}
+      {macros.length > 0 && (
+        <section aria-label="Fluxo de fases" className="space-y-2.5">
+          <h3 className={cn(CLASSE_TITULO, "flex flex-wrap items-baseline gap-x-3")}>
+            Fluxo de fases
+            {resumo && <span className="text-[0.8125rem] font-normal normal-case tracking-normal text-slate-600">{resumo.concluidas} de {resumo.total} fases concluídas</span>}
+            <button type="button" onClick={() => abrirAba("fases")} className="ml-auto text-[0.8125rem] font-medium normal-case tracking-normal text-[color:var(--modulo-tinta)] hover:underline">detalhar</button>
+          </h3>
+          <ol className="grid gap-x-2 gap-y-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(6.5rem, 1fr))" }}>
+            {macros.map((m, i) => {
+              const atual = i === iProxima;
+              return (
+                <li key={m.chave} className="flex min-w-0 flex-col gap-1.5" title={m.fases.map((f) => `${f.nome}: ${f.estado === "feita" ? "concluída" : f.estado === "pendente" ? "a fazer" : "em andamento"}`).join("\n")}>
+                  <span className={cn("block h-1.5 rounded-full", atual && "emd-pulso")} style={{ backgroundColor: corDoSegmento(m, atual) }} />
+                  <span className={cn("text-[0.8125rem] leading-snug", m.estado === "pendente" && !atual ? "text-slate-600" : "font-medium text-cataguases-marinho")}>
+                    {m.nome}
+                    {m.alerta && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-amber-500" aria-label="Com alerta" />}
+                  </span>
+                  <span className="text-[0.8125rem] text-slate-600">{m.estado === "feita" ? "concluída" : atual ? (m.estado === "andamento" ? "em andamento · próxima" : "próxima") : m.estado === "andamento" ? "em andamento" : "a fazer"}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
 
-          <section aria-label="Dados" className="space-y-1.5">
-            <h3 className={CLASSE_TITULO}>Dados</h3>
-            <dl className="divide-y divide-slate-100 text-[0.8125rem]">
-              {dados.map(([k, v]) => (
-                <div key={k} className="grid grid-cols-[5.5rem_1fr] gap-2 py-1.5">
-                  <dt className="text-slate-500">{k}</dt>
-                  <dd className="min-w-0 break-words font-medium text-cataguases-marinho">{v}</dd>
-                </div>
+      <section aria-label="Execução financeira" className="space-y-2.5">
+        <div className="flex flex-wrap items-baseline gap-x-3">
+          <h3 className={CLASSE_TITULO}>Execução financeira</h3>
+          <span className="ml-auto text-[0.8125rem] text-slate-600">Valor da emenda</span>
+          <span className="text-[1.25rem] font-semibold leading-none tracking-tight tabular-nums text-cataguases-marinho">{brl(e.valor)}</span>
+        </div>
+        <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`Pago ${brl(e.pago)}, a pagar ${brl(aPagar)}, sem empenhar ${brl(semEmpenhar)}`}>
+          {fatiaBarra(e.pago, COR_PAGO, "Pago")}
+          {fatiaBarra(aPagar, COR_A_PAGAR, "A pagar")}
+          {fatiaBarra(semEmpenhar, COR_SEM_EMPENHO, "Sem empenhar")}
+          <span className="block h-full" style={{ flex: `${Math.max(0, baseBarra - e.pago - aPagar - semEmpenhar)} 0 0` }} />
+        </div>
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
+          <div>
+            <dt className="text-[0.8125rem] text-slate-600">Empenhado</dt>
+            <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(e.empenhado)}</dd>
+          </div>
+          {(
+            [
+              ["Pago", e.pago, COR_PAGO],
+              ["A pagar", aPagar, COR_A_PAGAR],
+              ["Sem empenhar", semEmpenhar, COR_SEM_EMPENHO],
+            ] as [string, number, string][]
+          ).map(([nome, v, c]) => (
+            <div key={nome}>
+              <dt className="flex items-center gap-1.5 text-[0.8125rem] text-slate-600"><span className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: c }} aria-hidden />{nome}</dt>
+              <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(v)}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))" }}>
+        <section aria-label="Pendências" className="space-y-2 rounded-xl border border-slate-200 px-3.5 py-3">
+          <h3 className={cn(CLASSE_TITULO, "flex items-center justify-between")}>
+            Pendências abertas ({abertas})
+            {abertas > 0 && <button type="button" onClick={() => abrirAba("pendencias")} className="text-[0.8125rem] font-medium normal-case tracking-normal text-[color:var(--modulo-tinta)] hover:underline">ver todas</button>}
+          </h3>
+          {resumo?.pendencias?.length ? (
+            <ul className="space-y-1.5">
+              {resumo.pendencias.map((p, i) => (
+                <li key={`${p.titulo}-${i}`} className="flex items-start gap-2 text-[0.8125rem]">
+                  <span className="mt-1.5 h-2 w-2 flex-none rounded-full" style={{ backgroundColor: COR_GRAVIDADE[p.gravidade] }} aria-hidden />
+                  <span className="min-w-0 flex-1 leading-snug text-cataguases-marinho">{p.titulo}</span>
+                  <span className="flex-none text-[0.8125rem] font-medium" style={{ color: COR_GRAVIDADE[p.gravidade] }}>{NOME_GRAVIDADE[p.gravidade]}</span>
+                </li>
               ))}
-            </dl>
-          </section>
+            </ul>
+          ) : (
+            <p className="flex items-center gap-1.5 text-[0.8125rem] text-slate-600"><CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />Nenhuma pendência aberta.</p>
+          )}
+        </section>
+        <button type="button" aria-expanded={dadosAbertos} onClick={() => setDadosAbertos((v) => !v)} className="flex items-center gap-3 rounded-xl border border-slate-200 px-3.5 py-3 text-left hover:bg-slate-50">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[0.875rem] font-semibold text-cataguases-marinho">Dados orçamentários</span>
+            <span className="block truncate text-[0.8125rem] text-slate-600">Unidade {e.unidade_codigo}{e.natureza_despesa ? ` · natureza ${e.natureza_despesa}` : ""}</span>
+          </span>
+          <ChevronDown className={cn("h-4 w-4 flex-none text-slate-600 transition-transform", dadosAbertos && "rotate-180")} aria-hidden />
+        </button>
+      </div>
 
+      {dadosAbertos && (
+        <section aria-label="Dados" className="space-y-3">
+          <dl className="divide-y divide-slate-100 text-[0.8125rem]">
+            {dados.map(([k, v]) => (
+              <div key={k} className="grid grid-cols-[6rem_1fr] gap-2 py-1.5">
+                <dt className="text-slate-600">{k}</dt>
+                <dd className="min-w-0 break-words font-medium text-cataguases-marinho">{v}</dd>
+              </div>
+            ))}
+          </dl>
           {pacote?.detalhe.emenda.descricao && (
-            <section aria-label="Descrição" className="space-y-1.5">
+            <div className="space-y-1">
               <h3 className={CLASSE_TITULO}>Descrição completa</h3>
               <p className="whitespace-pre-line text-[0.8125rem] leading-relaxed text-slate-700">{pacote.detalhe.emenda.descricao}</p>
-            </section>
+            </div>
           )}
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 
   const abaDoDetalhe: AbaEmenda | null = aba === "resumo" || aba === "parceria" ? null : aba;
+  const classeAba = (ativa: boolean) =>
+    cn("relative flex-none whitespace-nowrap px-2.5 py-2.5 text-[0.8125rem] transition-colors", ativa ? "font-semibold text-[color:var(--modulo-tinta)]" : "text-slate-700 hover:text-cataguases-marinho");
+  const sublinhado = (ativa: boolean) => <span aria-hidden className={cn("absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity", ativa ? "opacity-100" : "opacity-0")} style={{ backgroundColor: "var(--modulo)" }} />;
 
   return (
     <article key={e.id} className="emd-troca flex h-full min-w-[20rem] flex-col" aria-label={`Emenda ${e.numero}`}>
-      <header className="relative px-4 pb-2.5 pt-3" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${cor} 14%, transparent), transparent 70%)` }}>
-        <div className="flex items-start justify-between gap-3">
+      <header className="relative px-4 pb-2 pt-2.5" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${cor} 14%, transparent), transparent 70%)` }}>
+        <div className="flex items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="rounded-md bg-white/70 px-2 py-0.5 font-mono font-semibold text-cataguases-marinho ring-1 ring-slate-200">Nº {e.numero}</span>
             <TipoSelo tipo={tipo} />
@@ -240,47 +353,77 @@ export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: E
             {e.saude && <Chip tom="saude">Saúde</Chip>}
             {e.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
           </div>
-          <button type="button" onClick={aoFechar} aria-label="Fechar detalhe da emenda" title="Fechar (Esc)" className="-mr-1.5 -mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-        <h2 className="mt-2 line-clamp-2 text-[0.9375rem] font-semibold leading-snug tracking-tight text-cataguases-marinho" title={e.objeto}>{e.objeto}</h2>
-        <p className="mt-0.5 truncate text-[0.8125rem] text-slate-600">{[e.beneficiario_nome, e.secretaria_nome].filter(Boolean).join(" · ")}</p>
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <SeloEtapa etapa={e.etapa} situacao={e.situacao} catalogo={catalogo} />
-            {e.ultimo_pagamento && <span className="text-xs text-slate-500">pago em {dataBr(e.ultimo_pagamento)}</span>}
+          <div className="-mr-1.5 flex flex-none items-center gap-0.5">
+            <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+              {expandido ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
+              {expandido ? "Recolher" : "Expandir"}
+            </button>
+            <button type="button" onClick={aoFechar} aria-label="Fechar detalhe da emenda" title="Fechar (Esc)" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+              <X className="h-4 w-4" aria-hidden />
+            </button>
           </div>
-          {resumo && resumo.total > 0 && (
-            <div className="flex flex-none items-center gap-2" title={`${resumo.concluidas} de ${resumo.total} fases concluídas`}>
-              <span className="text-right text-xs leading-tight text-slate-600">
-                <span className="block font-medium text-cataguases-marinho">Andamento</span>
-                <span className="block tabular-nums">{resumo.concluidas}/{resumo.total} fases</span>
-              </span>
-              <AnelAndamento concluidas={resumo.concluidas} total={resumo.total} tamanho={40} espessura={4.5} />
-            </div>
-          )}
         </div>
+        <h2 className="mt-1.5 line-clamp-2 text-[0.9375rem] font-semibold leading-snug tracking-tight text-cataguases-marinho" title={e.objeto}>{e.objeto}</h2>
+        <p className="mt-0.5 truncate text-[0.8125rem] text-slate-600" title={[e.beneficiario_nome, e.secretaria_nome, e.vereador_nome].filter(Boolean).join(" · ")}>
+          {[e.beneficiario_nome, e.secretaria_nome, `Vereador(a) ${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`].filter(Boolean).join(" · ")}
+        </p>
       </header>
 
-      <div role="tablist" aria-label="Seções da emenda" className="flex flex-none gap-0.5 overflow-x-auto overscroll-x-contain border-y border-slate-200 bg-white/60 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onPointerEnter={() => { if (!pacote && !erro) void carregar(); }}>
-        {abas.map(([chave, rotulo]) => (
-          <button
-            key={chave}
-            type="button"
-            role="tab"
-            id={`aba-${e.id}-${chave}`}
-            aria-selected={aba === chave}
-            onClick={() => abrirAba(chave)}
-            className={cn(
-              "relative flex-none whitespace-nowrap px-2.5 py-2 text-[0.8125rem] transition-colors",
-              aba === chave ? "font-semibold text-[color:var(--modulo-tinta)]" : "text-slate-600 hover:text-cataguases-marinho"
-            )}
-          >
+      <div role="tablist" aria-label="Seções da emenda" className="flex flex-none flex-wrap items-center gap-x-0.5 border-y border-slate-200 bg-white/60 px-2">
+        {fixas.map(([chave, rotulo]) => (
+          <button key={chave} type="button" role="tab" id={`aba-${e.id}-${chave}`} aria-selected={aba === chave} onClick={() => abrirAba(chave)} className={classeAba(aba === chave)}>
             {rotulo}
-            <span aria-hidden className={cn("absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity", aba === chave ? "opacity-100" : "opacity-0")} style={{ backgroundColor: "var(--modulo)" }} />
+            {sublinhado(aba === chave)}
           </button>
         ))}
+        <Suspenso
+          botao={({ aberto, alternar }) => (
+            <button type="button" role="tab" aria-selected={!!abaExtra} aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className={cn(classeAba(!!abaExtra), "inline-flex items-center gap-1")}>
+              {abaExtra ? abaExtra[1] : "Mais"}
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+              {sublinhado(!!abaExtra)}
+            </button>
+          )}
+        >
+          {(fechar) =>
+            extras.map(([chave, rotulo]) => (
+              <button key={chave} type="button" role="menuitem" onClick={() => { fechar(); abrirAba(chave); }} className={cn(CLASSE_ITEM_MENU, aba === chave && "bg-slate-100")}>
+                {rotulo}
+              </button>
+            ))
+          }
+        </Suspenso>
+
+        <div className="ml-auto flex items-center gap-1.5 py-1.5">
+          {primaria && !pacote && !erro && <span className="h-8 w-36 animate-pulse rounded-lg bg-slate-200/70 motion-reduce:animate-none" aria-hidden />}
+          {primaria && podeGravar && (
+            <button type="button" onClick={() => abrirDialogo(primaria)} className={CLASSE_BOTAO_PRIMARIO}>
+              {primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"}
+            </button>
+          )}
+          <Suspenso
+            alinhar="right"
+            largura="w-52"
+            botao={({ aberto, alternar }) => (
+              <button type="button" aria-label="Mais ações" aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+          >
+            {() => (
+              <>
+                {pacote?.gestor && (
+                  <Link role="menuitem" href={`/emendas/${e.id}/editar`} className={CLASSE_ITEM_MENU}>
+                    Corrigir cadastro
+                  </Link>
+                )}
+                <Link role="menuitem" href={href(abaDoDetalhe ?? undefined)} className={CLASSE_ITEM_MENU}>
+                  Abrir em página inteira
+                </Link>
+              </>
+            )}
+          </Suspenso>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5" role="tabpanel" aria-labelledby={`aba-${e.id}-${aba}`}>
@@ -297,6 +440,7 @@ export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: E
             <DetalheEmendaCliente
               key={`${e.id}-${aba}`}
               modoPainel
+              controleRef={controle}
               abaControlada={abaDoDetalhe}
               aoMudarAba={irParaAba}
               aoSucesso={aoSucesso}
@@ -325,13 +469,6 @@ export function PainelDetalheEmenda({ emenda: e, resumo, aoFechar }: { emenda: E
           </>
         )}
       </div>
-
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white/70 px-4 py-2 backdrop-blur">
-        <span className="text-xs text-slate-500">{pacote ? (pacote.podeEditar ? "Você pode registrar andamentos nesta emenda." : "Você só visualiza esta emenda.") : "Abas Fases a Histórico: mesmos dados da emenda completa."}</span>
-        <Link href={href(abaDoDetalhe ?? undefined)} className="btn-ui inline-flex h-8 items-center gap-1.5 rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110">
-          Abrir emenda completa <ArrowUpRight className="h-4 w-4" aria-hidden />
-        </Link>
-      </footer>
     </article>
   );
 }

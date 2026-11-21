@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-21",
+    titulo: "Emendas: barra de fases na lista e painel da emenda com “Próximo passo”",
+    descricao:
+      "Na lista de Emendas, o anel de percentual deu lugar a uma barra de até seis etapas (Planejamento, Formalização, Empenho, Pagamento, Prestação de contas e Encerramento) com a frase “próximo: …”; o percentual e as etapas aparecem ao passar o mouse. No painel da emenda, o Resumo agora diz o que fazer (por exemplo, “Fechar o empenho: faltam R$ 0,60”) e traz o fluxo em linha, uma barra única do dinheiro (pago, a pagar, sem empenhar) e os dados cadastrais recolhidos. A aba Financeiro passou para o segundo lugar, Andamentos, Parceria e Histórico ficaram em “Mais”, o botão da ação principal fica no topo (Registrar andamento ou Lançar movimento) e há um botão Expandir para trabalhar com o painel em tela cheia. Os botões de remanejar e de registrar impedimento saíram do painel (remanejamento é feito em Configurações). Nos gráficos, a rosca ficou menor e os nomes não são mais cortados.",
+  },
+  {
+    data: "2026-11-21",
     titulo: "Emendas: painel da emenda com abas completas e resumo do andamento ao passar o mouse",
     descricao:
       "No painel que abre ao lado da lista de Emendas, o valor da emenda foi para dentro de “Execução financeira” e uma faixa de abas deu lugar ao que antes exigia abrir a emenda: Resumo, Fases, Documentação, Pendências, Financeiro, Andamentos, Parceria e Histórico, com os mesmos dados e as mesmas ações (registrar andamento ou impedimento, lançar movimento, ligar documentos). Os dados completos só são carregados na primeira vez que você abre uma aba (ou passa o mouse na faixa). O Resumo ficou com as duas colunas equilibradas, sem o grande espaço vazio. Na lista, ao passar o mouse sobre o percentual de andamento aparece uma caixa com os valores (empenhado, pago, a pagar, sem empenhar) e as etapas principais do fluxo.",

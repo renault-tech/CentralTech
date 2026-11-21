@@ -141,6 +141,9 @@ function paraNumero(t: string): number | null {
   return limpo && Number.isFinite(n) ? n : null;
 }
 
+/** Comandos que o painel ao lado da lista dá ao detalhe (abrir os diálogos de gravação sem repetir a barra de botões). */
+export type ControleDetalhe = { abrir: (dialogo: "andamento" | "movimento", opcoes?: { tipoMovimento?: "empenho" | "pagamento" }) => void };
+
 export type AbaEmenda = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
 const ABAS_VALIDAS: AbaEmenda[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
 
@@ -164,6 +167,7 @@ export function DetalheEmendaCliente({
   aoMudarAba,
   modoPainel,
   aoSucesso,
+  controleRef,
 }: {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
@@ -176,6 +180,7 @@ export function DetalheEmendaCliente({
   modoPainel?: boolean;
   /** Chamado depois de uma gravação bem-sucedida (o painel recarrega os próprios dados). */
   aoSucesso?: () => void;
+  controleRef?: React.Ref<ControleDetalhe>;
   detalhe: DetalheEmenda;
   podeEditar: boolean;
   gestor: boolean;
@@ -196,6 +201,13 @@ export function DetalheEmendaCliente({
   const aba: AbaEmenda | null = controlada ? abaControlada : abaLocal;
   const setAba = (destino: AbaEmenda) => (controlada && aoMudarAba ? aoMudarAba(destino) : setAbaLocal(destino));
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
+  const [tipoMov, setTipoMov] = React.useState<"empenho" | "pagamento">("pagamento");
+  React.useImperativeHandle(controleRef, () => ({
+    abrir: (d, opcoes) => {
+      if (d === "movimento") setTipoMov(opcoes?.tipoMovimento ?? "pagamento");
+      setDialogo(d);
+    },
+  }));
   const [erroGeral, setErroGeral] = React.useState<string | null>(null);
   const [avisoGeral, setAvisoGeral] = React.useState<string | null>(null);
 
@@ -230,7 +242,7 @@ export function DetalheEmendaCliente({
 
   return (
     <>
-      {(podeEditar || gestor) && (
+      {!modoPainel && (podeEditar || gestor) && (
         <div className={cn("flex flex-wrap justify-end gap-2 print:hidden", modoPainel && "gap-1.5")} data-tour="acoes-emenda">
           {podeEditar && emenda.situacao !== "cancelada" && (
             <>
@@ -430,7 +442,7 @@ export function DetalheEmendaCliente({
                 </table>
                 {movimentos.length === 0 && <p className="py-4 text-sm text-slate-500">Nenhum empenho, liquidação ou pagamento registrado ainda.</p>}
               </div>
-              {podeEditar && (
+              {podeEditar && !modoPainel && (
                 <div className="flex flex-wrap items-center gap-2">
                   <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("movimento")}>
                     + Lançar movimento (parcial, anulação…)
@@ -585,6 +597,8 @@ export function DetalheEmendaCliente({
         aoSalvar={(d) => executar(() => registrarImpedimento({ emendaId: emenda.id, ...d }))}
       />
       <DialogoMovimento
+        key={tipoMov}
+        tipoInicial={tipoMov}
         aberto={dialogo === "movimento"}
         saldos={(() => {
           const t = totaisFinanceiros(movimentos);
@@ -787,16 +801,18 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
 
 function DialogoMovimento({
   aberto,
+  tipoInicial,
   saldos,
   aoFechar,
   aoSalvar,
 }: {
   aberto: boolean;
+  tipoInicial: "empenho" | "pagamento";
   saldos: { empenhar: number; liquidar: number; pagar: number };
   aoFechar: () => void;
   aoSalvar: (d: { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero?: string; data: string | null; valor: number }) => Promise<Resultado>;
 }) {
-  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">("pagamento");
+  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">(tipoInicial);
   const [numero, setNumero] = React.useState("");
   const [data, setData] = React.useState(hojeLocal());
   const [valor, setValor] = React.useState("");

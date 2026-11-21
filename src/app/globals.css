@@ -808,6 +808,9 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
   .emd .emd-ws > :nth-child(1), .emd .emd-ws > :nth-child(2) { margin-right: 1rem; transition: margin 0.65s var(--emd-curva); }
   .emd .emd-ws[data-detalhe="false"] > :nth-child(2) { margin-right: 0; }
   .emd .emd-conteudo-graficos { min-width: 30rem; }
+  /* Painel expandido: o detalhe ocupa a largura toda; gráficos e lista recolhem a zero. */
+  .emd .emd-ws[data-detalhe="true"][data-expandido="true"] { grid-template-columns: minmax(0, 0fr) minmax(0, 0fr) minmax(0, 1fr); }
+  .emd .emd-ws[data-expandido="true"] > :nth-child(1), .emd .emd-ws[data-expandido="true"] > :nth-child(2) { margin-right: 0; opacity: 0; border-color: transparent; }
 }
 /* Lista: item com realce, selecionado com brilho na cor do tipo; entram em sequência. */
 .emd .emd-item { transition: background-color 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva); animation: emd-linha 0.4s var(--emd-curva) both; }
@@ -832,10 +835,6 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 @media (prefers-reduced-motion: reduce) { .emd .emd-ws { transition: none; } .emd .emd-ws > * { transition: none !important; } }
 @media print { .emd .emd-ws { display: block; height: auto !important; } }
 
-/* Resumo da emenda: em painel largo, financeiro/pendências/dados à esquerda e o fluxo de fases à direita (menos rolagem). */
-.emd .emd-cont { container-type: inline-size; }
-.emd .emd-det-grade { display: grid; gap: 1.25rem; }
-@container (min-width: 32rem) { .emd-det-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 1.5rem; } }
 
 /* Gráficos de filtro: a altura de cada um acompanha a quantidade de linhas (ver `GraficoFiltro`). */
 .emd .emd-grafico { transition: flex-grow 0.5s var(--emd-curva); }

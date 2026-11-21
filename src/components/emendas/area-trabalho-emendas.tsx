@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PanelLeftOpen, Plus, Search, SearchX, X } from "lucide-react";
 
-import { AnelAndamento } from "@/components/emendas/anel-andamento";
+import { BarraFases, macrosDoResumo } from "@/components/emendas/barra-fases";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { HoverAndamento } from "@/components/emendas/hover-andamento";
@@ -46,6 +46,9 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
   const escolhidaId = params.get("e") ?? "";
   const escolhida = escolhidaId ? emendas.find((e) => e.id === escolhidaId) : undefined;
   const aberto = !!escolhida;
+  // Painel expandido (ocupa a largura toda): guarda a emenda expandida, então trocar de emenda ou fechar volta ao normal.
+  const [expandidaId, setExpandidaId] = React.useState("");
+  const expandido = aberto && expandidaId === escolhidaId;
 
   const definir = React.useCallback((m: Record<string, string>) => definirUrl(m), [definirUrl]);
 
@@ -95,12 +98,15 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
   React.useEffect(() => {
     if (!aberto) return;
     const aoTeclar = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape" && !(ev.target instanceof HTMLInputElement || ev.target instanceof HTMLSelectElement)) fechar();
+      if (ev.key === "Escape" && !(ev.target instanceof HTMLInputElement || ev.target instanceof HTMLSelectElement)) {
+        if (expandido) setExpandidaId("");
+        else fechar();
+      }
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto]);
+  }, [aberto, expandido]);
   React.useEffect(() => {
     if (!escolhidaId) return;
     const t = setTimeout(() => listaRef.current?.querySelector(`[data-id="${CSS.escape(escolhidaId)}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }), 120);
@@ -167,9 +173,9 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
         </div>
       </div>
 
-      <div ref={areaRef} data-detalhe={aberto} className="emd-ws min-h-[30rem]">
+      <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
         {/* 1 · gráficos e filtros (viram uma faixa quando há emenda escolhida) */}
-        <aside aria-label="Gráficos e filtros" className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
             <div className="flex h-full flex-col">
               <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
@@ -195,7 +201,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
         </aside>
 
         {/* 2 · lista */}
-        <section aria-label="Lista de emendas" className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh]">
+        <section aria-label="Lista de emendas" inert={expandido} className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh]">
           <div className="space-y-2.5 border-b border-slate-200 px-4 pb-3 pt-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <label className="relative min-w-[11rem] flex-1">
@@ -283,6 +289,11 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
                       {r.beneficiario_nome ? `${r.beneficiario_nome} · ` : ""}
                       {numeroVereador(r.vereador_numero)} {r.vereador_nome} · {r.secretaria_nome}
                     </p>
+                    {res && res.total > 0 && (
+                      <HoverAndamento emenda={r} resumo={res}>
+                        <BarraFases macros={macrosDoResumo(res)} cancelada={r.situacao === "cancelada"} className="mt-1.5" />
+                      </HoverAndamento>
+                    )}
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <TipoSelo tipo={tipo} />
                       <CategoriaSelo categoria={r.beneficiario_categoria} />
@@ -293,14 +304,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <span className="whitespace-nowrap text-[0.875rem] font-semibold tabular-nums text-cataguases-marinho">{brl(r.valor)}</span>
-                    <div className="flex items-center gap-2">
-                      <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
-                      {res && res.total > 0 && (
-                        <HoverAndamento emenda={r} resumo={res}>
-                          <AnelAndamento concluidas={res.concluidas} total={res.total} tamanho={34} espessura={4} />
-                        </HoverAndamento>
-                      )}
-                    </div>
+                    <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
                   </div>
                 </div>
               );
@@ -310,7 +314,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
 
         {/* 3 · resumo da emenda escolhida */}
         <section aria-label="Resumo da emenda" aria-hidden={!aberto} inert={!aberto} className={cn("emd-painel emd-detalhe min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:hidden", !aberto && "border-transparent")}>
-          {escolhida && <PainelDetalheEmenda emenda={escolhida} resumo={resumos[escolhida.id]} aoFechar={fechar} />}
+          {escolhida && <PainelDetalheEmenda emenda={escolhida} resumo={resumos[escolhida.id]} aoFechar={fechar} expandido={expandido} aoExpandir={() => setExpandidaId(expandido ? "" : escolhida.id)} />}
         </section>
       </div>
     </div>
