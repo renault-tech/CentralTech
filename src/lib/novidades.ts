@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-21",
+    titulo: "Emendas: menu lateral recolhível e dois gráficos de filtro lado a lado",
+    descricao:
+      "O menu lateral do módulo Emendas ficou mais estreito e pode ser recolhido numa faixa só de ícones (botão no topo do menu ou a tecla [); a escolha fica lembrada. Na lista de Emendas, o cabeçalho caiu para uma linha e a área dos gráficos ganhou dois gráficos de filtro empilhados, cada um com a sua dimensão (etapa, vereador, secretaria, situação financeira…): clique numa fatia de um e veja o outro já recalculado, combinando filtros com facilidade. Os gráficos ficaram maiores e a lista, mais larga.",
+  },
+  {
+    data: "2026-11-21",
     titulo: "Emendas: lista em área de trabalho, sem rolar a página",
     descricao:
       "Na lista de Emendas (visual novo, telas largas) a página não rola mais: os gráficos e filtros ficam à esquerda e a lista à direita, cada um rolando por dentro, então o resultado do filtro aparece na hora ao lado. Ao clicar numa emenda, os gráficos recolhem numa faixa, a lista desliza para o lugar deles e o resumo da emenda (andamento, financeiro, fases e pendências) abre à direita. Os filtros continuam valendo (aparecem como etiquetas no topo da lista) e a faixa devolve os gráficos. Setas ↑ ↓ trocam de emenda, Esc fecha o resumo e “Abrir emenda completa” leva à página de sempre.",

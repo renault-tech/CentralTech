@@ -10,7 +10,8 @@ import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
-import { chipsDosFiltros, PainelLista } from "@/components/emendas/painel-lista";
+import { FaixaIndicadores, GraficoFiltro } from "@/components/emendas/grafico-filtro";
+import { chipsDosFiltros } from "@/components/emendas/painel-lista";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
 import { Chip, SeloEtapa } from "@/components/emendas/ui";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
@@ -130,13 +131,10 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          <h1 className="text-[1.625rem] font-semibold leading-tight tracking-[-0.02em] text-cataguases-marinho">Emendas de {ano}</h1>
-          <p className="mt-0.5 text-sm text-slate-600">Escolha uma emenda para ver o resumo ao lado, sem perder o filtro.</p>
-        </div>
-        <div role="tablist" aria-label="Tipo de execução" className="emd-segmento flex flex-wrap items-center gap-1 rounded-2xl bg-slate-200/60 p-1">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <h1 className="!text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] text-cataguases-marinho">Emendas de {ano}</h1>
+        <div role="tablist" aria-label="Tipo de execução" className="emd-segmento flex flex-wrap items-center gap-0.5 rounded-xl bg-slate-200/60 p-0.5">
           {[{ chave: "", nome: "Consolidado", cor: "#0C1D33", qtd: semTipo.length }, ...ORDEM_TIPOS.map((t) => ({ chave: t as string, nome: TIPOS_EXECUCAO[t].nome, cor: TIPOS_EXECUCAO[t].cor, qtd: semTipo.filter((r) => tipoDaEmenda(r) === t).length }))].map((t) => (
             <button
               key={t.chave || "todos"}
@@ -144,7 +142,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
               role="tab"
               aria-selected={f.t === t.chave}
               onClick={() => definir({ t: t.chave })}
-              className={cn("inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm transition-all duration-200", f.t === t.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
+              className={cn("inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm transition-all duration-200", f.t === t.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
             >
               {t.chave && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />}
               {t.nome}
@@ -152,7 +150,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2 print:hidden">
+        <div className="ml-auto flex flex-wrap items-center gap-2 print:hidden">
           <MenuExportar
             opcoes={[
               { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
@@ -172,7 +170,11 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
         {/* 1 · gráficos e filtros (viram uma faixa quando há emenda escolhida) */}
         <aside aria-label="Gráficos e filtros" className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
-            <PainelLista emendas={emendas} resumos={resumos} filtros={f} definir={definir} barra={null} aoLimparTudo={limparTudo} compacto />
+            <div className="flex h-full flex-col">
+              <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
+              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="flex-1 border-b border-slate-200" />
+              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" className="flex-1" />
+            </div>
           </div>
           <button
             type="button"

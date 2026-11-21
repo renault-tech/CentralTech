@@ -24,9 +24,9 @@ import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { brlCurto, etapasEmOrdem, infoEtapa, numeroVereador, pct } from "@/lib/emendas/regras";
 import type { EmendaResumo } from "@/types/emendas";
 
-type Visao = "etapa" | "vereador" | "secretaria" | "financeiro" | "categoria" | "saude" | "pendencia" | "situacao" | "remanejada";
+export type Visao = "etapa" | "vereador" | "secretaria" | "financeiro" | "categoria" | "saude" | "pendencia" | "situacao" | "remanejada";
 /** Toda dimensão de filtro da lista é uma aba: não há mais uma caixa de seletores repetindo o que o gráfico faz. */
-const VISOES: { chave: Visao; rotulo: string; param: ChaveLista }[] = [
+export const VISOES: { chave: Visao; rotulo: string; param: ChaveLista }[] = [
   { chave: "etapa", rotulo: "Etapa", param: "etapa" },
   { chave: "vereador", rotulo: "Vereador", param: "v" },
   { chave: "secretaria", rotulo: "Secretaria", param: "s" },
@@ -38,13 +38,13 @@ const VISOES: { chave: Visao; rotulo: string; param: ChaveLista }[] = [
   { chave: "remanejada", rotulo: "Remanejamento", param: "rem" },
 ];
 
-const COR_FINANCEIRA: Record<string, string> = { paga: "#563A9E", paga_parcial: "#9479DD", empenhada_sem_pagamento: "#C4B5F0", sem_empenho: "#94A3B8" };
+export const COR_FINANCEIRA: Record<string, string> = { paga: "#563A9E", paga_parcial: "#9479DD", empenhada_sem_pagamento: "#C4B5F0", sem_empenho: "#94A3B8" };
 const ZERO = { n: 0, valor: 0, empenhado: 0, pago: 0, comPendencia: 0 };
 const NOME_SITUACAO: Record<string, string> = { normal: "Normal", impedida: "Impedida", cancelada: "Cancelada" };
 const COR_SITUACAO: Record<string, string> = { normal: "#5C7A1F", impedida: "#B45309", cancelada: "#94A3B8" };
 
-type Medida = "n" | "valor" | "pago";
-type Item = GrupoLista & { cor: string };
+export type Medida = "n" | "valor" | "pago";
+export type Item = GrupoLista & { cor: string };
 
 /** Chips dos filtros que estão valendo (o tipo de execução já aparece nas abas da tela; a busca, na própria barra). */
 export function chipsDosFiltros(f: FiltrosLista, emendas: EmendaResumo[], catalogo: ReturnType<typeof useCatalogo>): FiltroAtivo[] {
@@ -68,49 +68,9 @@ export function chipsDosFiltros(f: FiltrosLista, emendas: EmendaResumo[], catalo
   return chips;
 }
 
-/**
- * Dashboard da lista de Emendas, numa caixa só: barra enxuta (busca e ordem), filtros ativos em chips, indicadores,
- * abas por dimensão e, abaixo, a pizza ao lado do ranking. Clicar numa fatia, linha ou aba aplica o filtro na lista;
- * cada visão ignora o próprio filtro para sempre mostrar todas as opções.
- */
-export function PainelLista({
-  emendas,
-  resumos,
-  filtros,
-  definir,
-  barra,
-  aoLimparTudo,
-  compacto = false,
-}: {
-  emendas: EmendaResumo[];
-  resumos: Record<string, ResumoLinha>;
-  filtros: FiltrosLista;
-  definir: (m: Record<string, string>) => void;
-  /** Busca e ordem, desenhadas pela lista para dividir o mesmo estado. */
-  barra: React.ReactNode;
-  aoLimparTudo: () => void;
-  /** Dentro da área de trabalho (painel estreito ao lado da lista): sem barra de busca nem chips (a lista os mostra), indicadores em 2 colunas. */
-  compacto?: boolean;
-}) {
-  const f = filtros;
-  const catalogo = useCatalogo();
-  const novo = useNovoDesign();
-  const [visao, setVisao] = React.useState<Visao>("etapa");
-  const [medida, setMedida] = React.useState<Medida>("n");
-  /** Linha do ranking sob o cursor: realça a fatia correspondente da pizza. */
-  const [sobreChave, setSobreChave] = React.useState<string | null>(null);
-
-  const filtradas = filtrarEmendasLista(emendas, resumos, f);
-  const tot = somar(filtradas, resumos);
-  const todas = somar(emendas, resumos);
-  const faixa = faixaFinanceira(filtradas);
-  const faixaTotal = faixa.pago + faixa.aPagar + faixa.semEmpenho;
-
+/** Grupos de uma dimensão (Etapa, Vereador…) já filtrados pelos OUTROS filtros, com a cor de cada um. Serve a todo gráfico de filtro. */
+export function itensDaVisao(visao: Visao, medida: Medida, emendas: EmendaResumo[], resumos: Record<string, ResumoLinha>, f: FiltrosLista, catalogo: ReturnType<typeof useCatalogo>): Item[] {
   const def = VISOES.find((v) => v.chave === visao)!;
-  const selecionada = String(f[def.param as keyof FiltrosLista] ?? "");
-  const numerosDoAlerta = f.numeros.join(",");
-
-  const itens: Item[] = React.useMemo(() => {
     const base = filtrarEmendasLista(emendas, resumos, f, [def.param]);
     const por = (chaves: (e: EmendaResumo) => { chave: string; rotulo: string }[]) => agruparLista(base, resumos, chaves);
     const achar = (gs: GrupoLista[], chave: string, rotulo: string): GrupoLista => gs.find((g) => g.chave === chave) ?? { ...ZERO, chave, rotulo };
@@ -167,9 +127,56 @@ export function PainelLista({
         ];
       }
     }
-    // `f` entra pelos campos que ele tem; `def.param` já sai de `visao`
+}
+
+/**
+ * Dashboard da lista de Emendas, numa caixa só: barra enxuta (busca e ordem), filtros ativos em chips, indicadores,
+ * abas por dimensão e, abaixo, a pizza ao lado do ranking. Clicar numa fatia, linha ou aba aplica o filtro na lista;
+ * cada visão ignora o próprio filtro para sempre mostrar todas as opções.
+ */
+export function PainelLista({
+  emendas,
+  resumos,
+  filtros,
+  definir,
+  barra,
+  aoLimparTudo,
+  compacto = false,
+}: {
+  emendas: EmendaResumo[];
+  resumos: Record<string, ResumoLinha>;
+  filtros: FiltrosLista;
+  definir: (m: Record<string, string>) => void;
+  /** Busca e ordem, desenhadas pela lista para dividir o mesmo estado. */
+  barra: React.ReactNode;
+  aoLimparTudo: () => void;
+  /** Dentro da área de trabalho (painel estreito ao lado da lista): sem barra de busca nem chips (a lista os mostra), indicadores em 2 colunas. */
+  compacto?: boolean;
+}) {
+  const f = filtros;
+  const catalogo = useCatalogo();
+  const novo = useNovoDesign();
+  const [visao, setVisao] = React.useState<Visao>("etapa");
+  const [medida, setMedida] = React.useState<Medida>("n");
+  /** Linha do ranking sob o cursor: realça a fatia correspondente da pizza. */
+  const [sobreChave, setSobreChave] = React.useState<string | null>(null);
+
+  const filtradas = filtrarEmendasLista(emendas, resumos, f);
+  const tot = somar(filtradas, resumos);
+  const todas = somar(emendas, resumos);
+  const faixa = faixaFinanceira(filtradas);
+  const faixaTotal = faixa.pago + faixa.aPagar + faixa.semEmpenho;
+
+  const def = VISOES.find((v) => v.chave === visao)!;
+  const selecionada = String(f[def.param as keyof FiltrosLista] ?? "");
+  const numerosDoAlerta = f.numeros.join(",");
+
+  const itens: Item[] = React.useMemo(
+    () => itensDaVisao(visao, medida, emendas, resumos, f, catalogo),
+    // `f` entra pelos campos que ele tem
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visao, medida, emendas, resumos, catalogo, f.v, f.s, f.etapa, f.t, f.p, f.situacao, f.fin, f.sd, f.cat, f.rem, f.pe, f.q, numerosDoAlerta]);
+    [visao, medida, emendas, resumos, catalogo, f.v, f.s, f.etapa, f.t, f.p, f.situacao, f.fin, f.sd, f.cat, f.rem, f.pe, f.q, numerosDoAlerta]
+  );
 
   const valorDe = (i: GrupoLista) => i[medida];
   const total = itens.reduce((s, i) => s + valorDe(i), 0);

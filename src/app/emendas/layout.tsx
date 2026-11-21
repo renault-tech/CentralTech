@@ -8,6 +8,8 @@ import { NavModulo } from "@/components/modulo/nav-modulo";
 import { BarraLateral } from "@/components/emendas/barra-lateral";
 import { AlternadorDesign, ProvedorDesign } from "@/components/emendas/design-emendas";
 import { podeAlternarDesign, usarNovoDesign } from "@/lib/emendas/design";
+import { COOKIE_BARRA } from "@/lib/emendas/barra-cookie";
+import { cookies } from "next/headers";
 import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
@@ -88,6 +90,7 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
   ];
 
   const [novo, podeAlternar] = await Promise.all([usarNovoDesign(), podeAlternarDesign()]);
+  const barraRecolhida = (await cookies()).get(COOKIE_BARRA)?.value === "1";
   const cabecalho = (
     <CabecalhoHub
       usuario={ctx.usuario}
@@ -131,11 +134,12 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
       <div className="lg:hidden">
         <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" largura={LARGURA_MODULO} />
       </div>
-      <div className={`mx-auto flex ${LARGURA_MODULO} gap-6 px-4 py-5 sm:px-6 sm:py-6 print:block print:max-w-none print:p-0`}>
+      <div className="mx-auto flex max-w-[110rem] gap-4 px-3 py-4 sm:px-5 sm:py-5 print:block print:max-w-none print:p-0">
         <BarraLateral
           itens={itens.map((i) => ({ ...i, selos: i.href === "/emendas/portal" ? ("alerta" as const) : undefined }))}
           rotuloAria="Seções do módulo Emendas"
           tour="nav-emendas"
+          recolhidaInicial={barraRecolhida}
         />
         <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
           {aviso}
