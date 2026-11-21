@@ -121,7 +121,12 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
 
   const id = React.useId();
   return (
-    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} className={cn("flex min-h-0 flex-col", className)}>
+    <section
+      aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`}
+      // A altura acompanha a quantidade de linhas: quem tem poucas opções não sobra em branco e quem tem muitas ganha espaço.
+      style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }}
+      className={cn("emd-grafico flex min-h-[14.5rem] flex-col", className)}
+    >
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
@@ -154,18 +159,18 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[11rem_minmax(0,1fr)]">
-        <div className="flex items-center justify-center pl-2 pr-1">
-          <Pizza fatias={fatias} destaque={sobre} selecionada={selecionada} aoEscolher={escolher} dinheiro={dinheiro} className="h-[10.25rem] w-[10.25rem]" rotuloTotal={medida === "valor" ? "indicados" : medida === "pago" ? "pagos" : visao === "pendencia" ? "pendências" : "emendas"} />
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(11rem,40%)_minmax(0,1fr)]">
+        <div className="flex min-h-0 items-center justify-center py-1 pl-2 pr-1">
+          <Pizza fatias={fatias} destaque={sobre} selecionada={selecionada} aoEscolher={escolher} dinheiro={dinheiro} className="aspect-square h-full max-h-[19rem] min-h-[10.25rem] w-auto max-w-full" rotuloTotal={medida === "valor" ? "indicados" : medida === "pago" ? "pagos" : visao === "pendencia" ? "pendências" : "emendas"} />
         </div>
-        <ul id={id} className="emd-foco min-h-0 overflow-y-auto overscroll-contain py-0.5 pr-1" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul id={id} className="emd-foco flex min-h-0 flex-col justify-center overflow-y-auto overscroll-contain py-0.5 pr-1" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
             const ativo = selecionada === i.chave;
             const detalhe = `${i.n} emendas, ${brlCurto(i.valor)} indicados, ${brlCurto(i.pago)} pagos${i.comPendencia ? `, ${i.comPendencia} com pendência` : ""}`;
             return (
-              <li key={i.chave}>
+              <li key={i.chave} style={{ flex: "1 0 2.25rem", maxHeight: "2.75rem" }} className="flex">
                 <button
                   type="button"
                   aria-pressed={ativo}
@@ -176,7 +181,7 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
                   onMouseLeave={() => setSobre(null)}
                   onFocus={() => setSobre(i.chave)}
                   onBlur={() => setSobre(null)}
-                  className={cn("grid min-h-9 w-full grid-cols-[0.625rem_minmax(4.5rem,1fr)_minmax(1.5rem,3.5rem)_auto_2.25rem] items-center gap-x-2 rounded-lg px-2.5 py-0.5 text-left transition-colors", ativo ? "bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)]" : "hover:bg-slate-50")}
+                  className={cn("grid h-full min-h-9 w-full grid-cols-[0.625rem_minmax(4.5rem,1fr)_minmax(1.5rem,3.5rem)_auto_2.25rem] items-center gap-x-2 rounded-lg px-2.5 py-0.5 text-left transition-colors", ativo ? "bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)]" : "hover:bg-slate-50")}
                 >
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
                   <span className="truncate text-[0.8125rem] leading-tight text-cataguases-marinho">{i.rotulo}</span>

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-21",
+    titulo: "Emendas: resumo da emenda sem rolagem longa e gráficos que se ajustam aos dados",
+    descricao:
+      "O resumo da emenda que abre ao lado da lista foi reorganizado para caber em notebooks: cabeçalho mais compacto, execução financeira e pendências numa coluna e o fluxo de fases na outra (quando há largura), sem a longa rolagem de antes. Nos dois gráficos de filtro, a altura de cada um passa a acompanhar a quantidade de linhas que tem (ex.: Beneficiário com poucas categorias ocupa menos espaço que Vereador com 16), e a rosca e as linhas crescem ou diminuem para preencher a área, sem faixa em branco em telas grandes e sem rolar nas pequenas.",
+  },
+  {
+    data: "2026-11-21",
     titulo: "Emendas: menu lateral recolhível e dois gráficos de filtro lado a lado",
     descricao:
       "O menu lateral do módulo Emendas ficou mais estreito e pode ser recolhido numa faixa só de ícones (botão no topo do menu ou a tecla [); a escolha fica lembrada. Na lista de Emendas, o cabeçalho caiu para uma linha e a área dos gráficos ganhou dois gráficos de filtro empilhados, cada um com a sua dimensão (etapa, vereador, secretaria, situação financeira…): clique numa fatia de um e veja o outro já recalculado, combinando filtros com facilidade. Os gráficos ficaram maiores e a lista, mais larga.",

@@ -831,3 +831,11 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 .emd .emd-item-faixa { transition: width 0.2s var(--emd-curva), opacity 0.2s; }
 @media (prefers-reduced-motion: reduce) { .emd .emd-ws { transition: none; } .emd .emd-ws > * { transition: none !important; } }
 @media print { .emd .emd-ws { display: block; height: auto !important; } }
+
+/* Resumo da emenda: em painel largo, financeiro/pendências/dados à esquerda e o fluxo de fases à direita (menos rolagem). */
+.emd .emd-cont { container-type: inline-size; }
+.emd .emd-det-grade { display: grid; gap: 1.25rem; }
+@container (min-width: 32rem) { .emd-det-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 1.5rem; } }
+
+/* Gráficos de filtro: a altura de cada um acompanha a quantidade de linhas (ver `GraficoFiltro`). */
+.emd .emd-grafico { transition: flex-grow 0.5s var(--emd-curva); }

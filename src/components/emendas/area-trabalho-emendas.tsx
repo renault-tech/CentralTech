@@ -172,8 +172,8 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
           <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
             <div className="flex h-full flex-col">
               <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
-              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="flex-1 border-b border-slate-200" />
-              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" className="flex-1" />
+              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="border-b border-slate-200" />
+              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" />
             </div>
           </div>
           <button
