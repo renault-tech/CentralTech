@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, Pencil, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, Pencil, Plus, X } from "lucide-react";
 
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { corDoSegmento, macrosDoResumo } from "@/components/emendas/barra-fases";
@@ -36,6 +36,8 @@ export type AbaPainel = "resumo" | "parceria" | Extract<AbaEmenda, "fases" | "do
 
 const CLASSE_TITULO = "text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-slate-600";
 const CLASSE_BOTAO_PRIMARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110 disabled:opacity-50";
+/** Ação principal da aba, pequena, no canto do cabeçalho (não ocupa uma linha própria). */
+const CLASSE_BOTAO_ACAO = "btn-ui mr-1 inline-flex h-7 items-center justify-center gap-1 whitespace-nowrap rounded-md bg-[color:var(--modulo-texto)] px-2.5 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50";
 const CLASSE_BOTAO_SECUNDARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[0.8125rem] font-semibold text-cataguases-marinho hover:bg-slate-50";
 
 function Esqueleto() {
@@ -401,6 +403,13 @@ function PainelCorpo({
             {e.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
           </div>
           <div className="-mr-1.5 flex flex-none items-center gap-0.5">
+            {primaria && !pacote && !erro && <span className="mr-1 h-7 w-24 animate-pulse rounded-md bg-slate-200/70 motion-reduce:animate-none" aria-hidden />}
+            {primaria && podeGravar && (
+              <button type="button" onClick={() => abrirDialogo(primaria)} title={primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"} aria-label={primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"} className={CLASSE_BOTAO_ACAO}>
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {primaria === "movimento" ? "Movimento" : "Andamento"}
+              </button>
+            )}
             {pacote?.gestor && (
               <Link href={`/emendas/${e.id}/editar`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
                 <Pencil className="h-4 w-4" aria-hidden />
@@ -429,14 +438,6 @@ function PainelCorpo({
             {sublinhado(aba === chave)}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-1.5 py-1.5">
-          {primaria && !pacote && !erro && <span className="h-8 w-36 animate-pulse rounded-lg bg-slate-200/70 motion-reduce:animate-none" aria-hidden />}
-          {primaria && podeGravar && (
-            <button type="button" onClick={() => abrirDialogo(primaria)} className={CLASSE_BOTAO_PRIMARIO}>
-              {primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"}
-            </button>
-          )}
-        </div>
       </div>
 
       <div className="emd-rola min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5" role="tabpanel" aria-labelledby={`aba-${e.id}-${aba}`}>
