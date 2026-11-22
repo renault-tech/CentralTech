@@ -18,7 +18,7 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
 
   return (
     <div className="flex flex-col gap-5">
-      <TituloTela titulo="Secretarias" subtitulo={`Exercício ${exercicio.ano} · execução das emendas por secretaria responsável`} />
+      <TituloTela titulo="Secretarias" subtitulo={`Exercício ${exercicio.ano}`} />
       {linhas.length === 0 && <Vazio>Nenhuma emenda visível para você neste exercício.</Vazio>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {linhas.map((l) => {

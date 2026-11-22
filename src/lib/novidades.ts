@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: telas mais enxutas e gráficos da Conformidade que se ajustam à tela",
+    descricao:
+      "As frases explicativas embaixo dos títulos saíram das telas de Emendas (Pendências, Panorama, Aprovações, Relatórios, Configurações, Portal público e outras), dando mais espaço aos dados. Na Conformidade, a base legal fica na linha do título e o “Como usar” abre num quadro curto. O painel de gráficos da esquerda agora rola por dentro quando a tela é baixa, em vez de cortar o segundo gráfico; vale também para Emendas e Pendências.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: caixas de informações nos indicadores e gráficos, e botão de voltar ao topo",
     descricao:
       "A caixa clara que já aparecia na barra de fases da lista agora aparece também nos dados consolidados: indicadores (Emendas, Indicado, Empenhado, Pago, andamento médio e a barra de execução), linhas e fatias dos gráficos de Emendas, Pendências e Conformidade, cartões do Panorama, cartões e linhas por vereador do Painel, e as fases e a barra financeira do Resumo no painel da emenda. Ela só abre depois de uma pequena pausa com o mouse parado, então não pipoca enquanto você atravessa a tela. As listas de Emendas, Pendências, Conformidade e Panorama ganharam um botão discreto de voltar ao topo, que aparece depois de rolar.",

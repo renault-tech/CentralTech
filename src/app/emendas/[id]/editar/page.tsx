@@ -43,10 +43,7 @@ export default async function PaginaEditarEmenda({ params }: { params: Promise<{
   return (
     <div className="flex flex-col gap-5">
       <LinkVoltar href={`/emendas/${id}`}>Voltar para a emenda</LinkVoltar>
-      <TituloTela
-        titulo={`Corrigir cadastro · emenda nº ${emenda.numero}`}
-        subtitulo="Para mudar destinação ou dotação com ato e motivo, use “Remanejar” no detalhe da emenda."
-      />
+      <TituloTela titulo={`Corrigir cadastro · emenda nº ${emenda.numero}`} />
       <FormularioEmenda
         exercicio={exercicio}
         emendasDoAno={emendas}

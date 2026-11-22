@@ -71,7 +71,6 @@ export function PainelPortalPublico({
     <div className="flex flex-col gap-6">
       <TituloPagina
         titulo="Portal público"
-        subtitulo="A página aberta ao cidadão, sem login. Ela lê os dados deste módulo e se atualiza sozinha; antes de publicar, confira os alertas abaixo."
         acao={
           <div className="flex flex-wrap gap-2">
             <a href={`/transparencia/emendas?ano=${ano}&previa=1`} target="_blank" rel="noopener" className={CLASSE_BOTAO_SECUNDARIO}>

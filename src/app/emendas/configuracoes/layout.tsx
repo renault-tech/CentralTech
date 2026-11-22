@@ -28,7 +28,7 @@ export default async function LayoutConfiguracoesEmendas({ children }: { childre
 
   return (
     <div className="flex flex-col gap-5">
-      <TituloTela titulo="Configurações de Emendas" subtitulo="Exercícios, cadastros, permissões por secretaria e importação de planilhas." />
+      <TituloTela titulo="Configurações de Emendas" />
       <AbasNavegacao label="Configurações de Emendas" abas={abas} />
       <div>{children}</div>
     </div>

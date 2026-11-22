@@ -197,7 +197,7 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
       aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`}
       // A altura acompanha a quantidade de linhas: quem tem poucas opções não sobra em branco e quem tem muitas ganha espaço.
       style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }}
-      className={cn("emd-grafico flex min-h-[14.5rem] flex-col", className)}
+      className={cn("emd-grafico flex min-h-[13rem] flex-col", className)}
     >
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">

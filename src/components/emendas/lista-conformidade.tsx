@@ -83,7 +83,7 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
   const escolher = (chave: string) => definir({ [def.param]: chave });
 
   return (
-    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-[14.5rem] flex-col", className)}>
+    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-[13rem] flex-col", className)}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
@@ -191,20 +191,17 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Conformidade com a IN TCE-MG 05/2025 · {ano}</h1>
-          <div className="mt-1 max-w-3xl text-sm text-slate-600">
-            Itens que o art. 7º manda divulgar <strong>antes da execução</strong> da emenda (e o identificador contábil do art. 5º). O sistema <strong>alerta</strong>; não impede o empenho.{" "}
-            <details className="inline">
-              <summary className="cursor-pointer font-medium text-[color:var(--modulo-tinta)]">Como usar</summary>
-              <span className="mt-1 block text-slate-700">
-                1) Os gráficos mostram quantas emendas ainda não têm cada informação; clique numa fatia ou linha para filtrar. 2) Escolha uma emenda na lista. 3) Preencha o que falta na aba “Parceria”; o que falta também aparece em “Documentos”.
-              </span>
-            </details>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Conformidade · IN TCE-MG 05/2025 · {ano}</h1>
+        <details className="group min-w-0 flex-1 basis-80 text-xs text-slate-600">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-0.5">
+            <BaseLegalLinha chave="publicidade" />
+            <span className="font-medium text-[color:var(--modulo-tinta)] underline-offset-2 group-open:underline">Como usar</span>
+          </summary>
+          <div className="mt-1 max-w-3xl rounded-[0.75rem] border border-slate-200 bg-slate-50 px-3 py-2 text-[0.8125rem] leading-relaxed text-slate-700">
+            Mostra o que o art. 7º manda divulgar <strong>antes da execução</strong> (e o identificador contábil do art. 5º). O sistema <strong>alerta</strong>; não impede o empenho. Os gráficos contam as emendas que ainda não têm cada informação: clique numa fatia ou linha para filtrar, escolha uma emenda na lista e preencha o que falta na aba “Parceria” (também listado em “Documentos”).
           </div>
-          <BaseLegalLinha chave="publicidade" className="mt-1" />
-        </div>
+        </details>
       </div>
 
       <EspacoTrabalho

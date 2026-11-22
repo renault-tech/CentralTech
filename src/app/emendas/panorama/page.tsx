@@ -25,9 +25,6 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-cataguases-marinho">
           <Gauge className="h-6 w-6 text-[color:var(--modulo-tinta)]" aria-hidden /> Panorama da execução · {exercicio.ano}
         </h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-600">
-          O que já foi empenhado e pago, o que falta, como cada emenda foi encerrada e o que a Contabilidade precisa conciliar. Clique em um cartão para listar as emendas e em uma emenda para ver os detalhes ao lado.
-        </p>
       </div>
       <Suspense>
         <AreaTrabalhoPanorama linhas={linhas} restos={restos} ano={exercicio.ano} />
