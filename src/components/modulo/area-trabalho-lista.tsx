@@ -157,9 +157,9 @@ export function AreaTrabalhoLista<T>(p: PropsAreaTrabalho<T>) {
         graficos={
           <>
             {kpis.length > 0 && (
-              <div className="grid divide-x divide-slate-200 border-b border-slate-200" style={{ gridTemplateColumns: `repeat(${kpis.length}, minmax(0, 1fr))` }}>
+              <div className="grid grid-cols-2 border-b border-slate-200 sm:[grid-template-columns:repeat(var(--n),minmax(0,1fr))]" style={{ ["--n" as string]: kpis.length }}>
                 {kpis.map((k) => (
-                  <div key={k.rotulo} className="min-w-0 px-3 py-2">
+                  <div key={k.rotulo} className="min-w-0 border-slate-200 px-3 py-2 max-sm:[&:nth-child(even)]:border-l max-sm:[&:nth-child(n+3)]:border-t sm:border-l sm:first:border-l-0">
                     <p className="truncate text-xs font-medium text-slate-600">{k.rotulo}</p>
                     <p className="truncate text-base font-semibold leading-tight tabular-nums text-cataguases-marinho">{k.valor}</p>
                     {k.apoio && <p className="truncate text-xs tabular-nums text-slate-500">{k.apoio}</p>}

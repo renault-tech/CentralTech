@@ -675,11 +675,13 @@ body:has(.cabecalho-escuro) .zoom-flutuante { display: none; }
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--modulo) 38%, transparent); }
   70%, 100% { box-shadow: 0 0 0 9px transparent; }
 }
-.emd .emd-pagina > * > * { animation: emd-entra 0.22s var(--emd-curva) both; }
+/* `backwards` (não `both`): depois da entrada a animação não deixa `transform` no elemento — um `transform` residual vira o bloco de
+   contenção dos filhos `position: fixed` (a folha do detalhe no celular saía da tela). */
+.emd .emd-pagina > * > * { animation: emd-entra 0.22s var(--emd-curva) backwards; }
 .emd .emd-pagina > * > *:nth-child(2) { animation-delay: 25ms; }
 .emd .emd-pagina > * > *:nth-child(3) { animation-delay: 50ms; }
 .emd .emd-pagina > * > *:nth-child(n + 4) { animation-delay: 75ms; }
-.emd .emd-entra { animation: emd-entra 0.25s var(--emd-curva) both; animation-delay: calc(var(--i, 0) * 30ms); }
+.emd .emd-entra { animation: emd-entra 0.25s var(--emd-curva) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
 .emd .emd-barra { transform-origin: left center; animation: emd-barra 0.9s var(--emd-curva) both; animation-delay: 0.12s; }
 .emd .emd-anel-arco { animation: emd-anel 1.1s var(--emd-curva) both; animation-delay: 0.1s; }
 .emd .emd-pulso { animation: emd-pulso 2.4s ease-out infinite; }
