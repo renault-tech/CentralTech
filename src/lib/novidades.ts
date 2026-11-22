@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Requerimentos no padrão dos demais módulos, com os prazos à vista",
+    descricao:
+      "A tela de Requerimentos da Câmara agora funciona como Emendas, Frotas e Imóveis: dois gráficos à esquerda que também são filtros (quando vence — atrasados, até 3 dias, até 7, até 15 —, quem ainda deve resposta, situação, secretaria e vereador), a lista no meio e, ao escolher um requerimento, o detalhe ao lado com as mesmas ações de antes (distribuir, ciência, responder, prorrogar, enviar à Câmara, anular). A lista abre pelos mais urgentes, cada linha mostra o prazo (“Atrasado há 3 dias”, “Vence hoje”, “5 dias”) numa faixa colorida, e quatro números no alto dizem o que fazer: atrasados, vencem em 7 dias, a distribuir e prontos para devolver. O botão Exportar leva os filtros, a busca e a ordem da tela. De carona, no celular a folha de detalhe das áreas de trabalho (Emendas, Frotas e Imóveis) volta a abrir ocupando a tela e os números do alto ficam em duas colunas.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Frotas e Imóveis: navegação mais rápida e menu que responde ao clique",
     descricao:
       "Trocar de tela em Frotas e em Imóveis e Consumo ficou mais ágil: os dados que várias telas usam passam a ser guardados por um minuto (o que você grava aparece na hora, sem esperar), o selo do menu deixou de carregar tabelas inteiras e o carregamento das tabelas grandes (como as contas de água e luz) acontece em paralelo. Depois de salvar, a tela não é mais refeita duas vezes. No menu, o item clicado acende e mostra um ponto pulsando enquanto a tela nova chega, e as listas e páginas de importação mostram um esqueleto parecido com a tela de verdade enquanto carregam.",
