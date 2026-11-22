@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: caixa de informações abre depois de 1 segundo e também no título da emenda",
+    descricao:
+      "A caixa que aparece ao deixar o mouse parado sobre um dado agora espera 1 segundo (antes, meio segundo), para não aparecer sem querer. Ela também abre sobre o título da emenda: na lista mostra os valores e as etapas, e no painel da emenda mostra o objeto completo, o beneficiário, a secretaria e o vereador.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: botão de ação do painel da emenda ficou menor e subiu para o canto",
     descricao:
       "“Registrar andamento” e “Lançar movimento” deixaram de ocupar uma linha inteira abaixo das abas, principalmente em notebooks. Agora são um botão pequeno (“+ Andamento” e “+ Movimento”) no canto do cabeçalho do painel, ao lado de Expandir e Fechar, e o espaço que ele ocupava vai para os dados.",
