@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { CLASSE_BOTAO, CLASSE_BOTAO_COMPACTO, Mensagem } from "@/components/imoveis/ui";
 import { justificarPendencia, removerJustificativa } from "@/lib/imoveis/actions";
@@ -9,7 +8,6 @@ import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 
 /** Justifica uma pendência (deixa de contar enquanto o dado não mudar) ou remove a justificativa. */
 export function BotaoJustificar({ imovelId, chave, assinatura, justificada }: { imovelId: string; chave: string; assinatura: string; justificada?: boolean }) {
-  const router = useRouter();
   const [aberto, setAberto] = React.useState(false);
   const [texto, setTexto] = React.useState("");
   const [erro, setErro] = React.useState<string | null>(null);
@@ -23,7 +21,6 @@ export function BotaoJustificar({ imovelId, chave, assinatura, justificada }: { 
       if (!r.sucesso) return setErro(r.erro);
       setAberto(false);
       setTexto("");
-      router.refresh();
     });
   }
 
@@ -36,7 +33,6 @@ export function BotaoJustificar({ imovelId, chave, assinatura, justificada }: { 
         onClick={() =>
           iniciar(async () => {
             await removerJustificativa(imovelId, chave);
-            router.refresh();
           })
         }
       >

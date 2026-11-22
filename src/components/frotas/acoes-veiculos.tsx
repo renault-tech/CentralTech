@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { atualizarValoresFipe, ligarVeiculosFipe, type RodadaLigarFipe } from "@/lib/frotas/actions-importacao";
 import { CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
@@ -15,7 +14,6 @@ type SemLigacao = RodadaLigarFipe["semLigacao"];
  * rodadas curtas sozinhas, para caber no tempo da função, e mostram o motivo quando algo falha.
  */
 export function AtualizarFipe() {
-  const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
   const [msg, setMsg] = React.useState<Msg | null>(null);
   const [progresso, setProgresso] = React.useState<string | null>(null);
@@ -51,7 +49,6 @@ export function AtualizarFipe() {
       if (falhas) partes.push(`${falhas} com falha`);
       const texto = partes.join(" · ") + "." + (motivo ? ` ${motivo}` : atualizados === 0 && falhas === 0 ? " Todos os veículos ligados à FIPE já estão com o valor deste mês." : "");
       setMsg({ tipo: motivo && !atualizados ? "erro" : falhas ? "aviso" : "ok", texto });
-      router.refresh();
     });
   }
 
@@ -92,7 +89,6 @@ export function AtualizarFipe() {
       const partes = [`${ligados} ligados à FIPE`];
       if (pendentes.length) partes.push(`${pendentes.length} para escolher na mão (veja a lista)`);
       setMsg({ tipo: motivo ? (ligados ? "aviso" : "erro") : pendentes.length ? "aviso" : "ok", texto: partes.join(" · ") + "." + (motivo ? ` ${motivo}` : "") });
-      router.refresh();
     });
   }
 

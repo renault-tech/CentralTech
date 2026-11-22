@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { MarcaPendente } from "@/components/modulo/marca-pendente";
 import { LARGURA_MODULO } from "@/components/modulo/tema";
 import { cn } from "@/lib/utils";
 
@@ -71,13 +72,14 @@ export function NavModulo({
                 href={item.href}
                 aria-current={ativo ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-colors duration-200 sm:min-h-10",
+                  "emd-nav-item inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-colors duration-200 sm:min-h-10",
                   ativo
                     ? "bg-[color-mix(in_srgb,var(--modulo)_13%,transparent)] font-semibold text-[color:var(--modulo-tinta)] shadow-[inset_0_-3px_0_0_var(--modulo)]"
                     : "font-medium text-slate-700 hover:bg-slate-100 hover:text-cataguases-marinho"
                 )}
               >
                 {item.rotulo}
+                <MarcaPendente />
                 {!!item.selo && (
                   <span className="ml-1.5 rounded-full bg-[color:var(--modulo-texto)] px-1.5 py-px text-[0.6875rem] font-medium tabular-nums text-white">
                     {item.selo}

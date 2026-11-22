@@ -150,7 +150,6 @@ export function FormularioOrcamento({
 
 /** A decisão do Setor de Frotas sobre o orçamento. */
 export function PainelDecisao({ id }: { id: string }) {
-  const router = useRouter();
   const [observacao, setObservacao] = React.useState("");
   const [erro, setErro] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
@@ -161,7 +160,6 @@ export function PainelDecisao({ id }: { id: string }) {
     iniciar(async () => {
       const r = await decidirOrcamento({ id, decisao, observacao });
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
     });
   }
 
@@ -252,7 +250,6 @@ type PropsEtapas = { manutencao: Manutencao; dataHoje: string };
 
 /** OC, NF e Contabilidade: três etapas separadas, cada uma salva sozinha e na hora em que acontece. */
 export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
-  const router = useRouter();
   const { confirmar } = useDialogos();
   const [erro, setErro] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
@@ -273,7 +270,6 @@ export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
     iniciar(async () => {
       const r = await desfazerEtapa({ id: m.id, etapa });
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
     });
   }
 
@@ -326,7 +322,6 @@ export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
 }
 
 function useEnvio(aoSalvar: () => void) {
-  const router = useRouter();
   const [erro, setErro] = React.useState<string | null>(null);
   const [aviso, setAviso] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
@@ -338,7 +333,6 @@ function useEnvio(aoSalvar: () => void) {
       if (!r.sucesso) return setErro(r.erro);
       if (r.aviso) setAviso(r.aviso);
       else aoSalvar();
-      router.refresh();
     });
   }
   return { erro, aviso, pendente, enviar, setErro };
@@ -471,7 +465,6 @@ function Observacoes({ m }: { m: Manutencao }) {
               const r = await salvarObservacoesManutencao({ id: m.id, observacoes: texto });
               if (!r.sucesso) return setErro(r.erro);
               setOk(true);
-              router.refresh();
             })
           }
         >

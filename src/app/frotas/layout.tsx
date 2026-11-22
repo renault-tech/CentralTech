@@ -11,7 +11,7 @@ import { NavModulo } from "@/components/modulo/nav-modulo";
 import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { COOKIES_BARRA } from "@/lib/modulo/barra-cookie";
 import { MODULOS } from "@/lib/modulos-info";
-import { obterContextoFrotas, listarManutencoes } from "@/lib/frotas/dados";
+import { obterContextoFrotas, contarOrcamentosAAnalisar } from "@/lib/frotas/dados";
 import { ProvedorColunasExportacao } from "@/components/frotas/colunas-exportacao";
 import { lerColunasOcultasDoUsuario } from "@/lib/frotas/preferencias";
 import { COR_MODULO } from "@/lib/frotas/regras";
@@ -50,6 +50,9 @@ export const metadata = { title: "Frotas · Central Cataguases" };
  * vê/edita lá dentro é decidido pela RLS do schema `frotas`.
  */
 export default async function LayoutFrotas({ children }: { children: React.ReactNode }) {
+  // O selo do menu e as colunas da exportação não dependem do contexto: saem juntos com ele (em vez de esperar uma etapa atrás da outra).
+  // Se a pessoa não puder entrar, o resultado é só descartado (por isso os `catch`: nunca fica rejeição solta).
+  const extras = Promise.all([contarOrcamentosAAnalisar().catch(() => 0), lerColunasOcultasDoUsuario().catch(() => ({}))]);
   const ctx = await obterContextoFrotas();
   if (ctx.situacao === "sem_login") redirect("/login?proximo=%2Ffrotas");
   if (ctx.situacao === "inativo") redirect("/login?motivo=desativado");
@@ -75,12 +78,7 @@ export default async function LayoutFrotas({ children }: { children: React.React
     );
   }
 
-  const [orcamentos, colunasOcultas] = await Promise.all([
-    listarManutencoes()
-      .then((l) => l.filter((m) => m.status_analise === "a_analisar").length)
-      .catch(() => 0),
-    lerColunasOcultasDoUsuario(),
-  ]);
+  const [orcamentos, colunasOcultas] = await extras;
   const itens = [
     { href: "/frotas", rotulo: "Painel", exato: true },
     { href: "/frotas/combustivel", rotulo: "Combustível" },

@@ -715,6 +715,14 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 }
 .emd-lateral a { transition: background-color 0.2s var(--emd-curva), color 0.2s var(--emd-curva), transform 0.2s var(--emd-curva); }
 .emd-lateral a:not([aria-current="page"]):hover { transform: translateX(2px); }
+/* Clique respondido na hora: o item cuja tela ainda está chegando acende como o ativo e mostra um ponto pulsando (`MarcaPendente`). */
+.emd-lateral a:has([data-pendente]),
+.emd .emd-nav-item:has([data-pendente]) {
+  background: color-mix(in srgb, var(--modulo) 13%, transparent);
+  color: var(--modulo-tinta);
+}
+.emd [data-pendente] { animation: emd-pendente 0.8s ease-in-out infinite alternate; }
+@keyframes emd-pendente { from { opacity: 0.35; transform: scale(0.8); } to { opacity: 1; transform: scale(1.15); } }
 
 @media (prefers-reduced-motion: reduce) {
   .emd *, .emd *::before, .emd *::after { animation: none !important; transition: none !important; }
