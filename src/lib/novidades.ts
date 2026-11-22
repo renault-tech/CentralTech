@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: novo Painel de abertura, com o que importa à vista",
+    descricao:
+      "O Painel do módulo virou uma tela de comando. No alto, o total indicado partido em pago, empenhado a pagar e sem empenhar, com a situação das emendas, o ritmo de pagamento necessário até 31/12 e a régua do exercício. Ao lado, “Precisa da sua atenção”: pendências graves, divulgação incompleta, propostas a aprovar, emendas paradas, restos a pagar e relatórios a vencer, cada um com a quantidade e um clique para a tela já filtrada. Abaixo, um cartão por tipo de execução, o ritmo dos pagamentos no ano com a meta, onde as emendas estão no fluxo, a execução por vereador, a Saúde e as secretarias, os últimos lançamentos e o que vence nas próximas semanas. A comparação com outro exercício continua no fim da tela.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: caixa de informações abre depois de 1 segundo e também no título da emenda",
     descricao:
       "A caixa que aparece ao deixar o mouse parado sobre um dado agora espera 1 segundo (antes, meio segundo), para não aparecer sem querer. Ela também abre sobre o título da emenda: na lista mostra os valores e as etapas, e no painel da emenda mostra o objeto completo, o beneficiário, a secretaria e o vereador.",

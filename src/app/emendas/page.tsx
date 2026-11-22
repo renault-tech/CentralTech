@@ -1,25 +1,27 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { Gauge } from "lucide-react";
 
 import { TituloTela } from "@/components/emendas/titulo-tela";
-import { FaixaTipos } from "@/components/emendas/faixa-tipos";
-import { PainelEmendas } from "@/components/emendas/painel-emendas";
+import { PainelAbertura } from "@/components/emendas/painel-abertura";
 import { lerComCache } from "@/lib/emendas/cache-dados";
 import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
 import { resumoDaLinha, type ResumoLinha } from "@/lib/emendas/resumo";
 import { Vazio } from "@/components/emendas/ui";
 import {
+  contarPropostasPendentes,
   listarEmendasEmCache,
+  listarExecucoes,
   listarMovimentos,
-  listarSecretarias,
   listarVereadores,
+  obterCatalogoEtapas,
+  obterContextoEmendas,
   resolverExercicio,
 } from "@/lib/emendas/dados";
-import { brl } from "@/lib/emendas/regras";
+import { alertas as calcularAlertas } from "@/lib/emendas/regras";
+import { diasEntre, montarPainel } from "@/lib/emendas/painel-abertura";
 import { carregarPanorama } from "@/lib/emendas/panorama-dados";
 import { totaisPorCartao } from "@/lib/emendas/encerramento";
+import { ehGestor } from "@/lib/emendas/regras";
 import { dataNoFuso } from "@/lib/fuso";
 import { ComparacaoExercicios } from "@/components/emendas/comparacao-exercicios";
 import { anoParaComparar, curvaPercentual, pagoAte, totaisDoExercicio } from "@/lib/emendas/comparacao";
@@ -51,101 +53,67 @@ export default async function PaginaPainelEmendas({
     );
   }
 
-  const [emendas, vereadores, secretarias] = await medir("painel:emendas+cadastros", () =>
-    Promise.all([listarEmendasEmCache(exercicio.ano), listarVereadores(), listarSecretarias()])
+  const [emendas, vereadores, ctx, catalogo, propostasPendentes] = await medir("painel:emendas+cadastros", () =>
+    Promise.all([listarEmendasEmCache(exercicio.ano), listarVereadores(), obterContextoEmendas(), obterCatalogoEtapas(), contarPropostasPendentes().catch(() => 0)])
   );
-  const movimentos = await medir("painel:movimentos", () => lerComCache("movimentos", String(exercicio.ano), () => listarMovimentos(emendas.map((e) => e.id))));
-  const calculos = await medir("painel:calculos", () => calcularEmendasDoExercicio(emendas, exercicio, movimentos));
+  const ids = emendas.map((e) => e.id);
+  const movimentos = await medir("painel:movimentos", () => lerComCache("movimentos", String(exercicio.ano), () => listarMovimentos(ids)));
+  const [calculos, execucoes, panorama] = await medir("painel:calculos", () =>
+    Promise.all([
+      calcularEmendasDoExercicio(emendas, exercicio, movimentos),
+      lerComCache("execucoes", String(exercicio.ano), () => listarExecucoes(ids)),
+      carregarPanorama(exercicio.ano),
+    ])
+  );
   const resumos: Record<string, ResumoLinha> = {};
   for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);
   const hoje = dataNoFuso(new Date());
-  const vereadoresAtivos = vereadores.filter(
-    (v) => v.ativo || emendas.some((e) => e.vereador_id === v.id),
-  );
+  const vereadoresAtivos = vereadores.filter((v) => v.ativo || emendas.some((e) => e.vereador_id === v.id));
+
+  const ativas = emendas.filter((e) => e.situacao !== "cancelada");
+  const executadasIncompletas = ativas.filter((e) => (e.empenhado > 0 || e.pago > 0) && (calculos.get(e.id)?.conformidade ?? []).some((i) => i.aplica && !i.ok)).length;
+  const relatoriosGestao = [...calculos.values()].reduce((t, c) => t + c.pendencias.filter((p) => p.regra.startsWith("relatorio_gestao") && !p.justificativa).length, 0);
+  const paradas = calcularAlertas(emendas, movimentos, { hoje: new Date(`${hoje}T12:00:00`), ano: exercicio.ano, diasParado: 30, catalogo }).find((a) => a.chave === "paradas")?.quantidade ?? 0;
+  const admin = ctx.situacao === "ok" && ctx.usuario.admin_hub;
+
+  const painel = montarPainel({
+    ano: exercicio.ano,
+    hoje,
+    emendas,
+    resumos,
+    movimentos,
+    vereadores: vereadoresAtivos,
+    cotaPorVereador: exercicio.cota_por_vereador,
+    saudeMinimoPct: exercicio.percentual_saude_min,
+    prazoExequibilidade: exercicio.prazo_exequibilidade,
+    execucoes: execucoes.map((x) => ({ emenda_id: x.id, vigencia_fim: x.vigencia_fim })),
+    contagens: { propostasPendentes, executadasIncompletas, relatoriosGestao, semSituacao: totaisPorCartao(panorama.linhas).sem_situacao.quantidade, paradas },
+    portalPublicado: admin ? Boolean(exercicio.portal_publicado_em) : null,
+    gestor: ctx.situacao === "ok" && ehGestor(ctx.perfil),
+  });
+
+  const fuso = "America/Sao_Paulo";
+  const hora = Number(new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, hour: "numeric", hourCycle: "h23" }).format(new Date()));
+  const nome = ctx.situacao === "ok" ? ctx.usuario.nome.trim().split(/\s+/)[0] : "";
+  const saudacao = `${hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"}${nome ? `, ${nome}` : ""}.`;
+  const dataExtenso = new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  const diasFim = diasEntre(hoje, `${exercicio.ano}-12-31`);
 
   return (
-    <div className="flex flex-col gap-5">
-      <TituloTela
-        titulo="Painel das emendas"
-        selo={`Exercício ${exercicio.ano}`}
-        subtitulo={`${vereadoresAtivos.length} vereadores · cota individual de ${brl(exercicio.cota_por_vereador)} · ${emendas.length} emendas${exercicio.numero_lei_loa ? ` · ${exercicio.numero_lei_loa}` : ""}`}
-      />
+    <div className="flex flex-col gap-4">
       {emendas.length === 0 ? (
         <Vazio>
-          Nenhuma emenda de {exercicio.ano} visível para você. Gestores
-          cadastram em “Nova emenda” ou importam a planilha em Configurações →
-          Importar.
+          Nenhuma emenda de {exercicio.ano} visível para você. Gestores cadastram em “Nova emenda” ou importam a planilha em Configurações → Importar.
         </Vazio>
       ) : (
         <>
-          <FaixaTipos
-            emendas={emendas}
-            resumos={resumos}
-            exercicio={exercicio}
-            hoje={hoje}
-          />
+          <PainelAbertura painel={painel} ano={exercicio.ano} saudacao={saudacao} dataExtenso={dataExtenso} diasFim={diasFim} />
           <Suspense>
-            <CartaoPanorama ano={exercicio.ano} />
-          </Suspense>
-            <Suspense>
-              <CartaoComparacao
-                exercicio={exercicio}
-                emendas={emendas}
-                movimentos={movimentos}
-                anos={exercicios.map((e) => e.ano)}
-                comparar={comparar}
-                hoje={hoje}
-              />
-            </Suspense>
-          <Suspense>
-            <PainelEmendas
-              emendas={emendas}
-              movimentos={movimentos}
-              vereadores={vereadoresAtivos}
-              secretarias={secretarias.filter((s) =>
-                emendas.some((e) => e.secretaria_id === s.id),
-              )}
-              exercicio={exercicio}
-              hoje={hoje}
-            />
+            <CartaoComparacao exercicio={exercicio} emendas={emendas} movimentos={movimentos} anos={exercicios.map((e) => e.ano)} comparar={comparar} hoje={hoje} />
           </Suspense>
         </>
       )}
     </div>
-  );
-}
-
-/** Resumo do Panorama da execução no Painel: os números que pedem atenção, com o link para o quadro completo. */
-async function CartaoPanorama({ ano }: { ano: number }) {
-  const { linhas } = await carregarPanorama(ano);
-  const t = totaisPorCartao(linhas);
-  const itens: [string, string, string][] = [
-    ["Cumpridas", String(t.cumprida.quantidade + t.cumprida_economia.quantidade), "c=cumprida"],
-    ["Sem situação definida", String(t.sem_situacao.quantidade), "c=sem_situacao"],
-    ["Em restos a pagar", brl(t.restos_a_pagar.valor), "c=restos_a_pagar"],
-    ["Empenho não pago", brl(t.a_pagar.valor), "c=a_pagar"],
-  ];
-  return (
-    <section aria-label="Panorama da execução" className="rounded-xl border border-slate-200 bg-white p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-cataguases-marinho">
-          <Gauge className="h-4 w-4 text-[#5B3FA8]" aria-hidden /> Panorama da execução
-        </h2>
-        <Link href={`/emendas/panorama?ano=${ano}`} className="text-xs font-medium text-[#5B3FA8] underline-offset-2 hover:underline">
-          Ver o quadro completo
-        </Link>
-      </div>
-      <ul className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {itens.map(([nome, valor, q]) => (
-          <li key={nome}>
-            <Link href={`/emendas/panorama?ano=${ano}&${q}`} className="block rounded-lg bg-slate-50 px-3 py-2 transition-colors duration-200 hover:bg-slate-100">
-              <span className="block text-[0.6875rem] text-slate-500">{nome}</span>
-              <span className="text-base font-semibold tabular-nums text-cataguases-marinho">{valor}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
