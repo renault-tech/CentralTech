@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Campo, Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo } from "@/components/imoveis/ui";
 import { importarPlanilhaContas, previaPlanilhaContas, type ResultadoImportacao, type ResultadoPrevia } from "@/lib/imoveis/actions-importacao-contas";
@@ -12,7 +11,6 @@ type Linha = { incluir: boolean; imovelId: string };
 
 /** Importa a planilha de controle de água ou luz (uma aba por secretaria): lê, mostra o que aconteceria e só grava depois de confirmar. */
 export function ImportadorPlanilhaContas() {
-  const router = useRouter();
   const [arquivo, setArquivo] = React.useState<File | null>(null);
   const [vinculo, setVinculo] = React.useState("proprio");
   const [previa, setPrevia] = React.useState<Previa | null>(null);
@@ -77,7 +75,6 @@ export function ImportadorPlanilhaContas() {
       if (!r.sucesso) return setErro(r.erro);
       setResultado(r);
       setPrevia(null);
-      router.refresh();
     });
   }
 

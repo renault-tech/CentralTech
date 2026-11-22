@@ -102,7 +102,6 @@ export function FormularioVeiculo({
     iniciar(async () => {
       const r = await marcarRevisaoCorreta(veiculo.id, codigo);
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
     });
   }
 

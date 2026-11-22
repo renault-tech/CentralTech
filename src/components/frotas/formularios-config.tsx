@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { salvarFornecedor, salvarParametros, salvarSecretaria } from "@/lib/frotas/actions";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
@@ -10,7 +9,6 @@ import type { Fornecedor, ParametrosFrotas, SecretariaFrotas, TipoFornecedor } f
 
 /** Limites dos alertas (dias parado, % do valor do veículo etc.). */
 export function FormularioParametros({ params }: { params: ParametrosFrotas }) {
-  const router = useRouter();
   const [v, setV] = React.useState({
     diasAtencao: params.dias_atencao,
     diasCritico: params.dias_critico,
@@ -44,7 +42,6 @@ export function FormularioParametros({ params }: { params: ParametrosFrotas }) {
       const r = await salvarParametros(v);
       if (!r.sucesso) return setMsg({ tipo: "erro", texto: r.erro });
       setMsg({ tipo: "ok", texto: "Limites salvos." });
-      router.refresh();
     });
   }
 
@@ -78,7 +75,6 @@ export function FormularioParametros({ params }: { params: ParametrosFrotas }) {
 
 /** Secretarias: quais devem ter uma NF de combustível por quinzena. */
 export function ListaSecretarias({ secretarias }: { secretarias: SecretariaFrotas[] }) {
-  const router = useRouter();
   const [msg, setMsg] = React.useState<string | null>(null);
   const [nova, setNova] = React.useState("");
   const [pendente, iniciar] = React.useTransition();
@@ -88,7 +84,6 @@ export function ListaSecretarias({ secretarias }: { secretarias: SecretariaFrota
     iniciar(async () => {
       const r = await salvarSecretaria({ id: s.id, nome: s.nome, controlaCombustivel: mudanca.controla_combustivel ?? s.controla_combustivel, ativa: mudanca.ativa ?? s.ativa });
       if (!r.sucesso) return setMsg(r.erro);
-      router.refresh();
     });
   }
 
@@ -99,7 +94,6 @@ export function ListaSecretarias({ secretarias }: { secretarias: SecretariaFrota
       const r = await salvarSecretaria({ nome: nova, controlaCombustivel: true, ativa: true });
       if (!r.sucesso) return setMsg(r.erro);
       setNova("");
-      router.refresh();
     });
   }
 
@@ -144,7 +138,6 @@ const ROTULO_TIPO: Record<TipoFornecedor, string> = { posto: "Postos de combust�
 
 /** Postos, oficinas e locadoras: cadastro simples (nome, CNPJ e se está ativo). */
 export function ListaFornecedores({ tipo, fornecedores }: { tipo: TipoFornecedor; fornecedores: Fornecedor[] }) {
-  const router = useRouter();
   const [nome, setNome] = React.useState("");
   const [cnpj, setCnpj] = React.useState("");
   const [msg, setMsg] = React.useState<string | null>(null);
@@ -158,7 +151,6 @@ export function ListaFornecedores({ tipo, fornecedores }: { tipo: TipoFornecedor
       if (!r.sucesso) return setMsg(r.erro);
       setNome("");
       setCnpj("");
-      router.refresh();
     });
   }
 
@@ -167,7 +159,6 @@ export function ListaFornecedores({ tipo, fornecedores }: { tipo: TipoFornecedor
     iniciar(async () => {
       const r = await salvarFornecedor({ id: f.id, tipo: f.tipo, nome: f.nome, cnpj: f.cnpj, ativo: !f.ativo });
       if (!r.sucesso) return setMsg(r.erro);
-      router.refresh();
     });
   }
 

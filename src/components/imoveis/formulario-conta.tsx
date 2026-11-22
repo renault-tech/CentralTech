@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, SeloNivel } from "@/components/imoveis/ui";
 import { excluirConta, salvarConta } from "@/lib/imoveis/actions";
@@ -27,7 +26,6 @@ export function FormularioConta({
   mesPadrao: string;
   aoConcluir?: () => void;
 }) {
-  const router = useRouter();
   const { confirmar } = useDialogos();
   const [unidadeId, setUnidadeId] = React.useState(conta?.unidade_id ?? unidades[0]?.id ?? "");
   const [mes, setMes] = React.useState((conta?.referencia ?? mesPadrao).slice(0, 7));
@@ -67,7 +65,6 @@ export function FormularioConta({
         setValor("");
         setPagoEm("");
       }
-      router.refresh();
       aoConcluir?.();
     });
   }
@@ -77,7 +74,6 @@ export function FormularioConta({
     iniciar(async () => {
       const r = await excluirConta(conta.id);
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
       aoConcluir?.();
     });
   }

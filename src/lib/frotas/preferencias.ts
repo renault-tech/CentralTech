@@ -8,9 +8,11 @@ import { criarClienteFrotas } from "@/lib/supabase/frotas-cliente";
 export async function lerColunasOcultasDoUsuario(): Promise<Partial<Record<IdRelatorio, string[]>>> {
   try {
     const frotas = await criarClienteFrotas();
-    const { data: sessao } = await frotas.auth.getUser();
-    if (!sessao.user) return {};
-    const { data } = await frotas.from("preferencias_exportacao").select("ocultas").eq("usuario_id", sessao.user.id).maybeSingle();
+    // `getClaims` confere o token localmente (o middleware já validou a sessão com o servidor de Auth): uma ida à rede a menos por página.
+    const { data: claims } = await frotas.auth.getClaims();
+    const usuarioId = claims?.claims?.sub;
+    if (!usuarioId) return {};
+    const { data } = await frotas.from("preferencias_exportacao").select("ocultas").eq("usuario_id", usuarioId).maybeSingle();
     if (!data) return {};
     // só o que ainda existe no catálogo (coluna renomeada deixa de valer)
     const limpo: Partial<Record<IdRelatorio, string[]>> = {};

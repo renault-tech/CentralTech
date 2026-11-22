@@ -50,6 +50,10 @@ export const metadata = { title: "Imóveis e Consumo · Central Cataguases" };
  * (a secretaria só enxerga os imóveis da própria secretaria).
  */
 export default async function LayoutImoveis({ children }: { children: React.ReactNode }) {
+  // O selo de pendências do menu sai junto com o contexto (as leituras são as mesmas das telas, em cache curto): sem esperar uma etapa atrás da outra.
+  const pendenciasPronto = carregarTudo()
+    .then((t) => t.pendencias.length)
+    .catch(() => 0);
   const ctx = await obterContextoImoveis();
   if (ctx.situacao === "sem_login") redirect("/login?proximo=%2Fimoveis");
   if (ctx.situacao === "inativo") redirect("/login?motivo=desativado");
@@ -75,9 +79,7 @@ export default async function LayoutImoveis({ children }: { children: React.Reac
     );
   }
 
-  const pendencias = await carregarTudo()
-    .then((t) => t.pendencias.length)
-    .catch(() => 0);
+  const pendencias = await pendenciasPronto;
   const itens = [
     { href: "/imoveis", rotulo: "Painel", exato: true },
     { href: "/imoveis/imoveis", rotulo: "Imóveis" },

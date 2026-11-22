@@ -31,6 +31,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { MarcaPendente } from "@/components/modulo/marca-pendente";
 import { definirBarraRecolhida } from "@/lib/modulo/actions-barra";
 import type { ModuloComBarra } from "@/lib/modulo/barra-cookie";
 import { cn } from "@/lib/utils";
@@ -152,6 +153,7 @@ export function BarraLateral({
                       >
                         <Icone className="h-[1.125rem] w-[1.125rem] shrink-0" strokeWidth={1.75} aria-hidden />
                         {!recolhida && <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>}
+                        <MarcaPendente />
                         {!!item.selo &&
                           (recolhida ? (
                             <span className={cn("absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-white", item.selos === "alerta" ? "bg-red-600" : "bg-[color:var(--modulo-texto)]")} aria-hidden />

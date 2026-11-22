@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { anosDoModeloFipe, aplicarFipe, buscarModelosFipe, modelosDaMarcaFipe, type BuscaFipe } from "@/lib/frotas/actions-importacao";
 import type { ItemFipe } from "@/lib/frotas/fipe-parse";
@@ -14,7 +13,6 @@ const ROTULO_TIPO: Record<TipoFipe, string> = { carros: "Carros e utilitários",
 
 /** Vincula o veículo à tabela FIPE: acha marca e modelo parecidos, a pessoa confere e o valor do mês vai para o cadastro. */
 export function BuscaFipeVeiculo({ veiculoId, tipoInicial }: { veiculoId: string; tipoInicial: TipoFipe | null }) {
-  const router = useRouter();
   const [tipo, setTipo] = React.useState<TipoFipe>(tipoInicial ?? "carros");
   const [busca, setBusca] = React.useState<BuscaFipe | null>(null);
   const [marcaId, setMarcaId] = React.useState("");
@@ -74,7 +72,6 @@ export function BuscaFipeVeiculo({ veiculoId, tipoInicial }: { veiculoId: string
       const r = await aplicarFipe({ veiculoId, tipo, marcaId, modeloId, anoId });
       if (!r.sucesso) return setMsg({ tipo: "erro", texto: r.erro });
       setMsg({ tipo: "ok", texto: `Valor da FIPE gravado: ${brl(r.valor)} (${r.referencia}).` });
-      router.refresh();
     });
   }
 

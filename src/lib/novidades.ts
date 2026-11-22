@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Frotas e Imóveis: navegação mais rápida e menu que responde ao clique",
+    descricao:
+      "Trocar de tela em Frotas e em Imóveis e Consumo ficou mais ágil: os dados que várias telas usam passam a ser guardados por um minuto (o que você grava aparece na hora, sem esperar), o selo do menu deixou de carregar tabelas inteiras e o carregamento das tabelas grandes (como as contas de água e luz) acontece em paralelo. Depois de salvar, a tela não é mais refeita duas vezes. No menu, o item clicado acende e mostra um ponto pulsando enquanto a tela nova chega, e as listas e páginas de importação mostram um esqueleto parecido com a tela de verdade enquanto carregam.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Frotas e Imóveis: listas com gráficos que filtram e resumo ao lado",
     descricao:
       "Manutenção, Veículos e Combustível (Frotas) e Imóveis, Pendências e Entregas (Imóveis) agora funcionam como as Emendas: dois gráficos à esquerda que também são filtros (clique numa fatia ou linha), a lista no meio e, ao escolher um item, um resumo ao lado só para consulta, com o botão “Abrir e editar” para a página do item. Os filtros acompanham o endereço da página e são lembrados ao voltar de uma edição; os links dos painéis continuam funcionando. Água, Luz e Vencimentos ganharam um visual mais enxuto, sem painel lateral: faixa de indicadores, gráfico mensal que preenche o cartão e tabela com cabeçalho fixo. De carona, os campos de seleção do modo escuro ficaram legíveis.",

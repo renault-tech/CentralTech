@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo } from "@/components/imoveis/ui";
 import { confirmarContasPdf, lerContasPdf, type LinhaPrevia, type OpcaoUnidadePdf, type ResultadoLinha } from "@/lib/imoveis/actions-contas-pdf";
@@ -12,7 +11,6 @@ type Editavel = { arquivo: string; semTexto: boolean; avisos: string[]; unidadeI
 
 /** Prévia de faturas em PDF: o servidor propõe, a pessoa confere e confirma. */
 export function ImportadorContasPdf() {
-  const router = useRouter();
   const [linhas, setLinhas] = React.useState<Editavel[]>([]);
   const [unidades, setUnidades] = React.useState<OpcaoUnidadePdf[]>([]);
   const [resultados, setResultados] = React.useState<ResultadoLinha[] | null>(null);
@@ -64,7 +62,6 @@ export function ImportadorContasPdf() {
       // As gravadas saem da lista; as que falharam ficam para corrigir.
       const falharam = new Set(escolhidas.filter((_, k) => !r.resultados[k].ok).map(({ i }) => i));
       setLinhas((ls) => ls.filter((_, i) => !escolhidas.some((e) => e.i === i) || falharam.has(i)));
-      router.refresh();
     });
   }
 
