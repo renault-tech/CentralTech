@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: caixas de informações nos indicadores e gráficos, e botão de voltar ao topo",
+    descricao:
+      "A caixa clara que já aparecia na barra de fases da lista agora aparece também nos dados consolidados: indicadores (Emendas, Indicado, Empenhado, Pago, andamento médio e a barra de execução), linhas e fatias dos gráficos de Emendas, Pendências e Conformidade, cartões do Panorama, cartões e linhas por vereador do Painel, e as fases e a barra financeira do Resumo no painel da emenda. Ela só abre depois de uma pequena pausa com o mouse parado, então não pipoca enquanto você atravessa a tela. As listas de Emendas, Pendências, Conformidade e Panorama ganharam um botão discreto de voltar ao topo, que aparece depois de rolar.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: Conformidade na área de trabalho, Pendências com dois gráficos e apagar propostas",
     descricao:
       "A tela de Conformidade passou para o mesmo padrão de Emendas, Pendências e Panorama: indicadores e dois gráficos de filtro à esquerda (item exigido, secretaria, tipo ou execução), a lista de emendas com itens a completar ao lado e os detalhes da emenda à direita, na aba Parceria. Pendências também ganhou dois gráficos combináveis (área, gravidade, assunto, motivo, secretaria, tipo ou documentos faltando). No painel da emenda, todas as abas aparecem na faixa (sem “Mais” nem o menu de três pontos) e “Corrigir cadastro” fica no cabeçalho. O fluxo de fases agrupa o Repasse em Pagamento e Execução e monitoramento em Execução e prestação, e a pendência de datas fora de ordem do repasse antes do extrato passou a indicar a saída orientada pelo Controle Interno: o extrato saneador. Em Aprovações, o gestor pode apagar propostas (uma a uma, marcadas ou todas as decididas), inclusive as em conflito, que antes ficavam presas na lista.",

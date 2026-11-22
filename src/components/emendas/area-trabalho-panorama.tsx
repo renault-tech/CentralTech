@@ -2,8 +2,10 @@
 
 import * as React from "react";
 
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { COR_SITUACAO, CARTOES, agrupar, pertenceAoCartao, rotuloSituacao, totaisPorCartao, type Cartao, type LinhaPanorama } from "@/lib/emendas/encerramento";
@@ -71,6 +73,7 @@ const NOME_TIPO: Record<string, string> = { "Execução direta": "direta", "Repa
 export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPanorama[]; restos: RestoAnterior[]; ano: number }) {
   const { params, definir } = useFiltrosUrl("emendas-panorama", String(ano));
   const [expandidaId, setExpandidaId] = React.useState("");
+  const listaRef = React.useRef<HTMLUListElement>(null);
   const s = params.get("s") ?? "";
   const t = params.get("t") ?? "";
   const c = params.get("c") ?? "";
@@ -126,7 +129,17 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
                     const tot = totais[i.c];
                     const ativo = cartao === i.c;
                     return (
-                      <li key={i.c}>
+                      <CaixaInfo
+                        key={i.c}
+                        as="li"
+                        conteudo={
+                          <>
+                            <CaixaTitulo rotulo={g.titulo} valor={brl(tot.valor)} lado={String(tot.quantidade)} ladoApoio="emenda(s)" corLado={COR_TOM[i.tom ?? "neutro"]} />
+                            <CaixaLinhas linhas={[{ rotulo: i.nome, valor: brl(tot.valor) }, { rotulo: "No recorte atual", valor: `${tot.quantidade} de ${recorte.length}` }]} />
+                            <CaixaNota>{i.apoio}. Clique para listar estas emendas.</CaixaNota>
+                          </>
+                        }
+                      >
                         <button
                           type="button"
                           aria-pressed={ativo}
@@ -137,7 +150,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
                           <span className="mt-0.5 block text-[1.0625rem] font-semibold tabular-nums" style={{ color: COR_TOM[i.tom ?? "neutro"] }}>{brl(tot.valor)}</span>
                           <span className="mt-0.5 block text-[0.75rem] leading-snug text-slate-600">{tot.quantidade} emenda(s) · {i.apoio}</span>
                         </button>
-                      </li>
+                      </CaixaInfo>
                     );
                   })}
                 </ul>
@@ -189,7 +202,8 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
           </div>
 
           {visao === "emendas" && (
-            <ul className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label="Emendas">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+            <ul ref={listaRef} className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label="Emendas">
               {lista.length === 0 && <li className="p-6 text-sm text-slate-600">Nenhuma emenda nesse recorte.</li>}
               {lista.map((l) => (
                 <li key={l.id} className="border-b border-slate-100">
@@ -215,6 +229,8 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
                 </li>
               ))}
             </ul>
+            <VoltarAoTopo alvoRef={listaRef} />
+            </div>
           )}
 
           {(visao === "secretaria" || visao === "vereador" || visao === "tipo") && (

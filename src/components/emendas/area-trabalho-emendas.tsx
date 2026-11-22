@@ -9,6 +9,7 @@ import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { HoverAndamento } from "@/components/emendas/hover-andamento";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
 import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { PainelDetalheEmenda, type AtualizacaoEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { FaixaIndicadores, GraficoFiltro } from "@/components/emendas/grafico-filtro";
@@ -207,6 +208,7 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
             </div>
           </div>
 
+          <div className="relative flex min-h-0 flex-1 flex-col">
           <div ref={listaRef} role="listbox" aria-label="Emendas" aria-activedescendant={escolhidaId ? `emenda-${escolhidaId}` : undefined} onKeyDown={teclasDaLista} className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {ordenadas.length === 0 && (
               <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
@@ -275,6 +277,8 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
                 </div>
               );
             })}
+          </div>
+          <VoltarAoTopo alvoRef={listaRef} />
           </div>
           </>
         }

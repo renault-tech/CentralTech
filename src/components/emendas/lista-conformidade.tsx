@@ -4,10 +4,12 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
+import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
@@ -110,12 +112,23 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
           {itens.map((i) => {
             const ativo = selecionada === i.chave;
             return (
-              <li key={i.chave} style={{ flex: "1 0 2.25rem", maxHeight: "2.75rem" }} className="flex">
+              <CaixaInfo
+                key={i.chave}
+                as="li"
+                style={{ flex: "1 0 2.25rem", maxHeight: "2.75rem" }}
+                className="flex"
+                conteudo={
+                  <>
+                    <CaixaTitulo rotulo={def.rotulo} valor={i.rotulo} lado={String(i.n)} ladoApoio={total ? `${pct(i.n / total, 0)} do gráfico` : undefined} />
+                    {i.dica && <CaixaNota>{i.dica}</CaixaNota>}
+                    <CaixaNota>Emendas com algum item faltando neste recorte. Clique para filtrar a lista.</CaixaNota>
+                  </>
+                }
+              >
                 <button
                   type="button"
                   aria-pressed={ativo}
                   aria-label={`${i.rotulo}: ${i.n}`}
-                  title={i.dica ?? `${i.rotulo}: ${i.n}`}
                   onClick={() => escolher(ativo ? "" : i.chave)}
                   onMouseEnter={() => setSobre(i.chave)}
                   onMouseLeave={() => setSobre(null)}
@@ -131,7 +144,7 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
                   <span className="whitespace-nowrap text-right text-[0.8125rem] font-semibold tabular-nums text-cataguases-marinho">{i.n}</span>
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(i.n / total, 0) : "0%"}</span>
                 </button>
-              </li>
+              </CaixaInfo>
             );
           })}
         </ul>
@@ -149,6 +162,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
   const { params, definir: definirUrl } = useFiltrosUrl("emendas-conformidade", String(ano));
   const [limite, setLimite] = React.useState(POR_PAGINA);
   const [expandidaId, setExpandidaId] = React.useState("");
+  const listaRef = React.useRef<HTMLUListElement>(null);
   const f: Filtros = { i: params.get("i") ?? "", s: params.get("s") ?? "", t: params.get("t") ?? "", x: params.get("x") ?? "", q: params.get("q") ?? "" };
   const escolhidaId = params.get("e") ?? "";
   const aberto = !!escolhidaId;
@@ -205,11 +219,22 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
           <>
             <dl className="grid flex-none grid-cols-2 divide-slate-200 border-b border-slate-200 lg:grid-cols-4 lg:divide-x">
               {kpis.map(([k, v, cor, apoio]) => (
-                <div key={k} className="min-w-0 px-3 py-2.5">
+                <CaixaInfo
+                  key={k}
+                  as="div"
+                  className="min-w-0 px-3 py-2.5"
+                  conteudo={
+                    <>
+                      <CaixaTitulo rotulo={k} valor={v} />
+                      {(k === "Emendas completas" || k === "Executadas incompletas") && <CaixaLinhas linhas={[{ rotulo: "Emendas no exercício", valor: String(linhas.length) }, { rotulo: "Com item faltando", valor: String(linhas.length - completas), forte: true }, { rotulo: "Já executadas e incompletas", valor: String(execIncompletas), cor: "#B91C1C" }]} />}
+                      <CaixaNota>{apoio}.</CaixaNota>
+                    </>
+                  }
+                >
                   <dt className="text-xs font-medium text-slate-600">{k}</dt>
                   <dd className="text-lg font-semibold leading-tight tabular-nums" style={{ color: cor }}>{v}</dd>
                   <dd className="text-[0.75rem] leading-snug text-slate-600">{apoio}</dd>
-                </div>
+                </CaixaInfo>
               ))}
             </dl>
             <GraficoConformidade linhas={linhas} resumo={resumo} filtros={f} definir={definir} visaoInicial="item" className="border-b border-slate-200" />
@@ -245,7 +270,8 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
                 )}
               </div>
             </div>
-            <ul className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden" aria-label="Emendas com itens a completar">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+            <ul ref={listaRef} className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden" aria-label="Emendas com itens a completar">
               {filtradas.slice(0, limite).map((l) => {
                 const sel = l.id === escolhidaId;
                 const cor = l.executada ? "#B91C1C" : "#94A3B8";
@@ -281,6 +307,8 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
                 </li>
               )}
             </ul>
+            <VoltarAoTopo alvoRef={listaRef} />
+            </div>
           </>
         }
         detalhe={aberto && <PainelDetalheEmenda emendaId={escolhidaId} abaInicial="parceria" aoFechar={() => definirUrl({ e: "" })} expandido={expandido} aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)} />}

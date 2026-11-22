@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, Pencil, X } from "lucide-react";
 
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { corDoSegmento, macrosDoResumo } from "@/components/emendas/barra-fases";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
@@ -20,7 +21,7 @@ import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { indiceDaProxima, proximoPasso } from "@/lib/emendas/fases-resumo";
 import { NOME_GRAVIDADE } from "@/lib/emendas/pendencias";
-import { brl, numeroVereador } from "@/lib/emendas/regras";
+import { brl, numeroVereador, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
@@ -219,7 +220,7 @@ function PainelCorpo({
   // Barra financeira: pago + a pagar = empenhado; o resto do valor ainda não foi empenhado.
   const baseBarra = Math.max(e.valor, e.empenhado, 1);
   const fatiaBarra = (v: number, c: string, nome: string) => (
-    <span key={nome} className="emd-preenche block h-full" title={`${nome}: ${brl(v)}`} style={{ flex: `${v} 0 0`, minWidth: v > 0 ? 4 : 0, backgroundColor: c }} />
+    <span key={nome} className="emd-preenche block h-full" style={{ flex: `${v} 0 0`, minWidth: v > 0 ? 4 : 0, backgroundColor: c }} />
   );
 
   const blocoResumo = (
@@ -257,14 +258,25 @@ function PainelCorpo({
             {macros.map((m, i) => {
               const atual = i === iProxima;
               return (
-                <li key={m.chave} className="flex min-w-0 flex-col gap-1.5" title={m.fases.map((f) => `${f.nome}: ${f.estado === "feita" ? "concluída" : f.estado === "pendente" ? "a fazer" : "em andamento"}`).join("\n")}>
+                <CaixaInfo
+                  key={m.chave}
+                  as="li"
+                  className="flex min-w-0 flex-col gap-1.5"
+                  conteudo={
+                    <>
+                      <CaixaTitulo rotulo="Etapa do fluxo" valor={m.nome} />
+                      <CaixaLinhas linhas={m.fases.map((f) => ({ rotulo: f.nome, valor: f.estado === "feita" ? "concluída" : f.estado === "pendente" ? "a fazer" : "em andamento", cor: f.estado === "feita" ? "#10B981" : f.estado === "pendente" ? "#CBD5E1" : "#6B4FBB" }))} />
+                      <CaixaNota>O detalhe de cada fase (datas, documentos) está na aba Fases.</CaixaNota>
+                    </>
+                  }
+                >
                   <span className={cn("block h-1.5 rounded-full", atual && "emd-pulso")} style={{ backgroundColor: corDoSegmento(m, atual) }} />
                   <span className={cn("text-[0.8125rem] leading-snug", m.estado === "pendente" && !atual ? "text-slate-600" : "font-medium text-cataguases-marinho")}>
                     {m.nome}
                     {m.alerta && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-amber-500" aria-label="Com alerta" />}
                   </span>
                   <span className="text-[0.8125rem] text-slate-600">{m.estado === "feita" ? "concluída" : atual ? (m.estado === "andamento" ? "em andamento · próxima" : "próxima") : m.estado === "andamento" ? "em andamento" : "a fazer"}</span>
-                </li>
+                </CaixaInfo>
               );
             })}
           </ol>
@@ -277,30 +289,49 @@ function PainelCorpo({
           <span className="ml-auto text-[0.8125rem] text-slate-600">Valor da emenda</span>
           <span className="text-[1.25rem] font-semibold leading-none tracking-tight tabular-nums text-cataguases-marinho">{brl(e.valor)}</span>
         </div>
-        <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`Pago ${brl(e.pago)}, a pagar ${brl(aPagar)}, sem empenhar ${brl(semEmpenhar)}`}>
-          {fatiaBarra(e.pago, COR_PAGO, "Pago")}
-          {fatiaBarra(aPagar, COR_A_PAGAR, "A pagar")}
-          {fatiaBarra(semEmpenhar, COR_SEM_EMPENHO, "Sem empenhar")}
-          <span className="block h-full" style={{ flex: `${Math.max(0, baseBarra - e.pago - aPagar - semEmpenhar)} 0 0` }} />
-        </div>
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
-          <div>
-            <dt className="text-[0.8125rem] text-slate-600">Empenhado</dt>
-            <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(e.empenhado)}</dd>
+        <CaixaInfo
+          as="div"
+          className="space-y-2.5"
+          conteudo={
+            <>
+              <CaixaTitulo rotulo="Execução financeira" valor={brl(e.valor)} lado={e.valor ? pct(e.empenhado / e.valor, 0) : undefined} ladoApoio="empenhado" />
+              <CaixaLinhas
+                linhas={[
+                  { rotulo: "Empenhado", valor: brl(e.empenhado), cor: COR_DINHEIRO.empenhado, apoio: e.valor ? pct(e.empenhado / e.valor, 0) : undefined },
+                  { rotulo: "Pago", valor: brl(e.pago), cor: COR_PAGO, apoio: e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : undefined },
+                  { rotulo: "A pagar", valor: brl(aPagar), cor: COR_A_PAGAR },
+                  { rotulo: "Sem empenhar", valor: brl(semEmpenhar), cor: COR_SEM_EMPENHO },
+                ]}
+              />
+              <CaixaNota>Pago + a pagar = empenhado. O que não foi empenhado ainda não saiu do valor da emenda.</CaixaNota>
+            </>
+          }
+        >
+          <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`Pago ${brl(e.pago)}, a pagar ${brl(aPagar)}, sem empenhar ${brl(semEmpenhar)}`}>
+            {fatiaBarra(e.pago, COR_PAGO, "Pago")}
+            {fatiaBarra(aPagar, COR_A_PAGAR, "A pagar")}
+            {fatiaBarra(semEmpenhar, COR_SEM_EMPENHO, "Sem empenhar")}
+            <span className="block h-full" style={{ flex: `${Math.max(0, baseBarra - e.pago - aPagar - semEmpenhar)} 0 0` }} />
           </div>
-          {(
-            [
-              ["Pago", e.pago, COR_PAGO],
-              ["A pagar", aPagar, COR_A_PAGAR],
-              ["Sem empenhar", semEmpenhar, COR_SEM_EMPENHO],
-            ] as [string, number, string][]
-          ).map(([nome, v, c]) => (
-            <div key={nome}>
-              <dt className="flex items-center gap-1.5 text-[0.8125rem] text-slate-600"><span className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: c }} aria-hidden />{nome}</dt>
-              <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(v)}</dd>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
+            <div>
+              <dt className="text-[0.8125rem] text-slate-600">Empenhado</dt>
+              <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(e.empenhado)}</dd>
             </div>
-          ))}
-        </dl>
+            {(
+              [
+                ["Pago", e.pago, COR_PAGO],
+                ["A pagar", aPagar, COR_A_PAGAR],
+                ["Sem empenhar", semEmpenhar, COR_SEM_EMPENHO],
+              ] as [string, number, string][]
+            ).map(([nome, v, c]) => (
+              <div key={nome}>
+                <dt className="flex items-center gap-1.5 text-[0.8125rem] text-slate-600"><span className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: c }} aria-hidden />{nome}</dt>
+                <dd className="text-[0.9375rem] font-semibold tabular-nums text-cataguases-marinho">{brl(v)}</dd>
+              </div>
+            ))}
+          </dl>
+        </CaixaInfo>
       </section>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))" }}>

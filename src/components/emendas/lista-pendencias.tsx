@@ -7,6 +7,7 @@ import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { PainelPendencias, chipsDePendencias, removerFiltroPendencia } from "@/components/emendas/painel-pendencias";
+import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
@@ -30,6 +31,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   const { params, definir: definirUrl } = useFiltrosUrl("emendas-pendencias", String(ano));
   const [limite, setLimite] = React.useState(POR_PAGINA);
   const [expandidaId, setExpandidaId] = React.useState("");
+  const listaRef = React.useRef<HTMLUListElement>(null);
   const busca = params.get("q") ?? "";
   const f = lerFiltros((k) => params.get(k));
   const escolhidaId = params.get("e") ?? "";
@@ -120,7 +122,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
             </div>
           </div>
 
-          <ul className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden" aria-label="Pendências">
+          <div className="relative flex min-h-0 flex-1 flex-col">
+          <ul ref={listaRef} className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden" aria-label="Pendências">
             {filtradas.slice(0, limite).map((l) => {
               const sel = l.emendaId === escolhidaId;
               return (
@@ -171,6 +174,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
               </li>
             )}
           </ul>
+          <VoltarAoTopo alvoRef={listaRef} />
+          </div>
         </>
       }
       detalhe={

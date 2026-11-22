@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { createPortal } from "react-dom";
+
+import { CaixaInfo } from "@/components/emendas/caixa-info";
 import { AlertTriangle, Check } from "lucide-react";
 
 import { corDoAndamento } from "@/components/emendas/anel-andamento";
@@ -13,69 +14,11 @@ import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
-const LARGURA = 288; // 18 rem em tamanho normal; o cálculo de posição usa o tamanho real medido
-
 /**
- * Envolve o anel de andamento da lista: ao passar o mouse (ou focar) abre uma caixa com os valores da emenda e as etapas
- * mais importantes do fluxo. A caixa vai para o `body` (portal) porque a lista rola e tem vidro, que prenderiam um
- * elemento `fixed`; por isso usa cores literais (as variáveis do módulo ficam no contêiner da página).
+ * Envolve a barra de fases da lista: ao passar o mouse (depois de uma pequena pausa) abre a caixa com os valores da emenda e
+ * as macro-etapas do fluxo.
  */
 export function HoverAndamento({ emenda: e, resumo, children }: { emenda: EmendaResumo; resumo: ResumoLinha; children: React.ReactNode }) {
-  const alvo = React.useRef<HTMLSpanElement>(null);
-  const caixa = React.useRef<HTMLDivElement>(null);
-  const [aberta, setAberta] = React.useState(false);
-  const [pos, setPos] = React.useState<{ top: number; left: number } | null>(null);
-  const temporizador = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const id = React.useId();
-
-  const abrir = () => {
-    if (temporizador.current) clearTimeout(temporizador.current);
-    temporizador.current = setTimeout(() => setAberta(true), 140);
-  };
-  const fechar = () => {
-    if (temporizador.current) clearTimeout(temporizador.current);
-    temporizador.current = null;
-    setAberta(false);
-    setPos(null);
-  };
-  React.useEffect(() => () => { if (temporizador.current) clearTimeout(temporizador.current); }, []);
-
-  // Posição: abaixo do anel, alinhada à direita dele; se não couber, ao lado (à esquerda) para não cobrir o anel.
-  // Nunca sai da janela.
-  React.useLayoutEffect(() => {
-    if (!aberta || !alvo.current || !caixa.current) return;
-    const r = alvo.current.getBoundingClientRect();
-    const c = caixa.current.getBoundingClientRect();
-    const margem = 8;
-    const cabeAbaixo = r.bottom + 8 + c.height <= window.innerHeight - margem;
-    let left: number;
-    let top: number;
-    if (cabeAbaixo) {
-      left = r.right - c.width;
-      top = r.bottom + 8;
-    } else if (r.left - 8 - c.width >= margem) {
-      left = r.left - 8 - c.width;
-      top = r.top + r.height / 2 - c.height / 2;
-    } else {
-      left = r.right - c.width;
-      top = r.top - c.height - 8;
-    }
-    left = Math.max(margem, Math.min(left, window.innerWidth - c.width - margem));
-    top = Math.max(margem, Math.min(top, window.innerHeight - c.height - margem));
-    setPos({ top, left });
-  }, [aberta]);
-
-  React.useEffect(() => {
-    if (!aberta) return;
-    const sair = () => fechar();
-    window.addEventListener("scroll", sair, true);
-    window.addEventListener("resize", sair);
-    return () => {
-      window.removeEventListener("scroll", sair, true);
-      window.removeEventListener("resize", sair);
-    };
-  }, [aberta]);
-
   const macros = macrosDoResumo(resumo);
   const proxima = indiceDaProxima(macros);
   const p = resumo.total > 0 ? Math.round((resumo.concluidas / resumo.total) * 100) : 0;
@@ -98,28 +41,9 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
     );
   };
 
-  return (
-    <span
-      ref={alvo}
-      className="inline-flex"
-      onMouseEnter={abrir}
-      onMouseLeave={fechar}
-      onFocus={abrir}
-      onBlur={fechar}
-      aria-describedby={aberta ? id : undefined}
-    >
-      {children}
-      {aberta &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={caixa}
-            id={id}
-            role="tooltip"
-            style={{ position: "fixed", top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: LARGURA, opacity: pos ? 1 : 0, zIndex: 80 }}
-            className="pointer-events-none rounded-[0.875rem] border border-slate-200 bg-white p-3.5 text-cataguases-marinho shadow-[0_18px_40px_-12px_rgba(15,23,42,0.35)] transition-opacity duration-150 motion-reduce:transition-none"
-          >
-            <div className="flex items-center justify-between gap-3">
+  const conteudo = (
+    <>
+      <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500">Emenda nº {e.numero}</p>
                 <p className="text-base font-semibold tabular-nums tracking-tight">{brl(e.valor)}</p>
@@ -165,9 +89,7 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
               </div>
             )}
             <p className="mt-2 text-[0.6875rem] text-slate-400">Clique na emenda para ver as fases e os documentos ao lado.</p>
-          </div>,
-          document.body
-        )}
-    </span>
+    </>
   );
+  return <CaixaInfo conteudo={conteudo}>{children}</CaixaInfo>;
 }

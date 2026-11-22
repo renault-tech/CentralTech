@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
@@ -23,7 +24,7 @@ import {
   type LinhaDocFaltando,
   type LinhaPendencia,
 } from "@/lib/emendas/painel-pendencias";
-import { brlCurto, pct } from "@/lib/emendas/regras";
+import { brl, brlCurto, pct } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
@@ -78,34 +79,73 @@ export function FaixaPendencias({ linhas, docs, emendas, filtros: f }: { linhas:
         <span className="emd-preenche" style={{ width: `${filtradas.length ? (baixa / filtradas.length) * 100 : 0}%`, backgroundColor: COR.baixa }} />
       </div>
       <dl className="grid flex-none grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x">
-        <div className={celula}>
+        <CaixaInfo
+          as="div"
+          className={celula}
+          conteudo={
+            <>
+              <CaixaTitulo rotulo="Pendências abertas" valor={String(ind.pendencias)} />
+              <CaixaLinhas linhas={[{ rotulo: "Alta", valor: String(alta), cor: COR.alta }, { rotulo: "Média", valor: String(media), cor: COR.media }, { rotulo: "Baixa", valor: String(baixa), cor: COR.baixa }]} />
+              <CaixaNota>Pendências justificadas ficam fora da contagem até os dados mudarem.</CaixaNota>
+            </>
+          }
+        >
           <dt className="text-xs font-medium text-slate-600">Pendências abertas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{ind.pendencias}</span>
             <span className="text-xs tabular-nums" style={{ color: alta > 0 ? COR.alta : undefined }}>{alta} {alta === 1 ? "alta" : "altas"}</span>
           </dd>
-        </div>
-        <div className={celula}>
+        </CaixaInfo>
+        <CaixaInfo
+          as="div"
+          className={celula}
+          conteudo={
+            <>
+              <CaixaTitulo rotulo="Emendas afetadas" valor={`${ind.emendasAfetadas} de ${ind.emendasNoRecorte}`} lado={ind.emendasNoRecorte ? pct(ind.emendasAfetadas / ind.emendasNoRecorte, 0) : "0%"} ladoApoio="do recorte" />
+              <CaixaLinhas linhas={[{ rotulo: "Com pendência", valor: String(ind.emendasAfetadas), cor: COR.alta }, { rotulo: "Sem pendência", valor: String(Math.max(0, ind.emendasNoRecorte - ind.emendasAfetadas)) }]} />
+              <CaixaNota>Cada emenda conta uma vez, mesmo com várias pendências.</CaixaNota>
+            </>
+          }
+        >
           <dt className="text-xs font-medium text-slate-600">Emendas afetadas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{ind.emendasAfetadas}</span>
             <span className="text-xs tabular-nums text-slate-600">de {ind.emendasNoRecorte} ({ind.emendasNoRecorte ? pct(ind.emendasAfetadas / ind.emendasNoRecorte, 0) : "0%"})</span>
           </dd>
-        </div>
-        <div className={celula}>
+        </CaixaInfo>
+        <CaixaInfo
+          as="div"
+          className={celula}
+          conteudo={
+            <>
+              <CaixaTitulo rotulo="Valor das emendas afetadas" valor={brl(ind.valorAfetado)} lado={ind.valorNoRecorte ? pct(ind.valorAfetado / ind.valorNoRecorte, 0) : "0%"} ladoApoio="do recorte" />
+              <CaixaLinhas linhas={[{ rotulo: "Valor no recorte", valor: brl(ind.valorNoRecorte) }]} />
+            </>
+          }
+        >
           <dt className="text-xs font-medium text-slate-600">Valor afetado</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{brlCurto(ind.valorAfetado)}</span>
             <span className="text-xs tabular-nums text-slate-600">de {brlCurto(ind.valorNoRecorte)}</span>
           </dd>
-        </div>
-        <div className={celula}>
+        </CaixaInfo>
+        <CaixaInfo
+          as="div"
+          className={celula}
+          conteudo={
+            <>
+              <CaixaTitulo rotulo="Documentos faltando" valor={String(totalDocs)} ladoApoio={`em ${emendasSemDoc} emendas`} />
+              <CaixaLinhas linhas={faltando.length ? faltando.slice(0, 6).map((g) => ({ rotulo: g.rotulo, valor: String(g.emendas.length) })) : [{ rotulo: "Nenhum documento faltando", valor: "0" }]} />
+              <CaixaNota>Exigidos por lei e ainda não ligados no Drive.</CaixaNota>
+            </>
+          }
+        >
           <dt className="text-xs font-medium text-slate-600">Documentos faltando</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
             <span className={numero}>{totalDocs}</span>
             <span className="text-xs tabular-nums text-slate-600">em {emendasSemDoc} emendas</span>
           </dd>
-        </div>
+        </CaixaInfo>
       </dl>
     </>
   );
@@ -216,7 +256,26 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
             const clicavel = !!param || !!i.emendas;
             const detalhe = `${i.n} ${unidade}${param ? ` (${i.alta} altas, ${i.media} médias, ${i.baixa} baixas)` : ""}, ${brlCurto(i.valor)}`;
             return (
-              <li key={i.chave} style={aberto ? undefined : { flex: "1 0 2.25rem", maxHeight: "2.75rem" }} className={cn(!aberto && "flex", aberto && "flex-none")}>
+              <CaixaInfo
+                key={i.chave}
+                as="li"
+                style={aberto ? undefined : { flex: "1 0 2.25rem", maxHeight: "2.75rem" }}
+                className={cn(!aberto && "flex", aberto && "flex-none")}
+                desativada={aberto}
+                conteudo={
+                  <>
+                    <CaixaTitulo rotulo={def.rotulo} valor={i.rotulo} lado={String(v)} ladoApoio={total ? `${pct(v / total, 0)} do gráfico` : undefined} />
+                    <CaixaLinhas
+                      linhas={[
+                        { rotulo: unidade === "emendas" ? "Emendas" : "Pendências", valor: String(i.n), forte: true },
+                        ...(param ? [{ rotulo: "Alta", valor: String(i.alta), cor: COR.alta }, { rotulo: "Média", valor: String(i.media), cor: COR.media }, { rotulo: "Baixa", valor: String(i.baixa), cor: COR.baixa }] : []),
+                        { rotulo: "Valor das emendas", valor: brl(i.valor) },
+                      ]}
+                    />
+                    <CaixaNota>{param ? "Clique para filtrar a lista por este item." : "Clique para ver quais emendas."}</CaixaNota>
+                  </>
+                }
+              >
                 <div className="flex w-full flex-col">
                   <button
                     type="button"
@@ -224,7 +283,6 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
                     aria-pressed={param ? ativo : undefined}
                     aria-expanded={i.emendas ? aberto : undefined}
                     aria-label={`${i.rotulo}: ${detalhe}`}
-                    title={detalhe}
                     onMouseEnter={() => setSobreChave(i.chave)}
                     onMouseLeave={() => setSobreChave(null)}
                     onFocus={() => setSobreChave(i.chave)}
@@ -263,7 +321,7 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
                     </p>
                   )}
                 </div>
-              </li>
+              </CaixaInfo>
             );
           })}
           {visao === "motivo" && <li className="px-2.5 pb-1 pt-2 text-xs text-slate-600 print:hidden">Causa específica de cada assunto. Uma pendência pode ter mais de um motivo e conta em cada um.</li>}
