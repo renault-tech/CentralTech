@@ -13,6 +13,102 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-22",
+    titulo: "Emendas: botão de ação do painel da emenda ficou menor e subiu para o canto",
+    descricao:
+      "“Registrar andamento” e “Lançar movimento” deixaram de ocupar uma linha inteira abaixo das abas, principalmente em notebooks. Agora são um botão pequeno (“+ Andamento” e “+ Movimento”) no canto do cabeçalho do painel, ao lado de Expandir e Fechar, e o espaço que ele ocupava vai para os dados.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: telas de erro, sem internet e carregamento lento; rolagem que desacelera",
+    descricao:
+      "Quando uma tela de Emendas dá erro, agora aparece um aviso claro com o código para copiar, “Tentar de novo” e o caminho de volta, com o menu e o cabeçalho no lugar. Se a conexão cair com a tela aberta, um aviso no topo avisa que gravar pode falhar e some sozinho quando a internet volta; sem internet ao abrir, a tela diz isso em vez de um erro genérico. Emenda inexistente ou de outra secretaria tem página própria, e o carregamento lento ganhou uma linha de progresso e avisos depois de 3 s e de 10 s. A lista de emendas agora desacelera suavemente até a linha mais próxima quando você para de rolar, e uma margem com degradê no fim impede que palavras sejam cortadas na borda do painel.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: botão “Limpar filtros” e rolagem das listas sem trancos",
+    descricao:
+      "No alto da área de gráficos de Emendas, Pendências, Conformidade e Panorama há agora um botão discreto “Limpar filtros” (apagado enquanto não há filtro, com a contagem quando há). O ajuste das linhas ao parar de rolar ficou mais leve: só encaixa quando a rolagem para perto do início de uma linha, em vez de puxar a cada giro da roda.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: navegação mais rápida e fluida",
+    descricao:
+      "Abrir e fechar o painel da emenda ao lado da lista, trocar de emenda e mudar de aba ficou bem mais suave: o deslizar das colunas é mais curto (0,4 s) e não trava mais, a lista de mais de 200 emendas só desenha o que está na tela, escolher uma emenda não refaz mais os gráficos nem as outras linhas, e as animações de entrada das telas ficaram mais curtas.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: rolagem suave, sem linhas cortadas",
+    descricao:
+      "As listas de Emendas, Pendências, Conformidade e Panorama, os gráficos, o painel de gráficos e o painel da emenda agora rolam deslizando, e a lista sempre para com uma linha inteira no topo, sem item cortado ao meio. Quem prefere menos movimento no sistema continua com a rolagem normal.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: telas mais enxutas e gráficos da Conformidade que se ajustam à tela",
+    descricao:
+      "As frases explicativas embaixo dos títulos saíram das telas de Emendas (Pendências, Panorama, Aprovações, Relatórios, Configurações, Portal público e outras), dando mais espaço aos dados. Na Conformidade, a base legal fica na linha do título e o “Como usar” abre num quadro curto. O painel de gráficos da esquerda agora rola por dentro quando a tela é baixa, em vez de cortar o segundo gráfico; vale também para Emendas e Pendências.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: caixas de informações nos indicadores e gráficos, e botão de voltar ao topo",
+    descricao:
+      "A caixa clara que já aparecia na barra de fases da lista agora aparece também nos dados consolidados: indicadores (Emendas, Indicado, Empenhado, Pago, andamento médio e a barra de execução), linhas e fatias dos gráficos de Emendas, Pendências e Conformidade, cartões do Panorama, cartões e linhas por vereador do Painel, e as fases e a barra financeira do Resumo no painel da emenda. Ela só abre depois de uma pequena pausa com o mouse parado, então não pipoca enquanto você atravessa a tela. As listas de Emendas, Pendências, Conformidade e Panorama ganharam um botão discreto de voltar ao topo, que aparece depois de rolar.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: Conformidade na área de trabalho, Pendências com dois gráficos e apagar propostas",
+    descricao:
+      "A tela de Conformidade passou para o mesmo padrão de Emendas, Pendências e Panorama: indicadores e dois gráficos de filtro à esquerda (item exigido, secretaria, tipo ou execução), a lista de emendas com itens a completar ao lado e os detalhes da emenda à direita, na aba Parceria. Pendências também ganhou dois gráficos combináveis (área, gravidade, assunto, motivo, secretaria, tipo ou documentos faltando). No painel da emenda, todas as abas aparecem na faixa (sem “Mais” nem o menu de três pontos) e “Corrigir cadastro” fica no cabeçalho. O fluxo de fases agrupa o Repasse em Pagamento e Execução e monitoramento em Execução e prestação, e a pendência de datas fora de ordem do repasse antes do extrato passou a indicar a saída orientada pelo Controle Interno: o extrato saneador. Em Aprovações, o gestor pode apagar propostas (uma a uma, marcadas ou todas as decididas), inclusive as em conflito, que antes ficavam presas na lista.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Emendas: Pendências e Panorama na mesma área de trabalho, folha no celular e gravação mais rápida",
+    descricao:
+      "Pendências e Panorama agora seguem o mesmo padrão da lista de Emendas: o painel de gráficos ou cartões filtra, a lista responde ao lado e, ao escolher uma pendência ou emenda, os detalhes abrem à direita (Pendências abre na aba Pendências; Panorama, no Financeiro). Em telas com menos de 1024 px o detalhe abre como uma folha por cima da lista, em vez de levar para outra página. Depois de gravar um andamento ou lançamento, a emenda e a lista se atualizam na hora e o restante da tela se revalida em segundo plano. As cores do dinheiro são as mesmas em todo o módulo (indicado cinza-azulado, empenhado azul, pago verde, a pagar âmbar), e o violeta ficou só para a marca e a seleção. O botão provisório Original/Novo foi removido: o novo visual é o único. No painel da emenda saiu o botão repetido de Registrar andamento e o atalho de abrir a página inteira (há o botão Expandir).",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: barra de fases na lista e painel da emenda com “Próximo passo”",
+    descricao:
+      "Na lista de Emendas, o anel de percentual deu lugar a uma barra de até seis etapas (Planejamento, Formalização, Empenho, Pagamento, Prestação de contas e Encerramento) com a frase “próximo: …”; o percentual e as etapas aparecem ao passar o mouse. No painel da emenda, o Resumo agora diz o que fazer (por exemplo, “Fechar o empenho: faltam R$ 0,60”) e traz o fluxo em linha, uma barra única do dinheiro (pago, a pagar, sem empenhar) e os dados cadastrais recolhidos. A aba Financeiro passou para o segundo lugar, Andamentos, Parceria e Histórico ficaram em “Mais”, o botão da ação principal fica no topo (Registrar andamento ou Lançar movimento) e há um botão Expandir para trabalhar com o painel em tela cheia. Os botões de remanejar e de registrar impedimento saíram do painel (remanejamento é feito em Configurações). Nos gráficos, a rosca ficou menor e os nomes não são mais cortados.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: painel da emenda com abas completas e resumo do andamento ao passar o mouse",
+    descricao:
+      "No painel que abre ao lado da lista de Emendas, o valor da emenda foi para dentro de “Execução financeira” e uma faixa de abas deu lugar ao que antes exigia abrir a emenda: Resumo, Fases, Documentação, Pendências, Financeiro, Andamentos, Parceria e Histórico, com os mesmos dados e as mesmas ações (registrar andamento ou impedimento, lançar movimento, ligar documentos). Os dados completos só são carregados na primeira vez que você abre uma aba (ou passa o mouse na faixa). O Resumo ficou com as duas colunas equilibradas, sem o grande espaço vazio. Na lista, ao passar o mouse sobre o percentual de andamento aparece uma caixa com os valores (empenhado, pago, a pagar, sem empenhar) e as etapas principais do fluxo.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: resumo da emenda sem rolagem longa e gráficos que se ajustam aos dados",
+    descricao:
+      "O resumo da emenda que abre ao lado da lista foi reorganizado para caber em notebooks: cabeçalho mais compacto, execução financeira e pendências numa coluna e o fluxo de fases na outra (quando há largura), sem a longa rolagem de antes. Nos dois gráficos de filtro, a altura de cada um passa a acompanhar a quantidade de linhas que tem (ex.: Beneficiário com poucas categorias ocupa menos espaço que Vereador com 16), e a rosca e as linhas crescem ou diminuem para preencher a área, sem faixa em branco em telas grandes e sem rolar nas pequenas.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: menu lateral recolhível e dois gráficos de filtro lado a lado",
+    descricao:
+      "O menu lateral do módulo Emendas ficou mais estreito e pode ser recolhido numa faixa só de ícones (botão no topo do menu ou a tecla [); a escolha fica lembrada. Na lista de Emendas, o cabeçalho caiu para uma linha e a área dos gráficos ganhou dois gráficos de filtro empilhados, cada um com a sua dimensão (etapa, vereador, secretaria, situação financeira…): clique numa fatia de um e veja o outro já recalculado, combinando filtros com facilidade. Os gráficos ficaram maiores e a lista, mais larga.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: lista em área de trabalho, sem rolar a página",
+    descricao:
+      "Na lista de Emendas (visual novo, telas largas) a página não rola mais: os gráficos e filtros ficam à esquerda e a lista à direita, cada um rolando por dentro, então o resultado do filtro aparece na hora ao lado. Ao clicar numa emenda, os gráficos recolhem numa faixa, a lista desliza para o lugar deles e o resumo da emenda (andamento, financeiro, fases e pendências) abre à direita. Os filtros continuam valendo (aparecem como etiquetas no topo da lista) e a faixa devolve os gráficos. Setas ↑ ↓ trocam de emenda, Esc fecha o resumo e “Abrir emenda completa” leva à página de sempre.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas: clique na linha para abrir a emenda, e gráficos e tabelas com movimento",
+    descricao:
+      "Na lista de Emendas (e no Panorama e na página do vereador) basta clicar em qualquer ponto da linha para abrir a emenda; Ctrl ou Cmd + clique abre em outra aba. Ao passar o mouse, a linha acende, o título destaca e aparece uma seta. Os gráficos agora se desenham ao abrir (barras que enchem, pizza que abre fatia por fatia, curva que traça, percentual que conta), as linhas das tabelas entram em sequência, e ao passar o mouse num item do ranking ele se destaca, os outros recuam e a fatia correspondente da pizza cresce. Botões sobem levemente ao passar o mouse e afundam ao clicar. Quem prefere menos movimento no sistema operacional não vê as animações.",
+  },
+  {
+    data: "2026-11-21",
+    titulo: "Emendas com visual novo: menu lateral, andamento em % e comparação entre anos",
+    descricao:
+      "O módulo Emendas ganhou um menu lateral com as seções agrupadas (em telas pequenas continua a faixa de abas), títulos e cartões no mesmo padrão em todas as abas e movimento suave ao abrir e trocar de tela. Na lista, cada emenda mostra um anel com o percentual de andamento (fases concluídas ÷ fases do tipo), a fase seguinte e dá para ordenar por maior ou menor andamento; o mesmo anel aparece no detalhe da emenda e há um indicador de andamento médio no topo da lista. No Painel há um quadro de comparação entre exercícios, que compara valor indicado, empenhado, pago e a curva de pagamentos assim que existir mais de um ano. Nada mudou nas regras, permissões e fluxos.",
+  },
+  {
     data: "2026-11-19",
     titulo: "Busca de emendas mostra primeiro a que você digitou",
     descricao:

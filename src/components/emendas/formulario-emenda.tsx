@@ -316,7 +316,7 @@ function Medidor({ rotulo, valor, total, cor, marca }: { rotulo: string; valor: 
         </span>
       </div>
       <div className="relative mt-1 h-2.5 rounded-full bg-slate-100">
-        <div className="h-2.5 rounded-full" style={{ width: `${Math.min(100, (valor / total) * 100)}%`, backgroundColor: cor }} />
+        <div className="emd-preenche h-2.5 rounded-full" style={{ width: `${Math.min(100, (valor / total) * 100)}%`, backgroundColor: cor }} />
         {marca !== undefined && <span className="absolute -top-1 h-[18px] w-0.5 bg-cataguases-marinho" style={{ left: `${marca * 100}%` }} aria-hidden />}
       </div>
     </div>

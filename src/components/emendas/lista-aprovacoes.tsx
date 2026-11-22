@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { decidirPropostas } from "@/lib/emendas/actions-propostas";
+import { apagarPropostas, decidirPropostas } from "@/lib/emendas/actions-propostas";
 import type { PropostaListada } from "@/lib/emendas/dados";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -70,6 +70,8 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
   const [pendente, iniciar] = React.useTransition();
   const [msg, setMsg] = React.useState<string | null>(null);
   const decidiveis = pendentes.filter((p) => p.status === "pendente");
+  // Marcar vale para todas as da lista (inclusive as em conflito, que só podem ser apagadas).
+  const marcaveis = pendentes;
 
   const porEmenda = new Map<string, PropostaListada[]>();
   for (const p of pendentes) (porEmenda.get(p.emenda_id) ?? porEmenda.set(p.emenda_id, []).get(p.emenda_id)!).push(p);
@@ -80,6 +82,17 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
       if (n.has(id)) n.delete(id);
       else n.add(id);
       return n;
+    });
+  }
+  function apagar(ids: string[], quais: string) {
+    if (ids.length === 0) return;
+    if (!window.confirm(`Apagar ${quais}? Isso não altera a emenda e não pode ser desfeito.`)) return;
+    setMsg(null);
+    iniciar(async () => {
+      const r = await apagarPropostas({ ids });
+      if (!r.sucesso) return setMsg(r.erro);
+      setMarcadas(new Set());
+      setMsg(`${r.apagadas ?? 0} proposta(s) apagada(s).`);
     });
   }
   function decidir(ids: string[], aprovar: boolean) {
@@ -94,16 +107,19 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
 
   return (
     <div className="flex flex-col gap-5">
-      {gestor && decidiveis.length > 0 && (
+      {gestor && marcaveis.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-          <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setMarcadas(new Set(marcadas.size === decidiveis.length ? [] : decidiveis.map((p) => p.id)))}>
-            {marcadas.size === decidiveis.length ? "Desmarcar todas" : `Marcar todas (${decidiveis.length})`}
+          <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setMarcadas(new Set(marcadas.size === marcaveis.length ? [] : marcaveis.map((p) => p.id)))}>
+            {marcadas.size === marcaveis.length ? "Desmarcar todas" : `Marcar todas (${marcaveis.length})`}
           </button>
-          <button type="button" className={BOTAO_PRIMARIO} disabled={pendente || marcadas.size === 0} onClick={() => decidir(Array.from(marcadas), true)}>
-            Aprovar marcadas ({marcadas.size})
+          <button type="button" className={BOTAO_PRIMARIO} disabled={pendente || ![...marcadas].some((id) => decidiveis.some((p) => p.id === id))} onClick={() => decidir(Array.from(marcadas).filter((id) => decidiveis.some((p) => p.id === id)), true)}>
+            Aprovar marcadas
           </button>
-          <button type="button" className={BOTAO_SECUNDARIO} disabled={pendente || marcadas.size === 0} onClick={() => decidir(Array.from(marcadas), false)}>
+          <button type="button" className={BOTAO_SECUNDARIO} disabled={pendente || ![...marcadas].some((id) => decidiveis.some((p) => p.id === id))} onClick={() => decidir(Array.from(marcadas).filter((id) => decidiveis.some((p) => p.id === id)), false)}>
             Rejeitar marcadas
+          </button>
+          <button type="button" className={cn(BOTAO_SECUNDARIO, "border-red-200 text-red-800 hover:bg-red-50")} disabled={pendente || marcadas.size === 0} onClick={() => apagar(Array.from(marcadas), `${marcadas.size} proposta(s) marcada(s)`)}>
+            Apagar marcadas ({marcadas.size})
           </button>
         </div>
       )}
@@ -121,7 +137,7 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
           <ul className="divide-y divide-slate-100">
             {ps.map((p) => (
               <li key={p.id} className="flex items-start gap-3 px-4 py-3 text-[0.8125rem]">
-                {gestor && p.status === "pendente" && (
+                {gestor && (
                   <input type="checkbox" className="mt-1 h-4 w-4 accent-[#6B4FBB]" checked={marcadas.has(p.id)} onChange={() => alternar(p.id)} aria-label={`Marcar ${rotulo(p)}`} />
                 )}
                 <div className="min-w-0 flex-1">
@@ -137,10 +153,15 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
                     <span className="text-slate-600">Proposto: <strong className="text-cataguases-marinho">{mostrar(p, p.valor_proposto)}</strong></span>
                   </p>
                 </div>
-                {gestor && p.status === "pendente" && (
+                {gestor && (
                   <div className="flex gap-1.5">
-                    <button type="button" className={cn(BOTAO_PRIMARIO, "h-8 px-3")} disabled={pendente} onClick={() => decidir([p.id], true)}>Aprovar</button>
-                    <button type="button" className={cn(BOTAO_SECUNDARIO, "h-8 px-3")} disabled={pendente} onClick={() => decidir([p.id], false)}>Rejeitar</button>
+                    {p.status === "pendente" && (
+                      <>
+                        <button type="button" className={cn(BOTAO_PRIMARIO, "h-8 px-3")} disabled={pendente} onClick={() => decidir([p.id], true)}>Aprovar</button>
+                        <button type="button" className={cn(BOTAO_SECUNDARIO, "h-8 px-3")} disabled={pendente} onClick={() => decidir([p.id], false)}>Rejeitar</button>
+                      </>
+                    )}
+                    <button type="button" className={cn(BOTAO_SECUNDARIO, "h-8 border-red-200 px-3 text-red-800 hover:bg-red-50")} disabled={pendente} onClick={() => apagar([p.id], "esta proposta")}>Apagar</button>
                   </div>
                 )}
               </li>
@@ -152,6 +173,13 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
       {decididas.length > 0 && (
         <details className="rounded-xl border border-slate-200 bg-white">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-cataguases-marinho">Decididas recentemente ({decididas.length})</summary>
+          {gestor && (
+            <div className="border-t border-slate-100 px-4 py-2.5">
+              <button type="button" className={cn(BOTAO_SECUNDARIO, "h-8 border-red-200 px-3 text-red-800 hover:bg-red-50")} disabled={pendente} onClick={() => apagar(decididas.map((p) => p.id), `as ${decididas.length} propostas decididas`)}>
+                Apagar todas as decididas
+              </button>
+            </div>
+          )}
           <ul className="divide-y divide-slate-100">
             {decididas.map((p) => (
               <li key={p.id} className="px-4 py-2.5 text-[0.8125rem] text-slate-700">

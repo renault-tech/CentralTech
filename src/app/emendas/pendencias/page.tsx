@@ -23,7 +23,6 @@ export default async function PaginaPendencias({ searchParams }: { searchParams:
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">Pendências de {exercicio.ano}</h1>
-          <p className="mt-1 text-sm text-slate-600">O que merece atenção do gestor. Justificadas ficam fora da lista até os dados mudarem.</p>
         </div>
         {gestor && (
           <Link href="/emendas/nova" className={`${CLASSE_BOTAO} print:hidden`}>

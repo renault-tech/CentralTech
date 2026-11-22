@@ -5,10 +5,15 @@ import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import Link from "next/link";
 
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
+import { BarraLateral } from "@/components/emendas/barra-lateral";
+import { COOKIE_BARRA } from "@/lib/emendas/barra-cookie";
+import { cookies } from "next/headers";
+import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
+import { AjusteDeRolagem } from "@/components/emendas/ajuste-de-rolagem";
+import { AvisoConexao } from "@/components/emendas/estados-tela";
 import { AvisoExercicioEncerrado, SeletorExercicio } from "@/components/emendas/seletor-exercicio";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
@@ -84,28 +89,47 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/portal", rotulo: "Portal público", selo: alertasPortal },
   ];
 
-  return (
-    <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
-      <CabecalhoHub
-        usuario={ctx.usuario}
-        modulo={modulo}
-        contexto={
-          exercicioAtual && (
-            <React.Suspense fallback={null}>
-              <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
-            </React.Suspense>
-          )
-        }
-      />
-      <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" tour="nav-emendas" largura={LARGURA_MODULO} />
-      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
-        {exercicioAtual && (
+  const barraRecolhida = (await cookies()).get(COOKIE_BARRA)?.value === "1";
+  const cabecalho = (
+    <CabecalhoHub
+      usuario={ctx.usuario}
+      modulo={modulo}
+      contexto={
+        exercicioAtual && (
           <React.Suspense fallback={null}>
-            <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+            <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
           </React.Suspense>
-        )}
-        <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
-      </main>
+        )
+      }
+    />
+  );
+  const aviso = exercicioAtual && (
+    <React.Suspense fallback={null}>
+      <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+    </React.Suspense>
+  );
+
+  return (
+    <div className="emd min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
+      {cabecalho}
+      {/* Telas estreitas: a faixa de abas de sempre. Telas largas: barra lateral (mesmos itens, agrupados). */}
+      <div className="lg:hidden">
+        <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" largura={LARGURA_MODULO} />
+      </div>
+      <div className="mx-auto flex max-w-[110rem] gap-4 px-3 py-4 sm:px-5 sm:py-5 print:block print:max-w-none print:p-0">
+        <BarraLateral
+          itens={itens.map((i) => ({ ...i, selos: i.href === "/emendas/portal" ? ("alerta" as const) : undefined }))}
+          rotuloAria="Seções do módulo Emendas"
+          tour="nav-emendas"
+          recolhidaInicial={barraRecolhida}
+        />
+        <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
+          <AjusteDeRolagem />
+          <AvisoConexao />
+          {aviso}
+          <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
+        </main>
+      </div>
     </div>
   );
 }

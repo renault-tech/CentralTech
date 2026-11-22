@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Gauge } from "lucide-react";
 
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { TituloTela } from "@/components/emendas/titulo-tela";
 import { FaixaTipos } from "@/components/emendas/faixa-tipos";
 import { PainelEmendas } from "@/components/emendas/painel-emendas";
 import { lerComCache } from "@/lib/emendas/cache-dados";
@@ -21,21 +21,25 @@ import { brl } from "@/lib/emendas/regras";
 import { carregarPanorama } from "@/lib/emendas/panorama-dados";
 import { totaisPorCartao } from "@/lib/emendas/encerramento";
 import { dataNoFuso } from "@/lib/fuso";
+import { ComparacaoExercicios } from "@/components/emendas/comparacao-exercicios";
+import { anoParaComparar, curvaPercentual, pagoAte, totaisDoExercicio } from "@/lib/emendas/comparacao";
+import type { MovimentoResumo } from "@/lib/emendas/dados";
+import type { EmendaResumo, Exercicio } from "@/types/emendas";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaPainelEmendas({
   searchParams,
 }: {
-  searchParams: Promise<{ ano?: string }>;
+  searchParams: Promise<{ ano?: string; comparar?: string }>;
 }) {
-  const { ano } = await searchParams;
-  const { exercicio } = await medir("painel:exercicio", () => resolverExercicio(ano));
+  const { ano, comparar } = await searchParams;
+  const { exercicio, exercicios } = await medir("painel:exercicio", () => resolverExercicio(ano));
 
   if (!exercicio) {
     return (
       <div className="flex flex-col gap-5">
-        <CabecalhoPagina
+        <TituloTela
           titulo="Emendas impositivas"
           subtitulo="Nenhum exercício cadastrado ainda."
         />
@@ -61,9 +65,10 @@ export default async function PaginaPainelEmendas({
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina
-        titulo="Painel das emendas impositivas"
-        subtitulo={`Exercício ${exercicio.ano} · ${vereadoresAtivos.length} vereadores · cota individual de ${brl(exercicio.cota_por_vereador)} · ${emendas.length} emendas`}
+      <TituloTela
+        titulo="Painel das emendas"
+        selo={`Exercício ${exercicio.ano}`}
+        subtitulo={`${vereadoresAtivos.length} vereadores · cota individual de ${brl(exercicio.cota_por_vereador)} · ${emendas.length} emendas${exercicio.numero_lei_loa ? ` · ${exercicio.numero_lei_loa}` : ""}`}
       />
       {emendas.length === 0 ? (
         <Vazio>
@@ -82,6 +87,16 @@ export default async function PaginaPainelEmendas({
           <Suspense>
             <CartaoPanorama ano={exercicio.ano} />
           </Suspense>
+            <Suspense>
+              <CartaoComparacao
+                exercicio={exercicio}
+                emendas={emendas}
+                movimentos={movimentos}
+                anos={exercicios.map((e) => e.ano)}
+                comparar={comparar}
+                hoje={hoje}
+              />
+            </Suspense>
           <Suspense>
             <PainelEmendas
               emendas={emendas}
@@ -131,5 +146,52 @@ async function CartaoPanorama({ ano }: { ano: number }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Comparação com outro exercício. Sem outro ano cadastrado mostra o estado de espera; com ele, calcula e compara sozinha. */
+async function CartaoComparacao({
+  exercicio,
+  emendas,
+  movimentos,
+  anos,
+  comparar,
+  hoje,
+}: {
+  exercicio: Exercicio;
+  emendas: EmendaResumo[];
+  movimentos: MovimentoResumo[];
+  anos: number[];
+  comparar?: string;
+  hoje: string;
+}) {
+  const alvo = anoParaComparar(exercicio.ano, anos, comparar);
+  const outros = anos.filter((a) => a !== exercicio.ano).sort((a, b) => b - a);
+  if (alvo === null) return <ComparacaoExercicios ano={exercicio.ano} dados={null} outros={[]} hrefBase={() => "#"} />;
+
+  const emendasAnt = await listarEmendasEmCache(alvo);
+  const movAnt = await lerComCache("movimentos", String(alvo), () => listarMovimentos(emendasAnt.map((e) => e.id)));
+  const pagamentos = (m: MovimentoResumo[]) => m.filter((x) => x.tipo === "pagamento").map((x) => ({ data: x.data, valor: Number(x.valor) }));
+  const atual = totaisDoExercicio(exercicio.ano, emendas);
+  const anterior = totaisDoExercicio(alvo, emendasAnt);
+  const pagAtual = pagamentos(movimentos);
+  const pagAnt = pagamentos(movAnt);
+  // Ano em curso: compara até hoje; ano já passado: o exercício inteiro (31/12).
+  const mesDia = hoje.startsWith(`${exercicio.ano}-`) ? hoje.slice(5) : "12-31";
+  const [mm, dd] = mesDia.split("-");
+  return (
+    <ComparacaoExercicios
+      ano={exercicio.ano}
+      outros={outros}
+      hrefBase={(a) => `/emendas?ano=${exercicio.ano}&comparar=${a}`}
+      dados={{
+        atual,
+        anterior,
+        curvaAtual: curvaPercentual(pagAtual, exercicio.ano, atual.valor),
+        curvaAnterior: curvaPercentual(pagAnt, alvo, anterior.valor),
+        mesmoPeriodo: { rotuloData: `${dd}/${mm}`, atual: pagoAte(pagAtual, exercicio.ano, mesDia), anterior: pagoAte(pagAnt, alvo, mesDia) },
+        mesAtual: hoje.startsWith(`${exercicio.ano}-`) ? Number(mm) : null,
+      }}
+    />
   );
 }

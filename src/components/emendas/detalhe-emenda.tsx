@@ -40,6 +40,7 @@ export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 export const BOTAO_PRIMARIO =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+const BOTAO_COMPACTO = "h-8 px-3 text-[0.8125rem]";
 export const BOTAO_SECUNDARIO =
   "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
@@ -140,8 +141,11 @@ function paraNumero(t: string): number | null {
   return limpo && Number.isFinite(n) ? n : null;
 }
 
-type Aba = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
-const ABAS_VALIDAS: Aba[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
+/** Comandos que o painel ao lado da lista dá ao detalhe (abrir os diálogos de gravação sem repetir a barra de botões). */
+export type ControleDetalhe = { abrir: (dialogo: "andamento" | "movimento", opcoes?: { tipoMovimento?: "empenho" | "pagamento" }) => void };
+
+export type AbaEmenda = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
+const ABAS_VALIDAS: AbaEmenda[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
 
 export function DetalheEmendaCliente({
   detalhe,
@@ -159,12 +163,24 @@ export function DetalheEmendaCliente({
   corTipo,
   atalhos,
   abaInicial,
+  abaControlada,
+  aoMudarAba,
+  modoPainel,
+  aoSucesso,
+  controleRef,
 }: {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
   corTipo: string;
   atalhos?: AtalhosCompras;
   abaInicial?: string;
+  /** Painel ao lado da lista: a aba vem de fora (`null` = nenhuma aba daqui, só as ações e avisos), sem barra de abas nem moldura. */
+  abaControlada?: AbaEmenda | null;
+  aoMudarAba?: (destino: string) => void;
+  modoPainel?: boolean;
+  /** Chamado depois de uma gravação bem-sucedida (o painel recarrega os próprios dados). */
+  aoSucesso?: () => void;
+  controleRef?: React.Ref<ControleDetalhe>;
   detalhe: DetalheEmenda;
   podeEditar: boolean;
   gestor: boolean;
@@ -180,8 +196,18 @@ export function DetalheEmendaCliente({
   const catalogo = useCatalogo();
   const router = useRouter();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
-  const [aba, setAba] = React.useState<Aba>(ABAS_VALIDAS.includes(abaInicial as Aba) ? (abaInicial as Aba) : "fases");
+  const [abaLocal, setAbaLocal] = React.useState<AbaEmenda>(ABAS_VALIDAS.includes(abaInicial as AbaEmenda) ? (abaInicial as AbaEmenda) : "fases");
+  const controlada = abaControlada !== undefined;
+  const aba: AbaEmenda | null = controlada ? abaControlada : abaLocal;
+  const setAba = (destino: AbaEmenda) => (controlada && aoMudarAba ? aoMudarAba(destino) : setAbaLocal(destino));
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
+  const [tipoMov, setTipoMov] = React.useState<"empenho" | "pagamento">("pagamento");
+  React.useImperativeHandle(controleRef, () => ({
+    abrir: (d, opcoes) => {
+      if (d === "movimento") setTipoMov(opcoes?.tipoMovimento ?? "pagamento");
+      setDialogo(d);
+    },
+  }));
   const [erroGeral, setErroGeral] = React.useState<string | null>(null);
   const [avisoGeral, setAvisoGeral] = React.useState<string | null>(null);
 
@@ -207,31 +233,34 @@ export function DetalheEmendaCliente({
     const r = await acao();
     // Em caso de sucesso a própria action revalida a página (sem router.refresh).
     if (!r.sucesso) setErroGeral(r.erro);
-    else if (r.aviso) setAvisoGeral(r.aviso);
+    else {
+      if (r.aviso) setAvisoGeral(r.aviso);
+      aoSucesso?.();
+    }
     return r;
   }
 
   return (
     <>
-      {(podeEditar || gestor) && (
-        <div className="flex flex-wrap justify-end gap-2 print:hidden" data-tour="acoes-emenda">
+      {!modoPainel && (podeEditar || gestor) && (
+        <div className={cn("flex flex-wrap justify-end gap-2 print:hidden", modoPainel && "gap-1.5")} data-tour="acoes-emenda">
           {podeEditar && emenda.situacao !== "cancelada" && (
             <>
-              <button type="button" className={cn(BOTAO_SECUNDARIO, "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100")} onClick={() => setDialogo("impedimento")}>
+              <button type="button" className={cn(BOTAO_SECUNDARIO, "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100", modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("impedimento")}>
                 <AlertTriangle className="h-4 w-4" aria-hidden /> Registrar impedimento
               </button>
-              <button type="button" className={BOTAO_PRIMARIO} onClick={() => setDialogo("andamento")}>
+              <button type="button" className={cn(BOTAO_PRIMARIO, modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("andamento")}>
                 + Registrar andamento
               </button>
             </>
           )}
           {gestor && emenda.situacao !== "cancelada" && (
-            <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("remanejar")}>
+            <button type="button" className={cn(BOTAO_SECUNDARIO, modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("remanejar")}>
               Remanejar
             </button>
           )}
           {gestor && (
-            <a href={`/emendas/${emenda.id}/editar`} className={BOTAO_SECUNDARIO}>
+            <a href={`/emendas/${emenda.id}/editar`} className={cn(BOTAO_SECUNDARIO, modoPainel && BOTAO_COMPACTO)}>
               <Pencil className="h-4 w-4" aria-hidden /> Corrigir cadastro
             </a>
           )}
@@ -254,8 +283,9 @@ export function DetalheEmendaCliente({
         </div>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white print:border-0">
-        <div role="tablist" aria-label="Seções da emenda" className="flex flex-wrap gap-1 border-b border-slate-200 px-3 print:hidden">
+      {aba !== null && (
+      <section className={cn(!modoPainel && "rounded-xl border border-slate-200 bg-white print:border-0")}>
+        {!modoPainel && <div role="tablist" aria-label="Seções da emenda" className="flex flex-wrap gap-1 border-b border-slate-200 px-3 print:hidden">
           {(
             [
               ["fases", `Fases (${fases.filter((f) => f.situacao === "concluida").length}/${fases.filter((f) => f.situacao !== "nao_se_aplica").length})`],
@@ -265,7 +295,7 @@ export function DetalheEmendaCliente({
               ["andamentos", `Andamentos (${andamentos.length})`],
               // Anexos desativados por ora (nada de arquivo no banco): documentos ficam no Drive, na aba Documentação.
               ["historico", `Histórico${remanejamentos.length ? ` (${remanejamentos.length})` : ""}`],
-            ] as [Aba, string][]
+            ] as [AbaEmenda, string][]
           ).map(([chave, rotulo]) => (
             <button
               key={chave}
@@ -281,9 +311,9 @@ export function DetalheEmendaCliente({
               {rotulo}
             </button>
           ))}
-        </div>
+        </div>}
 
-        <div className="p-5">
+        <div className={modoPainel ? "pt-1" : "p-5"}>
           {aba === "fases" && vinculo && <div className="mb-4">{vinculo}</div>}
           {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} gestor={gestor} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
@@ -326,7 +356,8 @@ export function DetalheEmendaCliente({
               podeEditar={podeEditar}
               executar={executar}
               irParaAba={(destino) => {
-                if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
+                if (modoPainel && (destino === "execucao" || destino === "transparencia")) aoMudarAba?.("parceria");
+                else if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
                 else if (destino === "transparencia") document.getElementById("bloco-transparencia")?.scrollIntoView({ behavior: "smooth" });
                 else setAba(destino);
               }}
@@ -411,7 +442,7 @@ export function DetalheEmendaCliente({
                 </table>
                 {movimentos.length === 0 && <p className="py-4 text-sm text-slate-500">Nenhum empenho, liquidação ou pagamento registrado ainda.</p>}
               </div>
-              {podeEditar && (
+              {podeEditar && !modoPainel && (
                 <div className="flex flex-wrap items-center gap-2">
                   <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("movimento")}>
                     + Lançar movimento (parcial, anulação…)
@@ -512,6 +543,7 @@ export function DetalheEmendaCliente({
           )}
         </div>
       </section>
+      )}
 
       {gestor && (
         <div className="flex justify-end print:hidden">
@@ -565,6 +597,8 @@ export function DetalheEmendaCliente({
         aoSalvar={(d) => executar(() => registrarImpedimento({ emendaId: emenda.id, ...d }))}
       />
       <DialogoMovimento
+        key={tipoMov}
+        tipoInicial={tipoMov}
         aberto={dialogo === "movimento"}
         saldos={(() => {
           const t = totaisFinanceiros(movimentos);
@@ -767,16 +801,18 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
 
 function DialogoMovimento({
   aberto,
+  tipoInicial,
   saldos,
   aoFechar,
   aoSalvar,
 }: {
   aberto: boolean;
+  tipoInicial: "empenho" | "pagamento";
   saldos: { empenhar: number; liquidar: number; pagar: number };
   aoFechar: () => void;
   aoSalvar: (d: { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero?: string; data: string | null; valor: number }) => Promise<Resultado>;
 }) {
-  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">("pagamento");
+  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">(tipoInicial);
   const [numero, setNumero] = React.useState("");
   const [data, setData] = React.useState(hojeLocal());
   const [valor, setValor] = React.useState("");

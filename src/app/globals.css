@@ -661,3 +661,201 @@ html.dark .hub-home-fundo [class*="text-[#0A5FD0]"] { color: #6aa6ee; }
   html { font-size: 100% !important; }
 }
 body:has(.cabecalho-escuro) .zoom-flutuante { display: none; }
+
+/* ===== Emendas — novo design (escopo `.emd`, só o módulo Emendas) =====
+   Movimento curto e com propósito: entrada escalonada das seções, barras e anéis que "enchem" uma vez, cartões que se
+   erguem 1 px ao passar o mouse. Tudo some com `prefers-reduced-motion`. Curva única (--emd-curva) para o módulo todo. */
+.emd { --emd-curva: cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes emd-entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes emd-corre { from { left: -35%; } to { left: 100%; } }
+.emd .emd-corre { animation: emd-corre 1.3s var(--emd-curva) infinite; }
+@keyframes emd-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes emd-anel { from { stroke-dashoffset: var(--anel-total); } to { stroke-dashoffset: var(--anel-resto); } }
+@keyframes emd-pulso {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--modulo) 38%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 9px transparent; }
+}
+.emd .emd-pagina > * > * { animation: emd-entra 0.22s var(--emd-curva) both; }
+.emd .emd-pagina > * > *:nth-child(2) { animation-delay: 25ms; }
+.emd .emd-pagina > * > *:nth-child(3) { animation-delay: 50ms; }
+.emd .emd-pagina > * > *:nth-child(n + 4) { animation-delay: 75ms; }
+.emd .emd-entra { animation: emd-entra 0.25s var(--emd-curva) both; animation-delay: calc(var(--i, 0) * 30ms); }
+.emd .emd-barra { transform-origin: left center; animation: emd-barra 0.9s var(--emd-curva) both; animation-delay: 0.12s; }
+.emd .emd-anel-arco { animation: emd-anel 1.1s var(--emd-curva) both; animation-delay: 0.1s; }
+.emd .emd-pulso { animation: emd-pulso 2.4s ease-out infinite; }
+
+/* Cartões: cantos de 16 px, sombra de 1 camada e realce discreto ao passar o mouse (só os que são links ou botões). */
+.emd .bg-white[class*="rounded-xl"],
+.emd .bg-white[class*="rounded-2xl"] {
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px -8px rgb(15 23 42 / 0.1);
+}
+.emd a.bg-white[class*="rounded-xl"],
+.emd a[class*="rounded-xl"][style*="border-left"] {
+  transition: transform 0.25s var(--emd-curva), box-shadow 0.25s var(--emd-curva);
+}
+.emd a.bg-white[class*="rounded-xl"]:hover,
+.emd a[class*="rounded-xl"][style*="border-left"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgb(15 23 42 / 0.05), 0 14px 28px -12px rgb(15 23 42 / 0.2);
+}
+html.dark .emd .bg-white[class*="rounded-xl"],
+html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px -12px rgb(0 0 0 / 0.5); }
+
+/* Tabelas: cabeçalho que fica ao rolar, linha que acende ao passar o mouse, números alinhados. */
+.emd table { font-variant-numeric: tabular-nums; }
+.emd thead th { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgb(var(--slate-500)); }
+.emd tbody tr { transition: background-color 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva); }
+
+/* Barra lateral */
+.emd-lateral a[aria-current="page"] {
+  background: color-mix(in srgb, var(--modulo) 13%, transparent);
+  color: var(--modulo-tinta);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--modulo) 22%, transparent);
+}
+.emd-lateral a { transition: background-color 0.2s var(--emd-curva), color 0.2s var(--emd-curva), transform 0.2s var(--emd-curva); }
+.emd-lateral a:not([aria-current="page"]):hover { transform: translateX(2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .emd *, .emd *::before, .emd *::after { animation: none !important; transition: none !important; }
+}
+@media print { .emd-lateral { display: none !important; } .emd .emd-pagina > * > * { animation: none !important; } }
+
+/* Títulos de tela do módulo Emendas: um só tamanho e ritmo em todas as abas (as telas antigas têm o próprio <h1>). */
+.emd h1 { font-size: 1.625rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+
+/* ===== Emendas — gráficos, tabelas e botões vivos ===== */
+@property --emd-n { syntax: "<integer>"; initial-value: 0; inherits: false; }
+@keyframes emd-conta { from { --emd-n: 0; } }
+@keyframes emd-preenche { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes emd-traco { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes emd-fatia { from { stroke-dasharray: 0 240; } }
+@keyframes emd-linha { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Número que "conta" até o valor (anel de andamento). Sem suporte a @property, aparece direto o valor final. */
+.emd .emd-conta { counter-reset: emd-n var(--emd-n); animation: emd-conta 1.1s var(--emd-curva) 0.1s both; }
+.emd .emd-conta::before { content: counter(emd-n); }
+
+/* Barras que enchem da esquerda para a direita; ao mudar de valor (filtro), a largura desliza em vez de pular. */
+.emd .emd-preenche { animation: emd-preenche 0.85s var(--emd-curva) 0.1s both; transition: width 0.6s var(--emd-curva), filter 0.2s ease; }
+/* Linha do gráfico que se desenha, e fatias da pizza que abrem em sequência. */
+.emd .emd-traco { stroke-dasharray: 1; animation: emd-traco 1.5s var(--emd-curva) 0.15s both; }
+.emd .emd-fatia { animation: emd-fatia 0.9s var(--emd-curva) both; }
+
+/* Linhas de tabela entram em sequência (as 14 primeiras; o resto junto). */
+.emd tbody tr { animation: emd-linha 0.45s var(--emd-curva) both; }
+.emd tbody tr:nth-child(2) { animation-delay: 25ms; }
+.emd tbody tr:nth-child(3) { animation-delay: 50ms; }
+.emd tbody tr:nth-child(4) { animation-delay: 75ms; }
+.emd tbody tr:nth-child(5) { animation-delay: 100ms; }
+.emd tbody tr:nth-child(6) { animation-delay: 125ms; }
+.emd tbody tr:nth-child(7) { animation-delay: 150ms; }
+.emd tbody tr:nth-child(8) { animation-delay: 175ms; }
+.emd tbody tr:nth-child(9) { animation-delay: 200ms; }
+.emd tbody tr:nth-child(10) { animation-delay: 225ms; }
+.emd tbody tr:nth-child(n + 11) { animation-delay: 250ms; }
+
+/* Linha clicável: realce na cor do módulo (camada por cima do fundo do tipo, que é inline) e título que acende. */
+.emd tr.emd-linha-clic { transition: background-color 0.2s var(--emd-curva), background-image 0.2s var(--emd-curva); }
+.emd tr.emd-linha-clic:hover {
+  background-image: linear-gradient(color-mix(in srgb, var(--modulo) 9%, transparent), color-mix(in srgb, var(--modulo) 9%, transparent));
+}
+.emd tr.emd-linha-clic:hover a:first-of-type { color: var(--modulo-tinta); text-decoration: underline; text-underline-offset: 3px; }
+.emd tr.emd-linha-clic:active { background-image: linear-gradient(color-mix(in srgb, var(--modulo) 15%, transparent), color-mix(in srgb, var(--modulo) 15%, transparent)); }
+.emd tbody tr:not(.emd-linha-clic):hover { background-image: linear-gradient(rgb(var(--slate-500) / 0.07), rgb(var(--slate-500) / 0.07)); }
+
+/* Rolagem: as áreas rolam sem encaixe nativo (o `scroll-snap` puxava a cada giro da roda e dava tranco). O encaixe no início de uma
+   linha é feito por `AjusteDeRolagem` (JS): quando a rolagem para, a lista desacelera até a linha mais próxima. A borda de baixo da
+   lista some em degradê e a lista tem folga no fim, então nenhuma palavra é cortada seca pela borda arredondada do painel. */
+html:has(.emd) { scroll-behavior: smooth; }
+.emd .emd-rola, .emd .emd-foco { scroll-behavior: smooth; }
+.emd .emd-lista { scroll-behavior: auto; padding-bottom: 1.25rem; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); }
+.emd .emd-detalhe .emd-rola { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.emd), .emd .emd-rola, .emd .emd-foco { scroll-behavior: auto; }
+  .emd .emd-corre { animation: none; left: 0; width: 100%; opacity: .5; }
+}
+
+/* Botões: sobem 1 px com sombra ao passar o mouse e afundam ao clicar. */
+.emd .btn-ui, .emd button[role="tab"], .emd button[aria-pressed] {
+  transition: transform 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva), background-color 0.2s ease, filter 0.2s ease, color 0.2s ease;
+}
+@media (hover: hover) {
+  .emd .btn-ui:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 16px -8px rgb(15 23 42 / 0.4); }
+  .emd .btn-ui:not(:disabled):active { transform: translateY(0) scale(0.98); box-shadow: none; }
+  .emd button[role="tab"]:hover { transform: translateY(-1px); }
+
+  /* Gráficos: o item sob o cursor se destaca e os vizinhos recuam. */
+  .emd .emd-foco > li { transition: opacity 0.2s ease; }
+  .emd .emd-foco:hover > li:not(:hover):not(:focus-within) { opacity: 0.55; }
+  .emd .emd-foco > li:hover .emd-preenche { filter: brightness(1.12) saturate(1.15); }
+  .emd .emd-foco > li button:hover > span:first-child { transform: scale(1.35); }
+  .emd .emd-foco > li button > span:first-child { transition: transform 0.2s var(--emd-curva); }
+  .emd circle[role="button"]:hover { filter: brightness(1.1); }
+  .emd .emd-ergue { transition: transform 0.25s var(--emd-curva), box-shadow 0.25s var(--emd-curva); }
+  .emd .emd-ergue:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgb(15 23 42 / 0.05), 0 14px 28px -12px rgb(15 23 42 / 0.2); }
+}
+@media print { .emd tbody tr { animation: none !important; } .emd .emd-preenche, .emd .emd-traco, .emd .emd-fatia { animation: none !important; } }
+
+/* Detalhes que só existem no visual novo (o original não os tem). */
+.emd-ponto { display: none; }
+.emd .emd-ponto { display: inline-block; }
+
+/* ===== Emendas — área de trabalho (gráficos | lista | resumo) ===== */
+@keyframes emd-troca { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.emd .emd-ws { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+.emd .emd-ws > * { min-width: 0; }
+.emd .emd-troca { animation: emd-troca 0.25s var(--emd-curva) both; }
+.emd .emd-conteudo-graficos { transition: opacity 0.25s ease; }
+.emd .emd-ws[data-detalhe="true"] .emd-conteudo-graficos { opacity: 0; }
+.emd .emd-detalhe { transition: opacity 0.3s ease 0.05s, border-color 0.3s ease; }
+/* Desempenho: cartões dentro dos painéis não refazem o desfoque de vidro (só os painéis têm), e enquanto as colunas deslizam nem os painéis. */
+.emd .emd-ws .bg-white[class*="rounded-"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.emd .emd-ws[data-movendo] > * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background-color: rgb(var(--surface) / 0.92) !important; }
+.emd .emd-ws[data-movendo] :is(.emd-item, .emd-entra, .emd-preenche, .emd-anel-arco, .emd-fatia, .emd-conta) { animation: none !important; }
+.emd .emd-ws[data-movendo] .emd-lista { pointer-events: none; }
+.emd .emd-ws[data-detalhe="false"] .emd-detalhe { opacity: 0; }
+@media (min-width: 1024px) {
+  .emd .emd-ws {
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 0fr);
+    transition: grid-template-columns 0.4s var(--emd-curva);
+  }
+  .emd .emd-ws[data-detalhe="true"] { grid-template-columns: minmax(4.5rem, 0.04fr) minmax(0, 1fr) minmax(0, 1.3fr); }
+  .emd .emd-ws > :nth-child(1), .emd .emd-ws > :nth-child(2) { margin-right: 1rem; transition: margin 0.4s var(--emd-curva); }
+  .emd .emd-ws[data-detalhe="false"] > :nth-child(2) { margin-right: 0; }
+  .emd .emd-conteudo-graficos { min-width: 30rem; }
+  /* Painel expandido: o detalhe ocupa a largura toda; gráficos e lista recolhem a zero. */
+  .emd .emd-ws[data-detalhe="true"][data-expandido="true"] { grid-template-columns: minmax(0, 0fr) minmax(0, 0fr) minmax(0, 1fr); }
+  .emd .emd-ws[data-expandido="true"] > :nth-child(1), .emd .emd-ws[data-expandido="true"] > :nth-child(2) { margin-right: 0; opacity: 0; border-color: transparent; }
+}
+/* Abaixo de 1024 px o detalhe abre como folha por cima da lista (a lista continua atrás, escurecida). */
+@keyframes emd-folha { from { transform: translateY(100%); } to { transform: none; } }
+@media (max-width: 1023.98px) {
+  .emd .emd-ws[data-detalhe="false"] .emd-detalhe { display: none; }
+  html .emd .emd-ws[data-detalhe="true"] .emd-detalhe.emd-detalhe {
+    position: fixed; inset: 3.5rem 0 0 0; z-index: 50; border-radius: 1.25rem 1.25rem 0 0; border-color: transparent;
+    background: rgb(var(--surface)) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: 0 -24px 60px -24px rgb(15 23 42 / 0.55); animation: emd-folha 0.35s var(--emd-curva) both; opacity: 1;
+  }
+}
+/* Lista: item com realce, selecionado com brilho na cor do tipo; entram em sequência. */
+.emd .emd-item { transition: background-color 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva); animation: emd-linha 0.22s var(--emd-curva) both; }
+.emd .emd-item:nth-child(2) { animation-delay: 10ms; }
+.emd .emd-item:nth-child(3) { animation-delay: 20ms; }
+.emd .emd-item:nth-child(4) { animation-delay: 30ms; }
+.emd .emd-item:nth-child(5) { animation-delay: 40ms; }
+.emd .emd-item:nth-child(6) { animation-delay: 50ms; }
+.emd .emd-item:nth-child(n + 7) { animation-delay: 60ms; }
+.emd .emd-item:hover { background-color: color-mix(in srgb, var(--tipo) 7%, transparent); }
+.emd .emd-item:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--modulo) 60%, transparent); }
+.emd .emd-item-sel { background-color: color-mix(in srgb, var(--tipo) 12%, transparent); box-shadow: inset 3px 0 0 var(--tipo); }
+.emd .emd-item-sel .emd-item-faixa { opacity: 0; }
+.emd .emd-item:hover .emd-item-faixa { width: 0.375rem; }
+.emd .emd-item-faixa { transition: width 0.2s var(--emd-curva), opacity 0.2s; }
+@media (prefers-reduced-motion: reduce) { .emd .emd-ws { transition: none; } .emd .emd-ws > * { transition: none !important; } }
+@media print { .emd .emd-ws { display: block; height: auto !important; } }
+
+
+/* Gráficos de filtro: a altura de cada um acompanha a quantidade de linhas (ver `GraficoFiltro`). */
+.emd .emd-grafico { transition: flex-grow 0.5s var(--emd-curva); }

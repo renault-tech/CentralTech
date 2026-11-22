@@ -322,7 +322,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
       gravidade: "media",
       titulo: "Datas fora de ordem",
       detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).${
-        antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação." : ""
+        antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação. Se as datas estão corretas, a saída indicada pelo Controle Interno é a publicação de um extrato saneador (registre-a na justificativa)." : ""
       }`,
       motivos: [{ chave: `data_fora_de_ordem:${antes.fase.chave}>${depois.fase.chave}`, rotulo: `${depois.fase.nome} antes de ${antes.fase.nome}` }],
       aba: "fases",

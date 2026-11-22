@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AbasNavegacao } from "@/components/layout/abas-navegacao";
-import { CabecalhoPagina } from "@/components/layout/cabecalho-pagina";
+import { TituloTela } from "@/components/emendas/titulo-tela";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
 import { ehGestor } from "@/lib/emendas/regras";
 
@@ -28,7 +28,7 @@ export default async function LayoutConfiguracoesEmendas({ children }: { childre
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina titulo="Configurações de Emendas" subtitulo="Exercícios, cadastros, permissões por secretaria e importação de planilhas." />
+      <TituloTela titulo="Configurações de Emendas" />
       <AbasNavegacao label="Configurações de Emendas" abas={abas} />
       <div>{children}</div>
     </div>

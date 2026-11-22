@@ -180,6 +180,28 @@ const esquemaDecisao = z.object({
   motivo: z.string().trim().max(500).optional(),
 });
 
+const esquemaApagar = z.object({ ids: z.array(z.string().uuid()).min(1, "Marque ao menos uma proposta.").max(500) });
+
+/**
+ * Apaga propostas (pendentes, em conflito ou já decididas). Só gestor/admin; a RLS (`gestor_apaga_propostas`) confirma.
+ * Apagar uma proposta pendente não altera nada na emenda: o dado proposto simplesmente não entra.
+ */
+export async function apagarPropostas(dados: z.input<typeof esquemaApagar>): Promise<Resultado & { apagadas?: number }> {
+  const a = esquemaApagar.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const ctx = await exigirGestor();
+  if (!ctx) return { sucesso: false, erro: "Só gestores apagam propostas." };
+  const emendas = await criarClienteEmendas();
+  const { data, error } = await emendas.from("propostas").delete().in("id", a.data.ids).select("id");
+  if (error) {
+    console.error("[apagarPropostas]", error);
+    return { sucesso: false, erro: "Não foi possível apagar as propostas." };
+  }
+  revalidatePath("/emendas/aprovacoes");
+  revalidatePath("/emendas", "layout");
+  return { sucesso: true, apagadas: data?.length ?? 0 };
+}
+
 export async function decidirPropostas(dados: z.input<typeof esquemaDecisao>): Promise<Resultado & { aprovadas?: number; conflitos?: number; falhas?: number }> {
   const a = esquemaDecisao.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };

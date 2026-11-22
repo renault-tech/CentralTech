@@ -1,8 +1,11 @@
 "use client";
 
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import * as React from "react";
 import Link from "next/link";
+import { Coins, FileCheck2, HeartPulse, Hourglass, Landmark, OctagonAlert } from "lucide-react";
 
 import { Cartao, Kpi } from "@/components/emendas/ui";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
@@ -188,16 +191,50 @@ export function PainelEmendas({
         </span>
       </section>
 
-      <section aria-label="Indicadores" className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3" data-tour="indicadores-emendas">
-        <Kpi rotulo="Total indicado" valor={brlCurto(ind.total)} apoio={`${ind.quantidade} emendas no recorte`} barra={1} corBarra="#0C1D33" />
-        <Kpi rotulo="Empenhado" valor={brlCurto(ind.empenhado)} apoio={`${pct(ind.empenhado / (ind.total || 1))} do indicado`} barra={ind.empenhado / (ind.total || 1)} corBarra="#9479DD" />
-        <Kpi rotulo="Pago" valor={brlCurto(ind.pago)} apoio={`${ind.quantidadePagas} emendas pagas`} barra={ind.pago / (ind.total || 1)} corBarra="#563A9E" corValor="#4C3494" />
-        <Kpi rotulo="A executar" valor={brlCurto(ind.aExecutar)} apoio={`${ind.quantidade - ind.quantidadePagas} emendas em aberto`} barra={ind.aExecutar / (ind.total || 1)} corBarra="#CBD5E1" />
+      <section aria-label="Indicadores" className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6" data-tour="indicadores-emendas">
+        <Kpi
+          icone={Landmark}
+          rotulo="Total indicado"
+          valor={brlCurto(ind.total)}
+          apoio={`${ind.quantidade} emendas no recorte`}
+          barra={1}
+          corBarra={COR_DINHEIRO.indicado}
+          info={<><CaixaLinhas linhas={[{ rotulo: "Emendas no recorte", valor: String(ind.quantidade) }, { rotulo: "Valor médio por emenda", valor: brl(ind.quantidade ? ind.total / ind.quantidade : 0) }, { rotulo: "Na Saúde", valor: brlCurto(ind.saude), apoio: pct(ind.total ? ind.saude / ind.total : 0) }]} /><CaixaNota>Soma do valor das emendas do recorte atual.</CaixaNota></>}
+        />
+        <Kpi
+          icone={FileCheck2}
+          rotulo="Empenhado"
+          valor={brlCurto(ind.empenhado)}
+          apoio={`${pct(ind.empenhado / (ind.total || 1))} do indicado`}
+          barra={ind.empenhado / (ind.total || 1)}
+          corBarra={COR_DINHEIRO.empenhado}
+          info={<><CaixaLinhas linhas={[{ rotulo: "Do indicado", valor: pct(ind.empenhado / (ind.total || 1)) }, { rotulo: "Falta empenhar", valor: brl(Math.max(0, ind.total - ind.empenhado)), cor: COR_DINHEIRO.semEmpenhar }]} /><CaixaNota>Empenho registrado na aba Financeiro de cada emenda.</CaixaNota></>}
+        />
+        <Kpi
+          icone={Coins}
+          rotulo="Pago"
+          valor={brlCurto(ind.pago)}
+          apoio={`${ind.quantidadePagas} emendas pagas`}
+          barra={ind.pago / (ind.total || 1)}
+          corBarra={COR_DINHEIRO.pago}
+          corValor="#047857"
+          info={<><CaixaLinhas linhas={[{ rotulo: "Do indicado", valor: pct(ind.pago / (ind.total || 1)) }, { rotulo: "Do empenhado", valor: ind.empenhado ? pct(ind.pago / ind.empenhado) : "—" }, { rotulo: "Emendas pagas", valor: String(ind.quantidadePagas), cor: COR_DINHEIRO.pago }]} /><CaixaNota>O pagamento fecha com o valor empenhado, não com o valor da emenda.</CaixaNota></>}
+        />
+        <Kpi
+          icone={Hourglass}
+          rotulo="A executar"
+          valor={brlCurto(ind.aExecutar)}
+          apoio={`${ind.quantidade - ind.quantidadePagas} emendas em aberto`}
+          barra={ind.aExecutar / (ind.total || 1)}
+          corBarra={COR_DINHEIRO.semEmpenhar}
+          info={<><CaixaLinhas linhas={[{ rotulo: "Empenhado a pagar", valor: brl(Math.max(0, ind.empenhado - ind.pago)), cor: COR_DINHEIRO.aPagar }, { rotulo: "Sem empenhar", valor: brl(Math.max(0, ind.total - ind.empenhado)), cor: COR_DINHEIRO.semEmpenhar }, { rotulo: "Emendas em aberto", valor: String(ind.quantidade - ind.quantidadePagas) }]} /><CaixaNota>Tudo o que ainda não foi pago do valor indicado.</CaixaNota></>}
+        />
         {(() => {
           const p = ind.total ? ind.saude / ind.total : 0;
           const ok = p * 100 + 0.0001 >= exercicio.percentual_saude_min;
           return (
             <Kpi
+              icone={HeartPulse}
               rotulo="Na Saúde"
               ajuda={<BaseLegalDica chave="saude" />}
               valor={pct(p)}
@@ -205,10 +242,11 @@ export function PainelEmendas({
               barra={p}
               corBarra={ok ? "#16A34A" : "#D97706"}
               corValor={ok ? "#166534" : "#92400E"}
+              info={<><CaixaLinhas linhas={[{ rotulo: "Valor na Saúde", valor: brl(ind.saude) }, { rotulo: "Percentual", valor: pct(p), forte: true }, { rotulo: "Mínimo exigido", valor: `${exercicio.percentual_saude_min}%` }]} /><CaixaNota>{ok ? "Mínimo atendido." : "Abaixo do mínimo: é um alerta, não bloqueia nada."}</CaixaNota></>}
             />
           );
         })()}
-        <Kpi rotulo="Impedidas" valor={String(ind.impedidas)} apoio={`${ind.remanejadas} com remanejamento no histórico`} barra={ind.quantidade ? ind.impedidas / ind.quantidade : 0} corBarra="#D97706" />
+        <Kpi icone={OctagonAlert} rotulo="Impedidas" valor={String(ind.impedidas)} apoio={`${ind.remanejadas} com remanejamento no histórico`} barra={ind.quantidade ? ind.impedidas / ind.quantidade : 0} corBarra="#D97706" info={<><CaixaLinhas linhas={[{ rotulo: "Impedidas", valor: String(ind.impedidas), forte: true }, { rotulo: "Com remanejamento no histórico", valor: String(ind.remanejadas) }]} /><CaixaNota>Impedida: há impedimento aberto; resolva-o ou remaneje a emenda.</CaixaNota></>} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -226,12 +264,21 @@ export function PainelEmendas({
               const ativo = f.v === l.vereadorId;
               const ok = cumpreSaude(l.saude, exercicio.cota_por_vereador, exercicio.percentual_saude_min);
               return (
-                <button
+                <CaixaInfo
                   key={l.vereadorId}
+                  as="div"
+                  conteudo={
+                    <>
+                      <CaixaTitulo rotulo="Vereador" valor={l.nome} />
+                      <CaixaLinhas linhas={[{ rotulo: "Indicado", valor: brl(l.total), forte: true }, { rotulo: "Pago", valor: brl(l.pago), cor: COR_DINHEIRO.pago }, ...[3, 2, 1, 0].map((g) => ({ rotulo: GRUPOS_EXECUCAO[3 - g].nome, valor: brlCurto(l.grupos[g]), cor: GRUPOS_EXECUCAO[3 - g].cor }))]} />
+                      <CaixaNota>{ok ? "Mínimo de Saúde atendido." : "Abaixo do mínimo de Saúde (alerta)."} Clique para filtrar o painel.</CaixaNota>
+                    </>
+                  }
+                >
+                <button
                   type="button"
                   onClick={() => alternar("v", l.vereadorId)}
                   aria-pressed={ativo}
-                  title={`${l.nome}: ${brl(l.total)} indicados, ${brl(l.pago)} pagos`}
                   className={cn(
                     "grid grid-cols-[minmax(0,1fr)_minmax(90px,1fr)_40px] items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-violet-50 sm:grid-cols-[minmax(140px,200px)_1fr_48px_70px] sm:gap-2.5",
                     ativo && "bg-violet-50",
@@ -244,7 +291,7 @@ export function PainelEmendas({
                   <span className="flex h-3.5 overflow-hidden rounded bg-slate-100">
                     {[3, 2, 1, 0].map((g) =>
                       l.grupos[g] > 0 ? (
-                        <span key={g} style={{ width: `${(l.grupos[g] / maxV) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
+                        <span key={g} className="emd-preenche" style={{ width: `${(l.grupos[g] / maxV) * 100}%`, backgroundColor: GRUPOS_EXECUCAO[3 - g].cor }} />
                       ) : null
                     )}
                   </span>
@@ -258,6 +305,7 @@ export function PainelEmendas({
                     {recorteSoVereadorOuNada && l.total ? `Saúde ${pct(l.saude / exercicio.cota_por_vereador)}` : "—"}
                   </span>
                 </button>
+                </CaixaInfo>
               );
             })}
           </div>
@@ -285,7 +333,7 @@ export function PainelEmendas({
                       {etapa.nome}
                     </span>
                     <span className="h-[18px] overflow-hidden rounded bg-slate-50">
-                      <span className="block h-[18px] rounded" style={{ width: `${(valor / totalFunil) * 100}%`, backgroundColor: etapa.cor }} />
+                      <span className="emd-preenche block h-[18px] rounded" style={{ width: `${(valor / totalFunil) * 100}%`, backgroundColor: etapa.cor }} />
                     </span>
                     <span className="text-right text-xs tabular-nums text-slate-700">
                       <strong>{quantidade}</strong> · {brlCurto(valor)}
@@ -389,8 +437,8 @@ export function PainelEmendas({
                 >
                   <span className="truncate text-[0.8125rem] text-cataguases-marinho">{l.nome}</span>
                   <span className="relative h-4 overflow-hidden rounded bg-slate-50">
-                    <span className="absolute inset-y-0 left-0 rounded bg-[#DDD6F7]" style={{ width: `${(l.total / maxS) * 100}%` }} />
-                    <span className="absolute inset-y-0 left-0 rounded bg-[#563A9E]" style={{ width: `${(l.pago / maxS) * 100}%` }} />
+                    <span className="emd-preenche absolute inset-y-0 left-0 rounded bg-[#DDD6F7]" style={{ width: `${(l.total / maxS) * 100}%` }} />
+                    <span className="emd-preenche absolute inset-y-0 left-0 rounded bg-[#563A9E]" style={{ width: `${(l.pago / maxS) * 100}%` }} />
                   </span>
                   <span className="text-right text-xs tabular-nums text-slate-700">
                     {brlCurto(l.total)} · <strong>{pct(l.pago / l.total, 0)}</strong>
@@ -462,7 +510,7 @@ function Divisao({ a, b, va, vb, cor, apoioA, apoioB }: { a: string; b: string; 
         </span>
       </div>
       <div className="flex h-3 overflow-hidden rounded-full bg-slate-200" aria-hidden>
-        <span style={{ width: `${(va / total) * 100}%`, backgroundColor: cor }} />
+        <span className="emd-preenche" style={{ width: `${(va / total) * 100}%`, backgroundColor: cor }} />
       </div>
       <div className="mt-1 flex justify-between text-xs text-slate-500">
         <span>{apoioA}</span>
@@ -512,7 +560,7 @@ function Curva({ acumulado, total, mesHoje }: { acumulado: number[]; total: numb
       )}
       <polyline points={`${mx(0)},${my(0)} ${mx(12)},${my(total)}`} fill="none" stroke="#94A3B8" strokeWidth={2} strokeDasharray="5 4" />
       <polygon points={area} fill="rgba(107,79,187,0.12)" />
-      <polyline points={linha} fill="none" stroke="#563A9E" strokeWidth={2.5} strokeLinejoin="round" />
+      <polyline points={linha} fill="none" stroke="#563A9E" strokeWidth={2.5} strokeLinejoin="round" pathLength={1} className="emd-traco" />
       {pontos.slice(1).map((p) => (
         <circle key={p.m} cx={p.x} cy={p.y} r={3.5} fill="#FFFFFF" stroke="#563A9E" strokeWidth={2}>
           <title>{`Até ${MESES[p.m - 1]}: ${brl(p.v)}`}</title>

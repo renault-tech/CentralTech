@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
 import { AlertTriangle, ChevronDown, CircleDashed, Minus } from "lucide-react";
 
 import { preencherPeloPdf, removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
@@ -51,9 +52,21 @@ function Marca({ f }: { f: FaseCalculada }) {
   else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
   else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
   return (
-    <span title={resumo} aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-default">
-      {corpo}
-    </span>
+    <CaixaInfo
+      conteudo={
+        <>
+          <CaixaTitulo rotulo="Fase" valor={f.fase.nome} />
+          <CaixaNota>{f.resumo}</CaixaNota>
+          {f.alertas.map((a) => (
+            <p key={a} className="mt-1.5 text-[0.75rem] leading-snug text-amber-800">⚠ {a}</p>
+          ))}
+        </>
+      }
+    >
+      <span aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-default">
+        {corpo}
+      </span>
+    </CaixaInfo>
   );
 }
 

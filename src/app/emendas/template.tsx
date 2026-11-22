@@ -1,0 +1,7 @@
+/**
+ * Template (recriado a cada navegação dentro de /emendas): reinicia a animação de entrada das seções da tela.
+ * As seções de cada tela (filhas do elemento raiz dela) entram em sequência (CSS `.emd-pagina`), respeitando `prefers-reduced-motion`.
+ */
+export default function TemplateEmendas({ children }: { children: React.ReactNode }) {
+  return <div className="emd-pagina">{children}</div>;
+}
