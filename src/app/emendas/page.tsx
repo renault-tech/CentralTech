@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { TituloTela } from "@/components/emendas/titulo-tela";
+import { TituloTela } from "@/components/modulo/titulo-tela";
 import { PainelAbertura } from "@/components/emendas/painel-abertura";
 import { lerComCache } from "@/lib/emendas/cache-dados";
 import { medir } from "@/lib/emendas/tempo";

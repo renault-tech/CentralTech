@@ -4,7 +4,7 @@ import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { type FiltroAtivo } from "@/components/emendas/filtros-ativos";
-import { CINZA, PALETA } from "@/components/emendas/pizza";
+import { CINZA, PALETA } from "@/components/modulo/pizza";
 import { CATEGORIAS, INFO_CATEGORIA } from "@/lib/emendas/categorias";
 import {
   agruparLista,

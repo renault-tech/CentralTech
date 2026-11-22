@@ -4,12 +4,12 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
-import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
+import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
-import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
-import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
+import { CINZA, PALETA, Pizza } from "@/components/modulo/pizza";
+import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
@@ -22,7 +22,7 @@ export type ResumoItem = { codigo: string; nome: string; exigencia: string; apli
 export type LinhaConformidade = { id: string; numero: number; objeto: string; secretaria: string; tipo: TipoExecucao; executada: boolean; faltas: string[] };
 
 const CAMPO =
-  "h-10 min-w-0 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
+  "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 const POR_PAGINA = 40;
 const rotuloCodigo = (c: string) => (c === "art5" ? "Art. 5º" : `Art. 7º, ${c}`);
 
@@ -87,7 +87,7 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
-          <select value={dim} onChange={(e) => setDim(e.target.value as Dim)} className="h-9 cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white/80 py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25">
+          <select value={dim} onChange={(e) => setDim(e.target.value as Dim)} className="h-9 cursor-pointer appearance-none rounded-[0.75rem] border border-slate-300 bg-white py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25">
             {DIMENSOES.map((d) => (
               <option key={d.chave} value={d.chave}>{d.rotulo}</option>
             ))}

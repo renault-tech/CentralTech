@@ -9,8 +9,8 @@ import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { HoverAndamento } from "@/components/emendas/hover-andamento";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
-import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
-import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
+import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
+import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { PainelDetalheEmenda, type AtualizacaoEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { FaixaIndicadores, GraficoFiltro } from "@/components/emendas/grafico-filtro";
 import { chipsDosFiltros } from "@/components/emendas/painel-lista";
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
 const CAMPO =
-  "h-10 min-w-0 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
+  "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 
 const SEM_ATUALIZACOES: Record<string, AtualizacaoEmenda> = {};
 

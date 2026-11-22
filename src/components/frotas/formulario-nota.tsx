@@ -8,6 +8,7 @@ import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
 import type { Fornecedor, NotaCombustivel, SecretariaFrotas } from "@/types/frotas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 type OpcaoQuinzena = { inicio: string; rotulo: string };
 
@@ -28,6 +29,7 @@ export function FormularioNota({
   voltarPara: string;
 }) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [secretariaId, setSecretariaId] = React.useState(nota?.secretaria_id ?? "");
   const [numeroNf, setNumeroNf] = React.useState(nota?.numero_nf ?? "");
   const [postoId, setPostoId] = React.useState(nota?.fornecedor_id ?? "");
@@ -68,8 +70,8 @@ export function FormularioNota({
     });
   }
 
-  function excluir() {
-    if (!nota || !window.confirm(`Excluir a NF ${nota.numero_nf}? O histórico da alteração fica registrado.`)) return;
+  async function excluir() {
+    if (!nota || !(await confirmar({ titulo: `Excluir a NF ${nota.numero_nf}?`, mensagem: "O histórico da alteração fica registrado.", rotuloConfirmar: "Excluir", tom: "perigo" }))) return;
     iniciar(async () => {
       const r = await excluirNota(nota.id);
       if (!r.sucesso) return setErro(r.erro);

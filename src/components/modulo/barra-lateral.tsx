@@ -6,66 +6,98 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Building2,
+  CalendarClock,
+  CarFront,
   CheckCheck,
+  Droplets,
   ExternalLink,
+  Fuel,
   Gauge,
   Globe,
+  House,
+  KeyRound,
   Landmark,
   LayoutGrid,
+  PackageCheck,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
   ShieldCheck,
+  TrendingUp,
   TriangleAlert,
   Users,
+  Wrench,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
-import { definirBarraRecolhida } from "@/lib/emendas/actions-barra";
+import { definirBarraRecolhida } from "@/lib/modulo/actions-barra";
+import type { ModuloComBarra } from "@/lib/modulo/barra-cookie";
 import { cn } from "@/lib/utils";
 
-export type ItemLateral = { href: string; rotulo: string; exato?: boolean; selo?: number; selos?: "alerta" };
-
+/** Ícones disponíveis para a barra, por nome (o servidor não pode mandar componentes para o cliente, só o nome). */
 const ICONES: Record<string, LucideIcon> = {
-  "/emendas": LayoutGrid,
-  "/emendas/lista": Landmark,
-  "/emendas/pendencias": TriangleAlert,
-  "/emendas/conformidade": ShieldCheck,
-  "/emendas/panorama": Gauge,
-  "/emendas/aprovacoes": CheckCheck,
-  "/emendas/relatorios": BarChart3,
-  "/emendas/portal": Globe,
-  "/emendas/vereadores": Users,
-  "/emendas/secretarias": Building2,
-  "/emendas/configuracoes": Settings,
+  painel: LayoutGrid,
+  emendas: Landmark,
+  pendencias: TriangleAlert,
+  conformidade: ShieldCheck,
+  panorama: Gauge,
+  aprovacoes: CheckCheck,
+  relatorios: BarChart3,
+  portal: Globe,
+  vereadores: Users,
+  secretarias: Building2,
+  configuracoes: Settings,
+  combustivel: Fuel,
+  manutencao: Wrench,
+  veiculos: CarFront,
+  custos: TrendingUp,
+  analise: BarChart3,
+  imoveis: House,
+  agua: Droplets,
+  luz: Zap,
+  entregas: PackageCheck,
+  vencimentos: CalendarClock,
+  chave: KeyRound,
 };
+export type NomeIcone = keyof typeof ICONES;
 
-/** Grupos da barra: o que se acompanha, o que se decide e os cadastros. A ordem dos itens é a de sempre. */
-const GRUPOS: { titulo: string; hrefs: string[] }[] = [
-  { titulo: "Acompanhamento", hrefs: ["/emendas", "/emendas/lista", "/emendas/pendencias", "/emendas/conformidade", "/emendas/panorama"] },
-  { titulo: "Gestão", hrefs: ["/emendas/aprovacoes", "/emendas/relatorios", "/emendas/portal"] },
-  { titulo: "Cadastros", hrefs: ["/emendas/vereadores", "/emendas/secretarias", "/emendas/configuracoes"] },
-];
+export type ItemLateral = { href: string; rotulo: string; icone?: NomeIcone; exato?: boolean; selo?: number; selos?: "alerta" };
+export type GrupoLateral = { titulo: string; itens: ItemLateral[] };
+export type AtalhoExterno = { href: string; rotulo: string; dica?: string };
 
 /**
- * Barra lateral do módulo Emendas (a partir de `lg`; abaixo disso vale a faixa de abas de sempre).
- * É só navegação: os mesmos itens e rotas da faixa antiga, agrupados. Item ativo = pílula na cor do módulo.
- * Recolhível: o botão do topo (ou a tecla "[") alterna entre a barra com nomes (12,5 rem) e uma faixa só de ícones
- * (3,5 rem), com a escolha lembrada por navegador. Recolhida, cada ícone tem dica com o nome e o selo vira um ponto.
+ * Barra lateral dos módulos (a partir de `lg`; abaixo disso vale a faixa de abas `NavModulo`). É só navegação: os mesmos itens e
+ * rotas da faixa, agrupados. Item ativo = pílula na cor do módulo. Recolhível: o botão do topo (ou a tecla "[") alterna entre a barra
+ * com nomes (13 rem) e uma faixa só de ícones (3,75 rem), com a escolha lembrada por navegador e por módulo (cookie). Recolhida, cada
+ * ícone tem dica com o nome e o selo vira um ponto. `atalhoExterno` (opcional) é um link tracejado no pé da barra.
  */
-export function BarraLateral({ itens, rotuloAria, tour, recolhidaInicial = false }: { itens: ItemLateral[]; rotuloAria: string; tour?: string; recolhidaInicial?: boolean }) {
+export function BarraLateral({
+  modulo,
+  grupos,
+  rotuloAria,
+  tour,
+  recolhidaInicial = false,
+  atalhoExterno,
+}: {
+  modulo: ModuloComBarra;
+  grupos: GrupoLateral[];
+  rotuloAria: string;
+  tour?: string;
+  recolhidaInicial?: boolean;
+  atalhoExterno?: AtalhoExterno;
+}) {
   const pathname = usePathname();
   const [recolhida, setRecolhida] = React.useState(recolhidaInicial);
   const [, iniciar] = React.useTransition();
-  const porHref = new Map(itens.map((i) => [i.href, i]));
 
   const alternar = React.useCallback(() => {
     const nova = !recolhida;
     setRecolhida(nova);
     iniciar(() => {
-      void definirBarraRecolhida(nova);
+      void definirBarraRecolhida(modulo, nova);
     });
-  }, [recolhida]);
+  }, [recolhida, modulo]);
 
   React.useEffect(() => {
     const aoTeclar = (ev: KeyboardEvent) => {
@@ -96,15 +128,14 @@ export function BarraLateral({ itens, rotuloAria, tour, recolhidaInicial = false
           {recolhida ? <PanelLeftOpen className="h-[1.125rem] w-[1.125rem]" aria-hidden /> : <PanelLeftClose className="h-[1.125rem] w-[1.125rem]" aria-hidden />}
           {!recolhida && <span>Recolher menu</span>}
         </button>
-        {GRUPOS.map((g) => {
-          const doGrupo = g.hrefs.map((h) => porHref.get(h)).filter(Boolean) as ItemLateral[];
-          if (doGrupo.length === 0) return null;
+        {grupos.map((g) => {
+          if (g.itens.length === 0) return null;
           return (
             <div key={g.titulo} className="border-t border-slate-200/70 pt-2">
               {!recolhida && <p className="px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500">{g.titulo}</p>}
               <ul className="flex flex-col gap-0.5">
-                {doGrupo.map((item) => {
-                  const Icone = ICONES[item.href] ?? LayoutGrid;
+                {g.itens.map((item) => {
+                  const Icone = (item.icone && ICONES[item.icone]) || LayoutGrid;
                   const ativo = item.exato ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   return (
                     <li key={item.href}>
@@ -138,22 +169,24 @@ export function BarraLateral({ itens, rotuloAria, tour, recolhidaInicial = false
             </div>
           );
         })}
-        <a
-          href="/transparencia/emendas?previa=1"
-          target="_blank"
-          rel="noopener"
-          title={recolhida ? "Ver o portal como o público vê" : undefined}
-          aria-label={recolhida ? "Ver o portal como o público vê (abre em outra aba)" : undefined}
-          className={cn("mt-0.5 flex items-center gap-2 rounded-xl border border-dashed border-slate-300 py-2 text-xs text-slate-600 transition-colors duration-200 hover:border-[color:var(--modulo)] hover:text-[color:var(--modulo-tinta)]", recolhida ? "justify-center px-0" : "mx-0.5 px-2.5")}
-        >
-          <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {!recolhida && (
-            <>
-              Ver o portal como o público vê
-              <span className="sr-only">(abre em outra aba)</span>
-            </>
-          )}
-        </a>
+        {atalhoExterno && (
+          <a
+            href={atalhoExterno.href}
+            target="_blank"
+            rel="noopener"
+            title={recolhida ? (atalhoExterno.dica ?? atalhoExterno.rotulo) : undefined}
+            aria-label={recolhida ? `${atalhoExterno.dica ?? atalhoExterno.rotulo} (abre em outra aba)` : undefined}
+            className={cn("mt-0.5 flex items-center gap-2 rounded-xl border border-dashed border-slate-300 py-2 text-xs text-slate-600 transition-colors duration-200 hover:border-[color:var(--modulo)] hover:text-[color:var(--modulo-tinta)]", recolhida ? "justify-center px-0" : "mx-0.5 px-2.5")}
+          >
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {!recolhida && (
+              <>
+                {atalhoExterno.rotulo}
+                <span className="sr-only">(abre em outra aba)</span>
+              </>
+            )}
+          </a>
+        )}
       </nav>
     </aside>
   );

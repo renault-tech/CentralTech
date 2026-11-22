@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { TituloTela } from "@/components/emendas/titulo-tela";
+import { TituloTela } from "@/components/modulo/titulo-tela";
 import { Vazio } from "@/components/emendas/ui";
 import { listarEmendasEmCache, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, brlCurto, infoEtapa, pct, porSecretaria } from "@/lib/emendas/regras";

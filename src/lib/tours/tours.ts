@@ -90,7 +90,7 @@ export const TOURS: Tour[] = [
   {
     id: "frotas-painel",
     nome: "Frotas",
-    descricao: "Como ler o painel de pendências do Setor de Frotas",
+    descricao: "Como ler o painel de abertura do Setor de Frotas",
     rota: "/frotas",
     passos: [
       {
@@ -102,9 +102,9 @@ export const TOURS: Tour[] = [
       },
       {
         seletor: '[data-tour="resumo-frotas"]',
-        titulo: "Resumo geral",
+        titulo: "Em andamento na frota",
         descricao:
-          "Quantos documentos há em cada situação. Clicar num cartão abre a lista já filtrada. Em vermelho, o que passou do prazo de alerta.",
+          "O dinheiro das manutenções abertas dividido por etapa (orçamento, liberado, OC emitida, NF registrada) e quantos documentos há em cada situação. Clicar num cartão abre a lista já filtrada. Em vermelho, o que passou do prazo de alerta.",
         lado: "bottom",
       },
       {

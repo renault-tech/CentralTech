@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { TituloTela } from "@/components/emendas/titulo-tela";
+import { TituloTela } from "@/components/modulo/titulo-tela";
 import { Vazio } from "@/components/emendas/ui";
 import { listarEmendasEmCache, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { GRUPOS_EXECUCAO, brl, brlCurto, cumpreSaude, numeroVereador, pct, porVereador } from "@/lib/emendas/regras";

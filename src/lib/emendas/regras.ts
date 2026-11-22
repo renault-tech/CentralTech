@@ -5,6 +5,7 @@
  * aqui elas só antecipam o aviso na tela e calculam os painéis.
  */
 
+import { brlCurto } from "@/lib/moeda";
 import type { EmendaResumo, EtapaEmenda, Modalidade, PerfilEfetivo } from "@/types/emendas";
 
 export const COR_MODULO = "#6B4FBB";
@@ -196,15 +197,7 @@ export function brl(v: number): string {
   return BRL.format(v);
 }
 
-/** "R$ 5,16 mi" / "R$ 425 mil" — para KPIs e rótulos de barra. */
-export function brlCurto(v: number): string {
-  const abs = Math.abs(v);
-  if (abs >= 1e6) {
-    return `R$ ${(v / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi`;
-  }
-  if (abs >= 1e3) return `R$ ${Math.round(v / 1e3).toLocaleString("pt-BR")} mil`;
-  return brl(v);
-}
+export { brlCurto };
 
 export function pct(x: number, casas = 1): string {
   const v = Number.isFinite(x) ? x * 100 : 0;

@@ -7,11 +7,26 @@ import { brl } from "@/lib/emendas/regras";
  * Puro: classifica pelo NOME da fase (sem acento), então uma fase nova do catálogo cai em "Formalização" se não for reconhecida.
  */
 export type EstadoFase = "feita" | "parcial" | "andamento" | "pendente";
-export type FaseLinha = { nome: string; estado: EstadoFase; alerta: boolean };
+export type FaseLinha = { nome: string; estado: EstadoFase; alerta: boolean; /** Textos dos alertas da fase (o que está errado), para as caixas de informação. */ alertas?: string[] };
 export type ChaveMacro = "planejamento" | "formalizacao" | "empenho" | "pagamento" | "prestacao" | "encerramento";
 export type MacroEtapa = { chave: ChaveMacro; nome: string; estado: EstadoFase; alerta: boolean; fases: FaseLinha[] };
 
 const ORDEM: ChaveMacro[] = ["planejamento", "formalizacao", "empenho", "pagamento", "prestacao", "encerramento"];
+/** Nome curto para caber numa coluna do fluxo (o nome completo aparece na caixa de informações). */
+export const NOME_CURTO_MACRO: Record<ChaveMacro, string> = {
+  planejamento: "Planejamento",
+  formalizacao: "Formalização",
+  empenho: "Empenho",
+  pagamento: "Pagamento",
+  prestacao: "Execução",
+  encerramento: "Encerramento",
+};
+
+/** Os alertas (o que está errado) das fases de uma macro-etapa, com o nome da fase na frente. */
+export function alertasDaMacro(m: Pick<MacroEtapa, "fases">): string[] {
+  return m.fases.flatMap((f) => (f.alertas ?? []).map((a) => `${f.nome}: ${a}`));
+}
+
 export const NOME_MACRO: Record<ChaveMacro, string> = {
   planejamento: "Planejamento",
   formalizacao: "Formalização",

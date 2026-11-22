@@ -52,7 +52,6 @@ export default async function PaginaCustos({ searchParams }: { searchParams: Pro
     <>
       <TituloPagina
         titulo="Manutenção × valor na FIPE"
-        subtitulo="Quanto cada veículo gastou em manutenção, comparado ao que vale hoje na tabela FIPE. Só entram serviços liberados; vale a NF, senão a OC, senão o orçamento."
         acao={ctx.situacao === "ok" && ctx.gestor ? <AtualizarFipe /> : undefined}
       />
 

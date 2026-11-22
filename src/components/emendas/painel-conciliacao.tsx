@@ -12,6 +12,7 @@ import { situacaoConciliacao, type Conciliacao } from "@/lib/emendas/conciliacao
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { Resultado } from "@/lib/emendas/actions";
+import { useDialogos } from "@/components/ui/dialogos";
 
 type Executar = (acao: () => Promise<Resultado>) => Promise<Resultado>;
 
@@ -59,11 +60,12 @@ function Botoes({ confirmar, pendente, desabilitar, fechar, rotulo = "Confirmar"
 }
 
 function Desfazer({ onClick, pendente }: { onClick: () => void; pendente: boolean }) {
+  const { confirmar } = useDialogos();
   return (
     <button
       type="button"
-      onClick={() => {
-        if (window.confirm("Desfazer este registro? Ele sai da conciliação e a pendência volta, se ainda houver diferença.")) onClick();
+      onClick={async () => {
+        if (await confirmar({ titulo: "Desfazer este registro?", mensagem: "Ele sai da conciliação e a pendência volta, se ainda houver diferença.", rotuloConfirmar: "Desfazer", tom: "perigo" })) onClick();
       }}
       disabled={pendente}
       className={cn("inline-flex w-fit cursor-pointer items-center gap-1 rounded px-1 text-xs text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline disabled:opacity-50", ALVO)}

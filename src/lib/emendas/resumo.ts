@@ -38,7 +38,7 @@ export type ResumoLinha = {
   /** Assuntos (regra sem sufixo) das pendências abertas — para filtrar a lista. */
   regras: string[];
   /** Fases do fluxo da emenda (nome e estado), para o painel de detalhe ao lado da lista. */
-  fases?: { nome: string; estado: "feita" | "parcial" | "andamento" | "pendente"; alerta: boolean }[];
+  fases?: { nome: string; estado: "feita" | "parcial" | "andamento" | "pendente"; alerta: boolean; alertas?: string[] }[];
   /** Pendências abertas (as 4 mais graves), para o mesmo painel. */
   pendencias?: { titulo: string; gravidade: Gravidade }[];
 };
@@ -191,6 +191,7 @@ export function resumoDaLinha(c: CalculoEmenda): ResumoLinha {
         nome: f.fase.nome,
         estado: f.situacao === "concluida" ? (f.parcial ? ("parcial" as const) : ("feita" as const)) : f.situacao === "em_andamento" || f.parcial ? ("andamento" as const) : ("pendente" as const),
         alerta: f.alertas.length > 0,
+        alertas: f.alertas,
       })),
     pendencias: c.pendencias
       .filter((x) => !x.justificativa)

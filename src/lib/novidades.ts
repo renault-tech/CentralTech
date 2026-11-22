@@ -14,6 +14,30 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Frotas e Imóveis: listas com gráficos que filtram e resumo ao lado",
+    descricao:
+      "Manutenção, Veículos e Combustível (Frotas) e Imóveis, Pendências e Entregas (Imóveis) agora funcionam como as Emendas: dois gráficos à esquerda que também são filtros (clique numa fatia ou linha), a lista no meio e, ao escolher um item, um resumo ao lado só para consulta, com o botão “Abrir e editar” para a página do item. Os filtros acompanham o endereço da página e são lembrados ao voltar de uma edição; os links dos painéis continuam funcionando. Água, Luz e Vencimentos ganharam um visual mais enxuto, sem painel lateral: faixa de indicadores, gráfico mensal que preenche o cartão e tabela com cabeçalho fixo. De carona, os campos de seleção do modo escuro ficaram legíveis.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Novo painel de abertura em Frotas e em Imóveis e Consumo",
+    descricao:
+      "A primeira tela dos dois módulos virou um painel de comando. Em Frotas: quanto dinheiro está parado em cada etapa da manutenção, o tempo médio parado, as NFs de combustível em andamento, a quinzena anterior, o que precisa de atenção (NF acima da OC, veículos acima do limite do valor FIPE, secretarias sem NF…), gasto por mês, manutenção × valor do veículo e os últimos movimentos. Em Imóveis e Consumo: gasto do mês em aluguel, luz e água comparado com a média, o que precisa de atenção, contas lançadas e onde faltam, contratos, entregas em andamento, gasto dos últimos 12 meses, ranking por secretaria, contas fora do padrão e o que vence nas próximas semanas. Todo número leva à lista já filtrada, e passar o mouse mostra os detalhes.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Frotas e Imóveis e Consumo ganham o visual novo do módulo Emendas",
+    descricao:
+      "Os dois módulos agora têm a barra lateral recolhível (com selos de pendência e a tecla “[” para recolher), cartões em vidro, entrada suave das telas, rolagem suave e as mesmas telas de erro, página não encontrada, sem internet e carregamento lento do módulo Emendas. As frases explicativas embaixo dos títulos saíram para dar mais espaço aos dados. Em telas estreitas continua a faixa de abas de sempre. Os painéis de abertura e as listas com painel lateral de cada módulo vêm nas próximas etapas.",
+  },
+  {
+    data: "2026-11-22",
+    titulo: "Confirmações e avisos agora aparecem num cartão no centro da tela",
+    descricao:
+      "Excluir, apagar, cancelar, desfazer, remover e bloquear passaram a pedir confirmação num cartão no centro da tela, com o fundo escurecido, no lugar da caixa do navegador. Quando é preciso justificar (excluir lançamento, desfazer andamento, excluir emenda), o campo de texto está no próprio cartão, com a contagem de caracteres. Esc ou o clique no fundo cancelam. Vale para Emendas, Frotas, Imóveis e Configurações. No painel da emenda, o fluxo de fases ficou numa linha só e o triângulo de alerta agora mostra, ao deixar o mouse parado, qual é o problema.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: novo Painel de abertura, com o que importa à vista",
     descricao:
       "O Painel do módulo virou uma tela de comando. No alto, o total indicado partido em pago, empenhado a pagar e sem empenhar, com a situação das emendas, o ritmo de pagamento necessário até 31/12 e a régua do exercício. Ao lado, “Precisa da sua atenção”: pendências graves, divulgação incompleta, propostas a aprovar, emendas paradas, restos a pagar e relatórios a vencer, cada um com a quantidade e um clique para a tela já filtrada. Abaixo, um cartão por tipo de execução, o ritmo dos pagamentos no ano com a meta, onde as emendas estão no fluxo, a execução por vereador, a Saúde e as secretarias, os últimos lançamentos e o que vence nas próximas semanas. A comparação com outro exercício continua no fim da tela.",

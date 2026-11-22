@@ -69,7 +69,9 @@ function CodigoCopiavel({ codigo }: { codigo: string }) {
 }
 
 /** Erro de uma tela (usado por `error.tsx`). Sem conexão mostra a versão de rede; com conexão, o erro inesperado com o código. */
-export function TelaErro({ digest, detalhe, aoTentar }: { digest?: string; detalhe?: string; aoTentar: () => void }) {
+export type Destino = { href: string; rotulo: string };
+
+export function TelaErro({ digest, detalhe, aoTentar, voltar = { href: "/", rotulo: "Voltar para a Central" }, dica }: { digest?: string; detalhe?: string; aoTentar: () => void; voltar?: Destino; /** Pista extra, mostrada abaixo do texto (ex.: confira se o schema do módulo está exposto na API). */ dica?: string }) {
   const online = useOnline();
   const [tentando, setTentando] = React.useState(false);
   const tentar = () => {
@@ -104,20 +106,21 @@ export function TelaErro({ digest, detalhe, aoTentar }: { digest?: string; detal
           <button type="button" onClick={tentar} disabled={tentando} className={cn(CLASSE_BOTAO, "disabled:opacity-60")}>
             {tentando ? "Carregando…" : "Tentar de novo"}
           </button>
-          <Link href="/emendas/lista" className={CLASSE_BOTAO_SECUNDARIO}>
-            Voltar para a lista
+          <Link href={voltar.href} className={CLASSE_BOTAO_SECUNDARIO}>
+            {voltar.rotulo}
           </Link>
         </>
       }
     >
       Não foi possível carregar. Tente de novo e, se o problema voltar, avise a gente pelo megafone do cabeçalho{digest ? ", informando o código abaixo" : ""}.
+      {dica && <span className="mt-2 block text-[0.8125rem] text-slate-500">{dica}</span>}
       {detalhe && <span className="mt-3 block rounded-lg border border-slate-200 bg-slate-50 p-2 text-left font-mono text-[0.6875rem] text-slate-600 [overflow-wrap:anywhere]">{detalhe}</span>}
     </CartaoEstado>
   );
 }
 
-/** Emenda (ou vereador) que não existe, foi removida ou é de uma secretaria que a pessoa não acompanha. */
-export function TelaNaoEncontrada() {
+/** Registro que não existe, foi removido ou é de uma área que a pessoa não acompanha. `objeto` = "emenda", "veículo"… */
+export function TelaNaoEncontrada({ principal, secundario, objeto = "registro" }: { principal: Destino; secundario?: Destino; objeto?: string }) {
   return (
     <CartaoEstado
       tom="neutro"
@@ -125,16 +128,18 @@ export function TelaNaoEncontrada() {
       titulo="Não encontramos esta página"
       acoes={
         <>
-          <Link href="/emendas/lista" className={CLASSE_BOTAO}>
-            Voltar para a lista
+          <Link href={principal.href} className={CLASSE_BOTAO}>
+            {principal.rotulo}
           </Link>
-          <Link href="/emendas" className={CLASSE_BOTAO_SECUNDARIO}>
-            Ir ao Painel
-          </Link>
+          {secundario && (
+            <Link href={secundario.href} className={CLASSE_BOTAO_SECUNDARIO}>
+              {secundario.rotulo}
+            </Link>
+          )}
         </>
       }
     >
-      O endereço pode estar errado, a emenda pode ter sido cancelada ou removida, ou ser de uma secretaria que você não acompanha. Volte para a lista e procure pelo número ou pelo objeto.
+      O endereço pode estar errado, o {objeto} pode ter sido removido, ou ser de uma área que você não acompanha. Volte e procure de novo.
     </CartaoEstado>
   );
 }
