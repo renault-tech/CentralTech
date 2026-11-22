@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: telas de erro, sem internet e carregamento lento; rolagem que desacelera",
+    descricao:
+      "Quando uma tela de Emendas dá erro, agora aparece um aviso claro com o código para copiar, “Tentar de novo” e o caminho de volta, com o menu e o cabeçalho no lugar. Se a conexão cair com a tela aberta, um aviso no topo avisa que gravar pode falhar e some sozinho quando a internet volta; sem internet ao abrir, a tela diz isso em vez de um erro genérico. Emenda inexistente ou de outra secretaria tem página própria, e o carregamento lento ganhou uma linha de progresso e avisos depois de 3 s e de 10 s. A lista de emendas agora desacelera suavemente até a linha mais próxima quando você para de rolar, e uma margem com degradê no fim impede que palavras sejam cortadas na borda do painel.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: botão “Limpar filtros” e rolagem das listas sem trancos",
     descricao:
       "No alto da área de gráficos de Emendas, Pendências, Conformidade e Panorama há agora um botão discreto “Limpar filtros” (apagado enquanto não há filtro, com a contagem quando há). O ajuste das linhas ao parar de rolar ficou mais leve: só encaixa quando a rolagem para perto do início de uma linha, em vez de puxar a cada giro da roda.",

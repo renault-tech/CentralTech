@@ -12,6 +12,8 @@ import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
+import { AjusteDeRolagem } from "@/components/emendas/ajuste-de-rolagem";
+import { AvisoConexao } from "@/components/emendas/estados-tela";
 import { AvisoExercicioEncerrado, SeletorExercicio } from "@/components/emendas/seletor-exercicio";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
@@ -122,6 +124,8 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
           recolhidaInicial={barraRecolhida}
         />
         <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
+          <AjusteDeRolagem />
+          <AvisoConexao />
           {aviso}
           <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
         </main>

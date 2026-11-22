@@ -667,6 +667,8 @@ body:has(.cabecalho-escuro) .zoom-flutuante { display: none; }
    erguem 1 px ao passar o mouse. Tudo some com `prefers-reduced-motion`. Curva única (--emd-curva) para o módulo todo. */
 .emd { --emd-curva: cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes emd-entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes emd-corre { from { left: -35%; } to { left: 100%; } }
+.emd .emd-corre { animation: emd-corre 1.3s var(--emd-curva) infinite; }
 @keyframes emd-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes emd-anel { from { stroke-dashoffset: var(--anel-total); } to { stroke-dashoffset: var(--anel-resto); } }
 @keyframes emd-pulso {
@@ -762,18 +764,16 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 .emd tr.emd-linha-clic:active { background-image: linear-gradient(color-mix(in srgb, var(--modulo) 15%, transparent), color-mix(in srgb, var(--modulo) 15%, transparent)); }
 .emd tbody tr:not(.emd-linha-clic):hover { background-image: linear-gradient(rgb(var(--slate-500) / 0.07), rgb(var(--slate-500) / 0.07)); }
 
-/* Rolagem suave: toda área que rola no módulo desliza em vez de pular, e as listas "encaixam" no início de um item ao parar
-   (scroll-snap), então o topo nunca fica com uma linha cortada ao meio. Os gráficos usam encaixe mais frouxo (proximity). */
+/* Rolagem: as áreas rolam sem encaixe nativo (o `scroll-snap` puxava a cada giro da roda e dava tranco). O encaixe no início de uma
+   linha é feito por `AjusteDeRolagem` (JS): quando a rolagem para, a lista desacelera até a linha mais próxima. A borda de baixo da
+   lista some em degradê e a lista tem folga no fim, então nenhuma palavra é cortada seca pela borda arredondada do painel. */
 html:has(.emd) { scroll-behavior: smooth; }
-.emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: smooth; }
-/* Encaixe frouxo (proximity): só ajusta quando a rolagem para perto do início de uma linha, sem "puxar" a cada giro da roda. */
-.emd .emd-lista { scroll-snap-type: y proximity; }
-.emd .emd-lista > * { scroll-snap-align: start; }
-.emd .emd-foco { scroll-snap-type: y proximity; }
-.emd .emd-foco > li { scroll-snap-align: start; }
+.emd .emd-rola, .emd .emd-foco { scroll-behavior: smooth; }
+.emd .emd-lista { scroll-behavior: auto; padding-bottom: 1.25rem; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); }
+.emd .emd-detalhe .emd-rola { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); }
 @media (prefers-reduced-motion: reduce) {
-  html:has(.emd), .emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: auto; }
-  .emd .emd-lista { scroll-snap-type: none; }
+  html:has(.emd), .emd .emd-rola, .emd .emd-foco { scroll-behavior: auto; }
+  .emd .emd-corre { animation: none; left: 0; width: 100%; opacity: .5; }
 }
 
 /* Botões: sobem 1 px com sombra ao passar o mouse e afundam ao clicar. */
