@@ -31,6 +31,68 @@ const CAMPO =
 
 const SEM_ATUALIZACOES: Record<string, AtualizacaoEmenda> = {};
 
+type PropsLinha = { r: EmendaResumo; res: ResumoLinha | undefined; sel: boolean; primeiraSemSelecao: boolean; catalogo: ReturnType<typeof useCatalogo>; escolher: (id: string) => void };
+
+/** Uma linha da lista. Memoizada: escolher uma emenda só refaz a linha que perdeu e a que ganhou a seleção, não as 200 e tantas. */
+const LinhaEmenda = React.memo(function LinhaEmenda({ r, res, sel, primeiraSemSelecao, catalogo, escolher }: PropsLinha) {
+  const tipo = tipoDaEmenda(r);
+  const cor = TIPOS_EXECUCAO[tipo].cor;
+  return (
+        <div
+          key={r.id}
+          id={`emenda-${r.id}`}
+          data-id={r.id}
+          role="option"
+          aria-selected={sel}
+          tabIndex={sel || primeiraSemSelecao ? 0 : -1}
+          onClick={(ev) => {
+            if ((ev.target as HTMLElement).closest("button,input,select")) return;
+            const link = (ev.target as HTMLElement).closest("a");
+            if (link && link.dataset.abrir !== "1") return;
+            if (ev.metaKey || ev.ctrlKey) return window.open(`/emendas/${r.id}`, "_blank", "noopener");
+            ev.preventDefault();
+            escolher(r.id);
+          }}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter" || ev.key === " ") {
+              ev.preventDefault();
+              escolher(r.id);
+            }
+          }}
+          style={{ ["--tipo" as string]: cor }}
+          className={cn("emd-item group relative grid cursor-pointer grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-2.5 border-b border-slate-100 py-3 pl-4 pr-4 outline-none", sel && "emd-item-sel")}
+        >
+          <span aria-hidden className="emd-item-faixa absolute inset-y-2 left-0 w-1 rounded-r-full" style={{ backgroundColor: cor }} />
+          <span className="pt-0.5 font-mono text-xs tabular-nums text-slate-500">{r.numero}</span>
+          <div className="min-w-0">
+            <Link href={`/emendas/${r.id}`} data-abrir="1" tabIndex={-1} className="line-clamp-2 text-[0.875rem] font-medium leading-snug text-cataguases-marinho">
+              {r.objeto}
+            </Link>
+            <p className="mt-0.5 truncate text-xs text-slate-600">
+              {r.beneficiario_nome ? `${r.beneficiario_nome} · ` : ""}
+              {numeroVereador(r.vereador_numero)} {r.vereador_nome} · {r.secretaria_nome}
+            </p>
+            {res && res.total > 0 && (
+              <HoverAndamento emenda={r} resumo={res}>
+                <BarraFases macros={macrosDoResumo(res)} cancelada={r.situacao === "cancelada"} className="mt-1.5" />
+              </HoverAndamento>
+            )}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <TipoSelo tipo={tipo} />
+              <CategoriaSelo categoria={r.beneficiario_categoria} />
+              {r.saude && <Chip tom="saude">Saúde</Chip>}
+              {r.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
+              <SeloPendencias quantidade={res?.abertas ?? 0} gravidade={res?.gravidade ?? null} />
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="whitespace-nowrap text-[0.875rem] font-semibold tabular-nums text-cataguases-marinho">{brl(r.valor)}</span>
+            <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
+          </div>
+        </div>
+  );
+});
+
 /**
  * Área de trabalho da lista de Emendas (telas largas): a página não rola, cada painel rola por dentro.
  *   1. Sem emenda escolhida: gráficos e filtros à esquerda, lista à direita.
@@ -58,7 +120,9 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
   const catalogo = useCatalogo();
   const { params, definir: definirUrl } = useFiltrosUrl("emendas-lista", String(ano));
   const busca = params.get("q") ?? "";
-  const f = { ...lerFiltrosLista((k) => params.get(k), busca), ordem: params.get("ordem") ?? "numero" };
+  // Os filtros ganham uma identidade estável: escolher uma emenda (parâmetro `e`) não os muda, então gráficos e ordenação não são refeitos.
+  const fTexto = JSON.stringify({ ...lerFiltrosLista((k) => params.get(k), busca), ordem: params.get("ordem") ?? "numero" });
+  const f = JSON.parse(fTexto) as ReturnType<typeof lerFiltrosLista> & { ordem: string };
   const escolhidaId = params.get("e") ?? "";
   const escolhida = escolhidaId ? emendas.find((e) => e.id === escolhidaId) : undefined;
   const aberto = !!escolhida;
@@ -68,19 +132,25 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
 
   const definir = React.useCallback((m: Record<string, string>) => definirUrl(m), [definirUrl]);
 
+  // O compilador do React guarda estes cálculos pelas entradas: sem mudança de filtro ou de dados (ex.: só escolher uma emenda), nada é refeito.
   const filtradas = filtrarEmendasLista(emendas, resumos, f);
   const semTipo = filtrarEmendasLista(emendas, resumos, f, ["t"]);
   const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
   const ordenadas = ordenarEmendasLista(filtradas, f.ordem, f.q, resumos, todasEtapas.map((e) => e.chave));
   const total = filtradas.reduce((t, r) => t + r.valor, 0);
   const chips = chipsDosFiltros(f, emendas, catalogo);
+  const paineisDeGraficos = (
+    <>
+      <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
+      <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="border-b border-slate-200" />
+      <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" />
+    </>
+  );
 
   // A altura da área é o que sobra da janela: nada de rolar a página para ver o resultado do filtro.
   const listaRef = React.useRef<HTMLDivElement>(null);
 
-  function escolher(id: string) {
-    definir({ e: id });
-  }
+  const escolher = React.useCallback((id: string) => definir({ e: id }), [definir]);
   function fechar() {
     definir({ e: "" });
   }
@@ -160,13 +230,7 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
         filtrosAtivos={chips.length}
         rotuloLista="Lista de emendas"
         rotuloDetalhe="Resumo da emenda"
-        graficos={
-          <>
-              <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
-              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="border-b border-slate-200" />
-              <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" />
-          </>
-        }
+        graficos={paineisDeGraficos}
         lista={
           <>
           <div className="space-y-2.5 border-b border-slate-200 px-4 pb-3 pt-3.5">
@@ -217,66 +281,9 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
                 <button type="button" onClick={limparTudo} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-cataguases-marinho hover:bg-slate-50">Limpar filtros</button>
               </div>
             )}
-            {ordenadas.map((r) => {
-              const tipo = tipoDaEmenda(r);
-              const cor = TIPOS_EXECUCAO[tipo].cor;
-              const res = resumos[r.id];
-              const sel = r.id === escolhidaId;
-              return (
-                <div
-                  key={r.id}
-                  id={`emenda-${r.id}`}
-                  data-id={r.id}
-                  role="option"
-                  aria-selected={sel}
-                  tabIndex={sel || (!escolhidaId && r === ordenadas[0]) ? 0 : -1}
-                  onClick={(ev) => {
-                    if ((ev.target as HTMLElement).closest("button,input,select")) return;
-                    const link = (ev.target as HTMLElement).closest("a");
-                    if (link && link.dataset.abrir !== "1") return;
-                    if (ev.metaKey || ev.ctrlKey) return window.open(`/emendas/${r.id}`, "_blank", "noopener");
-                    ev.preventDefault();
-                    escolher(r.id);
-                  }}
-                  onKeyDown={(ev) => {
-                    if (ev.key === "Enter" || ev.key === " ") {
-                      ev.preventDefault();
-                      escolher(r.id);
-                    }
-                  }}
-                  style={{ ["--tipo" as string]: cor }}
-                  className={cn("emd-item group relative grid cursor-pointer grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-2.5 border-b border-slate-100 py-3 pl-4 pr-4 outline-none", sel && "emd-item-sel")}
-                >
-                  <span aria-hidden className="emd-item-faixa absolute inset-y-2 left-0 w-1 rounded-r-full" style={{ backgroundColor: cor }} />
-                  <span className="pt-0.5 font-mono text-xs tabular-nums text-slate-500">{r.numero}</span>
-                  <div className="min-w-0">
-                    <Link href={`/emendas/${r.id}`} data-abrir="1" tabIndex={-1} className="line-clamp-2 text-[0.875rem] font-medium leading-snug text-cataguases-marinho">
-                      {r.objeto}
-                    </Link>
-                    <p className="mt-0.5 truncate text-xs text-slate-600">
-                      {r.beneficiario_nome ? `${r.beneficiario_nome} · ` : ""}
-                      {numeroVereador(r.vereador_numero)} {r.vereador_nome} · {r.secretaria_nome}
-                    </p>
-                    {res && res.total > 0 && (
-                      <HoverAndamento emenda={r} resumo={res}>
-                        <BarraFases macros={macrosDoResumo(res)} cancelada={r.situacao === "cancelada"} className="mt-1.5" />
-                      </HoverAndamento>
-                    )}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <TipoSelo tipo={tipo} />
-                      <CategoriaSelo categoria={r.beneficiario_categoria} />
-                      {r.saude && <Chip tom="saude">Saúde</Chip>}
-                      {r.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
-                      <SeloPendencias quantidade={res?.abertas ?? 0} gravidade={res?.gravidade ?? null} />
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className="whitespace-nowrap text-[0.875rem] font-semibold tabular-nums text-cataguases-marinho">{brl(r.valor)}</span>
-                    <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
-                  </div>
-                </div>
-              );
-            })}
+            {ordenadas.map((r) => (
+              <LinhaEmenda key={r.id} r={r} res={resumos[r.id]} sel={r.id === escolhidaId} primeiraSemSelecao={!escolhidaId && r === ordenadas[0]} catalogo={catalogo} escolher={escolher} />
+            ))}
           </div>
           <VoltarAoTopo alvoRef={listaRef} />
           </div>

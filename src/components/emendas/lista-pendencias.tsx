@@ -33,7 +33,9 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   const [expandidaId, setExpandidaId] = React.useState("");
   const listaRef = React.useRef<HTMLUListElement>(null);
   const busca = params.get("q") ?? "";
-  const f = lerFiltros((k) => params.get(k));
+  // Identidade estável enquanto os filtros não mudam: escolher uma emenda (`e`) não refaz gráficos nem a lista.
+  const fTexto = JSON.stringify(lerFiltros((k) => params.get(k)));
+  const f = JSON.parse(fTexto) as ReturnType<typeof lerFiltros>;
   const escolhidaId = params.get("e") ?? "";
   const aberto = !!escolhidaId;
   const expandido = aberto && expandidaId === escolhidaId;

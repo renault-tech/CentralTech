@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: navegação mais rápida e fluida",
+    descricao:
+      "Abrir e fechar o painel da emenda ao lado da lista, trocar de emenda e mudar de aba ficou bem mais suave: o deslizar das colunas é mais curto (0,4 s) e não trava mais, a lista de mais de 200 emendas só desenha o que está na tela, escolher uma emenda não refaz mais os gráficos nem as outras linhas, e as animações de entrada das telas ficaram mais curtas.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: rolagem suave, sem linhas cortadas",
     descricao:
       "As listas de Emendas, Pendências, Conformidade e Panorama, os gráficos, o painel de gráficos e o painel da emenda agora rolam deslizando, e a lista sempre para com uma linha inteira no topo, sem item cortado ao meio. Quem prefere menos movimento no sistema continua com a rolagem normal.",

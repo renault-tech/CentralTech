@@ -58,6 +58,19 @@ export function EspacoTrabalho({
     };
   }, []);
 
+  // Enquanto as colunas deslizam, o CSS desliga o desfoque de vidro e as animações internas (`data-movendo`): refazer o desfoque a cada
+  // quadro é o que mais pesava. A marca sai logo depois da transição (0,4 s).
+  const anterior = React.useRef({ aberto, expandido });
+  React.useEffect(() => {
+    if (anterior.current.aberto === aberto && anterior.current.expandido === expandido) return;
+    anterior.current = { aberto, expandido };
+    const el = areaRef.current;
+    if (!el) return;
+    el.dataset.movendo = "true";
+    const t = setTimeout(() => delete el.dataset.movendo, 480);
+    return () => clearTimeout(t);
+  }, [aberto, expandido]);
+
   React.useEffect(() => {
     if (!aberto) return;
     const aoTeclar = (ev: KeyboardEvent) => {

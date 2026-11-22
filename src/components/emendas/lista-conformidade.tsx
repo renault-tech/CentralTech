@@ -163,7 +163,9 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
   const [limite, setLimite] = React.useState(POR_PAGINA);
   const [expandidaId, setExpandidaId] = React.useState("");
   const listaRef = React.useRef<HTMLUListElement>(null);
-  const f: Filtros = { i: params.get("i") ?? "", s: params.get("s") ?? "", t: params.get("t") ?? "", x: params.get("x") ?? "", q: params.get("q") ?? "" };
+  // Identidade estável enquanto os filtros não mudam: escolher uma emenda (`e`) não refaz gráficos nem a lista.
+  const fTexto = JSON.stringify({ i: params.get("i") ?? "", s: params.get("s") ?? "", t: params.get("t") ?? "", x: params.get("x") ?? "", q: params.get("q") ?? "" });
+  const f = JSON.parse(fTexto) as Filtros;
   const escolhidaId = params.get("e") ?? "";
   const aberto = !!escolhidaId;
   const expandido = aberto && expandidaId === escolhidaId;
