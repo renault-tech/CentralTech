@@ -2,15 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { PanelLeftOpen, Plus, Search, SearchX, X } from "lucide-react";
+import { Plus, Search, SearchX, X } from "lucide-react";
 
 import { BarraFases, macrosDoResumo } from "@/components/emendas/barra-fases";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { HoverAndamento } from "@/components/emendas/hover-andamento";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
-import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
+import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
+import { PainelDetalheEmenda, type AtualizacaoEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { FaixaIndicadores, GraficoFiltro } from "@/components/emendas/grafico-filtro";
 import { chipsDosFiltros } from "@/components/emendas/painel-lista";
 import { SeloPendencias, TipoSelo } from "@/components/emendas/tipo-selo";
@@ -28,7 +28,7 @@ import type { EmendaResumo } from "@/types/emendas";
 const CAMPO =
   "h-10 min-w-0 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 
-const ehDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+const SEM_ATUALIZACOES: Record<string, AtualizacaoEmenda> = {};
 
 /**
  * Área de trabalho da lista de Emendas (telas largas): a página não rola, cada painel rola por dentro.
@@ -37,8 +37,23 @@ const ehDesktop = () => typeof window !== "undefined" && window.matchMedia("(min
  *      abre à direita. Os filtros continuam valendo (chips no topo da lista); a faixa devolve os gráficos.
  * Em telas estreitas vale o empilhado de sempre e tocar numa emenda abre a página dela.
  */
-export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emendas: EmendaResumo[]; resumos: Record<string, ResumoLinha>; ano: number; podeCriar: boolean }) {
-  const router = useRouter();
+export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumosServidor, ano, podeCriar }: { emendas: EmendaResumo[]; resumos: Record<string, ResumoLinha>; ano: number; podeCriar: boolean }) {
+  // Depois de gravar, a emenda recalculada entra aqui na hora; quando o servidor devolve a lista nova (revalidação em segundo
+  // plano) as atualizações locais são descartadas, porque a lista já as traz.
+  const [locais, setLocais] = React.useState<{ base: EmendaResumo[]; mapa: Record<string, AtualizacaoEmenda> }>({ base: emendasServidor, mapa: {} });
+  const mapaLocal = locais.base === emendasServidor ? locais.mapa : SEM_ATUALIZACOES;
+  const temLocais = Object.keys(mapaLocal).length > 0;
+  const emendas = React.useMemo(() => (temLocais ? emendasServidor.map((e) => mapaLocal[e.id]?.emenda ?? e) : emendasServidor), [emendasServidor, mapaLocal, temLocais]);
+  const resumos = React.useMemo(() => {
+    if (!temLocais) return resumosServidor;
+    const r = { ...resumosServidor };
+    for (const [id, a] of Object.entries(mapaLocal)) r[id] = a.resumo;
+    return r;
+  }, [resumosServidor, mapaLocal, temLocais]);
+  const atualizarLinha = React.useCallback(
+    (id: string, dados: AtualizacaoEmenda) => setLocais((ant) => ({ base: emendasServidor, mapa: { ...(ant.base === emendasServidor ? ant.mapa : {}), [id]: dados } })),
+    [emendasServidor]
+  );
   const catalogo = useCatalogo();
   const { params, definir: definirUrl } = useFiltrosUrl("emendas-lista", String(ano));
   const busca = params.get("q") ?? "";
@@ -60,53 +75,16 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
   const chips = chipsDosFiltros(f, emendas, catalogo);
 
   // A altura da área é o que sobra da janela: nada de rolar a página para ver o resultado do filtro.
-  const areaRef = React.useRef<HTMLDivElement>(null);
-  React.useLayoutEffect(() => {
-    const ajustar = () => {
-      const el = areaRef.current;
-      if (!el) return;
-      if (!ehDesktop()) {
-        el.style.height = "";
-        return;
-      }
-      const topo = el.getBoundingClientRect().top + window.scrollY;
-      el.style.height = `${Math.max(480, window.innerHeight - topo - 28)}px`;
-    };
-    ajustar();
-    window.addEventListener("resize", ajustar);
-    const t = setTimeout(ajustar, 400); // depois da animação de entrada da página
-    return () => {
-      window.removeEventListener("resize", ajustar);
-      clearTimeout(t);
-    };
-  }, []);
-
   const listaRef = React.useRef<HTMLDivElement>(null);
 
   function escolher(id: string) {
-    if (!ehDesktop()) {
-      router.push(`/emendas/${id}`);
-      return;
-    }
     definir({ e: id });
   }
   function fechar() {
     definir({ e: "" });
   }
 
-  // Esc fecha o resumo; a seleção rola até ficar visível na lista.
-  React.useEffect(() => {
-    if (!aberto) return;
-    const aoTeclar = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape" && !(ev.target instanceof HTMLInputElement || ev.target instanceof HTMLSelectElement)) {
-        if (expandido) setExpandidaId("");
-        else fechar();
-      }
-    };
-    window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, expandido]);
+  // A seleção rola até ficar visível na lista.
   React.useEffect(() => {
     if (!escolhidaId) return;
     const t = setTimeout(() => listaRef.current?.querySelector(`[data-id="${CSS.escape(escolhidaId)}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }), 120);
@@ -123,7 +101,7 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
     const alvo = itens[prox];
     alvo.focus();
     alvo.scrollIntoView({ block: "nearest" });
-    if (ehDesktop() && aberto) definir({ e: alvo.dataset.id ?? "" });
+    if (aberto) definir({ e: alvo.dataset.id ?? "" });
   }
 
   const exportar = new URLSearchParams({ ano: String(ano) });
@@ -173,35 +151,23 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
         </div>
       </div>
 
-      <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
-        {/* 1 · gráficos e filtros (viram uma faixa quando há emenda escolhida) */}
-        <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
-            <div className="flex h-full flex-col">
+      <EspacoTrabalho
+        aberto={aberto}
+        expandido={expandido}
+        aoFechar={fechar}
+        aoRecolher={() => setExpandidaId("")}
+        filtrosAtivos={chips.length}
+        rotuloLista="Lista de emendas"
+        rotuloDetalhe="Resumo da emenda"
+        graficos={
+          <>
               <FaixaIndicadores emendas={emendas} resumos={resumos} filtros={f} definir={definir} />
               <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="etapa" className="border-b border-slate-200" />
               <GraficoFiltro emendas={emendas} resumos={resumos} filtros={f} definir={definir} visaoInicial="vereador" />
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={fechar}
-            tabIndex={aberto ? 0 : -1}
-            aria-hidden={!aberto}
-            aria-label="Mostrar gráficos e filtros"
-            title="Mostrar gráficos e filtros"
-            className={cn("emd-faixa absolute inset-0 flex flex-col items-center gap-3 pt-4 text-slate-600 transition-opacity duration-300 hover:bg-[color-mix(in_srgb,var(--modulo)_7%,transparent)]", aberto ? "opacity-100" : "pointer-events-none opacity-0")}
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)] text-[color:var(--modulo-tinta)]">
-              <PanelLeftOpen className="h-5 w-5" aria-hidden />
-            </span>
-            {chips.length > 0 && <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[color:var(--modulo-texto)] px-1.5 text-xs font-semibold tabular-nums text-white">{chips.length}</span>}
-            <span className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 [writing-mode:vertical-rl]">Gráficos e filtros</span>
-          </button>
-        </aside>
-
-        {/* 2 · lista */}
-        <section aria-label="Lista de emendas" inert={expandido} className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh]">
+          </>
+        }
+        lista={
+          <>
           <div className="space-y-2.5 border-b border-slate-200 px-4 pb-3 pt-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <label className="relative min-w-[11rem] flex-1">
@@ -310,13 +276,22 @@ export function AreaTrabalhoEmendas({ emendas, resumos, ano, podeCriar }: { emen
               );
             })}
           </div>
-        </section>
-
-        {/* 3 · resumo da emenda escolhida */}
-        <section aria-label="Resumo da emenda" aria-hidden={!aberto} inert={!aberto} className={cn("emd-painel emd-detalhe min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:hidden", !aberto && "border-transparent")}>
-          {escolhida && <PainelDetalheEmenda emenda={escolhida} resumo={resumos[escolhida.id]} aoFechar={fechar} expandido={expandido} aoExpandir={() => setExpandidaId(expandido ? "" : escolhida.id)} />}
-        </section>
-      </div>
+          </>
+        }
+        detalhe={
+          escolhida && (
+            <PainelDetalheEmenda
+              emendaId={escolhida.id}
+              emenda={escolhida}
+              resumo={resumos[escolhida.id]}
+              aoFechar={fechar}
+              expandido={expandido}
+              aoExpandir={() => setExpandidaId(expandido ? "" : escolhida.id)}
+              aoAtualizar={atualizarLinha}
+            />
+          )
+        }
+      />
     </div>
   );
 }

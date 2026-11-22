@@ -1,0 +1,108 @@
+"use client";
+
+import * as React from "react";
+import { PanelLeftOpen } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+export const ehDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+
+/**
+ * Esqueleto da área de trabalho do módulo (gráficos e filtros | lista | detalhe), usado por Emendas, Pendências e Panorama:
+ * a página não rola, cada painel rola por dentro. Com um item escolhido (`aberto`) os gráficos recolhem numa faixa, a lista
+ * desliza para o lugar deles e o detalhe abre à direita; `expandido` leva o detalhe à largura toda. Abaixo de 1024 px o detalhe
+ * abre como folha por cima da lista (CSS em `globals.css`), com fundo que fecha ao toque. Esc recolhe o expandido ou fecha o detalhe.
+ */
+export function EspacoTrabalho({
+  aberto,
+  expandido,
+  aoFechar,
+  aoRecolher,
+  filtrosAtivos = 0,
+  graficos,
+  lista,
+  rotuloLista,
+  detalhe,
+  rotuloDetalhe,
+}: {
+  aberto: boolean;
+  expandido: boolean;
+  aoFechar: () => void;
+  aoRecolher: () => void;
+  /** Quantos filtros estão valendo: aparece como selo na faixa em que os gráficos se recolhem. */
+  filtrosAtivos?: number;
+  graficos: React.ReactNode;
+  lista: React.ReactNode;
+  rotuloLista: string;
+  detalhe: React.ReactNode;
+  rotuloDetalhe: string;
+}) {
+  const areaRef = React.useRef<HTMLDivElement>(null);
+  React.useLayoutEffect(() => {
+    const ajustar = () => {
+      const el = areaRef.current;
+      if (!el) return;
+      if (!ehDesktop()) {
+        el.style.height = "";
+        return;
+      }
+      const topo = el.getBoundingClientRect().top + window.scrollY;
+      el.style.height = `${Math.max(480, window.innerHeight - topo - 28)}px`;
+    };
+    ajustar();
+    window.addEventListener("resize", ajustar);
+    const t = setTimeout(ajustar, 400); // depois da animação de entrada da página
+    return () => {
+      window.removeEventListener("resize", ajustar);
+      clearTimeout(t);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!aberto) return;
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape" || ev.defaultPrevented) return;
+      if (ev.target instanceof HTMLInputElement || ev.target instanceof HTMLSelectElement) return;
+      if (expandido) aoRecolher();
+      else aoFechar();
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [aberto, expandido, aoFechar, aoRecolher]);
+
+  return (
+    <>
+      {aberto && <button type="button" tabIndex={-1} aria-label="Fechar o detalhe" onClick={aoFechar} className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden print:hidden" />}
+      <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
+        <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
+            <div className="flex h-full flex-col">{graficos}</div>
+          </div>
+          <button
+            type="button"
+            onClick={aoFechar}
+            tabIndex={aberto ? 0 : -1}
+            aria-hidden={!aberto}
+            aria-label="Mostrar gráficos e filtros"
+            title="Mostrar gráficos e filtros"
+            className={cn("emd-faixa absolute inset-0 flex flex-col items-center gap-3 pt-4 text-slate-600 transition-opacity duration-300 hover:bg-[color-mix(in_srgb,var(--modulo)_7%,transparent)]", aberto ? "opacity-100" : "pointer-events-none opacity-0")}
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)] text-[color:var(--modulo-tinta)]">
+              <PanelLeftOpen className="h-5 w-5" aria-hidden />
+            </span>
+            {filtrosAtivos > 0 && <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[color:var(--modulo-texto)] px-1.5 text-xs font-semibold tabular-nums text-white">{filtrosAtivos}</span>}
+            <span className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 [writing-mode:vertical-rl]">Gráficos e filtros</span>
+          </button>
+        </aside>
+
+        <section aria-label={rotuloLista} inert={expandido} className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh] print:hidden">
+          {lista}
+        </section>
+
+        <section aria-label={rotuloDetalhe} aria-hidden={!aberto} inert={!aberto} className={cn("emd-painel emd-detalhe min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white print:hidden", !aberto && "border-transparent")}>
+          {detalhe}
+        </section>
+      </div>
+    </>
+  );
+}

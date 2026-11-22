@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { FiltrosAtivos, type FiltroAtivo } from "@/components/emendas/filtros-ativos";
+import { type FiltroAtivo } from "@/components/emendas/filtros-ativos";
 import { Pizza, PALETA, CINZA } from "@/components/emendas/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
@@ -56,6 +56,24 @@ type Item = {
 
 const doGrupo = (g: Grupo, cor: string): Item => ({ chave: g.chave, rotulo: g.rotulo, n: g.total, valor: g.valor, cor, alta: g.alta, media: g.media, baixa: g.baixa });
 
+/** Filtros que estão valendo, como chips (a lista os mostra; o painel só responde a eles). */
+export function chipsDePendencias(f: FiltrosPainel, linhas: LinhaPendencia[], secretarias: { id: string; nome: string }[]): FiltroAtivo[] {
+  return [
+    f.t && { chave: "t", rotulo: `Tipo: ${TIPOS_EXECUCAO[f.t as keyof typeof TIPOS_EXECUCAO]?.nome ?? f.t}` },
+    f.g && { chave: "g", rotulo: `Gravidade: ${NOME_GRAVIDADE[f.g as Gravidade] ?? f.g}` },
+    f.s && { chave: "s", rotulo: `Secretaria: ${secretarias.find((x) => x.id === f.s)?.nome ?? f.s}` },
+    f.a && { chave: "a", rotulo: `Área: ${f.a}` },
+    f.r && { chave: "r", rotulo: `Assunto: ${nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r })}` },
+    f.m && { chave: "m", rotulo: `Motivo: ${linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo ?? f.m}` },
+    f.j === "1" && { chave: "j", rotulo: "Com justificadas" },
+  ].filter(Boolean) as FiltroAtivo[];
+}
+
+/** Remove um filtro; trocar a área ou o assunto zera o que estava abaixo dele. */
+export function removerFiltroPendencia(chave: string): Record<string, string> {
+  return { [chave]: "", ...(chave === "a" ? { r: "", m: "" } : chave === "r" ? { m: "" } : {}) };
+}
+
 /**
  * Painel de Pendências numa caixa só: filtros, indicadores, abas por dimensão e, abaixo delas, a pizza ao lado do
  * ranking. Tudo responde aos mesmos filtros da lista, e escolher uma fatia/linha filtra a lista. Cada visão ignora o
@@ -69,8 +87,6 @@ export function PainelPendencias({
   filtros,
   definir,
   ano,
-  controles,
-  aoLimparTudo,
 }: {
   linhas: LinhaPendencia[];
   docs: LinhaDocFaltando[];
@@ -79,9 +95,6 @@ export function PainelPendencias({
   filtros: FiltrosPainel;
   definir: (m: Record<string, string>) => void;
   ano: number;
-  /** Linha de filtros (selects, busca, exportar), desenhada pela lista para dividir o mesmo estado. */
-  controles: React.ReactNode;
-  aoLimparTudo: () => void;
 }) {
   const f = filtros;
   const [visao, setVisao] = React.useState<Visao>("area");
@@ -169,37 +182,21 @@ export function PainelPendencias({
     motivo: f.m ? linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo : undefined,
   });
 
-  const celula = "min-w-0 px-5 py-3.5";
+  const celula = "min-w-0 px-4 py-3";
   return (
-    <section aria-label="Visão geral das pendências" className="rounded-xl border border-slate-200 bg-white">
+    <section aria-label="Visão geral das pendências" className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain print:overflow-visible">
       {/* proporção de gravidade da seleção atual, como um fio no topo da caixa */}
-      <div className="flex h-1 overflow-hidden rounded-t-xl bg-slate-100" aria-hidden>
+      <div className="flex h-1 flex-none overflow-hidden bg-slate-100" aria-hidden>
         <span className="emd-preenche" style={{ width: `${filtradas.length ? (alta / filtradas.length) * 100 : 0}%`, backgroundColor: COR.alta }} />
         <span className="emd-preenche" style={{ width: `${filtradas.length ? (media / filtradas.length) * 100 : 0}%`, backgroundColor: COR.media }} />
         <span className="emd-preenche" style={{ width: `${filtradas.length ? (baixa / filtradas.length) * 100 : 0}%`, backgroundColor: COR.baixa }} />
       </div>
 
-      <div className="border-b border-slate-200 px-4 py-3 print:hidden">{controles}</div>
-      <FiltrosAtivos
-        filtros={
-          [
-            f.t && { chave: "t", rotulo: `Tipo: ${TIPOS_EXECUCAO[f.t as keyof typeof TIPOS_EXECUCAO]?.nome ?? f.t}` },
-            f.g && { chave: "g", rotulo: `Gravidade: ${NOME_GRAVIDADE[f.g as Gravidade] ?? f.g}` },
-            f.s && { chave: "s", rotulo: `Secretaria: ${secretarias.find((x) => x.id === f.s)?.nome ?? f.s}` },
-            f.a && { chave: "a", rotulo: `Área: ${f.a}` },
-            f.r && { chave: "r", rotulo: `Assunto: ${nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r })}` },
-            f.m && { chave: "m", rotulo: `Motivo: ${linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo ?? f.m}` },
-            f.j === "1" && { chave: "j", rotulo: "Com justificadas" },
-          ].filter(Boolean) as FiltroAtivo[]
-        }
-        aoRemover={(k) => definir({ [k]: "", ...(k === "a" ? { r: "", m: "" } : k === "r" ? { m: "" } : {}) })}
-        aoLimparTudo={aoLimparTudo}
-      />
       <p className="hidden border-b border-slate-200 px-4 py-2 text-xs text-slate-600 print:block">
         Exercício {ano} · Filtros: {descricao} · Gerado em {new Date().toLocaleDateString("pt-BR")}
       </p>
 
-      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x">
+      <dl className="grid grid-cols-2 divide-slate-200 border-b border-slate-200 max-lg:[&>div:nth-child(n+3)]:border-t max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div]:border-slate-200 lg:grid-cols-4 lg:divide-x flex-none">
         <div className={celula}>
           <dt className="text-xs font-medium text-slate-600">Pendências abertas</dt>
           <dd className="flex flex-wrap items-baseline gap-x-2">
@@ -287,12 +284,12 @@ export function PainelPendencias({
         </div>
       </div>
 
-      <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid lg:grid-cols-[280px_1fr]">
-        <div className="flex items-center justify-center p-5 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
+      <div id="painel-pend-corpo" role="tabpanel" aria-labelledby={`aba-pend-${visao}`} className="grid min-h-[16rem] flex-1 lg:grid-cols-[15rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
+        <div className="flex items-center justify-center p-4 max-lg:border-b max-lg:border-slate-200 lg:border-r lg:border-slate-200">
           <Pizza fatias={fatias} destaque={sobreChave} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} rotuloTotal={medida === "valor" ? "em emendas" : visao === "documentos" ? "emendas" : "pendências"} />
         </div>
 
-        <ul className="emd-foco max-h-60 overflow-y-auto overscroll-contain py-2 lg:max-h-[236px] print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
+        <ul className="emd-foco max-h-60 min-h-0 overflow-y-auto overscroll-contain py-2 lg:max-h-none print:max-h-none" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
           {itens.map((i) => {
             const v = valorDe(i);
@@ -323,7 +320,7 @@ export function PainelPendencias({
                         return n;
                       });
                   }}
-                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] ${visao === "motivo" ? "sm:grid-cols-[10px_minmax(9rem,24rem)_minmax(0,1fr)_auto_40px]" : "sm:grid-cols-[10px_minmax(9rem,16rem)_minmax(0,1fr)_auto_40px]"} items-center gap-x-3 px-6 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
+                  className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_36px] ${visao === "motivo" ? "sm:grid-cols-[10px_minmax(9rem,24rem)_minmax(0,1fr)_auto_40px]" : "sm:grid-cols-[10px_minmax(9rem,16rem)_minmax(0,1fr)_auto_40px]"} items-center gap-x-3 px-4 py-1 text-left transition-colors motion-reduce:transition-none sm:min-h-9 ${
                     ativo ? "bg-violet-50/70" : "hover:bg-slate-50"
                   }`}
                 >
@@ -340,7 +337,7 @@ export function PainelPendencias({
                   <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                 </button>
                 {i.emendas && aberto && (
-                  <p className="flex flex-wrap gap-1.5 px-6 pb-2 pl-[46px] print:hidden">
+                  <p className="flex flex-wrap gap-1.5 px-4 pb-2 pl-[34px] print:hidden">
                     {i.emendas.map((e) => (
                       <Link
                         key={e.emendaId}
@@ -357,12 +354,12 @@ export function PainelPendencias({
             );
           })}
           {visao === "motivo" && (
-            <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">
+            <li className="px-4 pb-1 pt-2 text-xs text-slate-600 print:hidden">
               A causa específica de cada assunto (por exemplo, quais datas estão fora de ordem). Uma pendência pode ter mais de um motivo e conta em cada um; assuntos com causa única não aparecem aqui.
             </li>
           )}
           {visao === "documentos" && itens.length > 0 && (
-            <li className="px-6 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
+            <li className="px-4 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive (repasses). Clique para ver quais emendas.</li>
           )}
         </ul>
       </div>

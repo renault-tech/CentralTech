@@ -7,6 +7,7 @@ import { AlertTriangle, Check } from "lucide-react";
 import { corDoAndamento } from "@/components/emendas/anel-andamento";
 import { macrosDoResumo } from "@/components/emendas/barra-fases";
 import { indiceDaProxima } from "@/lib/emendas/fases-resumo";
+import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { brl, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
@@ -130,11 +131,11 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
             </div>
 
             <div className="mt-2.5 space-y-2 border-t border-slate-100 pt-2.5">
-              {linha("Empenhado", e.empenhado, e.valor, "#2563EB", `${pct(e.valor ? e.empenhado / e.valor : 0, 0)} do valor da emenda`)}
-              {linha("Pago", e.pago, e.empenhado || e.valor, "#059669", e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : "sem empenho ainda")}
+              {linha("Empenhado", e.empenhado, e.valor, COR_DINHEIRO.empenhado, `${pct(e.valor ? e.empenhado / e.valor : 0, 0)} do valor da emenda`)}
+              {linha("Pago", e.pago, e.empenhado || e.valor, COR_DINHEIRO.pago, e.empenhado ? `${pct(e.pago / e.empenhado, 0)} do empenhado` : "sem empenho ainda")}
               <div className="grid grid-cols-2 gap-2 text-[0.8125rem]">
-                <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="block text-[0.6875rem] text-slate-500">A pagar</span><span className="font-semibold tabular-nums">{brl(aPagar)}</span></div>
-                <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="block text-[0.6875rem] text-slate-500">Sem empenhar</span><span className="font-semibold tabular-nums">{brl(semEmpenhar)}</span></div>
+                <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="flex items-center gap-1.5 text-[0.6875rem] text-slate-600"><span className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: COR_DINHEIRO.aPagar }} aria-hidden />A pagar</span><span className="font-semibold tabular-nums">{brl(aPagar)}</span></div>
+                <div className="rounded-lg bg-slate-50 px-2 py-1"><span className="flex items-center gap-1.5 text-[0.6875rem] text-slate-600"><span className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: COR_DINHEIRO.semEmpenhar }} aria-hidden />Sem empenhar</span><span className="font-semibold tabular-nums">{brl(semEmpenhar)}</span></div>
               </div>
             </div>
 

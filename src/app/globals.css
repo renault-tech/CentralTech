@@ -812,6 +812,16 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
   .emd .emd-ws[data-detalhe="true"][data-expandido="true"] { grid-template-columns: minmax(0, 0fr) minmax(0, 0fr) minmax(0, 1fr); }
   .emd .emd-ws[data-expandido="true"] > :nth-child(1), .emd .emd-ws[data-expandido="true"] > :nth-child(2) { margin-right: 0; opacity: 0; border-color: transparent; }
 }
+/* Abaixo de 1024 px o detalhe abre como folha por cima da lista (a lista continua atrás, escurecida). */
+@keyframes emd-folha { from { transform: translateY(100%); } to { transform: none; } }
+@media (max-width: 1023.98px) {
+  .emd .emd-ws[data-detalhe="false"] .emd-detalhe { display: none; }
+  html .emd .emd-ws[data-detalhe="true"] .emd-detalhe.emd-detalhe {
+    position: fixed; inset: 3.5rem 0 0 0; z-index: 50; border-radius: 1.25rem 1.25rem 0 0; border-color: transparent;
+    background: rgb(var(--surface)) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: 0 -24px 60px -24px rgb(15 23 42 / 0.55); animation: emd-folha 0.35s var(--emd-curva) both; opacity: 1;
+  }
+}
 /* Lista: item com realce, selecionado com brilho na cor do tipo; entram em sequência. */
 .emd .emd-item { transition: background-color 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva); animation: emd-linha 0.4s var(--emd-curva) both; }
 .emd .emd-item:nth-child(2) { animation-delay: 22ms; }

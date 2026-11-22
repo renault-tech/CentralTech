@@ -13,7 +13,6 @@ import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { TIPOS_EXECUCAO, progresso } from "@/lib/emendas/fases";
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
-import { usarNovoDesign } from "@/lib/emendas/design";
 import { NOME_MODALIDADE, brl, dataBr, numeroVereador } from "@/lib/emendas/regras";
 import type { EtapaEmenda } from "@/types/emendas";
 
@@ -39,7 +38,6 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   if (execucao?.numero_termo && !rotulos.termo_parceria) rotulos.termo_parceria = `nº ${execucao.numero_termo}`;
 
   const andamento = progresso(calculo.fases);
-  const novo = await usarNovoDesign();
 
   return (
     <div className="flex flex-col gap-5">
@@ -68,7 +66,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {novo && andamento.total > 0 && (
+            {andamento.total > 0 && (
               <div className="flex items-center gap-2.5" title={`${andamento.concluidas} de ${andamento.total} fases concluídas`}>
                 <AnelAndamento concluidas={andamento.concluidas} total={andamento.total} tamanho={56} espessura={5} />
                 <span className="text-xs leading-snug text-slate-600">

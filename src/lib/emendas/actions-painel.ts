@@ -1,12 +1,15 @@
 "use server";
 
 import { carregarDetalheCompleto, type DetalheCompleto } from "@/lib/emendas/detalhe-completo";
+import { resumoDaLinha, type ResumoLinha } from "@/lib/emendas/resumo";
 
 export type PacoteDetalhe = Omit<DetalheCompleto, "calculo" | "exercicio" | "catalogo" | "tipo"> & {
   fases: DetalheCompleto["calculo"]["fases"];
   pendencias: DetalheCompleto["calculo"]["pendencias"];
   conformidade: DetalheCompleto["calculo"]["conformidade"];
   podeCorrigirLancamento: boolean;
+  /** O mesmo resumo que a lista usa, já recalculado com o que foi gravado. */
+  resumo: ResumoLinha;
 };
 
 /**
@@ -31,6 +34,7 @@ export async function carregarPacoteDetalhe(id: string): Promise<{ ok: true; pac
         fases: calculo.fases,
         pendencias: calculo.pendencias,
         conformidade: calculo.conformidade,
+        resumo: resumoDaLinha(calculo),
         podeCorrigirLancamento: r.podeEditar && !!exercicio?.secretaria_edita_lancamentos,
       },
     };

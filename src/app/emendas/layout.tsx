@@ -6,11 +6,9 @@ import Link from "next/link";
 
 import { NavModulo } from "@/components/modulo/nav-modulo";
 import { BarraLateral } from "@/components/emendas/barra-lateral";
-import { AlternadorDesign, ProvedorDesign } from "@/components/emendas/design-emendas";
-import { podeAlternarDesign, usarNovoDesign } from "@/lib/emendas/design";
 import { COOKIE_BARRA } from "@/lib/emendas/barra-cookie";
 import { cookies } from "next/headers";
-import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
+import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
@@ -89,7 +87,6 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/portal", rotulo: "Portal público", selo: alertasPortal },
   ];
 
-  const [novo, podeAlternar] = await Promise.all([usarNovoDesign(), podeAlternarDesign()]);
   const barraRecolhida = (await cookies()).get(COOKIE_BARRA)?.value === "1";
   const cabecalho = (
     <CabecalhoHub
@@ -110,23 +107,6 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     </React.Suspense>
   );
 
-  // PROVISÓRIO: visual original (como era) × novo, alternável só pelo administrador (ver lib/emendas/design.ts).
-  if (!novo) {
-    return (
-      <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
-        {cabecalho}
-        <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" tour="nav-emendas" largura={LARGURA_MODULO} />
-        <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
-          {aviso}
-          <ProvedorDesign novo={false}>
-            <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
-          </ProvedorDesign>
-        </main>
-        {podeAlternar && <AlternadorDesign novo={false} />}
-      </div>
-    );
-  }
-
   return (
     <div className="emd min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
       {cabecalho}
@@ -143,12 +123,9 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
         />
         <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
           {aviso}
-          <ProvedorDesign novo>
-            <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
-          </ProvedorDesign>
+          <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
         </main>
       </div>
-      {podeAlternar && <AlternadorDesign novo />}
     </div>
   );
 }

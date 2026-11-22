@@ -15,6 +15,7 @@ import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { Chip } from "@/components/emendas/ui";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
 import { carregarPacoteDetalhe, type PacoteDetalhe } from "@/lib/emendas/actions-painel";
+import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { indiceDaProxima, proximoPasso } from "@/lib/emendas/fases-resumo";
@@ -26,11 +27,11 @@ import type { EmendaResumo } from "@/types/emendas";
 
 const COR_GRAVIDADE = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" } as const;
 // Cores do dinheiro: as mesmas na barra do painel e na caixa de andamento da lista.
-const COR_PAGO = "#059669";
-const COR_A_PAGAR = "#D97706";
-const COR_SEM_EMPENHO = "#94A3B8";
+const COR_PAGO = COR_DINHEIRO.pago;
+const COR_A_PAGAR = COR_DINHEIRO.aPagar;
+const COR_SEM_EMPENHO = COR_DINHEIRO.semEmpenhar;
 
-type AbaPainel = "resumo" | "parceria" | Extract<AbaEmenda, "fases" | "documentacao" | "pendencias" | "financeiro" | "andamentos" | "historico">;
+export type AbaPainel = "resumo" | "parceria" | Extract<AbaEmenda, "fases" | "documentacao" | "pendencias" | "financeiro" | "andamentos" | "historico">;
 
 const CLASSE_TITULO = "text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-slate-600";
 const CLASSE_BOTAO_PRIMARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110 disabled:opacity-50";
@@ -99,21 +100,109 @@ const CLASSE_ITEM_MENU = "flex w-full items-center rounded-md px-2.5 py-2 text-l
  * da página da emenda, carregadas logo depois de abrir o painel, e gravam pelas mesmas ações. Remanejamento e impedimento não
  * têm botão aqui (o remanejamento é feito em Configurações).
  */
+export type AtualizacaoEmenda = { emenda: EmendaResumo; resumo: ResumoLinha };
+
 export function PainelDetalheEmenda({
-  emenda: e,
+  emendaId,
+  emenda,
   resumo,
   aoFechar,
   expandido,
   aoExpandir,
+  abaInicial,
+  aoAtualizar,
 }: {
-  emenda: EmendaResumo;
+  emendaId: string;
+  /** O que a tela de origem já tem da emenda (a lista); sem isso o painel espera a leitura completa. */
+  emenda?: EmendaResumo;
   resumo?: ResumoLinha;
   aoFechar: () => void;
   expandido: boolean;
   aoExpandir: () => void;
+  abaInicial?: AbaPainel;
+  /** Chamado depois de uma gravação com a emenda já recalculada: a tela atualiza só essa linha na hora. */
+  aoAtualizar?: (id: string, dados: AtualizacaoEmenda) => void;
+}) {
+  const router = useRouter();
+  const [, iniciarTransicao] = React.useTransition();
+  const [pacote, setPacote] = React.useState<PacoteDetalhe | null>(null);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const carregando = React.useRef(false);
+
+  const carregar = React.useCallback(
+    async (notificar = false) => {
+      if (carregando.current) return;
+      carregando.current = true;
+      setErro(null);
+      const r = await carregarPacoteDetalhe(emendaId);
+      carregando.current = false;
+      if (!r.ok) return setErro(r.erro);
+      setPacote(r.pacote);
+      if (notificar) aoAtualizar?.(emendaId, { emenda: r.pacote.detalhe.emenda, resumo: r.pacote.resumo });
+    },
+    [emendaId, aoAtualizar]
+  );
+
+  // Os dados completos vêm logo depois de a emenda abrir (com uma pausa, para quem navega pela lista com as setas; sem pausa
+  // quando a tela de origem não tem nada da emenda para mostrar).
+  React.useEffect(() => {
+    const t = setTimeout(() => void carregar(), emenda ? 350 : 0);
+    return () => clearTimeout(t);
+  }, [carregar, emenda]);
+
+  // Depois de gravar: a emenda recalculada aparece na hora (aqui e na linha da lista) e o restante da tela se revalida em segundo plano.
+  const aoSucesso = React.useCallback(() => {
+    void carregar(true);
+    iniciarTransicao(() => router.refresh());
+  }, [carregar, router]);
+
+  const e = pacote?.detalhe.emenda ?? emenda;
+  const res = pacote?.resumo ?? resumo;
+  if (!e) {
+    return (
+      <article className="flex h-full min-w-[20rem] flex-col gap-4 p-4" aria-label="Carregando a emenda">
+        <div className="flex justify-end">
+          <button type="button" onClick={aoFechar} aria-label="Fechar detalhe da emenda" title="Fechar (Esc)" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-slate-200/70">
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        {erro ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+            {erro} <button type="button" className="font-medium underline" onClick={() => void carregar()}>Tentar de novo</button>
+          </p>
+        ) : (
+          <Esqueleto />
+        )}
+      </article>
+    );
+  }
+  return <PainelCorpo key={e.id} emenda={e} resumo={res} pacote={pacote} erro={erro} carregar={carregar} aoSucesso={aoSucesso} aoFechar={aoFechar} expandido={expandido} aoExpandir={aoExpandir} abaInicial={abaInicial} />;
+}
+
+function PainelCorpo({
+  emenda: e,
+  resumo,
+  pacote,
+  erro,
+  carregar,
+  aoSucesso,
+  aoFechar,
+  expandido,
+  aoExpandir,
+  abaInicial,
+}: {
+  emenda: EmendaResumo;
+  resumo?: ResumoLinha;
+  pacote: PacoteDetalhe | null;
+  erro: string | null;
+  carregar: () => Promise<void>;
+  aoSucesso: () => void;
+  aoFechar: () => void;
+  expandido: boolean;
+  aoExpandir: () => void;
+  abaInicial?: AbaPainel;
 }) {
   useCatalogo();
-  const router = useRouter();
   const tipo = tipoDaEmenda(e);
   const cor = TIPOS_EXECUCAO[tipo].cor;
   const aPagar = Math.max(0, e.empenhado - e.pago);
@@ -121,39 +210,15 @@ export function PainelDetalheEmenda({
   const macros = React.useMemo(() => macrosDoResumo(resumo), [resumo]);
   const iProxima = indiceDaProxima(macros);
   const passo = React.useMemo(() => proximoPasso(e, macros), [e, macros]);
-  const href = (aba?: string) => `/emendas/${e.id}${aba ? `?aba=${aba}` : ""}`;
 
-  const [aba, setAba] = React.useState<AbaPainel>("resumo");
-  const [pacote, setPacote] = React.useState<PacoteDetalhe | null>(null);
-  const [erro, setErro] = React.useState<string | null>(null);
+  const [aba, setAba] = React.useState<AbaPainel>(abaInicial ?? "resumo");
   const [dadosAbertos, setDadosAbertos] = React.useState(false);
-  const carregando = React.useRef(false);
   const controle = React.useRef<ControleDetalhe>(null);
-
-  const carregar = React.useCallback(async () => {
-    if (carregando.current) return;
-    carregando.current = true;
-    setErro(null);
-    const r = await carregarPacoteDetalhe(e.id);
-    carregando.current = false;
-    if (r.ok) setPacote(r.pacote);
-    else setErro(r.erro);
-  }, [e.id]);
-
-  // Os dados completos vêm logo depois de a emenda abrir (com uma pausa, para quem navega pela lista com as setas).
-  React.useEffect(() => {
-    const t = setTimeout(() => void carregar(), 350);
-    return () => clearTimeout(t);
-  }, [carregar]);
 
   const abrirAba = (destino: AbaPainel) => {
     setAba(destino);
     if (destino !== "resumo" && !pacote && !erro) void carregar();
   };
-  const aoSucesso = React.useCallback(() => {
-    void carregar();
-    router.refresh(); // a lista e o resumo acompanham a gravação
-  }, [carregar, router]);
   const irParaAba = (destino: string) => {
     if (["resumo", "fases", "documentacao", "pendencias", "financeiro", "andamentos", "parceria", "historico"].includes(destino)) abrirAba(destino as AbaPainel);
     else if (destino === "execucao" || destino === "transparencia") abrirAba("parceria");
@@ -214,9 +279,9 @@ export function PainelDetalheEmenda({
           <p className="mt-0.5 text-[1.0625rem] font-semibold leading-snug tracking-tight text-cataguases-marinho">{passo.titulo}</p>
           <p className="mt-0.5 text-[0.8125rem] leading-relaxed text-slate-700">{passo.texto}</p>
         </div>
-        {((passo.acao && (podeGravar || !pacote)) || passo.atalho) && (
+        {((passo.acao && passo.acao !== "andamento" && (podeGravar || !pacote)) || passo.atalho) && (
           <div className="flex flex-none flex-col gap-2 max-sm:w-full max-sm:flex-row">
-            {passo.acao && (podeGravar || !pacote) && (
+            {passo.acao && passo.acao !== "andamento" && (podeGravar || !pacote) && (
               <button type="button" disabled={!pacote} onClick={executarPasso} className={cn(CLASSE_BOTAO_PRIMARIO, "h-9")}>
                 {passo.rotuloAcao}
               </button>
@@ -354,7 +419,7 @@ export function PainelDetalheEmenda({
             {e.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
           </div>
           <div className="-mr-1.5 flex flex-none items-center gap-0.5">
-            <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+            <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex max-lg:hidden h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
               {expandido ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
               {expandido ? "Recolher" : "Expandir"}
             </button>
@@ -401,28 +466,23 @@ export function PainelDetalheEmenda({
               {primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"}
             </button>
           )}
-          <Suspenso
-            alinhar="right"
-            largura="w-52"
-            botao={({ aberto, alternar }) => (
-              <button type="button" aria-label="Mais ações" aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                <MoreHorizontal className="h-4 w-4" aria-hidden />
-              </button>
-            )}
-          >
-            {() => (
-              <>
-                {pacote?.gestor && (
-                  <Link role="menuitem" href={`/emendas/${e.id}/editar`} className={CLASSE_ITEM_MENU}>
-                    Corrigir cadastro
-                  </Link>
-                )}
-                <Link role="menuitem" href={href(abaDoDetalhe ?? undefined)} className={CLASSE_ITEM_MENU}>
-                  Abrir em página inteira
+          {pacote?.gestor && (
+            <Suspenso
+              alinhar="right"
+              largura="w-52"
+              botao={({ aberto, alternar }) => (
+                <button type="button" aria-label="Mais ações" aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                  <MoreHorizontal className="h-4 w-4" aria-hidden />
+                </button>
+              )}
+            >
+              {() => (
+                <Link role="menuitem" href={`/emendas/${e.id}/editar`} className={CLASSE_ITEM_MENU}>
+                  Corrigir cadastro
                 </Link>
-              </>
-            )}
-          </Suspenso>
+              )}
+            </Suspenso>
+          )}
         </div>
       </div>
 

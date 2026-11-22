@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 
 import { AreaTrabalhoEmendas } from "@/components/emendas/area-trabalho-emendas";
-import { TabelaEmendas } from "@/components/emendas/tabela-emendas";
-import { usarNovoDesign } from "@/lib/emendas/design";
 import { Vazio } from "@/components/emendas/ui";
 import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
@@ -23,10 +21,9 @@ export default async function PaginaListaEmendas({ searchParams }: { searchParam
   const resumos: Record<string, ResumoLinha> = {};
   for (const [id, c] of calculos) resumos[id] = resumoDaLinha(c);
 
-  const Lista = (await usarNovoDesign()) ? AreaTrabalhoEmendas : TabelaEmendas;
   return (
     <Suspense>
-      <Lista
+      <AreaTrabalhoEmendas
         emendas={emendas}
         resumos={resumos}
         ano={exercicio.ano}
