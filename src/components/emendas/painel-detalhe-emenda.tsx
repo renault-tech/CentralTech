@@ -19,7 +19,7 @@ import { carregarPacoteDetalhe, type PacoteDetalhe } from "@/lib/emendas/actions
 import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
-import { indiceDaProxima, proximoPasso } from "@/lib/emendas/fases-resumo";
+import { alertasDaMacro, indiceDaProxima, NOME_CURTO_MACRO, proximoPasso } from "@/lib/emendas/fases-resumo";
 import { NOME_GRAVIDADE } from "@/lib/emendas/pendencias";
 import { brl, numeroVereador, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
@@ -256,7 +256,7 @@ function PainelCorpo({
             {resumo && <span className="text-[0.8125rem] font-normal normal-case tracking-normal text-slate-600">{resumo.concluidas} de {resumo.total} fases concluídas</span>}
             <button type="button" onClick={() => abrirAba("fases")} className="ml-auto text-[0.8125rem] font-medium normal-case tracking-normal text-[color:var(--modulo-tinta)] hover:underline">detalhar</button>
           </h3>
-          <ol className="grid gap-x-2 gap-y-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(6.5rem, 1fr))" }}>
+          <ol className="grid gap-x-2" style={{ gridTemplateColumns: `repeat(${macros.length}, minmax(0, 1fr))` }}>
             {macros.map((m, i) => {
               const atual = i === iProxima;
               return (
@@ -268,16 +268,26 @@ function PainelCorpo({
                     <>
                       <CaixaTitulo rotulo="Etapa do fluxo" valor={m.nome} />
                       <CaixaLinhas linhas={m.fases.map((f) => ({ rotulo: f.nome, valor: f.estado === "feita" ? "concluída" : f.estado === "pendente" ? "a fazer" : "em andamento", cor: f.estado === "feita" ? "#10B981" : f.estado === "pendente" ? "#CBD5E1" : "#6B4FBB" }))} />
+                      {alertasDaMacro(m).length > 0 && (
+                        <div className="mt-2.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[0.78125rem] leading-snug text-amber-900">
+                          <p className="font-semibold">Atenção nesta etapa</p>
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                            {alertasDaMacro(m).map((a) => (
+                              <li key={a}>{a}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       <CaixaNota>O detalhe de cada fase (datas, documentos) está na aba Fases.</CaixaNota>
                     </>
                   }
                 >
                   <span className={cn("block h-1.5 rounded-full", atual && "emd-pulso")} style={{ backgroundColor: corDoSegmento(m, atual) }} />
-                  <span className={cn("text-[0.8125rem] leading-snug", m.estado === "pendente" && !atual ? "text-slate-600" : "font-medium text-cataguases-marinho")}>
-                    {m.nome}
-                    {m.alerta && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-amber-500" aria-label="Com alerta" />}
+                  <span className={cn("text-[0.71875rem] leading-snug tracking-tight", m.estado === "pendente" && !atual ? "text-slate-600" : "font-medium text-cataguases-marinho")}>
+                    {NOME_CURTO_MACRO[m.chave]}
+                    {m.alerta && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-amber-500" aria-label={`Com alerta: ${alertasDaMacro(m).join("; ")}`} />}
                   </span>
-                  <span className="text-[0.8125rem] text-slate-600">{m.estado === "feita" ? "concluída" : atual ? (m.estado === "andamento" ? "em andamento · próxima" : "próxima") : m.estado === "andamento" ? "em andamento" : "a fazer"}</span>
+                  <span className="text-[0.75rem] text-slate-600">{m.estado === "feita" ? "concluída" : atual ? (m.estado === "andamento" ? "em andamento" : "próxima") : m.estado === "andamento" ? "em andamento" : "a fazer"}</span>
                 </CaixaInfo>
               );
             })}

@@ -7,7 +7,7 @@ import { AlertTriangle, Check } from "lucide-react";
 
 import { corDoAndamento } from "@/components/emendas/anel-andamento";
 import { macrosDoResumo } from "@/components/emendas/barra-fases";
-import { indiceDaProxima } from "@/lib/emendas/fases-resumo";
+import { alertasDaMacro, indiceDaProxima } from "@/lib/emendas/fases-resumo";
 import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { brl, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
@@ -86,6 +86,16 @@ export function HoverAndamento({ emenda: e, resumo, children, as, className }: {
                     </li>
                   ))}
                 </ol>
+              </div>
+            )}
+            {macros.some((m) => m.alerta) && (
+              <div className="mt-2.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[0.75rem] leading-snug text-amber-900">
+                <p className="font-semibold">Atenção</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {macros.flatMap((m) => alertasDaMacro(m)).map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
               </div>
             )}
             <p className="mt-2 text-[0.6875rem] text-slate-400">Clique na emenda para ver as fases e os documentos ao lado.</p>

@@ -35,6 +35,7 @@ import { CATEGORIAS, INFO_CATEGORIA, tipoDaCategoria, type CategoriaBeneficiario
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
 import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -195,6 +196,7 @@ export function DetalheEmendaCliente({
 }) {
   const catalogo = useCatalogo();
   const router = useRouter();
+  const { confirmar, pedirTexto } = useDialogos();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
   const [abaLocal, setAbaLocal] = React.useState<AbaEmenda>(ABAS_VALIDAS.includes(abaInicial as AbaEmenda) ? (abaInicial as AbaEmenda) : "fases");
   const controlada = abaControlada !== undefined;
@@ -384,11 +386,18 @@ export function DetalheEmendaCliente({
                         <button
                           type="button"
                           className="ml-3 text-red-700 hover:underline"
-                          onClick={() => {
-                            const motivo = window.prompt(`Desfazer o andamento “${infoEtapa(a.etapa, catalogo).nome}” de ${dataBr(a.data)}? A etapa da emenda volta ao andamento anterior.\n\nJustifique (mínimo de 10 caracteres):`);
+                          onClick={async () => {
+                            const motivo = await pedirTexto({
+                              titulo: `Desfazer o andamento “${infoEtapa(a.etapa, catalogo).nome}” de ${dataBr(a.data)}?`,
+                              mensagem: "A etapa da emenda volta ao andamento anterior.",
+                              rotulo: "Justificativa",
+                              minimo: 10,
+                              multilinha: true,
+                              rotuloConfirmar: "Desfazer andamento",
+                              tom: "perigo",
+                            });
                             if (motivo === null) return;
-                            if (motivo.trim().length < 10) return window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi desfeito.");
-                            void executar(() => excluirAndamento({ id: a.id, emendaId: emenda.id, justificativa: motivo.trim() }));
+                            void executar(() => excluirAndamento({ id: a.id, emendaId: emenda.id, justificativa: motivo }));
                           }}
                         >
                           Desfazer
@@ -550,9 +559,9 @@ export function DetalheEmendaCliente({
           <button
             type="button"
             className="text-xs text-slate-500 hover:text-red-700 hover:underline"
-            onClick={() => {
+            onClick={async () => {
               const cancelar = emenda.situacao !== "cancelada";
-              if (cancelar && !window.confirm("Cancelar esta emenda? O valor deixa de contar na cota do vereador.")) return;
+              if (cancelar && !(await confirmar({ titulo: "Cancelar esta emenda?", mensagem: "O valor deixa de contar na cota do vereador.", rotuloConfirmar: "Cancelar emenda", rotuloCancelar: "Voltar", tom: "perigo" }))) return;
               void executar(() => definirCancelamento(emenda.id, cancelar));
             }}
           >
@@ -563,17 +572,26 @@ export function DetalheEmendaCliente({
             type="button"
             className="text-xs text-slate-500 hover:text-red-700 hover:underline"
             onClick={async () => {
-              const motivo = window.prompt(
-                `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}, com todos os lançamentos, fases e anexos?\n\nSe só quer tirar a emenda da cota, use "Cancelar emenda".\n\nJustifique a exclusão (mínimo de 10 caracteres):`
-              );
+              const motivo = await pedirTexto({
+                titulo: `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}?`,
+                mensagem: "Vão junto todos os lançamentos, fases e anexos. Se só quer tirar a emenda da cota, use “Cancelar emenda”.",
+                rotulo: "Justificativa da exclusão",
+                minimo: 10,
+                multilinha: true,
+                rotuloConfirmar: "Continuar",
+                tom: "perigo",
+              });
               if (motivo === null) return;
-              if (motivo.trim().length < 10) {
-                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
-                return;
-              }
-              const digitado = window.prompt(`Para confirmar, digite o número da emenda (${emenda.numero}):`);
+              const digitado = await pedirTexto({
+                titulo: "Confirme o número da emenda",
+                mensagem: `Para excluir, digite o número da emenda (${emenda.numero}).`,
+                rotulo: "Número da emenda",
+                igualA: String(emenda.numero),
+                rotuloConfirmar: "Excluir emenda",
+                tom: "perigo",
+              });
               if (digitado === null) return;
-              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado.trim()), justificativa: motivo.trim() }));
+              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado), justificativa: motivo }));
               if (r.sucesso) router.push("/emendas/lista");
             }}
           >
@@ -1071,6 +1089,7 @@ function LinhaMovimento({
   nome: string;
   aoCorrigir: (numero: string, data: string | null, valor: number) => Promise<Resultado>;
 }) {
+  const { pedirTexto } = useDialogos();
   const [editando, setEditando] = React.useState(false);
   const [valorTexto, setValorTexto] = React.useState(movimento.valor.toFixed(2).replace(".", ","));
   const [numero, setNumero] = React.useState(movimento.numero ?? "");
@@ -1140,14 +1159,18 @@ function LinhaMovimento({
             aria-label="Excluir lançamento"
             title="Excluir lançamento"
             className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
-            onClick={() => {
-              const motivo = window.prompt(`Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})? Não pode ser desfeito.\n\nJustifique a exclusão (mínimo de 10 caracteres):`);
+            onClick={async () => {
+              const motivo = await pedirTexto({
+                titulo: `Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})?`,
+                mensagem: "Não pode ser desfeito.",
+                rotulo: "Justificativa da exclusão",
+                minimo: 10,
+                multilinha: true,
+                rotuloConfirmar: "Excluir lançamento",
+                tom: "perigo",
+              });
               if (motivo === null) return;
-              if (motivo.trim().length < 10) {
-                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
-                return;
-              }
-              void aoExcluir(motivo.trim());
+              void aoExcluir(motivo);
             }}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
@@ -1260,6 +1283,7 @@ function ListaAnexos({
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
   emendaId: string;
 }) {
+  const { confirmar } = useDialogos();
   return (
     <ul className="flex w-full flex-col gap-1 sm:w-auto">
       {anexos.map((d) => (
@@ -1281,7 +1305,7 @@ function ListaAnexos({
               type="button"
               aria-label={`Remover ${d.nome_arquivo}`}
               className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-700"
-              onClick={() => window.confirm("Remover este arquivo?") && void executar(() => removerDocumento(d.id, emendaId))}
+              onClick={async () => (await confirmar({ titulo: "Remover este arquivo?", mensagem: d.nome_arquivo, rotuloConfirmar: "Remover", tom: "perigo" })) && void executar(() => removerDocumento(d.id, emendaId))}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>

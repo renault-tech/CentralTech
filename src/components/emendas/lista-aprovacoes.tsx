@@ -7,6 +7,7 @@ import { apagarPropostas, decidirPropostas } from "@/lib/emendas/actions-propost
 import type { PropostaListada } from "@/lib/emendas/dados";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
+import { useDialogos } from "@/components/ui/dialogos";
 
 const BOTAO_PRIMARIO = "inline-flex h-9 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 const BOTAO_SECUNDARIO = "inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
@@ -66,6 +67,7 @@ function mostrar(p: PropostaListada, v: unknown): string {
 }
 
 export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: PropostaListada[]; decididas: PropostaListada[]; gestor: boolean }) {
+  const { confirmar } = useDialogos();
   const [marcadas, setMarcadas] = React.useState<Set<string>>(new Set());
   const [pendente, iniciar] = React.useTransition();
   const [msg, setMsg] = React.useState<string | null>(null);
@@ -84,9 +86,9 @@ export function ListaAprovacoes({ pendentes, decididas, gestor }: { pendentes: P
       return n;
     });
   }
-  function apagar(ids: string[], quais: string) {
+  async function apagar(ids: string[], quais: string) {
     if (ids.length === 0) return;
-    if (!window.confirm(`Apagar ${quais}? Isso não altera a emenda e não pode ser desfeito.`)) return;
+    if (!(await confirmar({ titulo: `Apagar ${quais}?`, mensagem: "Isso não altera a emenda e não pode ser desfeito.", rotuloConfirmar: "Apagar", tom: "perigo" }))) return;
     setMsg(null);
     iniciar(async () => {
       const r = await apagarPropostas({ ids });

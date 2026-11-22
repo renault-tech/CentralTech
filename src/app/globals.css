@@ -859,3 +859,11 @@ html:has(.emd) { scroll-behavior: smooth; }
 
 /* Gráficos de filtro: a altura de cada um acompanha a quantidade de linhas (ver `GraficoFiltro`). */
 .emd .emd-grafico { transition: flex-grow 0.5s var(--emd-curva); }
+
+/* Confirmações e avisos (components/ui/dialogos.tsx): fundo escurecido e cartão central, com entrada curta. */
+@keyframes dialogo-fundo { from { opacity: 0; } }
+@keyframes dialogo-cartao { from { opacity: 0; transform: translateY(8px) scale(0.97); } }
+.dialogo-fundo { animation: dialogo-fundo 0.15s ease both; }
+.dialogo-cartao { animation: dialogo-cartao 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .dialogo-fundo, .dialogo-cartao { animation: none; } }
+@media print { .dialogo-fundo { display: none; } }

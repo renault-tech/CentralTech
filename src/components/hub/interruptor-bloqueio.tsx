@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { alternarBloqueioLoginDireto } from "@/lib/actions/login-direto";
 import type { Modulo } from "@/types/database";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export function InterruptorBloqueio({
   modulo,
@@ -15,12 +16,13 @@ export function InterruptorBloqueio({
 }) {
   const router = useRouter();
   const [bloqueado, setBloqueado] = React.useState(bloqueadoInicial);
+  const { confirmar } = useDialogos();
   const [pendente, setPendente] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
 
   async function alternar() {
     const novo = !bloqueado;
-    if (novo && !window.confirm("Bloquear o login direto deste app agora, sem esperar mais adoção?")) {
+    if (novo && !(await confirmar({ titulo: "Bloquear o login direto deste app?", mensagem: "O bloqueio vale agora, sem esperar mais adoção pelo Hub.", rotuloConfirmar: "Bloquear", tom: "perigo" }))) {
       return;
     }
     setPendente(true);

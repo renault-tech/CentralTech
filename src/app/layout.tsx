@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AtualizarSozinho } from "@/components/layout/atualizar-sozinho";
 import { ControleZoom } from "@/components/layout/controle-zoom";
+import { ProvedorDialogos } from "@/components/ui/dialogos";
 import { SCRIPT_TEMA_INICIAL } from "@/lib/tema";
 import { SCRIPT_ZOOM_INICIAL } from "@/lib/zoom";
 
@@ -45,10 +46,12 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_ZOOM_INICIAL }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
-        <AtualizarSozinho />
-        {/* Só aparece onde não há cabeçalho (login, portal público…); com cabeçalho o botão é o dele. */}
-        <ControleZoom variante="flutuante" />
+        <ProvedorDialogos>
+          {children}
+          <AtualizarSozinho />
+          {/* Só aparece onde não há cabeçalho (login, portal público…); com cabeçalho o botão é o dele. */}
+          <ControleZoom variante="flutuante" />
+        </ProvedorDialogos>
       </body>
     </html>
   );

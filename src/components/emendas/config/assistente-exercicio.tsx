@@ -7,6 +7,7 @@ import { CheckCircle2, ChevronRight, CircleDashed, Lock, LockOpen, Rocket } from
 import { BOTAO, CAMPO, Erro, Secao, useSalvar } from "@/components/emendas/config/editores";
 import { abrirExercicio, fecharExercicio, reabrirExercicio } from "@/lib/emendas/actions-config";
 import { cn } from "@/lib/utils";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export type DadosAssistente = {
   ano: number;
@@ -95,6 +96,7 @@ export function AssistenteExercicio({ dados }: { dados: DadosAssistente }) {
 
 function FecharAnterior({ dados }: { dados: DadosAssistente }) {
   const { erro, salvando, salvar } = useSalvar();
+  const { confirmar } = useDialogos();
   const [justificativa, setJustificativa] = React.useState("");
   const [aviso, setAviso] = React.useState<string | null>(null);
   const a = dados.anterior;
@@ -133,8 +135,8 @@ function FecharAnterior({ dados }: { dados: DadosAssistente }) {
             type="button"
             className={BOTAO}
             disabled={salvando || (pendente && justificativa.trim().length < 10)}
-            onClick={() => {
-              if (window.confirm(`Fechar o exercício ${a.ano}? Restos a pagar continuam podendo receber pagamentos.`)) void salvar(async () => {
+            onClick={async () => {
+              if (await confirmar({ titulo: `Fechar o exercício ${a.ano}?`, mensagem: "Restos a pagar continuam podendo receber pagamentos.", rotuloConfirmar: "Fechar exercício" })) void salvar(async () => {
                 const r = await fecharExercicio({ ano: a.ano, justificativa });
                 if (r.sucesso) setAviso(r.aviso ?? null);
                 return r;

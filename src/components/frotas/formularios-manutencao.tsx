@@ -19,6 +19,7 @@ import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
 import type { Fornecedor, Manutencao } from "@/types/frotas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export type OpcaoVeiculo = { id: string; rotulo: string; grupo: string };
 
@@ -252,6 +253,7 @@ type PropsEtapas = { manutencao: Manutencao; dataHoje: string };
 /** OC, NF e Contabilidade: três etapas separadas, cada uma salva sozinha e na hora em que acontece. */
 export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [erro, setErro] = React.useState<string | null>(null);
   const [pendente, iniciar] = React.useTransition();
   const temOc = !!m.oc_numero;
@@ -259,14 +261,14 @@ export function EtapasDocumentacao({ manutencao: m, dataHoje }: PropsEtapas) {
   const temCtb = !!m.enviada_contabilidade_em;
   const dif = nfAcimaDaOc(m);
 
-  function desfazer(etapa: "oc" | "nf" | "contabilidade") {
+  async function desfazer(etapa: "oc" | "nf" | "contabilidade") {
     const aviso =
       etapa === "oc"
         ? "Desfazer a OC? Ela é apagada."
         : etapa === "nf"
           ? "Desfazer a NF? Ela é apagada."
           : "Desfazer o envio à Contabilidade?";
-    if (!window.confirm(aviso)) return;
+    if (!(await confirmar({ titulo: aviso, rotuloConfirmar: "Desfazer", tom: "perigo" }))) return;
     setErro(null);
     iniciar(async () => {
       const r = await desfazerEtapa({ id: m.id, etapa });
@@ -446,6 +448,7 @@ function FormContabilidade({ m, dataHoje, aoSalvar }: PropsForm) {
 /** Observações e exclusão da manutenção. */
 function Observacoes({ m }: { m: Manutencao }) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [texto, setTexto] = React.useState(m.observacoes ?? "");
   const [erro, setErro] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
@@ -478,8 +481,8 @@ function Observacoes({ m }: { m: Manutencao }) {
           type="button"
           disabled={pendente}
           className={`${CLASSE_BOTAO_PERIGO} ml-auto`}
-          onClick={() => {
-            if (!window.confirm("Excluir esta manutenção? O histórico da alteração fica registrado.")) return;
+          onClick={async () => {
+            if (!(await confirmar({ titulo: "Excluir esta manutenção?", mensagem: "O histórico da alteração fica registrado.", rotuloConfirmar: "Excluir", tom: "perigo" }))) return;
             iniciar(async () => {
               const r = await excluirManutencao(m.id);
               if (!r.sucesso) return setErro(r.erro);
