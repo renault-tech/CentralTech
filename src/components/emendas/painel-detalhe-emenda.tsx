@@ -425,7 +425,32 @@ function PainelCorpo({
             </button>
           </div>
         </div>
-        <h2 className="mt-1.5 line-clamp-2 text-[0.9375rem] font-semibold leading-snug tracking-tight text-cataguases-marinho" title={e.objeto}>{e.objeto}</h2>
+        <CaixaInfo
+          as="div"
+          largura={340}
+          conteudo={
+            <>
+              <CaixaTitulo rotulo={`Emenda nº ${e.numero}`} />
+              <p className="mt-1 text-[0.8125rem] leading-snug text-cataguases-marinho">{e.objeto}</p>
+              <dl className="mt-2.5 space-y-1 border-t border-slate-100 pt-2.5 text-[0.8125rem]">
+                {[
+                  ["Beneficiário", e.beneficiario_nome],
+                  ["Secretaria", e.secretaria_nome],
+                  ["Vereador(a)", `${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`],
+                ]
+                  .filter(([, v]) => v)
+                  .map(([k, v]) => (
+                    <div key={k}>
+                      <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500">{k}</dt>
+                      <dd className="font-medium leading-snug text-cataguases-marinho">{v}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </>
+          }
+        >
+          <h2 className="mt-1.5 line-clamp-2 text-[0.9375rem] font-semibold leading-snug tracking-tight text-cataguases-marinho">{e.objeto}</h2>
+        </CaixaInfo>
         <p className="mt-0.5 truncate text-[0.8125rem] text-slate-600" title={[e.beneficiario_nome, e.secretaria_nome, e.vereador_nome].filter(Boolean).join(" · ")}>
           {[e.beneficiario_nome, e.secretaria_nome, `Vereador(a) ${numeroVereador(e.vereador_numero)} · ${e.vereador_nome}`].filter(Boolean).join(" · ")}
         </p>

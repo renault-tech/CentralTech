@@ -18,7 +18,7 @@ import type { EmendaResumo } from "@/types/emendas";
  * Envolve a barra de fases da lista: ao passar o mouse (depois de uma pequena pausa) abre a caixa com os valores da emenda e
  * as macro-etapas do fluxo.
  */
-export function HoverAndamento({ emenda: e, resumo, children }: { emenda: EmendaResumo; resumo: ResumoLinha; children: React.ReactNode }) {
+export function HoverAndamento({ emenda: e, resumo, children, as, className }: { emenda: EmendaResumo; resumo: ResumoLinha; children: React.ReactNode; as?: "span" | "div" | "li"; className?: string }) {
   const macros = macrosDoResumo(resumo);
   const proxima = indiceDaProxima(macros);
   const p = resumo.total > 0 ? Math.round((resumo.concluidas / resumo.total) * 100) : 0;
@@ -91,5 +91,9 @@ export function HoverAndamento({ emenda: e, resumo, children }: { emenda: Emenda
             <p className="mt-2 text-[0.6875rem] text-slate-400">Clique na emenda para ver as fases e os documentos ao lado.</p>
     </>
   );
-  return <CaixaInfo conteudo={conteudo}>{children}</CaixaInfo>;
+  return (
+    <CaixaInfo conteudo={conteudo} as={as} className={className}>
+      {children}
+    </CaixaInfo>
+  );
 }

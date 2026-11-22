@@ -65,9 +65,17 @@ const LinhaEmenda = React.memo(function LinhaEmenda({ r, res, sel, primeiraSemSe
           <span aria-hidden className="emd-item-faixa absolute inset-y-2 left-0 w-1 rounded-r-full" style={{ backgroundColor: cor }} />
           <span className="pt-0.5 font-mono text-xs tabular-nums text-slate-500">{r.numero}</span>
           <div className="min-w-0">
-            <Link href={`/emendas/${r.id}`} data-abrir="1" tabIndex={-1} className="line-clamp-2 text-[0.875rem] font-medium leading-snug text-cataguases-marinho">
+            {res && res.total > 0 ? (
+                  <HoverAndamento emenda={r} resumo={res} as="div">
+                    <Link href={`/emendas/${r.id}`} data-abrir="1" tabIndex={-1} className="line-clamp-2 text-[0.875rem] font-medium leading-snug text-cataguases-marinho">
               {r.objeto}
             </Link>
+                  </HoverAndamento>
+                ) : (
+                  <Link href={`/emendas/${r.id}`} data-abrir="1" tabIndex={-1} className="line-clamp-2 text-[0.875rem] font-medium leading-snug text-cataguases-marinho">
+              {r.objeto}
+            </Link>
+                )}
             <p className="mt-0.5 truncate text-xs text-slate-600">
               {r.beneficiario_nome ? `${r.beneficiario_nome} · ` : ""}
               {numeroVereador(r.vereador_numero)} {r.vereador_nome} · {r.secretaria_nome}
