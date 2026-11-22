@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { cn } from "@/lib/utils";
 import { CATALOGO_PADRAO, infoEtapa, posicaoNaTrilha, trilha, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type { FaseCalculada } from "@/lib/emendas/fases";

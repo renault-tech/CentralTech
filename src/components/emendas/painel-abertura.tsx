@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, ChevronRight, Coins, FileCheck2, Undo2 } from "lucide-react";
 
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import type { ItemAtencao, Painel } from "@/lib/emendas/painel-abertura";

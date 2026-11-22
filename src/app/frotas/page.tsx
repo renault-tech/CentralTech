@@ -79,7 +79,7 @@ export default async function PainelFrotas() {
     <>
       <TituloPagina
         titulo="Painel"
-        subtitulo={`Situação dos documentos em ${formatarData(hoje)}. Alerta amarelo a partir de ${params.dias_atencao} dias parado na mesma etapa, vermelho a partir de ${params.dias_critico}.`}
+        subtitulo={`Situação dos documentos em ${formatarData(hoje)}`}
         acao={
           <>
             <MenuExportarFrotas

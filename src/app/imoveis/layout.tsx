@@ -2,14 +2,45 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
+import { cookies } from "next/headers";
+
+import { AjusteDeRolagem } from "@/components/modulo/ajuste-de-rolagem";
+import { BarraLateral, type GrupoLateral, type NomeIcone } from "@/components/modulo/barra-lateral";
+import { AvisoConexao } from "@/components/modulo/estados-tela";
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
+import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
+import { COOKIES_BARRA } from "@/lib/modulo/barra-cookie";
 import { carregarTudo } from "@/lib/imoveis/carregar";
 import { obterContextoImoveis } from "@/lib/imoveis/dados";
 import { COR_MODULO } from "@/lib/imoveis/regras";
 import { MODULOS } from "@/lib/modulos-info";
 
 export const dynamic = "force-dynamic";
+
+const ICONE_IMOVEIS: Record<string, NomeIcone> = {
+  "/imoveis": "painel",
+  "/imoveis/imoveis": "imoveis",
+  "/imoveis/agua": "agua",
+  "/imoveis/luz": "luz",
+  "/imoveis/entregas": "entregas",
+  "/imoveis/vencimentos": "vencimentos",
+  "/imoveis/pendencias": "pendencias",
+  "/imoveis/configuracoes": "configuracoes",
+};
+const GRUPOS_IMOVEIS: { titulo: string; hrefs: string[] }[] = [
+  { titulo: "Acompanhamento", hrefs: ["/imoveis", "/imoveis/pendencias", "/imoveis/vencimentos"] },
+  { titulo: "Imóveis e consumo", hrefs: ["/imoveis/imoveis", "/imoveis/agua", "/imoveis/luz", "/imoveis/entregas"] },
+  { titulo: "Cadastros", hrefs: ["/imoveis/configuracoes"] },
+];
+function gruposImoveis(itens: { href: string; rotulo: string; exato?: boolean; selo?: number }[]): GrupoLateral[] {
+  return GRUPOS_IMOVEIS.map((g) => ({
+    titulo: g.titulo,
+    itens: g.hrefs
+      .map((h) => itens.find((i) => i.href === h))
+      .filter((i): i is NonNullable<typeof i> => !!i)
+      .map((i) => ({ ...i, icone: ICONE_IMOVEIS[i.href], selos: i.href === "/imoveis/pendencias" ? ("alerta" as const) : undefined })),
+  }));
+}
 
 export const metadata = { title: "Imóveis e Consumo · Central Cataguases" };
 
@@ -58,13 +89,22 @@ export default async function LayoutImoveis({ children }: { children: React.Reac
     ...(ctx.gestor ? [{ href: "/imoveis/configuracoes", rotulo: "Configurações" }] : []),
   ];
 
+  const barraRecolhida = (await cookies()).get(COOKIES_BARRA.imoveis)?.value === "1";
   return (
-    <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.imoveis)}>
+    <div className="emd min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.imoveis)}>
       <CabecalhoHub usuario={ctx.usuario} modulo={modulo} />
-      <NavModulo itens={itens} rotuloAria="Seções do módulo Imóveis e Consumo" tour="nav-imoveis" />
-      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
-        {children}
-      </main>
+      {/* Telas estreitas: a faixa de abas de sempre. Telas largas: barra lateral (mesmos itens, agrupados). */}
+      <div className="lg:hidden">
+        <NavModulo itens={itens} rotuloAria="Seções do módulo Imóveis e Consumo" largura={LARGURA_MODULO} />
+      </div>
+      <div className="mx-auto flex max-w-[110rem] gap-4 px-3 py-4 sm:px-5 sm:py-5 print:block print:max-w-none print:p-0">
+        <BarraLateral modulo="imoveis" grupos={gruposImoveis(itens)} rotuloAria="Seções do módulo Imóveis e Consumo" tour="nav-imoveis" recolhidaInicial={barraRecolhida} />
+        <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
+          <AjusteDeRolagem />
+          <AvisoConexao />
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

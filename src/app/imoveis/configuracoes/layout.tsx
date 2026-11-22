@@ -17,7 +17,7 @@ export default async function LayoutConfiguracoesImoveis({ children }: { childre
   ];
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina titulo="Configurações de Imóveis e Consumo" subtitulo="Limites dos alertas, secretarias e imobiliárias." />
+      <CabecalhoPagina titulo="Configurações de Imóveis e Consumo" />
       <AbasNavegacao label="Configurações de Imóveis e Consumo" abas={abas} />
       <div>{children}</div>
     </div>

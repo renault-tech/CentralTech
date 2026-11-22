@@ -56,7 +56,7 @@ export default async function PainelImoveis() {
   if (imoveis.length === 0) {
     return (
       <>
-        <TituloPagina titulo="Painel" subtitulo="Aluguéis, contas de água e luz e entrega dos imóveis." />
+        <TituloPagina titulo="Painel" />
         <Cartao>
           <Vazio>Nenhum imóvel cadastrado ainda. Use “Imóveis” no menu para cadastrar o primeiro.</Vazio>
         </Cartao>
@@ -66,7 +66,7 @@ export default async function PainelImoveis() {
 
   return (
     <>
-      <TituloPagina titulo="Painel" subtitulo={`Aluguéis e contas até ${rotuloMes(refDados)}, com o que precisa de ação.`} />
+      <TituloPagina titulo="Painel" subtitulo={`Dados até ${rotuloMes(refDados)}`} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

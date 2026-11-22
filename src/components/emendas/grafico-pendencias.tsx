@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";

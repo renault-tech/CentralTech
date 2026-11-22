@@ -1,5 +1,5 @@
-import { TelaNaoEncontrada } from "@/components/emendas/estados-tela";
+import { TelaNaoEncontrada } from "@/components/modulo/estados-tela";
 
 export default function NaoEncontradaEmendas() {
-  return <TelaNaoEncontrada />;
+  return <TelaNaoEncontrada objeto="registro" principal={{ href: "/emendas/lista", rotulo: "Voltar para a lista" }} secundario={{ href: "/emendas", rotulo: "Ir ao Painel" }} />;
 }

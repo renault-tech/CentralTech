@@ -13,7 +13,7 @@ export default async function NovoImovel() {
   const { secretarias, imobiliarias } = await carregarTudo();
   return (
     <>
-      <TituloPagina titulo="Novo imóvel" subtitulo="Cadastre o imóvel e o contrato. As matrículas de água e luz entram na próxima tela." />
+      <TituloPagina titulo="Novo imóvel" />
       <Cartao>
         <FormularioImovel imovel={null} secretarias={secretarias} imobiliarias={imobiliarias} voltarPara="/imoveis/imoveis" />
       </Cartao>

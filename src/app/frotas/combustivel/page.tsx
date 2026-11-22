@@ -52,7 +52,6 @@ export default async function PaginaCombustivel({ searchParams }: { searchParams
     <>
       <TituloPagina
         titulo="Notas fiscais de combustível"
-        subtitulo="Uma NF por secretaria a cada 15 dias. Litros e veículos ficam no sistema de abastecimento; aqui só o controle do documento."
         acao={
           <>
             <MenuExportarFrotas

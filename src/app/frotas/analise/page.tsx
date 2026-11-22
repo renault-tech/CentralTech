@@ -39,7 +39,7 @@ export default async function PaginaAnalise() {
     <>
       <TituloPagina
         titulo="Análise da frota"
-        subtitulo="Quanto cada veículo custa em manutenção comparado ao que ele vale, e onde o gasto está concentrado. Últimos 12 meses."
+        subtitulo="Últimos 12 meses"
         acao={
           <MenuExportarFrotas
             opcoes={opcoesExportar([

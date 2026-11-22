@@ -14,12 +14,7 @@ export default async function PaginaImportarVeiculos() {
     <>
       <TituloPagina
         titulo="Importar a planilha de veículos"
-        subtitulo={
-          <>
-            A planilha “Todos os veículos da Prefeitura” (.xlsx), com as abas de veículos próprios, de convênio e alugados.{" "}
-            <Link href="/frotas/veiculos" className="font-semibold text-[#3F5A12] underline">Voltar aos veículos</Link>
-          </>
-        }
+        subtitulo={<Link href="/frotas/veiculos" className="font-semibold text-[color:var(--modulo-tinta)] underline">← Voltar aos veículos</Link>}
       />
       <Cartao>
         <ImportadorVeiculos />

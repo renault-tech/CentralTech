@@ -27,7 +27,7 @@ export default async function VencimentosImoveis() {
 
   return (
     <>
-      <TituloPagina titulo="Vencimentos" subtitulo="Aluguéis a pagar, contas em aberto, fim de contrato e reajustes." />
+      <TituloPagina titulo="Vencimentos" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Cartao titulo="Próximos aluguéis">
           {alugueis.length === 0 ? <Vazio>Nenhum imóvel com dia de vencimento cadastrado.</Vazio> : (

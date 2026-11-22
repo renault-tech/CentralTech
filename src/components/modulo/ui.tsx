@@ -94,16 +94,16 @@ export function Vazio({ children }: { children: ReactNode }) {
   return <p className="px-1 py-6 text-center text-sm text-slate-500">{children}</p>;
 }
 
-/** Título de página: o MESMO em todos os módulos (tamanho, peso e espaçamento). */
+/** Título de página: o MESMO em todos os módulos (tamanho, peso e espaçamento). Subtítulo = só dado curto (período, contagem), nunca explicação. */
 export function TituloPagina({ titulo, subtitulo, acao }: { titulo: string; subtitulo?: ReactNode; acao?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <header className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">{titulo}</h1>
-        {subtitulo && <p className="mt-1 max-w-3xl text-sm text-slate-600">{subtitulo}</p>}
+        <h1 className="text-[1.625rem] font-semibold leading-tight tracking-[-0.02em] text-cataguases-marinho text-balance">{titulo}</h1>
+        {subtitulo && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">{subtitulo}</p>}
       </div>
-      {acao && <div className="flex flex-wrap items-center gap-2">{acao}</div>}
-    </div>
+      {acao && <div className="flex flex-wrap items-center gap-2 print:hidden">{acao}</div>}
+    </header>
   );
 }
 

@@ -39,7 +39,7 @@ export default async function PendenciasImoveis({ searchParams }: { searchParams
 
   return (
     <>
-      <TituloPagina titulo="Pendências" subtitulo="Tudo o que o sistema encontrou fora do normal. Pendência justificada deixa de contar enquanto o dado não mudar." acao={<MenuExportarImoveis relatorios={[{ r: "pendencias", rotulo: "Pendências" }]} />} />
+      <TituloPagina titulo="Pendências" acao={<MenuExportarImoveis relatorios={[{ r: "pendencias", rotulo: "Pendências" }]} />} />
       <Cartao semPadding>
         <FormularioFiltros className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5" limpar={{ href: "/imoveis/pendencias", className: CLASSE_BOTAO_SECUNDARIO }}>
           <div className="flex min-w-[200px] flex-[2] flex-col gap-1">

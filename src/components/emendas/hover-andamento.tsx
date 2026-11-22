@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { CaixaInfo } from "@/components/emendas/caixa-info";
+import { CaixaInfo } from "@/components/modulo/caixa-info";
 import { AlertTriangle, Check } from "lucide-react";
 
 import { corDoAndamento } from "@/components/emendas/anel-andamento";

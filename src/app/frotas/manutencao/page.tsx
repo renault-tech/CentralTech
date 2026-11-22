@@ -91,7 +91,6 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
     <>
       <TituloPagina
         titulo="Manutenção de veículos"
-        subtitulo="Do orçamento da secretaria até a NF na Contabilidade. A OC é emitida no IPM; aqui só se registra o número."
         acao={
           <>
             <MenuExportarFrotas

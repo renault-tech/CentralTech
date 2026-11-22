@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";

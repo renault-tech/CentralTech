@@ -20,7 +20,7 @@ export default async function LayoutConfiguracoesFrotas({ children }: { children
 
   return (
     <div className="flex flex-col gap-5">
-      <CabecalhoPagina titulo="Configurações de Frotas" subtitulo="Limites dos alertas, secretarias, fornecedores e avisos do módulo." />
+      <CabecalhoPagina titulo="Configurações de Frotas" />
       <AbasNavegacao label="Configurações de Frotas" abas={abas} />
       <div>{children}</div>
     </div>

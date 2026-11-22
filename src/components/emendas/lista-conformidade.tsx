@@ -4,7 +4,7 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { AlertTriangle, ChevronDown, CircleDashed, Minus } from "lucide-react";
 
 import { preencherPeloPdf, removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";

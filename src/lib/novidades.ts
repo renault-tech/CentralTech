@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Frotas e Imóveis e Consumo ganham o visual novo do módulo Emendas",
+    descricao:
+      "Os dois módulos agora têm a barra lateral recolhível (com selos de pendência e a tecla “[” para recolher), cartões em vidro, entrada suave das telas, rolagem suave e as mesmas telas de erro, página não encontrada, sem internet e carregamento lento do módulo Emendas. As frases explicativas embaixo dos títulos saíram para dar mais espaço aos dados. Em telas estreitas continua a faixa de abas de sempre. Os painéis de abertura e as listas com painel lateral de cada módulo vêm nas próximas etapas.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Confirmações e avisos agora aparecem num cartão no centro da tela",
     descricao:
       "Excluir, apagar, cancelar, desfazer, remover e bloquear passaram a pedir confirmação num cartão no centro da tela, com o fundo escurecido, no lugar da caixa do navegador. Quando é preciso justificar (excluir lançamento, desfazer andamento, excluir emenda), o campo de texto está no próprio cartão, com a contagem de caracteres. Esc ou o clique no fundo cancelam. Vale para Emendas, Frotas, Imóveis e Configurações. No painel da emenda, o fluxo de fases ficou numa linha só e o triângulo de alerta agora mostra, ao deixar o mouse parado, qual é o problema.",

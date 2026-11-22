@@ -34,7 +34,6 @@ export default async function ListaImoveis({ searchParams }: { searchParams: Pro
     <>
       <TituloPagina
         titulo="Imóveis"
-        subtitulo="Todos os imóveis alugados pela Prefeitura, com contrato, proprietário, contas de água e luz e situação."
         acao={
           <>
             <MenuExportarImoveis relatorios={[{ r: "imoveis", rotulo: "Imóveis" }, { r: "secretarias", rotulo: "Gasto por secretaria" }]} />

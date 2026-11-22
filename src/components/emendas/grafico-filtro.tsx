@@ -4,7 +4,7 @@ import * as React from "react";
 import { X } from "lucide-react";
 
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
-import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/emendas/caixa-info";
+import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { COR_FINANCEIRA, itensDaVisao, VISOES, type Medida, type Visao } from "@/components/emendas/painel-lista";
 import { Pizza, CINZA } from "@/components/emendas/pizza";

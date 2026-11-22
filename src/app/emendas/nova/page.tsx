@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { TituloTela } from "@/components/emendas/titulo-tela";
+import { TituloTela } from "@/components/modulo/titulo-tela";
 import { FormularioEmenda } from "@/components/emendas/formulario-emenda";
 import { Vazio } from "@/components/emendas/ui";
 import {

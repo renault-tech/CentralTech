@@ -48,7 +48,7 @@ export default async function PaginaVeiculos({ searchParams }: { searchParams: P
     <>
       <TituloPagina
         titulo="Veículos"
-        subtitulo={`${veiculos.length} veículos: ${contagem.proprio} próprios, ${contagem.convenio} de convênio e ${contagem.alugado} alugados. O valor de referência vem da tabela FIPE.`}
+        subtitulo={`${veiculos.length} veículos: ${contagem.proprio} próprios, ${contagem.convenio} de convênio e ${contagem.alugado} alugados.`}
         acao={
           <>
             <MenuExportarFrotas opcoes={opcoesExportar([{ r: "veiculos", rotulo: "Veículos da lista", formatos: ["xlsx", "pdf", "csv"] }], base)} />

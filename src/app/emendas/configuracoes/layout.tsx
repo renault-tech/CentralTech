@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AbasNavegacao } from "@/components/layout/abas-navegacao";
-import { TituloTela } from "@/components/emendas/titulo-tela";
+import { TituloTela } from "@/components/modulo/titulo-tela";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
 import { ehGestor } from "@/lib/emendas/regras";
 

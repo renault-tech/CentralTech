@@ -15,7 +15,7 @@ export default async function EntregasImoveis() {
 
   return (
     <>
-      <TituloPagina titulo="Entregas de imóveis" subtitulo="A secretaria pede a saída e cuida do contrato. O Setor de Imóveis confere cada etapa e só encerra quando água e luz estão desligadas e a titularidade foi trocada." />
+      <TituloPagina titulo="Entregas de imóveis" />
       {abertas.length === 0 ? (
         <Cartao><Vazio>Nenhuma entrega em andamento. Para iniciar, abra o imóvel e use a aba “Entrega”.</Vazio></Cartao>
       ) : (

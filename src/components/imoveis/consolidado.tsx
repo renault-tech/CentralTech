@@ -62,7 +62,6 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
     <>
       <TituloPagina
         titulo={`${nome}: consolidado`}
-        subtitulo={`Todas as contas de ${nome.toLowerCase()} da Prefeitura. Cada conta também aparece dentro do imóvel a que pertence.`}
         acao={
           <>
             <MenuExportarImoveis relatorios={[{ r: "contas", rotulo: "Contas de água e luz" }]} />
