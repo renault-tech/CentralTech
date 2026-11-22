@@ -72,18 +72,18 @@ export const TOURS: Tour[] = [
         lado: "bottom",
       },
       {
-        seletor: '[data-tour="filtros-emendas"]',
-        titulo: "Recortes",
+        seletor: '[data-tour="indicadores-emendas"]',
+        titulo: "Execução do exercício",
         descricao:
-          "Filtre por vereador, secretaria, Saúde, modalidade ou etapa. O recorte fica no endereço da página — dá para mandar o link para alguém.",
+          "O total indicado partido em pago, empenhado a pagar e sem empenhar, com a situação das emendas logo abaixo. Clicar num número abre a lista já filtrada.",
         lado: "bottom",
       },
       {
-        seletor: '[data-tour="indicadores-emendas"]',
-        titulo: "Números do recorte",
+        seletor: '[data-tour="atencao-emendas"]',
+        titulo: "O que precisa da sua atenção",
         descricao:
-          "Total indicado, empenhado, pago, o que falta executar, a parcela na Saúde (mínimo de 50%) e as emendas impedidas. Clicar numa barra de qualquer gráfico abaixo filtra o painel inteiro.",
-        lado: "bottom",
+          "Pendências graves, propostas a aprovar, emendas paradas e outros pontos, com a quantidade de cada um. Só aparece o que tem alguma emenda envolvida; clicar leva à tela já filtrada.",
+        lado: "left",
       },
     ],
   },
