@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Novo painel de abertura em Frotas e em Imóveis e Consumo",
+    descricao:
+      "A primeira tela dos dois módulos virou um painel de comando. Em Frotas: quanto dinheiro está parado em cada etapa da manutenção, o tempo médio parado, as NFs de combustível em andamento, a quinzena anterior, o que precisa de atenção (NF acima da OC, veículos acima do limite do valor FIPE, secretarias sem NF…), gasto por mês, manutenção × valor do veículo e os últimos movimentos. Em Imóveis e Consumo: gasto do mês em aluguel, luz e água comparado com a média, o que precisa de atenção, contas lançadas e onde faltam, contratos, entregas em andamento, gasto dos últimos 12 meses, ranking por secretaria, contas fora do padrão e o que vence nas próximas semanas. Todo número leva à lista já filtrada, e passar o mouse mostra os detalhes.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Frotas e Imóveis e Consumo ganham o visual novo do módulo Emendas",
     descricao:
       "Os dois módulos agora têm a barra lateral recolhível (com selos de pendência e a tecla “[” para recolher), cartões em vidro, entrada suave das telas, rolagem suave e as mesmas telas de erro, página não encontrada, sem internet e carregamento lento do módulo Emendas. As frases explicativas embaixo dos títulos saíram para dar mais espaço aos dados. Em telas estreitas continua a faixa de abas de sempre. Os painéis de abertura e as listas com painel lateral de cada módulo vêm nas próximas etapas.",
