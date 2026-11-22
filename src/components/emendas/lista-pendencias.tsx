@@ -3,11 +3,11 @@
 import * as React from "react";
 import { Search, X } from "lucide-react";
 
-import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
+import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { PainelPendencias, chipsDePendencias, removerFiltroPendencia } from "@/components/emendas/painel-pendencias";
-import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
+import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
@@ -20,7 +20,7 @@ export type { LinhaPendencia };
 
 const COR: Record<Gravidade, string> = { alta: "#B91C1C", media: "#B45309", baixa: "#64748B" };
 const CAMPO =
-  "h-10 min-w-0 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
+  "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 const POR_PAGINA = 40;
 
 /**

@@ -240,7 +240,7 @@ export function montarPainelFrotas(entrada: EntradaPainelFrotas): PainelFrotas {
   const add = (i: ItemAtencao) => {
     if (i.quantidade > 0) atencao.push(i);
   };
-  add({ chave: "nf_acima_oc", titulo: "NF acima do valor da OC", detalhe: "conferir a diferença com a oficina antes de pagar", quantidade: nfAcimaOc, gravidade: "alta", href: "/frotas/manutencao?sit=andamento" });
+  add({ chave: "nf_acima_oc", titulo: "NF acima do valor da OC", detalhe: "conferir a diferença com a oficina antes de pagar", quantidade: nfAcimaOc, gravidade: "alta", href: "/frotas/manutencao?sit=todas&div=nf_acima" });
   add({ chave: "fipe_critico", titulo: "Veículos acima do limite do valor FIPE", detalhe: `manutenção acima de ${params.pct_critico}% do valor em 12 meses`, quantidade: criticos, gravidade: "alta", href: "/frotas/analise" });
   add({ chave: "sem_nf_quinzena", titulo: "Secretarias sem NF na quinzena", detalhe: q.esperadas ? `${q.rotulo}: ${q.semNf.length} de ${q.esperadas} não entregaram` : "", quantidade: q.semNf.length, gravidade: "media", href: `/frotas/combustivel?quinz=${painelQuinzenaInicio(entrada)}` });
   add({ chave: "nf_secretaria", titulo: "NFs há muito tempo com a secretaria", detalhe: `cobrar a devolução assinada (${params.dias_atencao} dias ou mais)`, quantidade: c.nfsAguardandoComAlerta, gravidade: "media", href: "/frotas/combustivel?sit=com_secretaria" });

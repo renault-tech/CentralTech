@@ -5,7 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
-import { CINZA, PALETA, Pizza } from "@/components/emendas/pizza";
+import { CINZA, PALETA, Pizza } from "@/components/modulo/pizza";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import {
@@ -220,7 +220,7 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
-          <select value={visao} onChange={(e) => setVisao(e.target.value as VisaoPend)} className="h-9 cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white/80 py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25">
+          <select value={visao} onChange={(e) => setVisao(e.target.value as VisaoPend)} className="h-9 cursor-pointer appearance-none rounded-[0.75rem] border border-slate-300 bg-white py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25">
             {VISOES.map((v) => (
               <option key={v.chave} value={v.chave}>{v.rotulo}</option>
             ))}

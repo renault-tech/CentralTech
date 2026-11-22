@@ -3,9 +3,9 @@
 import * as React from "react";
 
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
-import { EspacoTrabalho } from "@/components/emendas/espaco-trabalho";
+import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
-import { VoltarAoTopo } from "@/components/emendas/voltar-ao-topo";
+import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { COR_SITUACAO, CARTOES, agrupar, pertenceAoCartao, rotuloSituacao, totaisPorCartao, type Cartao, type LinhaPanorama } from "@/lib/emendas/encerramento";
@@ -62,7 +62,7 @@ const VISOES = [
 type Visao = (typeof VISOES)[number]["chave"];
 
 const NOME_CARTAO = Object.fromEntries(GRUPOS.flatMap((g) => g.itens.map((i) => [i.c, i.nome]))) as Record<Cartao, string>;
-const CAMPO = "h-10 min-w-0 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
+const CAMPO = "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 const COR_TOM = { alerta: "#B45309", ok: "#15803D", info: "#1D4ED8", neutro: "#0C1D33" } as const;
 const NOME_TIPO: Record<string, string> = { "Execução direta": "direta", "Repasse a OSC": "osc", "Repasse a ente": "ente" };
 

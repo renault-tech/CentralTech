@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { brlCurto, pct } from "@/lib/emendas/regras";
+import { brlCurto, pctDe } from "@/lib/moeda";
 
 /** Cores das fatias quando a dimensão não tem cor própria (área, assunto, secretaria, documento). */
 export const PALETA = ["#6B4FBB", "#0E7490", "#C2410C", "#5C7A1F", "#BE185D", "#1D4ED8", "#A16207", "#0F766E"];
@@ -74,7 +74,7 @@ export function Pizza({
               role={a.clicavel ? "button" : undefined}
               tabIndex={a.clicavel ? 0 : undefined}
               aria-pressed={a.clicavel ? ativa : undefined}
-              aria-label={`${a.rotulo}: ${fmt(a.v)} (${pct(a.v / total, 0)})`}
+              aria-label={`${a.rotulo}: ${fmt(a.v)} (${pctDe(a.v / total, 0)})`}
               onMouseEnter={() => setSobre(a.chave)}
               onMouseLeave={() => setSobre(null)}
               onFocus={() => setSobre(a.chave)}
@@ -99,7 +99,7 @@ export function Pizza({
         </text>
         {foco && total > 0 && (
           <text x="50" y="68" fontSize="4.6" opacity="0.7" className="tabular-nums">
-            {pct(foco.v / total, 0)}
+            {pctDe(foco.v / total, 0)}
           </text>
         )}
       </g>

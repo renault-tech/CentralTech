@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 import { FormularioConta, type OpcaoUnidade } from "@/components/imoveis/formulario-conta";
-import { GraficoLinhas } from "@/components/imoveis/graficos";
 import { MenuExportarImoveis } from "@/components/imoveis/menu-exportar-imoveis";
+import { GraficoMeses } from "@/components/modulo/painel-abertura-ui";
+import { brlCurto } from "@/lib/moeda";
 import { Cartao, SeloGravidade, TituloPagina, Vazio } from "@/components/imoveis/ui";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { CLASSE_BOTAO_SECUNDARIO } from "@/components/modulo/ui";
@@ -79,24 +80,34 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
         </details>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 divide-x divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-4 lg:divide-y-0">
         {[
-          [`Valor de ${rotuloMes(referencia)}`, brl(totalValor), ""],
-          ["Consumo do mês", `${Math.round(totalConsumo).toLocaleString("pt-BR")} ${un}`, ""],
+          [`Valor de ${rotuloMes(referencia)}`, brl(totalValor), `${doMes.length} contas lançadas`],
+          ["Consumo do mês", `${Math.round(totalConsumo).toLocaleString("pt-BR")} ${un}`, totalConsumo ? "" : "sem consumo informado"],
           ["Contas em 12 meses", brl(totalAno), "na seleção"],
-          ["Contas com anomalia", String(comAnomalia), semConta ? `${semConta} sem conta no mês` : ""],
+          ["Contas com anomalia", String(comAnomalia), semConta ? `${semConta} sem conta no mês` : "todas lançadas"],
         ].map(([r, v, d]) => (
-          <div key={r} className="rounded-xl border border-slate-200 bg-white p-3.5">
-            <p className="text-xs font-medium text-slate-600">{r}</p>
-            <p className="mt-0.5 text-xl font-bold tracking-tight tabular-nums text-cataguases-marinho">{v}</p>
-            {d && <p className="text-xs text-slate-500">{d}</p>}
+          <div key={r} className="min-w-0 px-4 py-3">
+            <p className="truncate text-xs font-medium text-slate-600">{r}</p>
+            <p className="mt-0.5 truncate text-xl font-semibold tracking-tight tabular-nums text-cataguases-marinho">{v}</p>
+            <p className="truncate text-xs text-slate-500">{d || "\u00A0"}</p>
           </div>
         ))}
       </div>
 
-      <Cartao titulo="Valor mensal" className="mb-4">
-        <GraficoLinhas rotulos={meses.map((m) => rotuloMes(m).slice(0, 3))} series={[{ rotulo: nome, cor, valores: porMes }]} altura={200} />
-      </Cartao>
+      <section aria-label="Valor mensal" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <h2 className="flex items-baseline justify-between gap-3 text-[0.75rem] font-semibold uppercase tracking-[0.09em] text-slate-600">
+          <span>Valor mensal · {nome}</span>
+          <span className="font-medium normal-case tracking-normal">{brlCurto(totalAno)} em 12 meses</span>
+        </h2>
+        <div className="flex h-[13.5rem]">
+          <GraficoMeses
+            atual={meses[meses.length - 1]}
+            series={[{ nome, cor }]}
+            meses={meses.map((m, i) => ({ chave: m, rotulo: rotuloMes(m).slice(0, 3), rotuloCompleto: rotuloMes(m), valores: [porMes[i]] }))}
+          />
+        </div>
+      </section>
 
       <Cartao semPadding titulo={`Contas de ${rotuloMes(referencia)} por imóvel`}>
         <FormularioFiltros className="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 sm:px-5" limpar={{ href: `/imoveis/${tipo}`, className: CLASSE_BOTAO_SECUNDARIO }}>
@@ -121,9 +132,9 @@ export async function ConsolidadoContas({ tipo, searchParams }: { tipo: TipoUnid
         {linhas.length === 0 ? (
           <Vazio>{t.unidades.some((u) => u.tipo === tipo) ? "Nenhuma conta com esses filtros." : `Nenhuma unidade de ${nome.toLowerCase()} cadastrada. Adicione a matrícula ou UC dentro de cada imóvel.`}</Vazio>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="emd-rola max-h-[65dvh] overflow-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
+              <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-semibold text-slate-600 shadow-[0_1px_0_rgb(226_232_240)]">
                 <tr>{["Imóvel", "Secretaria", tipo === "agua" ? "Matrícula" : "UC", "Consumo", "Valor", "vs. média", "Situação"].map((h) => <th key={h} scope="col" className="px-4 py-2.5 first:sm:pl-5">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

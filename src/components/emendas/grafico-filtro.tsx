@@ -7,7 +7,7 @@ import { AnelAndamento } from "@/components/emendas/anel-andamento";
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { COR_FINANCEIRA, itensDaVisao, VISOES, type Medida, type Visao } from "@/components/emendas/painel-lista";
-import { Pizza, CINZA } from "@/components/emendas/pizza";
+import { Pizza, CINZA } from "@/components/modulo/pizza";
 import { faixaFinanceira, filtrarEmendasLista, somar, type FiltrosLista, type GrupoLista } from "@/lib/emendas/painel-lista";
 import { COR_DINHEIRO } from "@/lib/emendas/cores-financeiras";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
@@ -205,7 +205,7 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
           <select
             value={visao}
             onChange={(e) => setVisao(e.target.value as Visao)}
-            className="h-9 cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white/80 py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25"
+            className="h-9 cursor-pointer appearance-none rounded-[0.75rem] border border-slate-300 bg-white py-0 pl-3 pr-8 text-sm font-semibold text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25"
           >
             {VISOES.map((v) => (
               <option key={v.chave} value={v.chave}>

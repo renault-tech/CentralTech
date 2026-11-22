@@ -1,29 +1,23 @@
 import Link from "next/link";
 
-import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
-
 import { EtapasDocumentacao, FormularioOrcamento, PainelDecisao, type OpcaoVeiculo } from "@/components/frotas/formularios-manutencao";
-import { Barra, Cartao, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo, SeloDias, TituloPagina, Vazio } from "@/components/frotas/ui";
+import { Barra, Cartao, CLASSE_BOTAO_SECUNDARIO, Mensagem, Selo, TituloPagina, Vazio } from "@/components/frotas/ui";
 import { analisarOrcamento } from "@/lib/frotas/analise";
 import { listarFornecedores, listarManutencoes, listarNotas, listarSecretarias, listarVeiculos, obterContextoFrotas, obterParametros } from "@/lib/frotas/dados";
-import { filtrarManutencoes, lerFiltroManutencao } from "@/lib/frotas/filtros";
+import { AreaManutencao } from "@/components/frotas/areas-trabalho";
+import { montarLinhasManutencao } from "@/lib/frotas/area-trabalho";
 import {
   brl,
-  diasEntre,
   formatarData,
-  nivelPorDias,
   nivelPorPercentual,
   passosManutencao,
   pct,
-  nfAcimaDaOc,
   situacaoManutencao,
   type EtapaManutencao,
 } from "@/lib/frotas/regras";
 import { montarUrl } from "@/lib/frotas/url";
 import { dataNoFuso } from "@/lib/fuso";
 import { cn } from "@/lib/utils";
-import { MenuExportarFrotas } from "@/components/frotas/menu-exportar-frotas";
-import { opcoesExportar } from "@/lib/frotas/exportacao";
 
 export const metadata = { title: "Manutenção · Frotas" };
 
@@ -36,15 +30,6 @@ const TOM_ETAPA: Record<EtapaManutencao, "neutro" | "azul" | "verde" | "ambar" |
   nf_registrada: "azul",
   concluida: "verde",
 };
-
-const FILTROS = [
-  { chave: "andamento", rotulo: "Em andamento" },
-  { chave: "a_analisar", rotulo: "A analisar" },
-  { chave: "aguardando", rotulo: "Aguardando NF" },
-  { chave: "concluidas", rotulo: "Concluídas" },
-  { chave: "recusadas", rotulo: "Recusadas" },
-  { chave: "todas", rotulo: "Todas" },
-] as const;
 
 export default async function PaginaManutencao({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
@@ -63,14 +48,14 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
   const nomeSecretaria = new Map(secretarias.map((s) => [s.id, s.nome]));
   const nomeOficina = new Map(oficinas.map((o) => [o.id, o.nome]));
 
-  const filtro = lerFiltroManutencao(sp);
-  const situacaoAtiva = filtro.situacao ?? "andamento";
-  const lista = filtrarManutencoes(manutencoes, filtro, { veiculos: porVeiculo, secretarias: nomeSecretaria });
-
   const id = typeof sp.id === "string" ? sp.id : undefined;
   const atual = id ? (manutencoes.find((m) => m.id === id) ?? null) : null;
   const novo = gestor && sp.novo === "1";
-  const base = { q: filtro.q, sit: filtro.situacao };
+  const base = {};
+
+  if (!id && !novo) {
+    return <AreaManutencao linhas={montarLinhasManutencao({ hoje, veiculos, manutencoes, notas, secretarias, params, oficinas })} gestor={gestor} />;
+  }
 
   const descreve = (veiculoId: string) => {
     const v = porVeiculo.get(veiculoId);
@@ -90,100 +75,15 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
   return (
     <>
       <TituloPagina
-        titulo="Manutenção de veículos"
+        titulo={novo ? "Registrar orçamento" : "Manutenção de veículos"}
         acao={
-          <>
-            <MenuExportarFrotas
-              opcoes={opcoesExportar(
-                [
-                  { r: "manutencoes", rotulo: "Manutenções da lista", formatos: ["xlsx", "pdf", "csv"] },
-                  { r: "contabilidade", rotulo: "Remessa à Contabilidade", formatos: ["pdf"] },
-                ],
-                base
-              )}
-            />
-            {gestor && (
-              <>
-                <Link href="/frotas/manutencao/importar" className={CLASSE_BOTAO_SECUNDARIO}>
-                  Importar PDFs
-                </Link>
-                <Link href={montarUrl("/frotas/manutencao", { ...base, novo: "1" })} className={CLASSE_BOTAO}>
-                  Registrar orçamento
-                </Link>
-              </>
-            )}
-          </>
+          <Link href="/frotas/manutencao" className={CLASSE_BOTAO_SECUNDARIO}>
+            ← Voltar à lista
+          </Link>
         }
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(300px,1fr)_minmax(0,2fr)]">
-        <Cartao semPadding>
-          <div className="flex flex-wrap gap-1.5 border-b border-slate-100 p-3">
-            {FILTROS.map((f) => (
-              <Link
-                key={f.chave}
-                href={montarUrl("/frotas/manutencao", { sit: f.chave === "andamento" ? undefined : f.chave, q: filtro.q })}
-                aria-current={situacaoAtiva === f.chave ? "true" : undefined}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold transition-colors",
-                  situacaoAtiva === f.chave ? "bg-[#3F5A12] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                )}
-              >
-                {f.rotulo}
-              </Link>
-            ))}
-          </div>
-          <FormularioFiltros className="flex gap-2 border-b border-slate-100 p-3">
-            {filtro.situacao && <input type="hidden" name="sit" value={filtro.situacao} />}
-            <label htmlFor="m-busca" className="sr-only">
-              Buscar OC, NF, placa ou serviço
-            </label>
-            <input
-              id="m-busca"
-              name="q"
-              defaultValue={filtro.q}
-              placeholder="OC, NF, placa ou serviço"
-              className="min-w-0 flex-1 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-cataguases-azul focus:ring-1 focus:ring-cataguases-azul"
-            />
-          </FormularioFiltros>
-          {lista.length === 0 ? (
-            <Vazio>Nenhuma manutenção encontrada.</Vazio>
-          ) : (
-            <ul>
-              {lista.map((m) => {
-                const s = situacaoManutencao(m);
-                const dias = diasEntre(s.desde, hoje);
-                const nivel = s.emAndamento ? nivelPorDias(dias, params) : "ok";
-                const ativo = atual?.id === m.id;
-                return (
-                  <li key={m.id} className="border-b border-slate-100 last:border-0">
-                    <Link
-                      href={montarUrl("/frotas/manutencao", { ...base, id: m.id })}
-                      className={cn(
-                        "flex flex-col gap-1 border-l-4 px-4 py-3 hover:bg-slate-50",
-                        ativo ? "bg-[#F4F8EA]" : "",
-                        nivel === "critico" ? "border-l-red-600" : nivel === "atencao" ? "border-l-amber-500" : ativo ? "border-l-[#3F5A12]" : "border-l-transparent"
-                      )}
-                    >
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-semibold text-cataguases-marinho">{descreve(m.veiculo_id)}</span>
-                        <span className="shrink-0 text-xs text-slate-500">{nomeSecretaria.get(m.secretaria_id)}</span>
-                      </span>
-                      <span className="text-[0.8125rem] text-slate-600">{m.servico}{m.oc_numero ? ` · OC ${m.oc_numero}` : ""}</span>
-                      <span className="flex flex-wrap items-center gap-1.5">
-                        <Selo tom={TOM_ETAPA[s.etapa]}>{s.rotulo}</Selo>
-                        {s.emAndamento && nivel !== "ok" && <SeloDias dias={dias} nivel={nivel} />}
-                        {nfAcimaDaOc(m) !== null && <Selo tom="vermelho">NF acima da OC</Selo>}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Cartao>
-
-        <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 max-w-5xl flex-col gap-6">
           {novo && (
             <Cartao titulo="Registrar orçamento">
               <FormularioOrcamento manutencao={null} veiculos={opcoesVeiculo} oficinas={oficinas} servicosConhecidos={servicosConhecidos} dataHoje={hoje} voltarPara={montarUrl("/frotas/manutencao", base)} />
@@ -382,7 +282,6 @@ export default async function PaginaManutencao({ searchParams }: { searchParams:
               )}
             </>
           )}
-        </div>
       </div>
     </>
   );

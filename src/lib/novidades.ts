@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Frotas e Imóveis: listas com gráficos que filtram e resumo ao lado",
+    descricao:
+      "Manutenção, Veículos e Combustível (Frotas) e Imóveis, Pendências e Entregas (Imóveis) agora funcionam como as Emendas: dois gráficos à esquerda que também são filtros (clique numa fatia ou linha), a lista no meio e, ao escolher um item, um resumo ao lado só para consulta, com o botão “Abrir e editar” para a página do item. Os filtros acompanham o endereço da página e são lembrados ao voltar de uma edição; os links dos painéis continuam funcionando. Água, Luz e Vencimentos ganharam um visual mais enxuto, sem painel lateral: faixa de indicadores, gráfico mensal que preenche o cartão e tabela com cabeçalho fixo. De carona, os campos de seleção do modo escuro ficaram legíveis.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Novo painel de abertura em Frotas e em Imóveis e Consumo",
     descricao:
       "A primeira tela dos dois módulos virou um painel de comando. Em Frotas: quanto dinheiro está parado em cada etapa da manutenção, o tempo médio parado, as NFs de combustível em andamento, a quinzena anterior, o que precisa de atenção (NF acima da OC, veículos acima do limite do valor FIPE, secretarias sem NF…), gasto por mês, manutenção × valor do veículo e os últimos movimentos. Em Imóveis e Consumo: gasto do mês em aluguel, luz e água comparado com a média, o que precisa de atenção, contas lançadas e onde faltam, contratos, entregas em andamento, gasto dos últimos 12 meses, ranking por secretaria, contas fora do padrão e o que vence nas próximas semanas. Todo número leva à lista já filtrada, e passar o mouse mostra os detalhes.",
