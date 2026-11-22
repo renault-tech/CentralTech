@@ -212,6 +212,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
         aoFechar={() => definirUrl({ e: "" })}
         aoRecolher={() => setExpandidaId("")}
         filtrosAtivos={chips.length}
+        aoLimpar={() => definir({ i: "", s: "", t: "", x: "", q: "" })}
         rotuloLista="Emendas com itens a completar"
         rotuloDetalhe="Emenda escolhida"
         graficos={

@@ -766,15 +766,14 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
    (scroll-snap), então o topo nunca fica com uma linha cortada ao meio. Os gráficos usam encaixe mais frouxo (proximity). */
 html:has(.emd) { scroll-behavior: smooth; }
 .emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: smooth; }
-.emd .emd-lista { scroll-snap-type: y mandatory; }
+/* Encaixe frouxo (proximity): só ajusta quando a rolagem para perto do início de uma linha, sem "puxar" a cada giro da roda. */
+.emd .emd-lista { scroll-snap-type: y proximity; }
 .emd .emd-lista > * { scroll-snap-align: start; }
-/* Linhas fora da janela de rolagem não são medidas nem pintadas (a lista de Emendas tem mais de 200). */
-.emd .emd-lista > * { content-visibility: auto; contain-intrinsic-size: auto 6.5rem; }
 .emd .emd-foco { scroll-snap-type: y proximity; }
 .emd .emd-foco > li { scroll-snap-align: start; }
 @media (prefers-reduced-motion: reduce) {
   html:has(.emd), .emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: auto; }
-  .emd .emd-lista { scroll-snap-type: y proximity; }
+  .emd .emd-lista { scroll-snap-type: none; }
 }
 
 /* Botões: sobem 1 px com sombra ao passar o mouse e afundam ao clicar. */

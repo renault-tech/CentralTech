@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PanelLeftOpen } from "lucide-react";
+import { FilterX, PanelLeftOpen } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ export function EspacoTrabalho({
   aoFechar,
   aoRecolher,
   filtrosAtivos = 0,
+  aoLimpar,
   graficos,
   lista,
   rotuloLista,
@@ -31,6 +32,8 @@ export function EspacoTrabalho({
   aoRecolher: () => void;
   /** Quantos filtros estão valendo: aparece como selo na faixa em que os gráficos se recolhem. */
   filtrosAtivos?: number;
+  /** Se informado, mostra o botão discreto "Limpar filtros" no alto da área de gráficos (apagado enquanto não há filtro). */
+  aoLimpar?: () => void;
   graficos: React.ReactNode;
   lista: React.ReactNode;
   rotuloLista: string;
@@ -88,8 +91,22 @@ export function EspacoTrabalho({
       {aberto && <button type="button" tabIndex={-1} aria-label="Fechar o detalhe" onClick={aoFechar} className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden print:hidden" />}
       <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
         <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
-            <div className="emd-rola flex h-full flex-col overflow-y-auto overscroll-contain">{graficos}</div>
+          <div className="emd-conteudo-graficos flex h-full flex-col" inert={aberto} aria-hidden={aberto}>
+            {aoLimpar && (
+              <div className="flex h-8 flex-none items-center justify-end border-b border-slate-200 px-2.5">
+                <button
+                  type="button"
+                  onClick={aoLimpar}
+                  disabled={filtrosAtivos === 0}
+                  className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-slate-600 transition-colors enabled:hover:bg-slate-100 enabled:hover:text-cataguases-marinho disabled:cursor-default disabled:opacity-40"
+                >
+                  <FilterX className="h-3.5 w-3.5" aria-hidden />
+                  Limpar filtros
+                  {filtrosAtivos > 0 && <span className="tabular-nums text-[color:var(--modulo-tinta)]">({filtrosAtivos})</span>}
+                </button>
+              </div>
+            )}
+            <div className="emd-rola flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">{graficos}</div>
           </div>
           <button
             type="button"

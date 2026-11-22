@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: botão “Limpar filtros” e rolagem das listas sem trancos",
+    descricao:
+      "No alto da área de gráficos de Emendas, Pendências, Conformidade e Panorama há agora um botão discreto “Limpar filtros” (apagado enquanto não há filtro, com a contagem quando há). O ajuste das linhas ao parar de rolar ficou mais leve: só encaixa quando a rolagem para perto do início de uma linha, em vez de puxar a cada giro da roda.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: navegação mais rápida e fluida",
     descricao:
       "Abrir e fechar o painel da emenda ao lado da lista, trocar de emenda e mudar de aba ficou bem mais suave: o deslizar das colunas é mais curto (0,4 s) e não trava mais, a lista de mais de 200 emendas só desenha o que está na tela, escolher uma emenda não refaz mais os gráficos nem as outras linhas, e as animações de entrada das telas ficaram mais curtas.",
