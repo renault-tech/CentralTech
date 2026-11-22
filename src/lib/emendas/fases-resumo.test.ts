@@ -15,6 +15,10 @@ describe("macroDaFase", () => {
     expect(macroDaFase("Envio para pagamento")).toBe("pagamento");
     expect(macroDaFase("Empenho")).toBe("empenho");
     expect(macroDaFase("Prestação de contas")).toBe("prestacao");
+    // O repasse é o pagamento do fluxo de parceria; execução e monitoramento fecha junto com a prestação.
+    expect(macroDaFase("Repasse")).toBe("pagamento");
+    expect(macroDaFase("Repasse à conta específica")).toBe("pagamento");
+    expect(macroDaFase("Execução e monitoramento")).toBe("prestacao");
     expect(macroDaFase("Encerramento")).toBe("encerramento");
   });
 });
@@ -23,7 +27,7 @@ describe("consolidarFases", () => {
   const osc = [f("Indicada na LOA", "feita"), f("Análise de viabilidade técnica", "feita"), f("Plano de trabalho", "feita"), f("Termo de fomento"), f("Empenho"), f("Pagamento"), f("Prestação de contas"), f("Encerramento")];
   it("reduz 8 fases a 6 macro-etapas em ordem fixa", () => {
     const m = consolidarFases(osc);
-    expect(m.map((x) => x.nome)).toEqual(["Planejamento", "Formalização", "Empenho", "Pagamento", "Prestação de contas", "Encerramento"]);
+    expect(m.map((x) => x.nome)).toEqual(["Planejamento", "Formalização", "Empenho", "Pagamento", "Execução e prestação", "Encerramento"]);
     expect(m[0].estado).toBe("feita");
     expect(m[1].estado).toBe("andamento"); // plano feito, termo a fazer
     expect(m[1].fases).toHaveLength(2);

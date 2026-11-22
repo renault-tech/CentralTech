@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, MoreHorizontal, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Maximize2, Minimize2, Pencil, X } from "lucide-react";
 
 import { corDoSegmento, macrosDoResumo } from "@/components/emendas/barra-fases";
 import { useCatalogo } from "@/components/emendas/catalogo-etapas";
@@ -47,52 +47,6 @@ function Esqueleto() {
     </div>
   );
 }
-
-/** Menu suspenso: fecha ao clicar fora ou com Esc (devolvendo o foco ao botão que o abriu). */
-function Suspenso({
-  botao,
-  children,
-  alinhar = "left",
-  largura = "w-44",
-}: {
-  botao: (p: { aberto: boolean; alternar: () => void }) => React.ReactNode;
-  children: (fechar: () => void) => React.ReactNode;
-  alinhar?: "left" | "right";
-  largura?: string;
-}) {
-  const [aberto, setAberto] = React.useState(false);
-  const raiz = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    if (!aberto) return;
-    const fora = (ev: PointerEvent) => {
-      if (!raiz.current?.contains(ev.target as Node)) setAberto(false);
-    };
-    const tecla = (ev: KeyboardEvent) => {
-      if (ev.key !== "Escape") return;
-      ev.stopPropagation();
-      setAberto(false);
-      raiz.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
-    };
-    document.addEventListener("pointerdown", fora);
-    document.addEventListener("keydown", tecla, true);
-    return () => {
-      document.removeEventListener("pointerdown", fora);
-      document.removeEventListener("keydown", tecla, true);
-    };
-  }, [aberto]);
-  return (
-    <div ref={raiz} className="relative flex-none">
-      {botao({ aberto, alternar: () => setAberto((v) => !v) })}
-      {aberto && (
-        <div role="menu" className={cn("absolute top-full z-20 mt-1 rounded-[0.75rem] border border-slate-200 bg-white p-1 shadow-[0_12px_28px_-10px_rgba(15,23,42,0.35)]", alinhar === "right" ? "right-0" : "left-0", largura)}>
-          {children(() => setAberto(false))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const CLASSE_ITEM_MENU = "flex w-full items-center rounded-md px-2.5 py-2 text-left text-[0.8125rem] font-medium text-cataguases-marinho hover:bg-slate-100";
 
 /**
  * Painel à direita da lista: a emenda escolhida sem sair da lista. O Resumo usa só o que a lista já carregou e diz o próximo
@@ -227,19 +181,16 @@ function PainelCorpo({
   const abrirDialogo = React.useCallback<ControleDetalhe["abrir"]>((d, o) => controle.current?.abrir(d, o), []);
   const podeGravar = !!pacote && pacote.podeEditar && e.situacao !== "cancelada";
   const abertas = resumo?.abertas ?? 0;
-  const fixas: [AbaPainel, string][] = [
+  const abas: [AbaPainel, string][] = [
     ["resumo", "Resumo"],
     ["financeiro", "Financeiro"],
     ["fases", resumo && resumo.total > 0 ? `Fases ${resumo.concluidas}/${resumo.total}` : "Fases"],
     ["documentacao", "Documentos"],
     ["pendencias", abertas ? `Pendências (${abertas})` : "Pendências"],
-  ];
-  const extras: [AbaPainel, string][] = [
     ["andamentos", "Andamentos"],
     ["parceria", "Parceria"],
     ["historico", "Histórico"],
   ];
-  const abaExtra = extras.find(([k]) => k === aba);
 
   // Ação principal da aba aberta (uma só; o resto fica no menu "⋯").
   const primaria: "movimento" | "andamento" | null = aba === "financeiro" ? "movimento" : aba === "resumo" || aba === "fases" || aba === "andamentos" ? "andamento" : null;
@@ -419,6 +370,12 @@ function PainelCorpo({
             {e.remanejada && <Chip tom="amarelo">Remanejada</Chip>}
           </div>
           <div className="-mr-1.5 flex flex-none items-center gap-0.5">
+            {pacote?.gestor && (
+              <Link href={`/emendas/${e.id}/editar`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+                <Pencil className="h-4 w-4" aria-hidden />
+                Corrigir cadastro
+              </Link>
+            )}
             <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex max-lg:hidden h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
               {expandido ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
               {expandido ? "Recolher" : "Expandir"}
@@ -435,53 +392,18 @@ function PainelCorpo({
       </header>
 
       <div role="tablist" aria-label="Seções da emenda" className="flex flex-none flex-wrap items-center gap-x-0.5 border-y border-slate-200 bg-white/60 px-2">
-        {fixas.map(([chave, rotulo]) => (
+        {abas.map(([chave, rotulo]) => (
           <button key={chave} type="button" role="tab" id={`aba-${e.id}-${chave}`} aria-selected={aba === chave} onClick={() => abrirAba(chave)} className={classeAba(aba === chave)}>
             {rotulo}
             {sublinhado(aba === chave)}
           </button>
         ))}
-        <Suspenso
-          botao={({ aberto, alternar }) => (
-            <button type="button" role="tab" aria-selected={!!abaExtra} aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className={cn(classeAba(!!abaExtra), "inline-flex items-center gap-1")}>
-              {abaExtra ? abaExtra[1] : "Mais"}
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-              {sublinhado(!!abaExtra)}
-            </button>
-          )}
-        >
-          {(fechar) =>
-            extras.map(([chave, rotulo]) => (
-              <button key={chave} type="button" role="menuitem" onClick={() => { fechar(); abrirAba(chave); }} className={cn(CLASSE_ITEM_MENU, aba === chave && "bg-slate-100")}>
-                {rotulo}
-              </button>
-            ))
-          }
-        </Suspenso>
-
         <div className="ml-auto flex items-center gap-1.5 py-1.5">
           {primaria && !pacote && !erro && <span className="h-8 w-36 animate-pulse rounded-lg bg-slate-200/70 motion-reduce:animate-none" aria-hidden />}
           {primaria && podeGravar && (
             <button type="button" onClick={() => abrirDialogo(primaria)} className={CLASSE_BOTAO_PRIMARIO}>
               {primaria === "movimento" ? "Lançar movimento" : "Registrar andamento"}
             </button>
-          )}
-          {pacote?.gestor && (
-            <Suspenso
-              alinhar="right"
-              largura="w-52"
-              botao={({ aberto, alternar }) => (
-                <button type="button" aria-label="Mais ações" aria-haspopup="menu" aria-expanded={aberto} onClick={alternar} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                  <MoreHorizontal className="h-4 w-4" aria-hidden />
-                </button>
-              )}
-            >
-              {() => (
-                <Link role="menuitem" href={`/emendas/${e.id}/editar`} className={CLASSE_ITEM_MENU}>
-                  Corrigir cadastro
-                </Link>
-              )}
-            </Suspenso>
           )}
         </div>
       </div>

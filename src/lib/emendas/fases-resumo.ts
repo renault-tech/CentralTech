@@ -2,7 +2,7 @@ import { brl } from "@/lib/emendas/regras";
 
 /**
  * Leitura rápida do andamento: as fases do fluxo (8 a 12, com nomes que variam por tipo e pelo catálogo editável) viram no
- * máximo seis macro-etapas fixas — Planejamento, Formalização, Empenho, Pagamento, Prestação de contas e Encerramento —,
+ * máximo seis macro-etapas fixas — Planejamento, Formalização, Empenho, Pagamento, Execução e prestação e Encerramento —,
  * que cabem numa linha da lista, do painel e da caixa de andamento. O detalhe de cada fase continua na aba Fases.
  * Puro: classifica pelo NOME da fase (sem acento), então uma fase nova do catálogo cai em "Formalização" se não for reconhecida.
  */
@@ -17,7 +17,7 @@ export const NOME_MACRO: Record<ChaveMacro, string> = {
   formalizacao: "Formalização",
   empenho: "Empenho",
   pagamento: "Pagamento",
-  prestacao: "Prestação de contas",
+  prestacao: "Execução e prestação",
   encerramento: "Encerramento",
 };
 
@@ -26,9 +26,9 @@ const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLo
 export function macroDaFase(nome: string): ChaveMacro {
   const n = semAcento(nome);
   if (/encerr|conclu/.test(n)) return "encerramento";
-  if (/presta/.test(n)) return "prestacao";
+  if (/presta|execu|monitor/.test(n)) return "prestacao";
   if (/empenh/.test(n)) return "empenho";
-  if (/pagament|liquida/.test(n)) return "pagamento";
+  if (/pagament|liquida|repasse/.test(n)) return "pagamento";
   if (/\bloa\b|indicad|analis|viabil|exequib|parecer|demanda/.test(n)) return "planejamento";
   return "formalizacao";
 }

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: Conformidade na área de trabalho, Pendências com dois gráficos e apagar propostas",
+    descricao:
+      "A tela de Conformidade passou para o mesmo padrão de Emendas, Pendências e Panorama: indicadores e dois gráficos de filtro à esquerda (item exigido, secretaria, tipo ou execução), a lista de emendas com itens a completar ao lado e os detalhes da emenda à direita, na aba Parceria. Pendências também ganhou dois gráficos combináveis (área, gravidade, assunto, motivo, secretaria, tipo ou documentos faltando). No painel da emenda, todas as abas aparecem na faixa (sem “Mais” nem o menu de três pontos) e “Corrigir cadastro” fica no cabeçalho. O fluxo de fases agrupa o Repasse em Pagamento e Execução e monitoramento em Execução e prestação, e a pendência de datas fora de ordem do repasse antes do extrato passou a indicar a saída orientada pelo Controle Interno: o extrato saneador. Em Aprovações, o gestor pode apagar propostas (uma a uma, marcadas ou todas as decididas), inclusive as em conflito, que antes ficavam presas na lista.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: Pendências e Panorama na mesma área de trabalho, folha no celular e gravação mais rápida",
     descricao:
       "Pendências e Panorama agora seguem o mesmo padrão da lista de Emendas: o painel de gráficos ou cartões filtra, a lista responde ao lado e, ao escolher uma pendência ou emenda, os detalhes abrem à direita (Pendências abre na aba Pendências; Panorama, no Financeiro). Em telas com menos de 1024 px o detalhe abre como uma folha por cima da lista, em vez de levar para outra página. Depois de gravar um andamento ou lançamento, a emenda e a lista se atualizam na hora e o restante da tela se revalida em segundo plano. As cores do dinheiro são as mesmas em todo o módulo (indicado cinza-azulado, empenhado azul, pago verde, a pagar âmbar), e o violeta ficou só para a marca e a seleção. O botão provisório Original/Novo foi removido: o novo visual é o único. No painel da emenda saiu o botão repetido de Registrar andamento e o atalho de abrir a página inteira (há o botão Expandir).",
