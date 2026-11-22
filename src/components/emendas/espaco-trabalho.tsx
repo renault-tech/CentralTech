@@ -76,7 +76,7 @@ export function EspacoTrabalho({
       <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
         <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="emd-conteudo-graficos h-full" inert={aberto} aria-hidden={aberto}>
-            <div className="flex h-full flex-col overflow-y-auto overscroll-contain">{graficos}</div>
+            <div className="emd-rola flex h-full flex-col overflow-y-auto overscroll-contain">{graficos}</div>
           </div>
           <button
             type="button"

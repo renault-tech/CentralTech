@@ -764,6 +764,19 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
 .emd tr.emd-linha-clic:active { background-image: linear-gradient(color-mix(in srgb, var(--modulo) 15%, transparent), color-mix(in srgb, var(--modulo) 15%, transparent)); }
 .emd tbody tr:not(.emd-linha-clic):hover { background-image: linear-gradient(rgb(var(--slate-500) / 0.07), rgb(var(--slate-500) / 0.07)); }
 
+/* Rolagem suave: toda área que rola no módulo desliza em vez de pular, e as listas "encaixam" no início de um item ao parar
+   (scroll-snap), então o topo nunca fica com uma linha cortada ao meio. Os gráficos usam encaixe mais frouxo (proximity). */
+html:has(.emd) { scroll-behavior: smooth; }
+.emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: smooth; }
+.emd .emd-lista { scroll-snap-type: y mandatory; }
+.emd .emd-lista > * { scroll-snap-align: start; }
+.emd .emd-foco { scroll-snap-type: y proximity; }
+.emd .emd-foco > li { scroll-snap-align: start; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.emd), .emd .emd-rola, .emd .emd-lista, .emd .emd-foco { scroll-behavior: auto; }
+  .emd .emd-lista { scroll-snap-type: y proximity; }
+}
+
 /* Botões: sobem 1 px com sombra ao passar o mouse e afundam ao clicar. */
 .emd .btn-ui, .emd button[role="tab"], .emd button[aria-pressed] {
   transition: transform 0.2s var(--emd-curva), box-shadow 0.2s var(--emd-curva), background-color 0.2s ease, filter 0.2s ease, color 0.2s ease;

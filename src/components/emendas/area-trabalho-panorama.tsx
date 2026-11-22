@@ -120,7 +120,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
               <option value="ente">Repasse a ente</option>
             </select>
           </div>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
+          <div className="emd-rola min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
             {GRUPOS.map((g) => (
               <section key={g.titulo} aria-label={g.titulo}>
                 <h2 className="mb-2 text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{g.titulo}</h2>

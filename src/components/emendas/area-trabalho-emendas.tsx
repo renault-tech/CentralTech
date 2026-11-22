@@ -101,7 +101,7 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
     const prox = Math.min(itens.length - 1, Math.max(0, atual + (ev.key === "ArrowDown" ? 1 : -1)));
     const alvo = itens[prox];
     alvo.focus();
-    alvo.scrollIntoView({ block: "nearest" });
+    alvo.scrollIntoView({ block: "nearest", behavior: "smooth" });
     if (aberto) definir({ e: alvo.dataset.id ?? "" });
   }
 

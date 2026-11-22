@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-22",
+    titulo: "Emendas: rolagem suave, sem linhas cortadas",
+    descricao:
+      "As listas de Emendas, Pendências, Conformidade e Panorama, os gráficos, o painel de gráficos e o painel da emenda agora rolam deslizando, e a lista sempre para com uma linha inteira no topo, sem item cortado ao meio. Quem prefere menos movimento no sistema continua com a rolagem normal.",
+  },
+  {
+    data: "2026-11-22",
     titulo: "Emendas: telas mais enxutas e gráficos da Conformidade que se ajustam à tela",
     descricao:
       "As frases explicativas embaixo dos títulos saíram das telas de Emendas (Pendências, Panorama, Aprovações, Relatórios, Configurações, Portal público e outras), dando mais espaço aos dados. Na Conformidade, a base legal fica na linha do título e o “Como usar” abre num quadro curto. O painel de gráficos da esquerda agora rola por dentro quando a tela é baixa, em vez de cortar o segundo gráfico; vale também para Emendas e Pendências.",
