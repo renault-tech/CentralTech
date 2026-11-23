@@ -40,6 +40,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/* Conexão com o Supabase já aberta quando a página precisa dele (sessão, avisos ao vivo). */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />}
         {/* Aplica o tema salvo (ou o do sistema) antes da pintura, sem piscar. */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
         {/* Aplica o zoom salvo (limitado pela largura da tela) antes da pintura. */}

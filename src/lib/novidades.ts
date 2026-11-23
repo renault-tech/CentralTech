@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-24",
+    titulo: "Boas-vindas ao novo design e tutoriais atualizados",
+    descricao:
+      "No primeiro acesso depois da mudança, cada pessoa vê uma tela de boas-vindas (uma única vez, em qualquer navegador) mostrando o que é novo: menu lateral, gráficos que filtram a lista, resumo ao lado da lista, caixas de informação ao passar o mouse e os ajustes de zoom e modo escuro. Os tutoriais (botão “?” no alto) ganharam passos sobre isso, em todos os módulos. O Compras também ganhou o Início como painel de abertura e o menu lateral no mesmo padrão dos demais módulos, e a navegação ficou mais rápida.",
+  },
+  {
     data: "2026-11-23",
     titulo: "Compras e Licitações no padrão dos demais módulos",
     descricao:
