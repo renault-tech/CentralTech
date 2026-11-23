@@ -23,26 +23,30 @@ export type UsuarioComAcessos = {
    */
   contratos: { ver: boolean; editar: boolean; deContratos: boolean } | null;
   /** Perfil e permissões ligadas no Compras (`public.permissoes`, só chaves do catálogo). `null` = sem conta no Compras. */
-  compras: { perfil: string; ligadas: string[] } | null;
+  compras: { perfil: string; ligadas: string[]; retiradas: string[] } | null;
 };
 
 /** Contratos do Compras por pessoa. Falha aqui não derruba a lista (some só o controle). */
-async function permissoesDeContratos(): Promise<Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[] }> | null> {
+async function permissoesDeContratos(): Promise<Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[]; retiradas: string[] }> | null> {
   try {
     const admin = criarClienteAdminBruto();
     const [{ data: contas }, { data: perms }] = await Promise.all([
       admin.schema("public").from("usuarios").select("id, perfil"),
       admin.schema("public").from("permissoes").select("usuario_id, chave, permitido").in("chave", CHAVES_COMPRAS),
     ]);
-    const mapa = new Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[] }>(
+    const mapa = new Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[]; retiradas: string[] }>(
       (contas ?? []).map((c) => [
         c.id as string,
-        { ver: false, editar: false, perfil: String(c.perfil), ligadas: [], deContratos: c.perfil === "serv_contratos" || c.perfil === "coord_contratos" },
+        { ver: false, editar: false, perfil: String(c.perfil), ligadas: [], retiradas: [], deContratos: c.perfil === "serv_contratos" || c.perfil === "coord_contratos" },
       ])
     );
     for (const x of perms ?? []) {
       const m = mapa.get(x.usuario_id as string);
-      if (!m || !x.permitido) continue;
+      if (!m) continue;
+      if (!x.permitido) {
+        m.retiradas.push(x.chave as string);
+        continue;
+      }
       m.ligadas.push(x.chave as string);
       if (x.chave === "contratos_ver") m.ver = true;
       else if (x.chave === "contratos_editar") m.editar = true;
@@ -110,7 +114,7 @@ export async function listarUsuariosComAcessos(): Promise<UsuarioComAcessos[]> {
       nuncaEntrou,
       linkPrimeiroAcesso: token && primeiroAcesso ? linkDoConvite(primeiroAcesso.origem, token) : null,
       contratos: contratos?.get(u.id) ?? null,
-      compras: contratos?.get(u.id) ? { perfil: contratos.get(u.id)!.perfil, ligadas: contratos.get(u.id)!.ligadas } : null,
+      compras: contratos?.get(u.id) ? { perfil: contratos.get(u.id)!.perfil, ligadas: contratos.get(u.id)!.ligadas, retiradas: contratos.get(u.id)!.retiradas } : null,
     };
   });
 }

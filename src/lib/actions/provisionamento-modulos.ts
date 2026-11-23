@@ -31,7 +31,7 @@ import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
-import { CHAVES_COMPRAS, normalizarPermissoes } from "@/lib/permissoes/catalogo";
+import { CHAVES_COMPRAS, GRUPOS_COMPRAS } from "@/lib/permissoes/catalogo";
 import type { Modulo } from "@/types/database";
 
 /** `contratosVer`/`contratosEditar` (opcionais): permissões de Contratos no Compras. Ausentes = padrão (perfil de Contratos ganha só a leitura). */
@@ -589,24 +589,31 @@ export async function sincronizarBookkeepingHub(
 }
 
 /**
- * Grava o conjunto de permissões do Compras (chaves do catálogo) de uma pessoa: o que está em `ligadas` fica permitido
- * (cria a linha se faltar); o que não está só é DESLIGADO se já existia (não cria linha `false` à toa). Respeita as dependências.
+ * Grava permissões avulsas do Compras (só as chaves em `definidas`, só chaves do catálogo). `true` concede (cria/atualiza a linha);
+ * `false` retira: atualiza a linha se existe e, se o perfil da pessoa já daria a permissão, cria a linha `false` (retirada explícita).
+ * Respeita as dependências (editar contratos exige ver contratos).
  */
 export async function gravarPermissoesCompras(
   usuarioId: string,
-  ligadas: string[]
+  definidas: Record<string, boolean>
 ): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
   const admin = criarClienteAdminBruto();
-  const { data: conta } = await admin.schema("public").from("usuarios").select("id").eq("id", usuarioId).maybeSingle();
+  const { data: conta } = await admin.schema("public").from("usuarios").select("id, perfil").eq("id", usuarioId).maybeSingle();
   if (!conta) return { sucesso: false, erro: "Esta pessoa não tem conta no Compras." };
-  const desejadas = normalizarPermissoes(new Set(ligadas.filter((c) => CHAVES_COMPRAS.includes(c))));
+  const itens = GRUPOS_COMPRAS.flatMap((g) => g.itens);
+  const alvo: Record<string, boolean> = {};
+  for (const [chave, valor] of Object.entries(definidas)) if (CHAVES_COMPRAS.includes(chave)) alvo[chave] = valor;
+  for (const i of itens) {
+    if (i.exige && alvo[i.chave] === true) alvo[i.exige] = true;
+    if (alvo[i.exige ?? ""] === false) alvo[i.chave] = false;
+  }
   const { data: atuais } = await admin.schema("public").from("permissoes").select("id, chave, permitido").eq("usuario_id", usuarioId).in("chave", CHAVES_COMPRAS);
   const porChave = new Map((atuais ?? []).map((l) => [l.chave as string, l]));
-  for (const chave of CHAVES_COMPRAS) {
-    const permitido = desejadas.has(chave);
+  for (const [chave, permitido] of Object.entries(alvo)) {
     const linha = porChave.get(chave);
     if (linha && linha.permitido === permitido) continue;
-    if (!linha && !permitido) continue;
+    const padrao = itens.find((i) => i.chave === chave)?.padraoPerfis?.includes(String(conta.perfil)) ?? false;
+    if (!linha && !permitido && !padrao) continue;
     const { error } = linha
       ? await admin.schema("public").from("permissoes").update({ permitido }).eq("id", linha.id)
       : await admin.schema("public").from("permissoes").insert({ usuario_id: usuarioId, chave, permitido });

@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-23",
+    titulo: "Permissão \"Criar processos\" no Compras",
+    descricao:
+      "No painel de permissões do Compras (Usuários e acessos → Editar) há agora \"Criar processos\", que vale de verdade no Compras: conceda a quem não é diretor nem coordenação de Compras, ou retire de quem teria pelo perfil. O selo \"já vem do perfil\" mostra quando a pessoa já tem a permissão sem ajuste avulso.",
+  },
+  {
+    data: "2026-11-23",
     titulo: "Permissões do Compras num painel só",
     descricao:
       "Em Usuários e acessos → Editar, as permissões do Compras (contratos, obras e concorrência, logs) ficam num painel agrupado por assunto, com o nome da pessoa e o módulo sempre visíveis no topo enquanto você rola. Há modelos prontos (ex.: Contratos — gestão) e o botão Salvar mostra quantas mudanças estão pendentes. Quem pede editar contratos ganha ver contratos junto.",

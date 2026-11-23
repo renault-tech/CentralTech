@@ -11,13 +11,22 @@ export type PermissaoDef = {
   ajuda: string;
   /** Só vale junto de outra (ex.: editar contratos exige ver contratos). */
   exige?: string;
+  /** Perfis que já têm a permissão sem nenhuma linha avulsa. Linha `true` concede a outros; linha `false` retira destes. */
+  padraoPerfis?: string[];
 };
+
+/** Valor efetivo de uma permissão: linha avulsa manda; sem linha, vale o padrão do perfil. */
+export function permissaoEfetiva(item: PermissaoDef, perfil: string, ligadas: ReadonlySet<string>, retiradas: ReadonlySet<string>): boolean {
+  if (ligadas.has(item.chave)) return true;
+  if (retiradas.has(item.chave)) return false;
+  return item.padraoPerfis?.includes(perfil) ?? false;
+}
 
 export type GrupoPermissoes = { id: string; titulo: string; itens: PermissaoDef[] };
 
 /**
  * Conferido no repositório App-Compras (23/11/2026): só estas chaves são lidas pelo banco/RLS ou pelo app.
- * `distribuir`, `editar_prazo`, `editar_fluxo` e `aprovar_prorrogacao` existem na matriz do Compras mas NADA as consulta
+ * `criar_processos` foi ligada ao banco e à tela em 23/11/2026. `distribuir`, `editar_prazo`, `editar_fluxo` e `aprovar_prorrogacao` existem na matriz do Compras mas NADA as consulta
  * (as ações correspondentes dependem só do perfil), então não aparecem aqui até serem de fato aplicadas.
  */
 export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
@@ -27,6 +36,18 @@ export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
     itens: [
       { chave: "contratos_ver", rotulo: "Ver contratos", ajuda: "Enxerga a lista e o detalhe dos contratos. O perfil sozinho não dá essa leitura." },
       { chave: "contratos_editar", rotulo: "Cadastrar e alterar contratos", ajuda: "Cria e edita contratos.", exige: "contratos_ver" },
+    ],
+  },
+  {
+    id: "processos",
+    titulo: "Processos",
+    itens: [
+      {
+        chave: "criar_processos",
+        rotulo: "Criar processos",
+        ajuda: "Abre processos novos. Diretor e coordenação de Compras já podem pelo perfil; aqui dá para conceder a outra pessoa ou retirar de quem teria.",
+        padraoPerfis: ["diretor", "coord_compras"],
+      },
     ],
   },
   {

@@ -459,7 +459,7 @@ function FormularioAcesso({
         )}
       </div>
 
-      {usuario?.compras && <PermissoesCompras usuarioId={usuario.id} nome={usuario.nome} perfil={usuario.compras.perfil} inicial={usuario.compras.ligadas} />}
+      {usuario?.compras && <PermissoesCompras usuarioId={usuario.id} nome={usuario.nome} perfil={usuario.compras.perfil} inicial={usuario.compras.ligadas} retiradas={usuario.compras.retiradas} />}
 
       {modulosParaDecisao.length > 0 && (
         <div className="mt-3">

@@ -352,18 +352,18 @@ export async function liberarLeituraContratosDoSetor(): Promise<{ sucesso: true;
   return { sucesso: true, liberados: faltam.length };
 }
 
-const esquemaPermissoesCompras = z.object({ usuarioId: z.uuid(), ligadas: z.array(z.string().max(60)).max(40) });
+const esquemaPermissoesCompras = z.object({ usuarioId: z.uuid(), definidas: z.record(z.string().max(60), z.boolean()) });
 
-/** Define o conjunto de permissões do Compras de uma pessoa (substitui o conjunto do catálogo; só admin do Hub). */
+/** Concede ou retira permissões avulsas do Compras de uma pessoa (só as chaves enviadas; só admin do Hub). */
 export async function definirPermissoesCompras(dados: {
   usuarioId: string;
-  ligadas: string[];
+  definidas: Record<string, boolean>;
 }): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
   const atual = await obterUsuarioAtual();
   if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
   const a = esquemaPermissoesCompras.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: "Dados inválidos." };
-  const r = await gravarPermissoesCompras(a.data.usuarioId, a.data.ligadas);
+  const r = await gravarPermissoesCompras(a.data.usuarioId, a.data.definidas);
   if (!r.sucesso) return r;
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true };

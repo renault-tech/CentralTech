@@ -5,15 +5,20 @@ import { Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { definirPermissoesCompras } from "@/lib/actions/configuracoes";
-import { alternarPermissao, GRUPOS_COMPRAS, MODELOS_COMPRAS, normalizarPermissoes } from "@/lib/permissoes/catalogo";
+import { alternarPermissao, GRUPOS_COMPRAS, MODELOS_COMPRAS, normalizarPermissoes, permissaoEfetiva } from "@/lib/permissoes/catalogo";
 
 /**
  * Permissões do Compras de UMA pessoa. O cabeçalho (quem + de qual módulo + salvar) fica fixo enquanto se rola a lista,
  * para nunca perder de vista a que pessoa e a que módulo cada interruptor se refere. Modelos ligam um conjunto de uma vez;
  * depois dá para ajustar item a item. Nada é gravado até clicar em "Salvar".
  */
-export function PermissoesCompras({ usuarioId, nome, perfil, inicial }: { usuarioId: string; nome: string; perfil: string; inicial: string[] }) {
-  const base = React.useMemo(() => normalizarPermissoes(new Set(inicial)), [inicial]);
+export function PermissoesCompras({ usuarioId, nome, perfil, inicial, retiradas }: { usuarioId: string; nome: string; perfil: string; inicial: string[]; retiradas: string[] }) {
+  const base = React.useMemo(() => {
+    const l = new Set(inicial);
+    const r = new Set(retiradas);
+    const efetivas = new Set(GRUPOS_COMPRAS.flatMap((g) => g.itens).filter((i) => permissaoEfetiva(i, perfil, l, r)).map((i) => i.chave));
+    return normalizarPermissoes(efetivas);
+  }, [inicial, retiradas, perfil]);
   const [ligadas, setLigadas] = React.useState<Set<string>>(base);
   const [pendente, setPendente] = React.useState(false);
   const [msg, setMsg] = React.useState<{ ok: boolean; texto: string } | null>(null);
@@ -23,7 +28,9 @@ export function PermissoesCompras({ usuarioId, nome, perfil, inicial }: { usuari
   async function salvar() {
     setPendente(true);
     setMsg(null);
-    const r = await definirPermissoesCompras({ usuarioId, ligadas: [...ligadas] });
+    const definidas: Record<string, boolean> = {};
+    for (const c of new Set([...ligadas, ...base])) if (ligadas.has(c) !== base.has(c)) definidas[c] = ligadas.has(c);
+    const r = await definirPermissoesCompras({ usuarioId, definidas });
     setPendente(false);
     setMsg(r.sucesso ? { ok: true, texto: "Permissões salvas. Valem na próxima tela que a pessoa abrir." } : { ok: false, texto: r.erro });
   }
@@ -79,6 +86,7 @@ export function PermissoesCompras({ usuarioId, nome, perfil, inicial }: { usuari
                       />
                       <span>
                         {i.rotulo}
+                        {i.padraoPerfis?.includes(perfil) && <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[0.6875rem] text-slate-600">já vem do perfil</span>}
                         {travada && <Lock className="ml-1 inline h-3 w-3" aria-hidden />}
                         <span className="block text-xs text-slate-500">{i.ajuda}</span>
                       </span>
