@@ -49,7 +49,7 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 
 ## Documentos novos tratados em 23/11/2026
 - Ligados: planos E91 e E209; extratos E139, E144, E148, E206, E209 (documentos faltando cai em 7). Em aberto na pasta: planos E114, E206 (arquivos grandes) e E110 (arquivo em branco); anuências do SUS (Superação e Cisum) aguardando decisão.
-- A conferir: E91, conta do plano lida do manuscrito (62.690-6) × cadastro (62.640-6); extrato da E206 publicou vigência "30/06/2026 a 29/06/2026" (erro de digitação do jornal; o cadastro tem 29/06/2026 a 29/06/2027).
+- E91: conta confirmada pelo dono como 62.640-6 (o cadastro está certo; o 4 manuscrito parecia 9). A conferir: extrato da E206 publicou vigência "30/06/2026 a 29/06/2026" (erro de digitação do jornal; o cadastro tem 29/06/2026 a 29/06/2027).
 - **Anuência do Cisum (23/11/2026)**: E93, E126 e E162 ligadas e marcadas "sim". Seguem faltando nas 3: convênio/contrato de rateio e extrato (Jurídico). Data da anuência em branco (ofícios sem data). Superação: 15 ofícios lidos e conferidos contra o cadastro (todos batem, exceto o 0953, que cita a emenda 053 por engano em lugar da 59); aguardando decisão de retomar o Superação.
 
 ## Fechamento de 23/11/2026
