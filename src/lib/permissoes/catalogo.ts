@@ -15,6 +15,11 @@ export type PermissaoDef = {
 
 export type GrupoPermissoes = { id: string; titulo: string; itens: PermissaoDef[] };
 
+/**
+ * Conferido no repositório App-Compras (23/11/2026): só estas chaves são lidas pelo banco/RLS ou pelo app.
+ * `distribuir`, `editar_prazo`, `editar_fluxo` e `aprovar_prorrogacao` existem na matriz do Compras mas NADA as consulta
+ * (as ações correspondentes dependem só do perfil), então não aparecem aqui até serem de fato aplicadas.
+ */
 export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
   {
     id: "contratos",
@@ -22,16 +27,6 @@ export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
     itens: [
       { chave: "contratos_ver", rotulo: "Ver contratos", ajuda: "Enxerga a lista e o detalhe dos contratos. O perfil sozinho não dá essa leitura." },
       { chave: "contratos_editar", rotulo: "Cadastrar e alterar contratos", ajuda: "Cria e edita contratos.", exige: "contratos_ver" },
-    ],
-  },
-  {
-    id: "processos",
-    titulo: "Processos",
-    itens: [
-      { chave: "distribuir", rotulo: "Distribuir processos", ajuda: "Encaminha processos entre setores." },
-      { chave: "editar_prazo", rotulo: "Alterar prazos", ajuda: "Muda o prazo de um processo." },
-      { chave: "editar_fluxo", rotulo: "Alterar o fluxo", ajuda: "Muda as etapas pelas quais o processo passa." },
-      { chave: "aprovar_prorrogacao", rotulo: "Aprovar prorrogações", ajuda: "Decide pedidos de prorrogação." },
     ],
   },
   {

@@ -16,7 +16,7 @@ export const NOVIDADES: Novidade[] = [
     data: "2026-11-23",
     titulo: "Permissões do Compras num painel só",
     descricao:
-      "Em Usuários e acessos → Editar, as permissões do Compras (contratos, processos, obras e concorrência, logs) ficam num painel agrupado por assunto, com o nome da pessoa e o módulo sempre visíveis no topo enquanto você rola. Há modelos prontos (ex.: Contratos — gestão) e o botão Salvar mostra quantas mudanças estão pendentes. Quem pede editar contratos ganha ver contratos junto.",
+      "Em Usuários e acessos → Editar, as permissões do Compras (contratos, obras e concorrência, logs) ficam num painel agrupado por assunto, com o nome da pessoa e o módulo sempre visíveis no topo enquanto você rola. Há modelos prontos (ex.: Contratos — gestão) e o botão Salvar mostra quantas mudanças estão pendentes. Quem pede editar contratos ganha ver contratos junto.",
   },
   {
     data: "2026-11-23",
