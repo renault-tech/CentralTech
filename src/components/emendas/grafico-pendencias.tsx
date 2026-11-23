@@ -216,7 +216,7 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
   const unidade = visao === "documentos" ? "emendas" : "pendências";
 
   return (
-    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-[13rem] flex-col", className)}>
+    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-0 flex-col overflow-hidden", className)}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
@@ -245,7 +245,7 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(9.5rem,34%)_minmax(0,1fr)]">
         <div className="flex min-h-0 items-center justify-center py-1 pl-2 pr-1">
-          <Pizza fatias={fatias} destaque={sobreChave} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} className="aspect-square h-full max-h-[14.5rem] min-h-[9rem] w-auto max-w-full" rotuloTotal={medida === "valor" ? "em emendas" : unidade} />
+          <Pizza fatias={fatias} destaque={sobreChave} selecionada={selecionada} aoEscolher={escolher} dinheiro={medida === "valor"} className="aspect-square h-full max-h-[14.5rem] min-h-[4.5rem] w-auto max-w-full" rotuloTotal={medida === "valor" ? "em emendas" : unidade} />
         </div>
         <ul id={id} className="emd-foco flex min-h-0 flex-col overflow-y-auto overscroll-contain py-0.5 pr-1 [&>li:first-child]:mt-auto [&>li:last-child]:mb-auto" aria-label={`Por ${def.rotulo.toLowerCase()}`}>
           {itens.length === 0 && <li className="p-6 text-center text-sm text-slate-600">Nada a mostrar com esses filtros.</li>}

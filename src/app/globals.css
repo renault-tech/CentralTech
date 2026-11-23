@@ -781,6 +781,9 @@ html.dark .emd .bg-white[class*="rounded-2xl"] { box-shadow: 0 1px 0 rgb(255 255
    lista some em degradê e a lista tem folga no fim, então nenhuma palavra é cortada seca pela borda arredondada do painel. */
 html:has(.emd) { scroll-behavior: smooth; }
 .emd .emd-rola, .emd .emd-foco { scroll-behavior: smooth; }
+/* Lista de um gráfico: a barra de rolagem fina só aparece com o mouse (ou o foco) em cima; sem ele, a lista rola igual, mas sem barra. */
+.emd .emd-foco { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.emd .emd-foco:hover, .emd .emd-foco:focus-within { scrollbar-color: rgb(148 163 184 / 0.75) transparent; }
 .emd .emd-lista { scroll-behavior: auto; padding-bottom: 1.25rem; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent); }
 .emd .emd-detalhe .emd-rola { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 0.875rem), transparent); }
 @media (prefers-reduced-motion: reduce) {
