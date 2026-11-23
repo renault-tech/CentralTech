@@ -90,7 +90,7 @@ export function EspacoTrabalho({
     <>
       {aberto && <button type="button" tabIndex={-1} aria-label="Fechar o detalhe" onClick={aoFechar} className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden print:hidden" />}
       <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
-        <aside aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <aside data-tour="ws-graficos" aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="emd-conteudo-graficos flex h-full flex-col" inert={aberto} aria-hidden={aberto}>
             {aoLimpar && (
               <div className="flex h-8 flex-none items-center justify-end border-b border-slate-200 px-2.5">
@@ -125,11 +125,11 @@ export function EspacoTrabalho({
           </button>
         </aside>
 
-        <section aria-label={rotuloLista} inert={expandido} className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh] print:hidden">
+        <section data-tour="ws-lista" aria-label={rotuloLista} inert={expandido} className="emd-painel flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white max-lg:h-[70dvh] print:hidden">
           {lista}
         </section>
 
-        <section aria-label={rotuloDetalhe} aria-hidden={!aberto} inert={!aberto} className={cn("emd-painel emd-detalhe min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white print:hidden", !aberto && "border-transparent")}>
+        <section data-tour="ws-detalhe" aria-label={rotuloDetalhe} aria-hidden={!aberto} inert={!aberto} className={cn("emd-painel emd-detalhe min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white print:hidden", !aberto && "border-transparent")}>
           {detalhe}
         </section>
       </div>

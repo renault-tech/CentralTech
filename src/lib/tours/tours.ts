@@ -18,6 +18,8 @@ export type Tour = {
   descricao: string;
   /** Rota onde este tour roda. Vazio = disponível em qualquer tela. */
   rota: string;
+  /** Outras rotas (prefixos) onde o mesmo tour vale. */
+  rotasExtras?: string[];
   passos: PassoTour[];
   /** Classe extra do balão (ex.: tema do portal público). */
   classePopover?: string;
@@ -41,7 +43,7 @@ export const TOURS: Tour[] = [
         seletor: '[data-tour="cards-modulos"]',
         titulo: "Seus módulos",
         descricao:
-          "Cada card leva ao sistema real, na conta que você já tem lá. Só aparecem aqui os módulos liberados para você — se faltar algum, peça ao administrador.",
+          "Cada card leva ao sistema real, na conta que você já tem lá. Só aparecem aqui os módulos liberados para você — se faltar algum, peça ao administrador. Dentro de cada módulo, o menu lateral, os gráficos que filtram e o resumo ao lado da lista seguem o mesmo padrão.",
         lado: "top",
       },
       {
@@ -116,6 +118,60 @@ export const TOURS: Tour[] = [
     ],
   },
   {
+    id: "area-trabalho",
+    nome: "Gráficos, lista e detalhe",
+    descricao: "Como filtrar pelos gráficos e abrir o resumo ao lado da lista",
+    rota: "/emendas/lista",
+    rotasExtras: [
+      "/emendas/pendencias",
+      "/emendas/conformidade",
+      "/emendas/panorama",
+      "/frotas/manutencao",
+      "/frotas/combustivel",
+      "/frotas/veiculos",
+      "/imoveis/imoveis",
+      "/imoveis/pendencias",
+      "/imoveis/entregas",
+    ],
+    passos: [
+      {
+        seletor: '[data-tour="ws-graficos"]',
+        titulo: "Gráficos que filtram",
+        descricao:
+          "Clique numa fatia, barra ou linha e a lista mostra só aquilo; clique de novo para tirar. Cada gráfico tem um seletor para trocar o que mostra, e dois gráficos se combinam. Os filtros ativos aparecem como etiquetas com ✕, e “Limpar” tira todos. A faixa lateral recolhe os gráficos para dar espaço à lista.",
+        lado: "right",
+      },
+      {
+        seletor: '[data-tour="ws-lista"]',
+        titulo: "A lista",
+        descricao:
+          "Busque pelo texto, ordene e exporte exatamente o que está na tela. Clique numa linha para abrir o resumo ao lado, sem perder o filtro; as setas do teclado passam de um item ao outro e Esc fecha. O que você filtrou fica guardado ao voltar de um item.",
+        lado: "left",
+      },
+      {
+        seletor: '[data-tour="ws-detalhe"]',
+        titulo: "Resumo ao lado",
+        descricao: "O resumo traz abas com o que importa do item. Quem pode editar faz as ações ali mesmo; “Expandir” dá mais espaço e, no celular, o resumo abre como uma folha por cima da lista.",
+        lado: "left",
+      },
+    ],
+  },
+  {
+    id: "imoveis-painel",
+    nome: "Imóveis e Consumo",
+    descricao: "Como ler o painel de abertura de imóveis, água e luz",
+    rota: "/imoveis",
+    passos: [
+      {
+        seletor: '[data-tour="nav-imoveis"]',
+        titulo: "Módulo Imóveis e Consumo",
+        descricao:
+          "Painel para a visão geral, Imóveis para o cadastro e os contratos, Água e Luz para as contas de cada unidade, Entregas para a devolução de imóveis, Vencimentos e Pendências para o que precisa de ação. Recolha o menu com o botão dele ou com a tecla [.",
+        lado: "bottom",
+      },
+    ],
+  },
+  {
     id: "portal-emendas",
     nome: "Portal das emendas",
     descricao: "Como usar o portal público das emendas impositivas",
@@ -136,9 +192,13 @@ export const TOURS: Tour[] = [
 
 /** Tour cuja rota é prefixo exato do pathname atual (a rota vazia do boas-vindas nunca "casa" aqui). */
 export function tourPorRota(pathname: string): Tour | undefined {
-  return TOURS.filter((t) => t.rota && pathname.startsWith(t.rota)).sort(
-    (a, b) => b.rota.length - a.rota.length
-  )[0];
+  const acertos: { tour: Tour; tamanho: number }[] = [];
+  for (const t of TOURS) {
+    for (const r of [t.rota, ...(t.rotasExtras ?? [])]) {
+      if (r && pathname.startsWith(r)) acertos.push({ tour: t, tamanho: r.length });
+    }
+  }
+  return acertos.sort((a, b) => b.tamanho - a.tamanho)[0]?.tour;
 }
 
 export function tourPorId(id: string): Tour | undefined {

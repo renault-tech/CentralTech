@@ -52,7 +52,7 @@ export function GerenciadorTours() {
     if (sessionStorage.getItem(CHAVE_TOUR_PENDENTE)) return;
     jaTentouBoasVindas.current = true;
 
-    const timer = setTimeout(() => {
+    const rodar = () => {
       const tour = tourPorId("boas-vindas");
       if (!tour) return;
       void import("@/components/ajuda/executar-tour").then(({ executarTour }) => {
@@ -61,8 +61,21 @@ export function GerenciadorTours() {
         });
         if (!rodou) localStorage.setItem(CHAVE_TOUR_VISTO, "1");
       });
-    }, 700);
-    return () => clearTimeout(timer);
+    };
+    let aoFecharBoasVindas: (() => void) | null = null;
+    const timer = setTimeout(() => {
+      // A tela de boas-vindas ao novo design abre antes (700 ms): o tour espera ela ser fechada, para não haver dois avisos juntos.
+      if (document.querySelector("[data-boas-vindas-design]")) {
+        aoFecharBoasVindas = () => setTimeout(rodar, 400);
+        window.addEventListener("boas-vindas-design-fechada", aoFecharBoasVindas, { once: true });
+        return;
+      }
+      rodar();
+    }, 1300);
+    return () => {
+      clearTimeout(timer);
+      if (aoFecharBoasVindas) window.removeEventListener("boas-vindas-design-fechada", aoFecharBoasVindas);
+    };
   }, []);
 
   return null;

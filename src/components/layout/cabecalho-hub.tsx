@@ -12,6 +12,7 @@ import { contarFeedbackNovos, podeGerirFeedback } from "@/lib/dados/feedback";
 import { BotaoFeedback } from "@/components/feedback/botao-feedback";
 import { SinoNotificacoes } from "@/components/notificacoes/sino";
 import { CLASSE_CONTADOR_CABECALHO, CLASSE_LINK_CABECALHO } from "@/components/layout/cabecalho-estilos";
+import { BoasVindasDesign } from "@/components/ajuda/boas-vindas-design";
 import { SincronizarPreferencias } from "@/components/layout/sincronizar-preferencias";
 import { lerPreferencias } from "@/lib/dados/preferencias";
 import type { UsuarioHub } from "@/types/database";
@@ -51,6 +52,7 @@ export async function CabecalhoHub({
   return (
     <>
       <SincronizarPreferencias salvas={preferencias} />
+      <BoasVindasDesign app="hub" jaVisto={!!preferencias?.boasVindasVistas} />
       <CabecalhoVisual
         usuario={usuario}
         modulo={modulo}
