@@ -46,3 +46,7 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 - Termos: E85 (091), E87 (104), E88 (120), E90 (135), E94 (121), E101 (111), E104 (105). Aditivo não cabe (cláusula 9.1: só até 30 dias antes do término); o caminho é exigir, na prestação de contas, extratos integrais, devolução de saldo e nexo das despesas. Modelos: `docs/aditivos-conta-bancaria/notificacoes-parcerias-encerradas/` (7 PDFs preenchíveis com o timbre da Agricultura + zip).
 - **Conferido no termo assinado** (vigência 3 meses, cl. 8.1): E87 (26/06 → 26/09), E90 (20/08 → **20/11**; o cadastro diz 20/10, errado), E94 (05/08 → 05/11), E101 (assinado 26/06; o texto diz "2025", erro de digitação; cadastro 25/09). **Não conferido** (PDF do termo não está no Drive; datas do cadastro): E85, E88, E104. E102 está fora por outro motivo: virou aplicação direta da Cultura (ver item 7), então não há termo nem conta de OSC a regularizar.
 - Não gravei nada no banco. Divergência de vigência do E90 a corrigir se o dono confirmar.
+
+## Documentos novos tratados em 23/11/2026
+- Ligados: planos E91 e E209; extratos E139, E144, E148, E206, E209 (documentos faltando cai em 7). Em aberto na pasta: planos E114, E206 (arquivos grandes) e E110 (arquivo em branco); anuências do SUS (Superação e Cisum) aguardando decisão.
+- A conferir: E91, conta do plano lida do manuscrito (62.690-6) × cadastro (62.640-6); extrato da E206 publicou vigência "30/06/2026 a 29/06/2026" (erro de digitação do jornal; o cadastro tem 29/06/2026 a 29/06/2027).
