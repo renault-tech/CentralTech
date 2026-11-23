@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
+import { gravarPermissoesDeContratos } from "@/lib/actions/provisionamento-modulos";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -294,4 +295,25 @@ export async function removerUsuario(dados: {
   revalidatePath("/configuracoes");
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true, avisos };
+}
+
+const esquemaContratos = z.object({ usuarioId: z.uuid(), ver: z.boolean(), editar: z.boolean() });
+
+/**
+ * Permissões de Contratos do Compras (ver / editar) de uma pessoa, pelo Hub. No Compras, o setor de Contratos só enxerga
+ * os contratos com `contratos_ver` e só altera com `contratos_editar` (o perfil sozinho não basta). Editar implica ver.
+ */
+export async function definirPermissoesContratos(dados: {
+  usuarioId: string;
+  ver: boolean;
+  editar: boolean;
+}): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const a = esquemaContratos.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos." };
+  const r = await gravarPermissoesDeContratos(a.data.usuarioId, a.data.ver || a.data.editar, a.data.editar);
+  if (!r.sucesso) return r;
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true };
 }

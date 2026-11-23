@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-23",
+    titulo: "Permissões de Contratos pelo Hub",
+    descricao:
+      "Em Configurações → Usuários e acessos → Editar, quem tem conta no Compras ganhou o bloco \"Contratos (no Compras)\", com \"Ver contratos\" e \"Editar contratos\". O perfil do setor de Contratos sozinho não mostra os contratos: é a permissão \"ver\" que libera. Ao conceder o perfil de servidor ou coordenador de Contratos, a permissão de ver já vem marcada.",
+  },
+  {
+    data: "2026-11-23",
     titulo: "Emendas: exportação fiel aos filtros e PDF com gráficos para apresentar",
     descricao:
       "Os arquivos exportados agora saem com exatamente as emendas que a tela mostra: o PDF e o Excel da lista levam todos os filtros (inclusive pendência, tipo de beneficiário, busca e ordem) e o cartão escolhido no Panorama. O cabeçalho informa os filtros aplicados e a quantidade de emendas (ex.: \"41 emendas, de 215 no exercício\"). Novo: \"PDF com gráficos\" na lista e no Panorama, e botão Exportar em Vereadores e Secretarias (PDF para apresentação só com gráficos, PDF completo e Excel), com gráficos nítidos para mostrar ao prefeito.",

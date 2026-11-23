@@ -196,6 +196,31 @@ export function linkPrimeiroAcessoNumera(origemHub: string) {
     `${origemHub}/api/numera/abrir-link?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 }
 
+/**
+ * Grava `contratos_ver` / `contratos_editar` em `public.permissoes` (só o admin do Compras escreve ali pela RLS: o Hub
+ * usa a chave de serviço, depois de checar admin_hub no chamador). Atualiza a linha se existe, senão cria. Exige conta no Compras.
+ */
+export async function gravarPermissoesDeContratos(
+  usuarioId: string,
+  ver: boolean,
+  editar: boolean
+): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const admin = criarClienteAdminBruto();
+  const { data: conta } = await admin.schema("public").from("usuarios").select("id").eq("id", usuarioId).maybeSingle();
+  if (!conta) return { sucesso: false, erro: "Esta pessoa não tem conta no Compras." };
+  for (const [chave, permitido] of [["contratos_ver", ver], ["contratos_editar", editar]] as const) {
+    const { data: existente } = await admin.schema("public").from("permissoes").select("id").eq("usuario_id", usuarioId).eq("chave", chave).maybeSingle();
+    const { error } = existente
+      ? await admin.schema("public").from("permissoes").update({ permitido }).eq("id", existente.id)
+      : await admin.schema("public").from("permissoes").insert({ usuario_id: usuarioId, chave, permitido });
+    if (error) {
+      console.error("[gravarPermissoesDeContratos] falha:", error);
+      return { sucesso: false, erro: "Não foi possível gravar a permissão agora." };
+    }
+  }
+  return { sucesso: true };
+}
+
 export async function aprovarCompras(
   authId: string,
   pessoa: PessoaAlvo,
@@ -235,6 +260,15 @@ export async function aprovarCompras(
   if (error) {
     console.error("[aprovarCompras] falha:", error);
     return { sucesso: false, mensagem: error.message };
+  }
+  // Perfil do setor de Contratos precisa de `contratos_ver` para enxergar os contratos (o perfil sozinho não dá a leitura).
+  // Só ACRESCENTA: nunca tira uma permissão que o admin do Compras já tenha dado ou retirado de propósito.
+  if (decisao.perfil === "serv_contratos" || decisao.perfil === "coord_contratos") {
+    const { data: ja } = await adminBruto.schema("public").from("permissoes").select("id").eq("usuario_id", authId).eq("chave", "contratos_ver").maybeSingle();
+    if (!ja) {
+      const { error: erroPerm } = await adminBruto.schema("public").from("permissoes").insert({ usuario_id: authId, chave: "contratos_ver", permitido: true });
+      if (erroPerm) console.error("[aprovarCompras] contratos_ver não gravada:", erroPerm);
+    }
   }
   return { sucesso: true, linkPrimeiroAcesso };
 }
