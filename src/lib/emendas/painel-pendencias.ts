@@ -156,7 +156,9 @@ export type Indicadores = {
 
 /** Números do topo: quantas pendências, quantas emendas e quanto dinheiro elas envolvem. */
 export function indicadores(linhas: LinhaPendencia[], todas: LinhaPendencia[], emendas: EmendaPainel[], f: FiltrosPainel): Indicadores {
-  const noRecorte = emendas.filter((e) => combinaEmenda(e, f));
+  // A busca por palavra também acha o texto das pendências ("gestor"): essas emendas fazem parte do recorte mesmo que o próprio texto delas não tenha a palavra.
+  const porTexto = new Set(todas.filter((l) => combinaEmenda({ ...l, textoBusca: textoDaLinha(l) }, f)).map((l) => l.emendaId));
+  const noRecorte = emendas.filter((e) => combinaEmenda(e, f) || porTexto.has(e.id));
   const afetadas = new Map<string, number>();
   for (const l of linhas) afetadas.set(l.emendaId, l.valor);
   return {

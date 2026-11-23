@@ -102,10 +102,10 @@ export function contarFiltros<T>(dims: Dimensao<T>[], ler: LerParametro, q: stri
 }
 
 /**
- * Peso do gráfico na divisão da altura do painel de gráficos. Regra da plataforma: gráficos com mais de 3 linhas dividem o espaço
- * em PARTES IGUAIS, por mais que um tenha bem mais opções que o outro (a lista dele rola por dentro); só quem tem 3 linhas ou menos
- * fica com o tamanho do que mostra, e o resto vai para os outros. O mínimo de cada gráfico é fixado no CSS (`min-h-[9rem]`).
+ * Parte da altura que um gráfico leva, em relação ao outro (`flex: peso 1 0%`). Com mais de 3 linhas os gráficos dividem por igual
+ * (a lista do que tem mais opções rola por dentro); com 3 linhas ou menos o gráfico leva um pouco menos, mas nunca vira um miniatura
+ * ao lado de outro cheio: uma rosca de uma única opção ainda precisa de espaço para ser lida.
  */
 export function pesoDoGrafico(linhas: number): number {
-  return linhas > 3 ? 10 : Math.max(linhas, 1) + 1.5;
+  return linhas > 3 ? 10 : Math.max(linhas, 1) + 6;
 }

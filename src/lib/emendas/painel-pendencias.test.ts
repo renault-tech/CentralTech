@@ -69,6 +69,17 @@ describe("painel de pendências", () => {
     expect(i).toMatchObject({ pendencias: 3, altas: 1, emendasAfetadas: 2, emendasNoRecorte: 4, valorAfetado: 1500, valorNoRecorte: 2000, justificadas: 1 });
   });
 
+  it("indicadores: a busca por palavra do texto da pendência não zera o recorte de emendas", () => {
+    const emendas: EmendaPainel[] = [
+      { id: "e1", numero: 1, objeto: "Obra", valor: 1000, tipo: "osc", secretariaId: "s1", secretaria: "Saúde" },
+      { id: "e2", numero: 2, objeto: "Obra", valor: 500, tipo: "direta", secretariaId: "s2", secretaria: "Educação" },
+    ];
+    const lin = [linha({ emendaId: "e1", numero: 1, regra: "publicidade_incompleta", titulo: "Publicidade", detalhe: "Item XIV — Gestor responsável" })];
+    const f = { ...F, q: "gestor" };
+    const i = indicadores(filtrarPendencias(lin, f), lin, emendas, f);
+    expect(i).toMatchObject({ pendencias: 1, emendasAfetadas: 1, emendasNoRecorte: 1, valorNoRecorte: 1000 });
+  });
+
   it("documentos faltando agrupam por documento e respeitam tipo e secretaria", () => {
     const d = (n: number, doc: string, s = "s1", tipo: "osc" | "ente" = "osc"): LinhaDocFaltando => ({
       emendaId: `e${n}`, numero: n, objeto: "x", valor: 100, tipo, secretariaId: s, secretaria: s, doc, rotulo: doc,
