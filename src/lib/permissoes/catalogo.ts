@@ -51,6 +51,24 @@ export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
     ],
   },
   {
+    id: "licitacoes",
+    titulo: "Licitações",
+    itens: [
+      {
+        chave: "licitacoes_atuar",
+        rotulo: "Atuar em processos de Licitações",
+        ajuda: "Movimenta processos que estão ou passaram por Licitações (devolver a Compras, confirmar recebimento, dar número). Desmarcar retira da coordenação ou do servidor.",
+        padraoPerfis: ["coord_licitacoes", "serv_licitacoes"],
+      },
+      {
+        chave: "licitacoes_apos_edital",
+        rotulo: "Servidor atua depois da publicação do edital",
+        ajuda: "Sem isto, o servidor de Licitações só age até a fase Publicação do edital. Vale só para servidor; a coordenação já não tem esse limite.",
+        exige: "licitacoes_atuar",
+      },
+    ],
+  },
+  {
     id: "obras",
     titulo: "Obras e concorrência",
     itens: [{ chave: "obras_concorrencia_autonomia", rotulo: "Gerir obras e concorrência", ajuda: "Autonomia para conduzir obras e concorrências." }],

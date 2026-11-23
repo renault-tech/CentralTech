@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-23",
+    titulo: "Permissões de Licitações no painel",
+    descricao:
+      "No painel de permissões do Compras há agora o grupo Licitações: \"Atuar em processos de Licitações\" (desmarcar retira a atuação da coordenação ou do servidor) e \"Servidor atua depois da publicação do edital\" (libera o limite que o servidor tem hoje). Valem de verdade no banco e na tela do Compras.",
+  },
+  {
+    data: "2026-11-23",
     titulo: "Permissão \"Criar processos\" no Compras",
     descricao:
       "No painel de permissões do Compras (Usuários e acessos → Editar) há agora \"Criar processos\", que vale de verdade no Compras: conceda a quem não é diretor nem coordenação de Compras, ou retire de quem teria pelo perfil. O selo \"já vem do perfil\" mostra quando a pessoa já tem a permissão sem ajuste avulso.",
