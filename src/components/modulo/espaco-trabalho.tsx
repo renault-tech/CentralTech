@@ -44,12 +44,16 @@ export function EspacoTrabalho({
   React.useLayoutEffect(() => {
     const el = areaRef.current;
     if (!el) return;
-    // Altura = o que sobra da janela abaixo do topo da área, menos o que existe DEPOIS dela (margens e preenchimentos dos contêineres
-    // por onde ela passa até o fim da página). Medir isso, em vez de usar um número fixo, é o que faz a página caber sem rolar e sem
-    // deixar uma faixa vazia embaixo, em qualquer tamanho de janela, zoom ou altura de cabeçalho.
+    // Altura = o que sobra da janela abaixo do topo da área, menos só o respiro de baixo (preenchimentos/bordas dos contêineres por onde
+    // ela passa). Medir isso, em vez de usar um número fixo, faz a área ir até o pé da janela em qualquer tamanho, zoom ou altura de
+    // cabeçalho. Não soma a altura de irmãos: se algo invisível sobrasse abaixo, a área encolheria e deixaria uma faixa vazia.
+    const MINIMO = 320; // px (não rem: com zoom do texto o rem cresceria e a página passaria a rolar)
+    const html = document.documentElement;
+    const rolagemOriginal = html.style.overflowY;
     const ajustar = () => {
       if (!ehDesktop()) {
         el.style.height = "";
+        html.style.overflowY = rolagemOriginal;
         return;
       }
       const topo = el.getBoundingClientRect().top + window.scrollY;
@@ -58,25 +62,30 @@ export function EspacoTrabalho({
         const cs = getComputedStyle(n);
         reserva += (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
         if (n !== el) reserva += parseFloat(cs.marginBottom) || 0;
-        for (let irmao = n.nextElementSibling as HTMLElement | null; irmao; irmao = irmao.nextElementSibling as HTMLElement | null) {
-          const pos = getComputedStyle(irmao).position;
-          if (pos === "static" || pos === "relative" || pos === "sticky") reserva += irmao.offsetHeight;
-        }
       }
-      const altura = Math.max(480, Math.floor(window.innerHeight - topo - reserva));
+      const ideal = Math.floor(window.innerHeight - topo - reserva);
+      const altura = Math.max(MINIMO, ideal);
       if (Math.abs((parseFloat(el.style.height) || 0) - altura) >= 1) el.style.height = `${altura}px`;
+      // A página não rola enquanto a área cabe na janela (é o que ela promete); numa janela minúscula (mínimo vencendo) a rolagem volta.
+      html.style.overflowY = ideal >= MINIMO ? "hidden" : rolagemOriginal;
+      if (ideal >= MINIMO && window.scrollY > 0) window.scrollTo(0, 0);
     };
     ajustar();
+    // Observa o corpo, o pai e tudo o que vem ANTES da área (cabeçalho, avisos, abas): se qualquer um mudar de altura, remede.
     const ro = new ResizeObserver(ajustar);
     ro.observe(document.body);
     if (el.parentElement) ro.observe(el.parentElement);
+    for (let n: HTMLElement | null = el; n && n !== document.body; n = n.parentElement) {
+      for (let irmao = n.previousElementSibling as HTMLElement | null; irmao; irmao = irmao.previousElementSibling as HTMLElement | null) ro.observe(irmao);
+    }
     window.addEventListener("resize", ajustar);
     void document.fonts?.ready.then(ajustar);
-    const t = setTimeout(ajustar, 400); // depois da animação de entrada da página
+    const timers = [150, 400, 1000, 2500].map((ms) => setTimeout(ajustar, ms)); // depois da animação de entrada, da fonte e de avisos que chegam tarde
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", ajustar);
-      clearTimeout(t);
+      timers.forEach(clearTimeout);
+      html.style.overflowY = rolagemOriginal;
     };
   }, []);
 
@@ -108,7 +117,7 @@ export function EspacoTrabalho({
   return (
     <>
       {aberto && <button type="button" tabIndex={-1} aria-label="Fechar o detalhe" onClick={aoFechar} className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden print:hidden" />}
-      <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[30rem]">
+      <div ref={areaRef} data-detalhe={aberto} data-expandido={expandido} className="emd-ws min-h-[320px]">
         <aside data-tour="ws-graficos" aria-label="Gráficos e filtros" inert={expandido} className="emd-painel relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="emd-conteudo-graficos flex h-full flex-col" inert={aberto} aria-hidden={aberto}>
             {aoLimpar && (

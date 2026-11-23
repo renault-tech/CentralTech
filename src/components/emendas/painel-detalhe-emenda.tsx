@@ -183,6 +183,7 @@ function PainelCorpo({
   };
 
   const abrirDialogo = React.useCallback<ControleDetalhe["abrir"]>((d, o) => controle.current?.abrir(d, o), []);
+  const textoCompleto = e.descricao && e.descricao.trim().length > e.objeto.length ? e.descricao.trim() : e.objeto;
   const podeGravar = !!pacote && pacote.podeEditar && e.situacao !== "cancelada";
   const abertas = resumo?.abertas ?? 0;
   const abas: [AbaPainel, string][] = [
@@ -435,11 +436,12 @@ function PainelCorpo({
         </div>
         <CaixaInfo
           as="div"
-          largura={340}
+          largura={380}
           conteudo={
             <>
               <CaixaTitulo rotulo={`Emenda nº ${e.numero}`} />
-              <p className="mt-1 text-[0.8125rem] leading-snug text-cataguases-marinho">{e.objeto}</p>
+              {/* O objeto da lista é um resumo cortado; com o pacote carregado a caixa mostra o texto completo (descrição), que é o motivo de abri-la. */}
+              <p className="mt-1 max-h-[16rem] overflow-hidden whitespace-pre-line text-[0.8125rem] leading-snug text-cataguases-marinho">{textoCompleto}</p>
               <dl className="mt-2.5 space-y-1 border-t border-slate-100 pt-2.5 text-[0.8125rem]">
                 {[
                   ["Beneficiário", e.beneficiario_nome],
