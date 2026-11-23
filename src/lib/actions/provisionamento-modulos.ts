@@ -31,6 +31,7 @@ import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
+import { CHAVES_COMPRAS, normalizarPermissoes } from "@/lib/permissoes/catalogo";
 import type { Modulo } from "@/types/database";
 
 /** `contratosVer`/`contratosEditar` (opcionais): permissões de Contratos no Compras. Ausentes = padrão (perfil de Contratos ganha só a leitura). */
@@ -585,4 +586,34 @@ export async function sincronizarBookkeepingHub(
   if (error) {
     console.error("[sincronizarBookkeepingHub] hub.definir_acesso falhou:", error);
   }
+}
+
+/**
+ * Grava o conjunto de permissões do Compras (chaves do catálogo) de uma pessoa: o que está em `ligadas` fica permitido
+ * (cria a linha se faltar); o que não está só é DESLIGADO se já existia (não cria linha `false` à toa). Respeita as dependências.
+ */
+export async function gravarPermissoesCompras(
+  usuarioId: string,
+  ligadas: string[]
+): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const admin = criarClienteAdminBruto();
+  const { data: conta } = await admin.schema("public").from("usuarios").select("id").eq("id", usuarioId).maybeSingle();
+  if (!conta) return { sucesso: false, erro: "Esta pessoa não tem conta no Compras." };
+  const desejadas = normalizarPermissoes(new Set(ligadas.filter((c) => CHAVES_COMPRAS.includes(c))));
+  const { data: atuais } = await admin.schema("public").from("permissoes").select("id, chave, permitido").eq("usuario_id", usuarioId).in("chave", CHAVES_COMPRAS);
+  const porChave = new Map((atuais ?? []).map((l) => [l.chave as string, l]));
+  for (const chave of CHAVES_COMPRAS) {
+    const permitido = desejadas.has(chave);
+    const linha = porChave.get(chave);
+    if (linha && linha.permitido === permitido) continue;
+    if (!linha && !permitido) continue;
+    const { error } = linha
+      ? await admin.schema("public").from("permissoes").update({ permitido }).eq("id", linha.id)
+      : await admin.schema("public").from("permissoes").insert({ usuario_id: usuarioId, chave, permitido });
+    if (error) {
+      console.error("[gravarPermissoesCompras] falha:", error);
+      return { sucesso: false, erro: "Não foi possível gravar as permissões agora." };
+    }
+  }
+  return { sucesso: true };
 }

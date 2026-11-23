@@ -6,6 +6,7 @@ import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
 import { definirAcesso, definirPermissoesContratos, liberarLeituraContratosDoSetor, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso, removerUsuario } from "@/lib/actions/configuracoes";
+import { PermissoesCompras } from "@/components/hub/permissoes-compras";
 import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
@@ -458,7 +459,7 @@ function FormularioAcesso({
         )}
       </div>
 
-      {usuario?.contratos && <PermissoesContratos usuarioId={usuario.id} inicial={usuario.contratos} />}
+      {usuario?.compras && <PermissoesCompras usuarioId={usuario.id} nome={usuario.nome} perfil={usuario.compras.perfil} inicial={usuario.compras.ligadas} />}
 
       {modulosParaDecisao.length > 0 && (
         <div className="mt-3">
@@ -508,47 +509,6 @@ function FormularioAcesso({
           </Button>
         )}
       </div>
-    </div>
-  );
-}
-
-/**
- * Contratos do Compras: no setor de Contratos o perfil sozinho não mostra nada; quem decide é "ver" (e "editar" para
- * cadastrar e alterar). Salva à parte do restante do formulário, na hora.
- */
-function PermissoesContratos({ usuarioId, inicial }: { usuarioId: string; inicial: { ver: boolean; editar: boolean } }) {
-  const [ver, setVer] = React.useState(inicial.ver);
-  const [editar, setEditar] = React.useState(inicial.editar);
-  const [pendente, setPendente] = React.useState(false);
-  const [msg, setMsg] = React.useState<{ ok: boolean; texto: string } | null>(null);
-  const alterado = ver !== inicial.ver || editar !== inicial.editar;
-
-  async function salvar() {
-    setPendente(true);
-    setMsg(null);
-    const r = await definirPermissoesContratos({ usuarioId, ver, editar });
-    setPendente(false);
-    setMsg(r.sucesso ? { ok: true, texto: "Permissões de contratos salvas. Vale na próxima tela que a pessoa abrir." } : { ok: false, texto: r.erro });
-  }
-
-  return (
-    <div className="mt-3 rounded-md border border-slate-200 bg-slate-50/60 p-2.5">
-      <p className="text-xs font-medium text-slate-700">Contratos (no Compras)</p>
-      <p className="mt-0.5 text-xs text-slate-600">O perfil do setor de Contratos não basta: sem “ver”, a pessoa não enxerga os contratos.</p>
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1.5">
-        <label className="flex items-center gap-1.5 text-xs text-slate-700">
-          <input type="checkbox" checked={ver || editar} disabled={editar} onChange={(e) => setVer(e.target.checked)} />
-          Ver contratos
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-slate-700">
-          <input type="checkbox" checked={editar} onChange={(e) => setEditar(e.target.checked)} />
-          Editar contratos (cadastrar e alterar)
-        </label>
-        <Button size="sm" variant="outline" disabled={pendente || !alterado} onClick={salvar}>
-          {pendente ? "Salvando…" : "Salvar permissões"}
-        </Button>
-      </div>
-      {msg && <p className={`mt-1.5 text-xs ${msg.ok ? "text-green-700" : "text-red-700"}`}>{msg.texto}</p>}
     </div>
   );
 }
@@ -641,6 +601,7 @@ function LinkCopiavel({ link }: { link: string }) {
     </div>
   );
 }
+
 
 /** Aviso na linha: perfil de Contratos sem a leitura — um clique libera (só "ver"; editar continua um passo consciente). */
 function AvisoSemLeituraContratos({ usuarioId }: { usuarioId: string }) {

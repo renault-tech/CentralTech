@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
-import { gravarPermissoesDeContratos } from "@/lib/actions/provisionamento-modulos";
+import { gravarPermissoesCompras, gravarPermissoesDeContratos } from "@/lib/actions/provisionamento-modulos";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -350,4 +350,21 @@ export async function liberarLeituraContratosDoSetor(): Promise<{ sucesso: true;
   }
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true, liberados: faltam.length };
+}
+
+const esquemaPermissoesCompras = z.object({ usuarioId: z.uuid(), ligadas: z.array(z.string().max(60)).max(40) });
+
+/** Define o conjunto de permissões do Compras de uma pessoa (substitui o conjunto do catálogo; só admin do Hub). */
+export async function definirPermissoesCompras(dados: {
+  usuarioId: string;
+  ligadas: string[];
+}): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const a = esquemaPermissoesCompras.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos." };
+  const r = await gravarPermissoesCompras(a.data.usuarioId, a.data.ligadas);
+  if (!r.sucesso) return r;
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true };
 }

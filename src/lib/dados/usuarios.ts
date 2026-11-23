@@ -1,6 +1,7 @@
 import { exigirAdminHub } from "@/lib/auth/exigir-admin";
 import { origemDaRequisicao } from "@/lib/origem";
 import { linkDoConvite } from "@/lib/auth/convite";
+import { CHAVES_COMPRAS } from "@/lib/permissoes/catalogo";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import type { Modulo } from "@/types/database";
@@ -21,24 +22,30 @@ export type UsuarioComAcessos = {
    * no Compras (nada a definir). Ver contratos NÃO vem do perfil: sem a linha `contratos_ver`, o setor de Contratos não enxerga nada.
    */
   contratos: { ver: boolean; editar: boolean; deContratos: boolean } | null;
+  /** Perfil e permissões ligadas no Compras (`public.permissoes`, só chaves do catálogo). `null` = sem conta no Compras. */
+  compras: { perfil: string; ligadas: string[] } | null;
 };
 
 /** Contratos do Compras por pessoa. Falha aqui não derruba a lista (some só o controle). */
-async function permissoesDeContratos(): Promise<Map<string, { ver: boolean; editar: boolean; deContratos: boolean }> | null> {
+async function permissoesDeContratos(): Promise<Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[] }> | null> {
   try {
     const admin = criarClienteAdminBruto();
     const [{ data: contas }, { data: perms }] = await Promise.all([
       admin.schema("public").from("usuarios").select("id, perfil"),
-      admin.schema("public").from("permissoes").select("usuario_id, chave, permitido").in("chave", ["contratos_ver", "contratos_editar"]),
+      admin.schema("public").from("permissoes").select("usuario_id, chave, permitido").in("chave", CHAVES_COMPRAS),
     ]);
-    const mapa = new Map<string, { ver: boolean; editar: boolean; deContratos: boolean }>(
-      (contas ?? []).map((c) => [c.id as string, { ver: false, editar: false, deContratos: c.perfil === "serv_contratos" || c.perfil === "coord_contratos" }])
+    const mapa = new Map<string, { ver: boolean; editar: boolean; deContratos: boolean; perfil: string; ligadas: string[] }>(
+      (contas ?? []).map((c) => [
+        c.id as string,
+        { ver: false, editar: false, perfil: String(c.perfil), ligadas: [], deContratos: c.perfil === "serv_contratos" || c.perfil === "coord_contratos" },
+      ])
     );
     for (const x of perms ?? []) {
       const m = mapa.get(x.usuario_id as string);
       if (!m || !x.permitido) continue;
+      m.ligadas.push(x.chave as string);
       if (x.chave === "contratos_ver") m.ver = true;
-      else m.editar = true;
+      else if (x.chave === "contratos_editar") m.editar = true;
     }
     return mapa;
   } catch (e) {
@@ -103,6 +110,7 @@ export async function listarUsuariosComAcessos(): Promise<UsuarioComAcessos[]> {
       nuncaEntrou,
       linkPrimeiroAcesso: token && primeiroAcesso ? linkDoConvite(primeiroAcesso.origem, token) : null,
       contratos: contratos?.get(u.id) ?? null,
+      compras: contratos?.get(u.id) ? { perfil: contratos.get(u.id)!.perfil, ligadas: contratos.get(u.id)!.ligadas } : null,
     };
   });
 }

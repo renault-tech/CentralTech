@@ -1,0 +1,77 @@
+/**
+ * Catálogo de permissões por módulo (um lugar só). Cada módulo lista SÓ o que ele de fato confere:
+ * uma permissão que nenhum código ou RLS do módulo lê não entra aqui (ligar um interruptor sem efeito engana).
+ * Permissão nova de um módulo = uma entrada em `GRUPOS_COMPRAS` (e a checagem correspondente no módulo).
+ */
+
+export type PermissaoDef = {
+  chave: string;
+  rotulo: string;
+  /** Frase curta sobre o que a pessoa passa a poder fazer. */
+  ajuda: string;
+  /** Só vale junto de outra (ex.: editar contratos exige ver contratos). */
+  exige?: string;
+};
+
+export type GrupoPermissoes = { id: string; titulo: string; itens: PermissaoDef[] };
+
+export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
+  {
+    id: "contratos",
+    titulo: "Contratos",
+    itens: [
+      { chave: "contratos_ver", rotulo: "Ver contratos", ajuda: "Enxerga a lista e o detalhe dos contratos. O perfil sozinho não dá essa leitura." },
+      { chave: "contratos_editar", rotulo: "Cadastrar e alterar contratos", ajuda: "Cria e edita contratos.", exige: "contratos_ver" },
+    ],
+  },
+  {
+    id: "processos",
+    titulo: "Processos",
+    itens: [
+      { chave: "distribuir", rotulo: "Distribuir processos", ajuda: "Encaminha processos entre setores." },
+      { chave: "editar_prazo", rotulo: "Alterar prazos", ajuda: "Muda o prazo de um processo." },
+      { chave: "editar_fluxo", rotulo: "Alterar o fluxo", ajuda: "Muda as etapas pelas quais o processo passa." },
+      { chave: "aprovar_prorrogacao", rotulo: "Aprovar prorrogações", ajuda: "Decide pedidos de prorrogação." },
+    ],
+  },
+  {
+    id: "obras",
+    titulo: "Obras e concorrência",
+    itens: [{ chave: "obras_concorrencia_autonomia", rotulo: "Gerir obras e concorrência", ajuda: "Autonomia para conduzir obras e concorrências." }],
+  },
+  {
+    id: "admin",
+    titulo: "Administração",
+    itens: [{ chave: "ver_logs", rotulo: "Ver registros de atividade", ajuda: "Acessa os logs do sistema." }],
+  },
+];
+
+export type ModeloPermissoes = { id: string; nome: string; chaves: string[] };
+
+/** Atalhos que ligam um conjunto de uma vez; depois dá para ajustar item a item. */
+export const MODELOS_COMPRAS: ModeloPermissoes[] = [
+  { id: "contratos_leitura", nome: "Contratos — só leitura", chaves: ["contratos_ver"] },
+  { id: "contratos_gestao", nome: "Contratos — gestão", chaves: ["contratos_ver", "contratos_editar"] },
+  { id: "nenhuma", nome: "Nenhuma permissão extra", chaves: [] },
+];
+
+export const CHAVES_COMPRAS: string[] = GRUPOS_COMPRAS.flatMap((g) => g.itens.map((i) => i.chave));
+
+/** Aplica as dependências: ligar uma permissão liga o que ela exige; desligar uma desliga quem depende dela. */
+export function normalizarPermissoes(ligadas: ReadonlySet<string>, grupos: GrupoPermissoes[] = GRUPOS_COMPRAS): Set<string> {
+  const itens = grupos.flatMap((g) => g.itens);
+  const r = new Set(ligadas);
+  for (const i of itens) if (r.has(i.chave) && i.exige) r.add(i.exige);
+  return r;
+}
+
+export function alternarPermissao(ligadas: ReadonlySet<string>, chave: string, ligar: boolean, grupos: GrupoPermissoes[] = GRUPOS_COMPRAS): Set<string> {
+  const itens = grupos.flatMap((g) => g.itens);
+  const r = new Set(ligadas);
+  if (ligar) r.add(chave);
+  else {
+    r.delete(chave);
+    for (const i of itens) if (i.exige === chave) r.delete(i.chave);
+  }
+  return normalizarPermissoes(r, grupos);
+}
