@@ -26,7 +26,7 @@ export type GrupoPermissoes = { id: string; titulo: string; itens: PermissaoDef[
 
 /**
  * Conferido no repositório App-Compras (23/11/2026): só estas chaves são lidas pelo banco/RLS ou pelo app.
- * `criar_processos` foi ligada ao banco e à tela em 23/11/2026. `distribuir`, `editar_prazo`, `editar_fluxo` e `aprovar_prorrogacao` existem na matriz do Compras mas NADA as consulta
+ * `criar_processos`, `editar_prazo` e as de Licitações foram ligadas ao banco e à tela em 23/11/2026. `distribuir`, `editar_fluxo` e `aprovar_prorrogacao` existem na matriz do Compras mas NADA as consulta
  * (as ações correspondentes dependem só do perfil), então não aparecem aqui até serem de fato aplicadas.
  */
 export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
@@ -42,6 +42,12 @@ export const GRUPOS_COMPRAS: GrupoPermissoes[] = [
     id: "processos",
     titulo: "Processos",
     itens: [
+      {
+        chave: "editar_prazo",
+        rotulo: "Alterar prazos",
+        ajuda: "Muda o prazo das atribuições em aberto do próprio setor. A coordenação do setor já pode pelo perfil; aqui dá para conceder a um servidor ou retirar de uma coordenação.",
+        padraoPerfis: ["coord_compras", "coord_licitacoes", "coord_contratos"],
+      },
       {
         chave: "criar_processos",
         rotulo: "Criar processos",
