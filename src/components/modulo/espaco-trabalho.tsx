@@ -106,7 +106,7 @@ export function EspacoTrabalho({
                 </button>
               </div>
             )}
-            <div className="emd-rola flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">{graficos}</div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{graficos}</div>
           </div>
           <button
             type="button"

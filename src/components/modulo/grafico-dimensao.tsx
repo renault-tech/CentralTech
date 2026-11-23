@@ -59,7 +59,7 @@ export function GraficoDimensao<T>({ itens, dims, medidas, ler, definir, busca, 
 
   const id = React.useId();
   return (
-    <section aria-label={`Gráfico por ${dim.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, grupos.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-[13rem] flex-col", className)}>
+    <section aria-label={`Gráfico por ${dim.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, grupos.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-0 flex-col overflow-hidden", className)}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
@@ -98,7 +98,7 @@ export function GraficoDimensao<T>({ itens, dims, medidas, ler, definir, busca, 
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(9.5rem,34%)_minmax(0,1fr)]">
         <div className="flex min-h-0 items-center justify-center py-1 pl-2 pr-1">
-          <Pizza fatias={fatias} destaque={sobre} selecionada={selecionada} aoEscolher={escolher} dinheiro={dinheiro} className="aspect-square h-full max-h-[14.5rem] min-h-[9rem] w-auto max-w-full" rotuloTotal={dinheiro ? ativa.rotulo.toLowerCase() : unidades.plural} />
+          <Pizza fatias={fatias} destaque={sobre} selecionada={selecionada} aoEscolher={escolher} dinheiro={dinheiro} className="aspect-square h-full max-h-[14.5rem] min-h-[4.5rem] w-auto max-w-full" rotuloTotal={dinheiro ? ativa.rotulo.toLowerCase() : unidades.plural} />
         </div>
         <ul id={id} className="emd-foco flex min-h-0 flex-col overflow-y-auto overscroll-contain py-0.5 pr-1 [&>li:first-child]:mt-auto [&>li:last-child]:mb-auto" aria-label={`Por ${dim.rotulo.toLowerCase()}`}>
           {grupos.length === 0 && <li className="p-6 text-center text-sm text-slate-500">Nada a mostrar com esses filtros.</li>}
