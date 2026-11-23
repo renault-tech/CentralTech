@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-23",
+    titulo: "Compras e Licitações no padrão dos demais módulos",
+    descricao:
+      "O Compras ganhou o visual dos módulos da Central. O Início abre com um cartão do total em andamento e a barra do semáforo (clique numa faixa para ver só aqueles processos) e uma lista “Precisa da sua atenção”. Processos e Contratos viraram áreas de trabalho: gráficos à esquerda que também são filtros (prazo, setor, fase, responsável, situação, vencimento mês a mês…), a lista no meio e, ao escolher um item, o detalhe ao lado — o mesmo de antes, com as ações do ciclo do seu perfil, a edição, a linha do tempo, a conversa e os termos aditivos. Os links antigos (do painel, do sino e dos favoritos) continuam funcionando. Concluídos seguem escondidos por padrão e a ordem continua “mais recentes primeiro”. A barra lateral ficou clara, no mesmo lugar e com os mesmos itens. Relatórios, Configurações, Logs e Minha conta ganharam títulos e abas no mesmo padrão, e os filtros de Logs e dos relatórios de Produtividade e Desempenho agora aplicam na hora, sem botão “Filtrar”. A opção “Detalhe do processo: folha ou linha” saiu de Minha conta, porque o detalhe agora fica sempre ao lado da lista (no celular abre como folha).",
+  },
+  {
     data: "2026-11-22",
     titulo: "Requerimentos no padrão dos demais módulos, com os prazos à vista",
     descricao:
