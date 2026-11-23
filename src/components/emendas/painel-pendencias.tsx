@@ -9,7 +9,7 @@ import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { descreverFiltros, nomeDaRegra, type EmendaPainel, type FiltrosPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 
 /** Filtros que estão valendo, como chips (a lista os mostra; o painel só responde a eles). */
-export function chipsDePendencias(f: FiltrosPainel, linhas: LinhaPendencia[], secretarias: { id: string; nome: string }[]): FiltroAtivo[] {
+export function chipsDePendencias(f: FiltrosPainel, linhas: LinhaPendencia[], secretarias: { id: string; nome: string }[], docs: LinhaDocFaltando[] = []): FiltroAtivo[] {
   return [
     f.t && { chave: "t", rotulo: `Tipo: ${TIPOS_EXECUCAO[f.t as keyof typeof TIPOS_EXECUCAO]?.nome ?? f.t}` },
     f.g && { chave: "g", rotulo: `Gravidade: ${NOME_GRAVIDADE[f.g as Gravidade] ?? f.g}` },
@@ -17,6 +17,7 @@ export function chipsDePendencias(f: FiltrosPainel, linhas: LinhaPendencia[], se
     f.a && { chave: "a", rotulo: `Área: ${f.a}` },
     f.r && { chave: "r", rotulo: `Assunto: ${nomeDaRegra(linhas.find((l) => l.regra.split(":")[0] === f.r) ?? { regra: f.r, titulo: f.r })}` },
     f.m && { chave: "m", rotulo: `Motivo: ${linhas.flatMap((l) => l.motivos ?? []).find((m) => m.chave === f.m)?.rotulo ?? f.m}` },
+    f.d && { chave: "d", rotulo: `Sem documento: ${docs.find((x) => x.doc === f.d)?.rotulo ?? f.d}` },
     f.j === "1" && { chave: "j", rotulo: "Com justificadas" },
   ].filter(Boolean) as FiltroAtivo[];
 }

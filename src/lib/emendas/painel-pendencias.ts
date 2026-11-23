@@ -43,8 +43,8 @@ export type LinhaDocFaltando = {
 /** Emenda do exercício (só o que o painel precisa), para dizer "X de Y emendas". */
 export type EmendaPainel = { id: string; numero: number; objeto: string; valor: number; tipo: TipoExecucao; secretariaId: string; secretaria: string };
 
-export type FiltrosPainel = { t: string; g: string; s: string; r: string; a: string; m: string; j: string; q: string };
-export type ChaveFiltro = keyof Pick<FiltrosPainel, "t" | "g" | "s" | "r" | "a" | "m">;
+export type FiltrosPainel = { t: string; g: string; s: string; r: string; a: string; m: string; j: string; q: string; /** Documento faltando escolhido (tipo do documento). Troca a lista para as emendas que ainda não o têm. */ d: string };
+export type ChaveFiltro = keyof Pick<FiltrosPainel, "t" | "g" | "s" | "r" | "a" | "m" | "d">;
 
 export const chaveRegra = (l: { regra: string }) => l.regra.split(":")[0];
 export const areaDaLinha = (l: { regra: string }) => ASSUNTO_DA_REGRA[chaveRegra(l)]?.area ?? "Cadastro";
@@ -188,6 +188,12 @@ export function documentosFaltando(docs: LinhaDocFaltando[], f: FiltrosPainel): 
   return Array.from(m.values()).sort((a, b) => b.emendas.length - a.emendas.length);
 }
 
+/** Emendas que ainda não têm o documento `f.d` (uma linha por emenda), nos filtros de tipo, secretaria e busca; vazio sem `f.d`. */
+export function docsDoFiltro(docs: LinhaDocFaltando[], f: FiltrosPainel): LinhaDocFaltando[] {
+  if (!f.d) return [];
+  return docs.filter((x) => x.doc === f.d && combinaEmenda({ ...x, textoBusca: x.rotulo }, f)).sort((a, b) => a.numero - b.numero);
+}
+
 /** Texto curto dos filtros aplicados, para o cabeçalho da impressão e do Excel. */
 export function descreverFiltros(f: FiltrosPainel, nomes: { tipo?: string; secretaria?: string; gravidade?: string; assunto?: string; motivo?: string }): string {
   const partes = [
@@ -205,5 +211,5 @@ export function descreverFiltros(f: FiltrosPainel, nomes: { tipo?: string; secre
 
 export function lerFiltros(get: (k: string) => string | null | undefined): FiltrosPainel {
   const v = (k: string) => get(k) ?? "";
-  return { t: v("t"), g: v("g"), s: v("s"), r: v("r"), a: v("a"), m: v("m"), j: v("j"), q: v("q") };
+  return { t: v("t"), g: v("g"), s: v("s"), r: v("r"), a: v("a"), m: v("m"), j: v("j"), q: v("q"), d: v("d") };
 }

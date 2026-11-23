@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import { pesoDoGrafico } from "@/lib/modulo/area-trabalho";
-import Link from "next/link";
 import { X } from "lucide-react";
 
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
@@ -40,7 +39,7 @@ const VISOES: { chave: VisaoPend; rotulo: string; param?: ChaveFiltro }[] = [
   { chave: "motivo", rotulo: "Motivo", param: "m" },
   { chave: "secretaria", rotulo: "Secretaria", param: "s" },
   { chave: "tipo", rotulo: "Tipo", param: "t" },
-  { chave: "documentos", rotulo: "Documentos faltando" },
+  { chave: "documentos", rotulo: "Documentos faltando", param: "d" },
 ];
 
 type Item = {
@@ -161,7 +160,6 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
   const [visao, setVisao] = React.useState<VisaoPend>(visaoInicial);
   const [medida, setMedida] = React.useState<"n" | "valor">("n");
   const [sobreChave, setSobreChave] = React.useState<string | null>(null);
-  const [abertos, setAbertos] = React.useState<Set<string>>(new Set());
   const id = React.useId();
 
   const sem = (...c: ChaveFiltro[]) => filtrarPendencias(linhas, f, c);
@@ -203,7 +201,8 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
   const escolher = (chave: string) => {
     if (!param) return;
     // trocar de área ou de assunto zera o que estava abaixo dele (o motivo escolhido pode nem existir no assunto novo)
-    definir({ [param]: chave, ...(param === "a" ? { r: "", m: "" } : param === "r" ? { m: "" } : {}) });
+    // Documento faltando e pendência são universos diferentes: escolher um documento larga os filtros de pendência e vice-versa.
+    definir({ [param]: chave, ...(param === "a" ? { r: "", m: "" } : param === "r" ? { m: "" } : {}), ...(param === "d" ? { g: "", r: "", a: "", m: "" } : ["g", "r", "a", "m"].includes(param) ? { d: "" } : {}) });
   };
 
   // Pizza: as 8 maiores fatias e um "demais" agregado (não clicável) para não virar confete.
@@ -215,7 +214,8 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
     const i = itens.find((x) => x.chave === selecionada);
     if (i && valorDe(i) > 0) fatias.splice(fatias.length - 1, 0, { chave: i.chave, rotulo: i.rotulo, v: valorDe(i), cor: i.cor, clicavel: true });
   }
-  const unidade = visao === "documentos" ? "emendas" : "pendências";
+  const ehDoc = visao === "documentos";
+  const unidade = ehDoc ? "emendas" : "pendências";
 
   return (
     <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${pesoDoGrafico(itens.length)} 1 0%` }} className={cn("emd-grafico flex min-h-[9rem] flex-col overflow-hidden", className)}>
@@ -254,27 +254,25 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
           {itens.map((i) => {
             const v = valorDe(i);
             const ativo = selecionada === i.chave;
-            const aberto = abertos.has(i.chave);
-            const clicavel = !!param || !!i.emendas;
-            const detalhe = `${i.n} ${unidade}${param ? ` (${i.alta} altas, ${i.media} médias, ${i.baixa} baixas)` : ""}, ${brlCurto(i.valor)}`;
+            const clicavel = !!param;
+            const detalhe = `${i.n} ${unidade}${param && !ehDoc ? ` (${i.alta} altas, ${i.media} médias, ${i.baixa} baixas)` : ""}, ${brlCurto(i.valor)}`;
             return (
               <CaixaInfo
                 key={i.chave}
                 as="li"
-                style={aberto ? undefined : { flex: "1 0 2.25rem", maxHeight: "2.75rem" }}
-                className={cn(!aberto && "flex", aberto && "flex-none")}
-                desativada={aberto}
+                style={{ flex: "1 0 2.25rem", maxHeight: "2.75rem" }}
+                className="flex"
                 conteudo={
                   <>
                     <CaixaTitulo rotulo={def.rotulo} valor={i.rotulo} lado={String(v)} ladoApoio={total ? `${pct(v / total, 0)} do gráfico` : undefined} />
                     <CaixaLinhas
                       linhas={[
                         { rotulo: unidade === "emendas" ? "Emendas" : "Pendências", valor: String(i.n), forte: true },
-                        ...(param ? [{ rotulo: "Alta", valor: String(i.alta), cor: COR.alta }, { rotulo: "Média", valor: String(i.media), cor: COR.media }, { rotulo: "Baixa", valor: String(i.baixa), cor: COR.baixa }] : []),
+                        ...(param && !ehDoc ? [{ rotulo: "Alta", valor: String(i.alta), cor: COR.alta }, { rotulo: "Média", valor: String(i.media), cor: COR.media }, { rotulo: "Baixa", valor: String(i.baixa), cor: COR.baixa }] : []),
                         { rotulo: "Valor das emendas", valor: brl(i.valor) },
                       ]}
                     />
-                    <CaixaNota>{param ? "Clique para filtrar a lista por este item." : "Clique para ver quais emendas."}</CaixaNota>
+                    <CaixaNota>{ehDoc ? "Clique para listar ao lado as emendas que ainda não têm este documento." : "Clique para filtrar a lista por este item."}</CaixaNota>
                   </>
                 }
               >
@@ -283,28 +281,18 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
                     type="button"
                     disabled={!clicavel}
                     aria-pressed={param ? ativo : undefined}
-                    aria-expanded={i.emendas ? aberto : undefined}
                     aria-label={`${i.rotulo}: ${detalhe}`}
                     onMouseEnter={() => setSobreChave(i.chave)}
                     onMouseLeave={() => setSobreChave(null)}
                     onFocus={() => setSobreChave(i.chave)}
                     onBlur={() => setSobreChave(null)}
-                    onClick={() => {
-                      if (param) escolher(ativo ? "" : i.chave);
-                      else if (i.emendas)
-                        setAbertos((a) => {
-                          const n = new Set(a);
-                          if (n.has(i.chave)) n.delete(i.chave);
-                          else n.add(i.chave);
-                          return n;
-                        });
-                    }}
+                    onClick={() => escolher(ativo ? "" : i.chave)}
                     className={cn("grid h-full min-h-9 w-full grid-cols-[0.625rem_minmax(4.5rem,1fr)_minmax(1.5rem,3.5rem)_auto_2.25rem] items-center gap-x-2 rounded-lg px-2.5 py-0.5 text-left transition-colors", ativo ? "bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)]" : "hover:bg-slate-50")}
                   >
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.cor }} aria-hidden />
                     <span className="truncate text-[0.8125rem] leading-tight text-cataguases-marinho">{i.rotulo}</span>
                     <span className="flex h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
-                      {param && medida === "n" ? (
+                      {param && !ehDoc && medida === "n" ? (
                         (["alta", "media", "baixa"] as const).map((g) => <span key={g} className="emd-preenche" style={{ width: `${(i[g] / maximo) * 100}%`, backgroundColor: COR[g] }} />)
                       ) : (
                         <span className="emd-preenche" style={{ width: `${(v / maximo) * 100}%`, backgroundColor: i.cor }} />
@@ -313,21 +301,12 @@ export function GraficoPendencias({ linhas, docs, filtros: f, definir, visaoInic
                     <span className="whitespace-nowrap text-right text-[0.8125rem] font-semibold tabular-nums text-cataguases-marinho">{medida === "valor" ? brlCurto(v) : v}</span>
                     <span className="text-right text-xs tabular-nums text-slate-600">{total ? pct(v / total, 0) : "0%"}</span>
                   </button>
-                  {i.emendas && aberto && (
-                    <p className="flex flex-wrap gap-1.5 px-2.5 pb-2 pl-7 print:hidden">
-                      {i.emendas.map((e) => (
-                        <Link key={e.emendaId} href={`/emendas/${e.emendaId}?aba=documentacao`} title={e.secretaria} className="inline-flex h-7 items-center rounded-full border border-slate-300 bg-white px-2.5 font-mono text-xs text-cataguases-marinho hover:bg-slate-50">
-                          {e.numero}
-                        </Link>
-                      ))}
-                    </p>
-                  )}
                 </div>
               </CaixaInfo>
             );
           })}
           {visao === "motivo" && <li className="px-2.5 pb-1 pt-2 text-xs text-slate-600 print:hidden">Causa específica de cada assunto. Uma pendência pode ter mais de um motivo e conta em cada um.</li>}
-          {visao === "documentos" && itens.length > 0 && <li className="px-2.5 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive. Clique para ver quais emendas.</li>}
+          {visao === "documentos" && itens.length > 0 && <li className="px-2.5 pb-1 pt-2 text-xs text-slate-600 print:hidden">Exigidos por lei e ainda não ligados no Drive. Clique para listar ao lado as emendas que não os têm.</li>}
         </ul>
       </div>
     </section>

@@ -11,7 +11,7 @@ import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
-import { filtrarPendencias, lerFiltros, textoDaLinha, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
+import { docsDoFiltro, filtrarPendencias, lerFiltros, textoDaLinha, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -61,8 +61,13 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
     if (busca.trim()) p.set("q", busca.trim());
     return p.toString();
   })();
-  const chips = chipsDePendencias({ ...f, q: busca }, linhas, secretarias);
-  const limparTudo = () => definir({ t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" });
+  const chips = chipsDePendencias({ ...f, q: busca }, linhas, secretarias, docs);
+  const limparTudo = () => definir({ t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "", d: "" });
+  // Com um documento faltando escolhido, a lista passa a ser das emendas que ainda não o têm (uma linha por emenda).
+  const modoDoc = !!f.d;
+  const semDoc = docsDoFiltro(docs, { ...f, q: busca });
+  const rotuloDoc = docs.find((x) => x.doc === f.d)?.rotulo ?? f.d;
+  const total = modoDoc ? semDoc.length : filtradas.length;
 
   return (
     <EspacoTrabalho
@@ -102,9 +107,9 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
             </div>
             <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1.5" role="group" aria-label="Filtros ativos">
               <span className="text-[0.8125rem] tabular-nums text-slate-600" aria-live="polite">
-                <strong className="font-semibold text-cataguases-marinho">{filtradas.length}</strong> pendências
+                <strong className="font-semibold text-cataguases-marinho">{total}</strong> {modoDoc ? `emendas sem ${rotuloDoc.toLowerCase()}` : "pendências"}
               </span>
-              {totalJustificadas > 0 && (
+              {!modoDoc && totalJustificadas > 0 && (
                 <label className="inline-flex min-h-7 cursor-pointer items-center gap-1.5 text-[0.8125rem] text-slate-700">
                   <input type="checkbox" className="h-4 w-4 accent-[color:var(--modulo)]" checked={f.j === "1"} onChange={(e) => definir({ j: e.target.checked ? "1" : "" })} />
                   Incluir justificadas ({totalJustificadas})
@@ -127,7 +132,42 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
 
           <div className="relative flex min-h-0 flex-1 flex-col">
           <ul ref={listaRef} className="emd-lista min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden" aria-label="Pendências">
-            {filtradas.slice(0, limite).map((l) => {
+            {modoDoc &&
+              semDoc.slice(0, limite).map((d) => {
+                const sel = d.emendaId === escolhidaId;
+                return (
+                  <li key={`${d.emendaId}:${d.doc}`} className="border-b border-slate-100">
+                    <button
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() => definirUrl({ e: sel ? "" : d.emendaId })}
+                      className={cn("emd-item relative block w-full py-3 pl-5 pr-4 text-left outline-none", sel && "emd-item-sel")}
+                      style={{ ["--tipo" as string]: COR.media }}
+                    >
+                      <span aria-hidden className="emd-item-faixa absolute inset-y-2 left-0 w-1 rounded-r-full" style={{ backgroundColor: COR.media }} />
+                      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                        <strong className="text-[0.875rem] text-cataguases-marinho">Emenda nº {d.numero}</strong>
+                        <span className="text-xs font-medium text-amber-700">Falta: {d.rotulo}</span>
+                        <span className="ml-auto text-xs tabular-nums text-slate-600">{brl(d.valor)}</span>
+                      </span>
+                      <span className="mt-0.5 block text-[0.8125rem] text-slate-700">{d.objeto}</span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-600">
+                        <TipoSelo tipo={d.tipo} />
+                        <span>{d.secretaria}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            {modoDoc && semDoc.length === 0 && <li className="p-8 text-center text-sm text-slate-600">Nenhuma emenda sem este documento com esses filtros.</li>}
+            {modoDoc && semDoc.length > limite && (
+              <li className="p-3 text-center">
+                <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="min-h-9 rounded-lg border border-slate-300 bg-white px-4 py-1 text-sm text-cataguases-marinho hover:bg-slate-50">
+                  Mostrar mais {POR_PAGINA}
+                </button>
+              </li>
+            )}
+            {!modoDoc && filtradas.slice(0, limite).map((l) => {
               const sel = l.emendaId === escolhidaId;
               return (
                 <li key={`${l.emendaId}:${l.regra}`} className="border-b border-slate-100">
@@ -168,8 +208,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
                 </li>
               );
             })}
-            {filtradas.length === 0 && <li className="p-8 text-center text-sm text-slate-600">Nenhuma pendência com esses filtros.</li>}
-            {filtradas.length > limite && (
+            {!modoDoc && filtradas.length === 0 && <li className="p-8 text-center text-sm text-slate-600">Nenhuma pendência com esses filtros.</li>}
+            {!modoDoc && filtradas.length > limite && (
               <li className="p-3 text-center">
                 <button type="button" onClick={() => setLimite((x) => x + POR_PAGINA)} className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
                   Mostrar mais {POR_PAGINA}
@@ -185,7 +225,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         aberto && (
           <PainelDetalheEmenda
             emendaId={escolhidaId}
-            abaInicial="pendencias"
+            abaInicial={modoDoc ? "documentacao" : "pendencias"}
             aoFechar={() => definirUrl({ e: "" })}
             expandido={expandido}
             aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)}

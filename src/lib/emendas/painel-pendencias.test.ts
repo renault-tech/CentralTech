@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   agruparPendencias,
+  docsDoFiltro,
   documentosFaltando,
   filtrarPendencias,
   indicadores,
@@ -14,7 +15,7 @@ import {
   type LinhaPendencia,
 } from "@/lib/emendas/painel-pendencias";
 
-const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" };
+const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "", d: "" };
 const linha = (o: Partial<LinhaPendencia>): LinhaPendencia => ({
   emendaId: "e1", numero: 1, objeto: "Obra", valor: 1000, tipo: "osc", secretariaId: "s1", secretaria: "Saúde",
   regra: "vigencia:x", gravidade: "media", titulo: "Vigência", detalhe: "", ...o,
@@ -78,6 +79,11 @@ describe("painel de pendências", () => {
     expect(g[0].emendas.map((e) => e.numero)).toEqual([1, 2, 3]);
     expect(documentosFaltando(docs, { ...F, s: "s2" })).toHaveLength(1);
     expect(documentosFaltando(docs, { ...F, t: "ente" })[0].emendas).toHaveLength(1);
+    // escolher um documento troca a lista para as emendas que não o têm
+    expect(docsDoFiltro(docs, F)).toHaveLength(0);
+    const termo = docsDoFiltro(docs, { ...F, d: g[0].doc });
+    expect(termo.length).toBe(g[0].emendas.length);
+    expect(termo.every((x) => x.doc === g[0].doc)).toBe(true);
   });
 
   it("motivos: filtra, agrupa e conta a pendência em cada motivo que ela tem", () => {
