@@ -41,3 +41,8 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 - **Vigência do cadastro errada em 10 termos** (AMAF e Cristo Vive: E23, 32, 34, 35, 37, 38, 50, 130, 157, 213): o cadastro tem vigência até 23/12/2026, mas os termos dizem 12 meses (conferido nos PDFs de E23, E32 e E50; extrato da E23: 09/09/2026 a 09/09/2027). **Não corrigido no banco** (regra: não sobrescrever campo preenchido sem confirmação); os PDFs usam início + 12 meses. A pendência "vigência" desses termos na plataforma depende dessa correção.
 - E148 já tem o 1º aditivo de troca de conta (02/11/2026, 62.082-3 → 63.402-6): fora da lista.
 
+
+## Parcerias encerradas em banco não público — 7 termos da Agricultura (23/11/2026)
+- Termos: E85 (091), E87 (104), E88 (120), E90 (135), E94 (121), E101 (111), E104 (105). Aditivo não cabe (cláusula 9.1: só até 30 dias antes do término); o caminho é exigir, na prestação de contas, extratos integrais, devolução de saldo e nexo das despesas. Modelos: `docs/aditivos-conta-bancaria/notificacoes-parcerias-encerradas/` (7 PDFs preenchíveis com o timbre da Agricultura + zip).
+- **Conferido no termo assinado** (vigência 3 meses, cl. 8.1): E87 (26/06 → 26/09), E90 (20/08 → **20/11**; o cadastro diz 20/10, errado), E94 (05/08 → 05/11), E101 (assinado 26/06; o texto diz "2025", erro de digitação; cadastro 25/09). **Não conferido** (PDF do termo não está no Drive; datas do cadastro): E85, E88, E104. E102 (termo 005) segue fora, a definir.
+- Não gravei nada no banco. Divergência de vigência do E90 a corrigir se o dono confirmar.
