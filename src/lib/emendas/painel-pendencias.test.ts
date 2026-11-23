@@ -102,3 +102,20 @@ describe("painel de pendências", () => {
     expect(filtrarPendencias(M, { ...F, m: "publicidade_incompleta:X" }, ["m"])).toHaveLength(5);
   });
 });
+
+describe("busca por palavra nas pendências", () => {
+  const com = [
+    linha({ emendaId: "e1", numero: 1, regra: "publicidade_incompleta", titulo: "Publicidade incompleta", detalhe: "Faltam dados exigidos", motivos: [{ chave: "publicidade_incompleta:XIV", rotulo: "XIV: Gestor responsável" }] }),
+    linha({ emendaId: "e2", numero: 2, regra: "vigencia:a", titulo: "Vigência", detalhe: "Parceria vencida" }),
+  ];
+  it("acha pela causa (motivo), pelo título e pela explicação, sem acento nem caixa", () => {
+    expect(filtrarPendencias(com, { ...F, q: "gestor" }).map((l) => l.numero)).toEqual([1]);
+    expect(filtrarPendencias(com, { ...F, q: "VIGENCIA" }).map((l) => l.numero)).toEqual([2]);
+    expect(filtrarPendencias(com, { ...F, q: "dados exigidos" }).map((l) => l.numero)).toEqual([1]);
+  });
+  it("várias palavras: todas precisam aparecer (em qualquer ordem)", () => {
+    expect(filtrarPendencias(com, { ...F, q: "responsavel gestor" }).map((l) => l.numero)).toEqual([1]);
+    expect(filtrarPendencias(com, { ...F, q: "gestor vencida" })).toEqual([]);
+  });
+});
+

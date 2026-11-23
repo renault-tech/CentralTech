@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+
+import { pesoDoGrafico } from "@/lib/modulo/area-trabalho";
 import { Search, X } from "lucide-react";
 
 import { BaseLegalLinha } from "@/components/emendas/base-legal";
@@ -13,7 +15,7 @@ import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
-import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
+import { normalizarTexto } from "@/lib/emendas/painel-lista";
 import { pct } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { TipoExecucao } from "@/types/emendas";
@@ -36,7 +38,7 @@ const DIMENSOES: { chave: Dim; rotulo: string; param: "i" | "s" | "t" | "x" }[] 
 type Filtros = { i: string; s: string; t: string; x: string; q: string };
 type ItemGrafico = { chave: string; rotulo: string; n: number; cor: string; dica?: string };
 
-function filtrar(linhas: LinhaConformidade[], f: Filtros, ignorar?: keyof Filtros): LinhaConformidade[] {
+function filtrar(linhas: LinhaConformidade[], f: Filtros, nomesItens: Map<string, string>, ignorar?: keyof Filtros): LinhaConformidade[] {
   const q = normalizarTexto(f.q.trim());
   return linhas.filter(
     (l) =>
@@ -45,7 +47,7 @@ function filtrar(linhas: LinhaConformidade[], f: Filtros, ignorar?: keyof Filtro
       (ignorar === "s" || !f.s || l.secretaria === f.s) &&
       (ignorar === "t" || !f.t || l.tipo === f.t) &&
       (ignorar === "x" || !f.x || (f.x === "1" ? l.executada : !l.executada)) &&
-      (!q || pontuarBusca({ numero: l.numero, objeto: l.objeto, outros: [l.secretaria] }, q) > 0)
+      (!q || q.split(/\s+/).every((parte) => normalizarTexto([l.numero, l.objeto, l.secretaria, ...l.faltas.map((c) => `${rotuloCodigo(c)} ${nomesItens.get(c) ?? ""}`)].join(" ")).includes(parte)))
   );
 }
 
@@ -54,7 +56,7 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
   const [sobre, setSobre] = React.useState<string | null>(null);
   const id = React.useId();
   const def = DIMENSOES.find((d) => d.chave === dim)!;
-  const base = filtrar(linhas, f, def.param);
+  const base = filtrar(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])), def.param);
   const selecionada = f[def.param];
 
   const itens: ItemGrafico[] = (() => {
@@ -83,7 +85,7 @@ function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial
   const escolher = (chave: string) => definir({ [def.param]: chave });
 
   return (
-    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-0 flex-col overflow-hidden", className)}>
+    <section aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`} style={{ flex: `${pesoDoGrafico(itens.length)} 1 0%` }} className={cn("emd-grafico flex min-h-[9rem] flex-col overflow-hidden", className)}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>
@@ -176,7 +178,7 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
 
   const completas = linhas.filter((l) => l.faltas.length === 0).length;
   const execIncompletas = linhas.filter((l) => l.executada && l.faltas.length > 0).length;
-  const filtradas = filtrar(linhas, f);
+  const filtradas = filtrar(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])));
   const nomeItem = (c: string) => resumo.find((r) => r.codigo === c)?.nome ?? c;
   const chips = [
     f.i && { chave: "i", rotulo: `${rotuloCodigo(f.i)} · ${nomeItem(f.i)}` },

@@ -1,7 +1,7 @@
 import { pontuarBusca } from "@/lib/emendas/painel-lista";
 import type { EmendaResumo } from "@/types/emendas";
 
-type Andamento = { concluidas: number; total: number };
+type Andamento = { concluidas: number; total: number; busca?: string };
 
 const pctDe = (r?: Andamento) => (r && r.total > 0 ? Math.round((r.concluidas / r.total) * 100) : null);
 
@@ -32,8 +32,8 @@ export function ordenarEmendasLista(
         return (pctDe(resumos[a.id]) ?? 101) - (pctDe(resumos[b.id]) ?? 101) || a.numero - b.numero;
       default: {
         if (q) {
-          const pa = pontuarBusca({ numero: a.numero, objeto: a.objeto, outros: [a.beneficiario_nome ?? "", a.vereador_nome, a.secretaria_nome, a.unidade_codigo, a.ficha ?? ""] }, q);
-          const pb = pontuarBusca({ numero: b.numero, objeto: b.objeto, outros: [b.beneficiario_nome ?? "", b.vereador_nome, b.secretaria_nome, b.unidade_codigo, b.ficha ?? ""] }, q);
+          const pa = pontuarBusca({ numero: a.numero, objeto: a.objeto, outros: [a.beneficiario_nome ?? "", a.vereador_nome, a.secretaria_nome, a.unidade_codigo, a.ficha ?? "", resumos[a.id]?.busca ?? ""] }, q);
+          const pb = pontuarBusca({ numero: b.numero, objeto: b.objeto, outros: [b.beneficiario_nome ?? "", b.vereador_nome, b.secretaria_nome, b.unidade_codigo, b.ficha ?? "", resumos[b.id]?.busca ?? ""] }, q);
           if (pa !== pb) return pb - pa;
         }
         return a.numero - b.numero;

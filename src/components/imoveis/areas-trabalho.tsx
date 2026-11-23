@@ -143,7 +143,7 @@ export function AreaImoveis({ linhas, gestor }: { linhas: LinhaImovel[]; gestor:
       dims={dimsImoveis}
       medidas={medidasImoveis}
       graficos={["situacao", "secretaria"]}
-      textoBusca={(l) => `${l.nome} ${l.endereco} ${l.contrato ?? ""} ${l.proprietario ?? ""} ${l.setor ?? ""} ${l.secretaria} ${l.imobiliaria ?? ""}`}
+      textoBusca={(l) => `${l.nome} ${l.endereco} ${l.contrato ?? ""} ${l.proprietario ?? ""} ${l.setor ?? ""} ${l.secretaria} ${l.imobiliaria ?? ""} ${l.pendencias.map((p) => `${p.titulo} ${p.detalhe}`).join(" ")}`}
       placeholderBusca="Nome, endereço, contrato ou proprietário"
       ordens={ordensImoveis}
       kpis={(f) => [

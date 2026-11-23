@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { CINZA, PALETA, Pizza } from "@/components/modulo/pizza";
-import { agruparPorDimensao, filtrarItens, opcaoEscolhida, type Dimensao, type GrupoDimensao, type LerParametro, type Medida } from "@/lib/modulo/area-trabalho";
+import { agruparPorDimensao, filtrarItens, opcaoEscolhida, type Dimensao, type GrupoDimensao, type LerParametro, type Medida, pesoDoGrafico } from "@/lib/modulo/area-trabalho";
 import { brlCompleto, brlCurto, pctDe } from "@/lib/moeda";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ export function GraficoDimensao<T>({ itens, dims, medidas, ler, definir, busca, 
 
   const id = React.useId();
   return (
-    <section aria-label={`Gráfico por ${dim.rotulo.toLowerCase()}`} style={{ flex: `${Math.max(5, grupos.length) + 2} 1 0%` }} className={cn("emd-grafico flex min-h-0 flex-col overflow-hidden", className)}>
+    <section aria-label={`Gráfico por ${dim.rotulo.toLowerCase()}`} style={{ flex: `${pesoDoGrafico(grupos.length)} 1 0%` }} className={cn("emd-grafico flex min-h-[9rem] flex-col overflow-hidden", className)}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">
           <span className="sr-only">Dimensão do gráfico</span>

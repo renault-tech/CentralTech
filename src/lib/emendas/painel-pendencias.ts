@@ -50,9 +50,9 @@ export const chaveRegra = (l: { regra: string }) => l.regra.split(":")[0];
 export const areaDaLinha = (l: { regra: string }) => ASSUNTO_DA_REGRA[chaveRegra(l)]?.area ?? "Cadastro";
 export const nomeDaRegra = (l: { regra: string; titulo: string }) => ASSUNTO_DA_REGRA[chaveRegra(l)]?.nome ?? l.titulo;
 
-const texto = (v: string) => v.trim().toLowerCase();
+const texto = (v: string) => v.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
 
-type Base = { numero: number; objeto: string; secretaria: string; secretariaId: string; tipo: TipoExecucao };
+type Base = { numero: number; objeto: string; secretaria: string; secretariaId: string; tipo: TipoExecucao; /** Outro texto da linha em que a busca por palavra também procura. */ textoBusca?: string };
 
 /** Filtros que valem para qualquer coisa ligada a uma emenda (tipo, secretaria, busca). */
 export function combinaEmenda(e: Base, f: FiltrosPainel, ignorar?: ChaveFiltro[]): boolean {
@@ -60,16 +60,19 @@ export function combinaEmenda(e: Base, f: FiltrosPainel, ignorar?: ChaveFiltro[]
   return (
     (ignorar?.includes("t") || !f.t || e.tipo === f.t) &&
     (ignorar?.includes("s") || !f.s || e.secretariaId === f.s) &&
-    (!q || `${e.numero} ${e.objeto} ${e.secretaria}`.toLowerCase().includes(q))
+    (!q || q.split(/\s+/).every((parte) => texto(`${e.numero} ${e.objeto} ${e.secretaria} ${e.textoBusca ?? ""}`).includes(parte)))
   );
 }
+
+/** Tudo o que a linha mostra: título, explicação, causas e o assunto. É onde a busca por palavra procura. */
+export const textoDaLinha = (l: LinhaPendencia) => [l.titulo, l.detalhe, nomeDaRegra(l), ...(l.motivos ?? []).map((m) => m.rotulo)].join(" ");
 
 /** Pendências que passam nos filtros. `ignorar` tira o próprio filtro de um gráfico, para ele mostrar todas as opções. */
 export function filtrarPendencias(linhas: LinhaPendencia[], f: FiltrosPainel, ignorar?: ChaveFiltro[]): LinhaPendencia[] {
   return linhas.filter(
     (l) =>
       (f.j === "1" || !l.justificativa) &&
-      combinaEmenda(l, f, ignorar) &&
+      combinaEmenda({ ...l, textoBusca: textoDaLinha(l) }, f, ignorar) &&
       (ignorar?.includes("g") || !f.g || l.gravidade === f.g) &&
       (ignorar?.includes("a") || !f.a || areaDaLinha(l) === f.a) &&
       (ignorar?.includes("r") || !f.r || chaveRegra(l) === f.r) &&
@@ -163,7 +166,7 @@ export function indicadores(linhas: LinhaPendencia[], todas: LinhaPendencia[], e
     emendasNoRecorte: noRecorte.length,
     valorAfetado: Array.from(afetadas.values()).reduce((s, v) => s + v, 0),
     valorNoRecorte: noRecorte.reduce((s, e) => s + e.valor, 0),
-    justificadas: todas.filter((l) => l.justificativa && combinaEmenda(l, f)).length,
+    justificadas: todas.filter((l) => l.justificativa && combinaEmenda({ ...l, textoBusca: textoDaLinha(l) }, f)).length,
   };
 }
 
@@ -172,7 +175,7 @@ export type GrupoDoc = { doc: string; rotulo: string; emendas: { emendaId: strin
 /** Documentos faltando por tipo de documento (só filtros de tipo de execução, secretaria e busca se aplicam). */
 export function documentosFaltando(docs: LinhaDocFaltando[], f: FiltrosPainel): GrupoDoc[] {
   const m = new Map<string, GrupoDoc>();
-  for (const d of docs.filter((x) => combinaEmenda(x, f))) {
+  for (const d of docs.filter((x) => combinaEmenda({ ...x, textoBusca: x.rotulo }, f))) {
     let g = m.get(d.doc);
     if (!g) {
       g = { doc: d.doc, rotulo: d.rotulo, emendas: [], valor: 0 };

@@ -135,7 +135,7 @@ export function AreaManutencao({ linhas, gestor }: { linhas: LinhaManutencao[]; 
       dims={dimsManutencao}
       medidas={medidasManutencao}
       graficos={["etapa", "secretaria"]}
-      textoBusca={(l) => `${l.veiculo} ${l.servico} ${l.ocNumero ?? ""} ${l.nfNumero ?? ""} ${l.secretaria} ${l.oficina}`}
+      textoBusca={(l) => `${l.veiculo} ${l.servico} ${l.ocNumero ?? ""} ${l.nfNumero ?? ""} ${l.secretaria} ${l.oficina} ${l.etapaRotulo}`}
       placeholderBusca="OC, NF, placa, serviço ou secretaria"
       ordens={ordensManutencao}
       kpis={(f) => [

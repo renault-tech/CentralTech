@@ -100,3 +100,12 @@ export function agruparPorDimensao<T>(itens: T[], dim: Dimensao<T>, medida?: Med
 export function contarFiltros<T>(dims: Dimensao<T>[], ler: LerParametro, q: string): number {
   return dims.filter((d) => !!ler(d.param)).length + (q.trim() ? 1 : 0);
 }
+
+/**
+ * Peso do gráfico na divisão da altura do painel de gráficos. Regra da plataforma: gráficos com mais de 3 linhas dividem o espaço
+ * em PARTES IGUAIS, por mais que um tenha bem mais opções que o outro (a lista dele rola por dentro); só quem tem 3 linhas ou menos
+ * fica com o tamanho do que mostra, e o resto vai para os outros. O mínimo de cada gráfico é fixado no CSS (`min-h-[9rem]`).
+ */
+export function pesoDoGrafico(linhas: number): number {
+  return linhas > 3 ? 10 : Math.max(linhas, 1) + 1.5;
+}
