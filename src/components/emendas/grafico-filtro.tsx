@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+
+import { pesoDoGrafico } from "@/lib/modulo/area-trabalho";
 import { X } from "lucide-react";
 
 import { AnelAndamento } from "@/components/emendas/anel-andamento";
@@ -196,8 +198,8 @@ export function GraficoFiltro({ emendas, resumos, filtros: f, definir, visaoInic
     <section
       aria-label={`Gráfico por ${def.rotulo.toLowerCase()}`}
       // A altura acompanha a quantidade de linhas: quem tem poucas opções não sobra em branco e quem tem muitas ganha espaço.
-      style={{ flex: `${Math.max(5, itens.length) + 2} 1 0%` }}
-      className={cn("emd-grafico flex min-h-0 flex-col overflow-hidden", className)}
+      style={{ flex: `${pesoDoGrafico(itens.length)} 1 0%` }}
+      className={cn("emd-grafico flex min-h-[9rem] flex-col overflow-hidden", className)}
     >
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2.5">
         <label className="relative">

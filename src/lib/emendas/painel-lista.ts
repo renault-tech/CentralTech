@@ -8,7 +8,7 @@ import { combinaSituacaoFinanceira } from "@/lib/emendas/regras";
 import type { EmendaResumo } from "@/types/emendas";
 
 /** O que a lista precisa saber de cada emenda sobre pendências (vem de `resumoDaLinha`). */
-export type PendenciasDaLinha = { abertas?: number; regras?: string[] };
+export type PendenciasDaLinha = { abertas?: number; regras?: string[]; busca?: string };
 
 export type FiltrosLista = {
   v: string;
@@ -92,7 +92,7 @@ export function filtrarEmendasLista(
       (f.numeros.length === 0 || f.numeros.includes(r.numero)) &&
       (!f.q ||
         f.q.split(/\s+/).every((parte) =>
-          normalizarTexto([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome, r.unidade_codigo, r.ficha ?? ""].join(" ")).includes(parte)
+          normalizarTexto([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome, r.unidade_codigo, r.ficha ?? "", pendencias[r.id]?.busca ?? ""].join(" ")).includes(parte)
         ))
   );
 }

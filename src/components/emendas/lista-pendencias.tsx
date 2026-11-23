@@ -11,7 +11,7 @@ import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { normalizarTexto, pontuarBusca } from "@/lib/emendas/painel-lista";
-import { filtrarPendencias, lerFiltros, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
+import { filtrarPendencias, lerFiltros, textoDaLinha, type EmendaPainel, type LinhaDocFaltando, type LinhaPendencia } from "@/lib/emendas/painel-pendencias";
 import { NOME_GRAVIDADE, type Gravidade } from "@/lib/emendas/pendencias";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
   const textoBusca = normalizarTexto(busca.trim());
   const filtradas = textoBusca
     ? achadas
-        .map((l, i) => ({ l, i, p: pontuarBusca({ numero: l.numero, objeto: l.objeto, outros: [l.secretaria] }, textoBusca) }))
+        .map((l, i) => ({ l, i, p: pontuarBusca({ numero: l.numero, objeto: l.objeto, outros: [l.secretaria, textoDaLinha(l)] }, textoBusca) }))
         .sort((a, b) => b.p - a.p || a.i - b.i)
         .map((x) => x.l)
     : achadas;

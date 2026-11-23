@@ -37,6 +37,8 @@ export type ResumoLinha = {
   gravidade: Gravidade | null;
   /** Assuntos (regra sem sufixo) das pendências abertas — para filtrar a lista. */
   regras: string[];
+  /** Texto das pendências abertas (título, explicação e causas), para a busca por palavra achar a emenda. */
+  busca?: string;
   /** Fases do fluxo da emenda (nome e estado), para o painel de detalhe ao lado da lista. */
   fases?: { nome: string; estado: "feita" | "parcial" | "andamento" | "pendente"; alerta: boolean; alertas?: string[] }[];
   /** Pendências abertas (as 4 mais graves), para o mesmo painel. */
@@ -185,6 +187,10 @@ export function resumoDaLinha(c: CalculoEmenda): ResumoLinha {
     abertas: c.pendencias.filter((x) => !x.justificativa).length,
     gravidade: maiorGravidade(c.pendencias),
     regras: Array.from(new Set(c.pendencias.filter((x) => !x.justificativa).map((x) => x.regra.split(":")[0]))),
+    busca: c.pendencias
+      .filter((x) => !x.justificativa)
+      .map((x) => [x.titulo, x.detalhe, ...(x.motivos ?? []).map((m) => m.rotulo)].join(" "))
+      .join(" "),
     fases: c.fases
       .filter((f) => f.situacao !== "nao_se_aplica")
       .map((f) => ({
