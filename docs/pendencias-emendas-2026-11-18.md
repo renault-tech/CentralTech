@@ -20,7 +20,7 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 6. **Projeto Superação**: parado por decisão do dono (19/11). A Secretaria de Saúde pediu plano e documentos (ofício 0828, de 28/10; reiterado pelo 0923, de 12/11, prazo de 10 dias). Acompanhar o recebimento para as 15 emendas (15, 27, 42, 52, 59, 71, 84, 98, 112, 117, 135, 138, 167, 191, 215) e as eventuais recusas por escrito.
 
 ## B. Dados a decidir ou conferir
-7. **Emenda 102**: o cadastro foi alterado para a Secretaria de Cultura (aplicação direta, 3.3.90.39), mas continuam o empenho 2328, o pagamento de R$ 23.500 (10/02/2026), o termo 005/2026 e a conta do clube. Perguntar à Fazenda/Contabilidade se o pagamento foi estornado.
+7. **Emenda 102 — RESOLVIDA (17/11/2026, planilha da Fazenda, aba "Após")**: deixou de ser repasse ao Esporte Clube Taquara Preta e passou a aplicação direta da Secretaria de Cultura (3.3.90.39, dotação 2.121.1416 - EP14, remanejamento registrado). O empenho 2328 e o pagamento de R$ 23.500 saíram; hoje há 3 empenhos (12268, 12270, 12271 = R$ 10.878,00), pago zero. Resta só limpar na execução os dados do repasse antigo (termo 005/2026, conta Sicredi e vigência 02/02 a 02/05), se o dono confirmar.
 8. **IEF (emenda 70)**: ente público com termo de fomento (aparece na pendência "instrumento incompatível"); decidir se vira convênio.
 9. **Projeto Superação**: categoria OSC; decidir com o Jurídico se vira saúde/SUS (A06 da CGM).
 10. **Planilha da Fazenda**: a ficha das emendas 93, 126 e 162 ainda diz "RATERIO" (na plataforma já está "RATEIO").
@@ -44,5 +44,5 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 
 ## Parcerias encerradas em banco não público — 7 termos da Agricultura (23/11/2026)
 - Termos: E85 (091), E87 (104), E88 (120), E90 (135), E94 (121), E101 (111), E104 (105). Aditivo não cabe (cláusula 9.1: só até 30 dias antes do término); o caminho é exigir, na prestação de contas, extratos integrais, devolução de saldo e nexo das despesas. Modelos: `docs/aditivos-conta-bancaria/notificacoes-parcerias-encerradas/` (7 PDFs preenchíveis com o timbre da Agricultura + zip).
-- **Conferido no termo assinado** (vigência 3 meses, cl. 8.1): E87 (26/06 → 26/09), E90 (20/08 → **20/11**; o cadastro diz 20/10, errado), E94 (05/08 → 05/11), E101 (assinado 26/06; o texto diz "2025", erro de digitação; cadastro 25/09). **Não conferido** (PDF do termo não está no Drive; datas do cadastro): E85, E88, E104. E102 (termo 005) segue fora, a definir.
+- **Conferido no termo assinado** (vigência 3 meses, cl. 8.1): E87 (26/06 → 26/09), E90 (20/08 → **20/11**; o cadastro diz 20/10, errado), E94 (05/08 → 05/11), E101 (assinado 26/06; o texto diz "2025", erro de digitação; cadastro 25/09). **Não conferido** (PDF do termo não está no Drive; datas do cadastro): E85, E88, E104. E102 está fora por outro motivo: virou aplicação direta da Cultura (ver item 7), então não há termo nem conta de OSC a regularizar.
 - Não gravei nada no banco. Divergência de vigência do E90 a corrigir se o dono confirmar.
