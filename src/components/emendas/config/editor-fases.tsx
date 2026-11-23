@@ -12,7 +12,7 @@ import type { Modalidade } from "@/types/emendas";
 
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB] disabled:bg-slate-50";
-const BOTAO = "inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+const BOTAO = "inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 const BOTAO_ICONE =
   "inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30";
 
@@ -169,7 +169,7 @@ function EditorFluxo({ modalidade, catalogo, uso }: { modalidade: Modalidade; ca
     <section className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-cataguases-marinho">Fluxo: {NOME_MODALIDADE[modalidade]}</h3>
-        <button type="button" onClick={adicionar} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#6B4FBB] bg-white px-3 text-sm font-medium text-[#5B3FA8] hover:bg-violet-50">
+        <button type="button" onClick={adicionar} className="inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg border border-[#6B4FBB] bg-white px-3 text-sm font-medium text-[#5B3FA8] hover:bg-violet-50">
           <Plus className="h-4 w-4" aria-hidden />
           Adicionar fase
         </button>

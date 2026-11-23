@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
  */
 
 const BOTAO_BASE =
-  "btn-ui inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-200 " +
-  "h-11 px-4 sm:h-9 sm:px-3.5 disabled:pointer-events-none disabled:opacity-50 " +
+  "btn-ui inline-flex items-center justify-center gap-2 rounded-lg text-center text-sm font-medium leading-tight transition-colors duration-200 " +
+  "min-h-11 px-4 py-1.5 sm:min-h-9 sm:px-3.5 disabled:pointer-events-none disabled:opacity-50 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--modulo-tinta)] focus-visible:ring-offset-2";
 
 /** Ação principal da tela: na cor do módulo. */
@@ -20,7 +20,7 @@ export const CLASSE_BOTAO_SECUNDARIO = `${BOTAO_BASE} border border-slate-300 bg
 export const CLASSE_BOTAO_PERIGO = `${BOTAO_BASE} border border-red-200 bg-white text-red-700 hover:bg-red-50`;
 /** Botão de uma linha de tabela ou barra de filtros (mesma forma, sem o alvo de 44 px). */
 export const CLASSE_BOTAO_COMPACTO =
-  "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 py-1 text-center text-xs font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 disabled:opacity-50";
 
 export function Cartao({
   titulo,

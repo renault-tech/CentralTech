@@ -265,7 +265,7 @@ function BlocoMaster({ usuarioId, master, haMasters, souAdmin, aoSalvar }: { usu
         {haMasters ? "Como já há gestor master, os demais gestores deixam de decidir essas coisas." : "Enquanto nenhum for designado, todos os gestores seguem decidindo."}
       </p>
       {souAdmin ? (
-        <button type="button" onClick={() => void alternar()} disabled={salvando} className="mt-2 inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50">
+        <button type="button" onClick={() => void alternar()} disabled={salvando} className="mt-2 inline-flex min-h-9 py-1 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50">
           {salvando ? "Salvando…" : master ? "Retirar gestor master" : "Designar gestor master"}
         </button>
       ) : (

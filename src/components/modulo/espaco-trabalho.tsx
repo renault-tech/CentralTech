@@ -42,20 +42,39 @@ export function EspacoTrabalho({
 }) {
   const areaRef = React.useRef<HTMLDivElement>(null);
   React.useLayoutEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    // Altura = o que sobra da janela abaixo do topo da área, menos o que existe DEPOIS dela (margens e preenchimentos dos contêineres
+    // por onde ela passa até o fim da página). Medir isso, em vez de usar um número fixo, é o que faz a página caber sem rolar e sem
+    // deixar uma faixa vazia embaixo, em qualquer tamanho de janela, zoom ou altura de cabeçalho.
     const ajustar = () => {
-      const el = areaRef.current;
-      if (!el) return;
       if (!ehDesktop()) {
         el.style.height = "";
         return;
       }
       const topo = el.getBoundingClientRect().top + window.scrollY;
-      el.style.height = `${Math.max(480, window.innerHeight - topo - 28)}px`;
+      let reserva = 0;
+      for (let n: HTMLElement | null = el; n && n !== document.body; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        reserva += (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+        if (n !== el) reserva += parseFloat(cs.marginBottom) || 0;
+        for (let irmao = n.nextElementSibling as HTMLElement | null; irmao; irmao = irmao.nextElementSibling as HTMLElement | null) {
+          const pos = getComputedStyle(irmao).position;
+          if (pos === "static" || pos === "relative" || pos === "sticky") reserva += irmao.offsetHeight;
+        }
+      }
+      const altura = Math.max(480, Math.floor(window.innerHeight - topo - reserva));
+      if (Math.abs((parseFloat(el.style.height) || 0) - altura) >= 1) el.style.height = `${altura}px`;
     };
     ajustar();
+    const ro = new ResizeObserver(ajustar);
+    ro.observe(document.body);
+    if (el.parentElement) ro.observe(el.parentElement);
     window.addEventListener("resize", ajustar);
+    void document.fonts?.ready.then(ajustar);
     const t = setTimeout(ajustar, 400); // depois da animação de entrada da página
     return () => {
+      ro.disconnect();
       window.removeEventListener("resize", ajustar);
       clearTimeout(t);
     };

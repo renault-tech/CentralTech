@@ -28,7 +28,7 @@ export function ImportadorJson() {
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input type="file" accept=".json,application/json" onChange={(e) => { setArquivo(e.target.files?.[0] ?? null); setResultado(null); }} className="text-sm" />
-        <button type="button" disabled={!arquivo || pendente} onClick={enviar} className="inline-flex h-9 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50">
+        <button type="button" disabled={!arquivo || pendente} onClick={enviar} className="inline-flex min-h-9 py-1 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50">
           {pendente ? "Analisando…" : "Gerar propostas"}
         </button>
       </div>

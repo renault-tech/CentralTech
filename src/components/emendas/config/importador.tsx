@@ -81,7 +81,7 @@ export function Importador({ anos }: { anos: number[] }) {
               setResultado(null);
             }}
           />
-          <label htmlFor="planilha" className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
+          <label htmlFor="planilha" className="inline-flex min-h-10 py-1 cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
             <FileSpreadsheet className="h-4 w-4" aria-hidden />
             {arquivo ? arquivo.name : "Escolher planilha (.xlsx)"}
           </label>

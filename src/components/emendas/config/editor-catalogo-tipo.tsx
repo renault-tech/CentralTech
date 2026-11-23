@@ -51,7 +51,7 @@ export function EditorCatalogoTipo({
             aria-selected={tipo === t}
             onClick={() => setTipo(t)}
             className={cn(
-              "-mb-px inline-flex h-10 items-center gap-2 border-b-2 px-3.5 text-sm",
+              "-mb-px inline-flex min-h-10 py-1 items-center gap-2 border-b-2 px-3.5 text-sm",
               tipo === t ? "font-semibold text-cataguases-marinho" : "border-transparent text-slate-600 hover:text-cataguases-marinho"
             )}
             style={tipo === t ? { borderBottomColor: TIPOS_EXECUCAO[t].cor } : undefined}
