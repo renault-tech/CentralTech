@@ -23,6 +23,7 @@ import { alertasDaMacro, indiceDaProxima, NOME_CURTO_MACRO, proximoPasso } from 
 import { NOME_GRAVIDADE } from "@/lib/emendas/pendencias";
 import { brl, numeroVereador, pct } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
+import { AbasComMais } from "@/components/modulo/abas-com-mais";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
@@ -35,10 +36,10 @@ const COR_SEM_EMPENHO = COR_DINHEIRO.semEmpenhar;
 export type AbaPainel = "resumo" | "parceria" | Extract<AbaEmenda, "fases" | "documentacao" | "pendencias" | "financeiro" | "andamentos" | "historico">;
 
 const CLASSE_TITULO = "text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-slate-600";
-const CLASSE_BOTAO_PRIMARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110 disabled:opacity-50";
+const CLASSE_BOTAO_PRIMARIO = "btn-ui inline-flex min-h-8 py-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[color:var(--modulo-texto)] px-3 text-[0.8125rem] font-semibold text-white hover:brightness-110 disabled:opacity-50";
 /** Ação principal da aba, pequena, no canto do cabeçalho (não ocupa uma linha própria). */
 const CLASSE_BOTAO_ACAO = "btn-ui mr-1 inline-flex h-7 items-center justify-center gap-1 whitespace-nowrap rounded-md bg-[color:var(--modulo-texto)] px-2.5 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50";
-const CLASSE_BOTAO_SECUNDARIO = "btn-ui inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[0.8125rem] font-semibold text-cataguases-marinho hover:bg-slate-50";
+const CLASSE_BOTAO_SECUNDARIO = "btn-ui inline-flex min-h-8 py-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[0.8125rem] font-semibold text-cataguases-marinho hover:bg-slate-50";
 
 function Esqueleto() {
   return (
@@ -397,9 +398,6 @@ function PainelCorpo({
   );
 
   const abaDoDetalhe: AbaEmenda | null = aba === "resumo" || aba === "parceria" ? null : aba;
-  const classeAba = (ativa: boolean) =>
-    cn("relative flex-none whitespace-nowrap px-2.5 py-2.5 text-[0.8125rem] transition-colors", ativa ? "font-semibold text-[color:var(--modulo-tinta)]" : "text-slate-700 hover:text-cataguases-marinho");
-  const sublinhado = (ativa: boolean) => <span aria-hidden className={cn("absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity", ativa ? "opacity-100" : "opacity-0")} style={{ backgroundColor: "var(--modulo)" }} />;
 
   return (
     <article key={e.id} className="emd-troca flex h-full min-w-[20rem] flex-col" aria-label={`Emenda ${e.numero}`}>
@@ -421,12 +419,12 @@ function PainelCorpo({
               </button>
             )}
             {pacote?.gestor && (
-              <Link href={`/emendas/${e.id}/editar`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+              <Link href={`/emendas/${e.id}/editar`} className="inline-flex min-h-8 py-1 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
                 <Pencil className="h-4 w-4" aria-hidden />
                 Corrigir cadastro
               </Link>
             )}
-            <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex max-lg:hidden h-8 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
+            <button type="button" onClick={aoExpandir} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex max-lg:hidden min-h-8 py-1 items-center gap-1.5 rounded-lg px-2 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho">
               {expandido ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
               {expandido ? "Recolher" : "Expandir"}
             </button>
@@ -466,14 +464,7 @@ function PainelCorpo({
         </p>
       </header>
 
-      <div role="tablist" aria-label="Seções da emenda" className="flex flex-none flex-wrap items-center gap-x-0.5 border-y border-slate-200 bg-white/60 px-2">
-        {abas.map(([chave, rotulo]) => (
-          <button key={chave} type="button" role="tab" id={`aba-${e.id}-${chave}`} aria-selected={aba === chave} onClick={() => abrirAba(chave)} className={classeAba(aba === chave)}>
-            {rotulo}
-            {sublinhado(aba === chave)}
-          </button>
-        ))}
-      </div>
+      <AbasComMais abas={abas.map(([chave, rotulo]) => ({ chave, rotulo }))} ativa={aba} aoEscolher={abrirAba} idAba={(chave) => `aba-${e.id}-${chave}`} rotuloAria="Seções da emenda" />
 
       <div className="emd-rola min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5" role="tabpanel" aria-labelledby={`aba-${e.id}-${aba}`}>
         {erro && (

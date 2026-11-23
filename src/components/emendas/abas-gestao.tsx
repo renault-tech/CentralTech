@@ -20,9 +20,9 @@ import { useDialogos } from "@/components/ui/dialogos";
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 const BOTAO_PRIMARIO =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+  "inline-flex min-h-9 py-1 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 const BOTAO_SECUNDARIO =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-9 py-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const NOME_SITUACAO: Record<SituacaoFase, string> = {
   pendente: "Pendente",

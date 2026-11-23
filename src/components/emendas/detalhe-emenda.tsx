@@ -40,10 +40,10 @@ import { useDialogos } from "@/components/ui/dialogos";
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 export const BOTAO_PRIMARIO =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
-const BOTAO_COMPACTO = "h-8 px-3 text-[0.8125rem]";
+  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 py-1.5 text-center text-sm leading-snug font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+const BOTAO_COMPACTO = "min-h-8 px-3 py-1 text-[0.8125rem]";
 export const BOTAO_SECUNDARIO =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-center text-sm leading-snug text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const TIPOS_DOC: { valor: TipoDocumento; rotulo: string; modalidade?: "repasse" | "direta" }[] = [
   { valor: "plano_trabalho", rotulo: "Plano de trabalho (IN 05/2025, art. 7º, IX)" },

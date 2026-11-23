@@ -172,7 +172,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
                     role="tab"
                     aria-selected={visao === v.chave}
                     onClick={() => definir({ q: v.chave === "emendas" ? "" : v.chave })}
-                    className={cn("inline-flex h-8 items-center rounded-lg px-2.5 text-[0.8125rem] transition-all duration-200", visao === v.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
+                    className={cn("inline-flex min-h-8 py-1 items-center rounded-lg px-2.5 text-[0.8125rem] transition-all duration-200", visao === v.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
                   >
                     {v.rotulo}
                     {v.chave === "restos" && <span className="ml-1.5 tabular-nums text-slate-600">{restos.length}</span>}

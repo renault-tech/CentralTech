@@ -124,14 +124,34 @@ export function BarraEtapas({
   );
 }
 
+/**
+ * "Paga" só vale como cumprida quando não sobra nada a conciliar. Etapa de pagamento (ou além) com saldo a registrar, empenho a anular
+ * ou pagamento parcial ganha uma ressalva, em âmbar, para a lista não passar a ideia de emenda concluída.
+ */
+export function ressalvaDaEtapa(
+  grupo: number,
+  fin?: { valor: number | string; empenhado: number | string; pago: number | string; regras?: string[] } | null
+): string | null {
+  if (!fin || grupo < 3) return null;
+  const regras = fin.regras ?? [];
+  if (regras.includes("saldo_nao_executado")) return "saldo a registrar";
+  if (regras.includes("anular_saldo_empenho")) return "empenho a anular";
+  const emp = Number(fin.empenhado), pago = Number(fin.pago);
+  if (emp > 0 && pago + 0.005 < emp) return "pagamento parcial";
+  return null;
+}
+
 export function SeloEtapa({
   etapa,
   situacao,
   catalogo = CATALOGO_PADRAO,
+  financeiro,
 }: {
   etapa: EtapaEmenda;
   situacao: SituacaoEmenda;
   catalogo?: CatalogoEtapas;
+  /** Valores e pendências da emenda: com eles o selo avisa quando a etapa "paga" ainda tem o que conciliar. */
+  financeiro?: { valor: number | string; empenhado: number | string; pago: number | string; regras?: string[] } | null;
 }) {
   if (situacao === "impedida") {
     return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Impedida</span>;
@@ -141,16 +161,19 @@ export function SeloEtapa({
   }
   const info = infoEtapa(etapa, catalogo);
   const escuro = info.grupo >= 2;
+  const ressalva = ressalvaDaEtapa(info.grupo, financeiro);
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      className={cn("inline-flex max-w-[11rem] items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium leading-tight", ressalva ? "rounded-[0.875rem]" : "rounded-full")}
+      title={ressalva ? `${info.nome}, mas com ${ressalva}: a emenda ainda não está cumprida.` : undefined}
       style={{
-        backgroundColor: info.grupo === 0 ? "#F1F5F9" : escuro ? "#EDE9FE" : "#F5F3FF",
-        color: info.grupo === 0 ? "#334155" : "#3B2A7A",
+        backgroundColor: ressalva ? "#FEF3C7" : info.grupo === 0 ? "#F1F5F9" : escuro ? "#EDE9FE" : "#F5F3FF",
+        color: ressalva ? "#78350F" : info.grupo === 0 ? "#334155" : "#3B2A7A",
       }}
     >
-      <span className="emd-ponto h-1.5 w-1.5 rounded-full" style={{ backgroundColor: info.cor === "#CBD5E1" ? "#94A3B8" : info.cor }} aria-hidden />
+      <span className="emd-ponto h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ressalva ? "#D97706" : info.cor === "#CBD5E1" ? "#94A3B8" : info.cor }} aria-hidden />
       {info.nome}
+      {ressalva && <span className="font-normal"> · {ressalva}</span>}
     </span>
   );
 }

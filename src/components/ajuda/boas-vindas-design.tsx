@@ -200,11 +200,11 @@ export function BoasVindasDesign({ app, jaVisto }: { app: AppBoasVindas; jaVisto
           </div>
           <div className="flex items-center gap-2">
             {indice > 0 ? (
-              <button type="button" onClick={() => setIndice(indice - 1)} className="inline-flex h-11 items-center gap-1 rounded-xl px-3 text-[0.875rem] font-medium text-slate-700 transition-colors hover:bg-slate-100 sm:h-9">
+              <button type="button" onClick={() => setIndice(indice - 1)} className="inline-flex min-h-11 py-1 items-center gap-1 rounded-xl px-3 text-[0.875rem] font-medium text-slate-700 transition-colors hover:bg-slate-100 sm:min-h-9">
                 <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar
               </button>
             ) : (
-              <button type="button" onClick={fechar} className="inline-flex h-11 items-center rounded-xl px-3 text-[0.875rem] font-medium text-slate-600 transition-colors hover:bg-slate-100 sm:h-9">
+              <button type="button" onClick={fechar} className="inline-flex min-h-11 py-1 items-center rounded-xl px-3 text-[0.875rem] font-medium text-slate-600 transition-colors hover:bg-slate-100 sm:min-h-9">
                 Pular
               </button>
             )}
@@ -212,7 +212,7 @@ export function BoasVindasDesign({ app, jaVisto }: { app: AppBoasVindas; jaVisto
               type="button"
               data-principal
               onClick={() => (ultimo ? fechar() : setIndice(indice + 1))}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl px-4 text-[0.875rem] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:h-9"
+              className="inline-flex min-h-11 py-1 items-center gap-1.5 rounded-xl px-4 text-[0.875rem] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:min-h-9"
               style={{ backgroundColor: "var(--modulo-texto, #0C1D33)" }}
             >
               {ultimo ? "Começar a usar" : "Próximo"}

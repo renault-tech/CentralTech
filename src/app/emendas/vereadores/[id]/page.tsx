@@ -55,10 +55,10 @@ export default async function PaginaVereador({ params, searchParams }: { params:
           </p>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
-          <BotaoImprimir className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15" />
+          <BotaoImprimir className="inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15" />
           <a
             href={`/emendas/exportar?ano=${exercicio.ano}&v=${vereador.id}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15"
+            className="inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15"
           >
             <Download className="h-4 w-4" aria-hidden /> Exportar Excel
           </a>

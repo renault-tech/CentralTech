@@ -90,7 +90,7 @@ const DISCO: Record<TomDialogo, string> = {
   info: "bg-blue-100 text-blue-700",
   erro: "bg-red-100 text-red-700",
 };
-const BASE_BOTAO = "inline-flex h-11 min-w-[6.5rem] items-center justify-center rounded-[0.625rem] px-4 text-sm font-semibold transition-[filter,background-color] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10";
+const BASE_BOTAO = "inline-flex min-h-11 py-1 min-w-[6.5rem] items-center justify-center rounded-[0.625rem] px-4 text-sm font-semibold transition-[filter,background-color] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10";
 const BOTAO_SECUNDARIO = `${BASE_BOTAO} border border-slate-300 bg-white text-cataguases-marinho hover:bg-slate-50`;
 
 function Cartao({ pedido, aoFechar }: { pedido: Pedido; aoFechar: () => void }) {

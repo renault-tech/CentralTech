@@ -95,7 +95,7 @@ const LinhaEmenda = React.memo(function LinhaEmenda({ r, res, sel, primeiraSemSe
           </div>
           <div className="flex flex-col items-end gap-1.5">
             <span className="whitespace-nowrap text-[0.875rem] font-semibold tabular-nums text-cataguases-marinho">{brl(r.valor)}</span>
-            <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} />
+            <SeloEtapa etapa={r.etapa} situacao={r.situacao} catalogo={catalogo} financeiro={{ valor: r.valor, empenhado: r.empenhado, pago: r.pago, regras: res?.regras }} />
           </div>
         </div>
   );
@@ -206,7 +206,7 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
               role="tab"
               aria-selected={f.t === t.chave}
               onClick={() => definir({ t: t.chave })}
-              className={cn("inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm transition-all duration-200", f.t === t.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
+              className={cn("inline-flex min-h-8 py-1 items-center gap-1.5 rounded-lg px-3 text-sm transition-all duration-200", f.t === t.chave ? "bg-white font-semibold text-cataguases-marinho shadow-sm" : "font-medium text-slate-600 hover:text-cataguases-marinho")}
             >
               {t.chave && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.cor }} aria-hidden />}
               {t.nome}

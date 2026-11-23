@@ -9,8 +9,8 @@ import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import { useDialogos } from "@/components/ui/dialogos";
 
-const BOTAO_PRIMARIO = "inline-flex h-9 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
-const BOTAO_SECUNDARIO = "inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
+const BOTAO_PRIMARIO = "inline-flex min-h-9 py-1 items-center rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+const BOTAO_SECUNDARIO = "inline-flex min-h-9 py-1 items-center rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const ROTULO_CAMPO: Record<string, string> = {
   numero_termo: "Termo de parceria",
