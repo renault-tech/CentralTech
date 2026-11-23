@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Download, Gauge } from "lucide-react";
+import { Gauge } from "lucide-react";
 
 import { Vazio } from "@/components/emendas/ui";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { FormularioFiltros } from "@/components/modulo/formulario-filtros";
 import { resolverExercicio } from "@/lib/emendas/dados";
 import { carregarPanorama, carregarRestosAnteriores } from "@/lib/emendas/panorama-dados";
@@ -87,9 +88,9 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
     const p = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(nova ? { c: nova } : {}), ...((outroQuadro ?? q) ? { q: (outroQuadro ?? q) as string } : {}) });
     return `/emendas/panorama?${p.toString()}`;
   };
-  const qExport = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}) }).toString();
+  // A exportação leva o cartão escolhido (c) além de secretaria e tipo: o arquivo sai com as MESMAS emendas da lista da tela.
+  const qExport = new URLSearchParams({ ano: String(exercicio.ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(cartao ? { c: cartao } : {}) }).toString();
   const exportar = `/emendas/panorama/exportar?${qExport}`;
-  const exportarPdf = `/emendas/panorama/exportar?${qExport}&formato=pdf`;
   const linhasDoQuadro = agrupar(recorte, quadro);
 
   return (
@@ -103,14 +104,13 @@ export default async function PaginaPanorama({ searchParams }: { searchParams: P
             O cenário global das emendas durante todo o ano: o que já foi empenhado e pago, o que falta, como cada emenda foi encerrada e o que a Contabilidade precisa conciliar. Clique em um cartão para ver as emendas.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <a href={exportar} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 sm:min-h-9">
-            <Download className="h-4 w-4" aria-hidden /> Relatório completo (Excel)
-          </a>
-          <a href={exportarPdf} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 sm:min-h-9">
-            <Download className="h-4 w-4" aria-hidden /> Resumo (PDF)
-          </a>
-        </div>
+        <MenuExportar
+          opcoes={[
+            { rotulo: "PDF para apresentação", detalhe: "Indicadores e gráficos do recorte atual, para mostrar ao prefeito", href: `${exportar}&formato=pdf&tabela=0` },
+            { rotulo: "PDF completo", detalhe: "Gráficos, indicadores e tabelas por secretaria, vereador e emenda", href: `${exportar}&formato=pdf` },
+            { rotulo: "Excel (.xlsx)", detalhe: "Relatório completo com a conciliação do IPM", href: exportar },
+          ]}
+        />
       </div>
 
       <FormularioFiltros className="flex flex-wrap items-center gap-2" limpar={{ href: `/emendas/panorama?ano=${exercicio.ano}${c ? `&c=${c}` : ""}`, className: "text-sm text-slate-600 underline underline-offset-2 hover:text-slate-900", visivel: !!(s || t) }}>

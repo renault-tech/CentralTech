@@ -15,7 +15,7 @@ import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { brl, dataBr, etapasEmOrdem, infoEtapa, numeroVereador } from "@/lib/emendas/regras";
-import { filtrarEmendasLista, lerFiltrosLista, pontuarBusca } from "@/lib/emendas/painel-lista";
+import { filtrarEmendasLista, lerFiltrosLista, ordenarEmendasLista, paramsDeExportacao } from "@/lib/emendas/painel-lista";
 import { cn } from "@/lib/utils";
 import type { EmendaResumo } from "@/types/emendas";
 
@@ -72,36 +72,12 @@ export function TabelaEmendas({
   const porTipo = (t: string) => semTipo.filter((r) => tipoDaEmenda(r) === t);
   const todasEtapas = etapasEmOrdem(catalogo, new Set(emendas.map((r) => r.etapa)));
 
-  const ordenadas = filtradas.slice().sort((a, b) => {
-    switch (f.ordem) {
-      case "valor":
-        return b.valor - a.valor;
-      case "vereador":
-        return a.vereador_numero - b.vereador_numero || a.numero_vereador - b.numero_vereador;
-      case "etapa":
-        return todasEtapas.findIndex((e) => e.chave === b.etapa) - todasEtapas.findIndex((e) => e.chave === a.etapa) || a.numero - b.numero;
-      case "parada":
-        return a.etapa_atualizada_em.localeCompare(b.etapa_atualizada_em);
-      default: {
-        // Com texto na busca (e a ordem padrão), o que mais combina vem primeiro: o número digitado, depois os parecidos.
-        if (f.q) {
-          const pa = pontuarBusca({ numero: a.numero, objeto: a.objeto, outros: [a.beneficiario_nome ?? "", a.vereador_nome, a.secretaria_nome, a.unidade_codigo, a.ficha ?? ""] }, f.q);
-          const pb = pontuarBusca({ numero: b.numero, objeto: b.objeto, outros: [b.beneficiario_nome ?? "", b.vereador_nome, b.secretaria_nome, b.unidade_codigo, b.ficha ?? ""] }, f.q);
-          if (pa !== pb) return pb - pa;
-        }
-        return a.numero - b.numero;
-      }
-    }
-  });
+  const ordenadas = ordenarEmendasLista(filtradas, f.ordem, f.q, todasEtapas.map((e) => e.chave));
   const total = filtradas.reduce((t, r) => t + r.valor, 0);
   const pago = filtradas.reduce((t, r) => t + r.pago, 0);
 
-  const exportar = new URLSearchParams({ ano: String(ano) });
-  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t", "fin", "sd", "rem", "cat"] as const) {
-    const v = params.get(k);
-    if (v) exportar.set(k, v);
-  }
-  if (busca.trim()) exportar.set("q", busca.trim());
+  // A exportação leva a busca e TODOS os filtros ativos (mesma lista de chaves da tela), para o arquivo sair igual à lista.
+  const exportar = paramsDeExportacao((k) => params.get(k), ano, busca);
 
   // Barra enxuta: só o que o gráfico não faz (buscar texto e ordenar). Todo o resto se filtra clicando no painel.
   const barra = (
@@ -150,8 +126,10 @@ export function TabelaEmendas({
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <MenuExportar
             opcoes={[
-              { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
-              { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
+              { rotulo: "PDF com gráficos", detalhe: `Panorama para apresentar: indicadores, gráficos e a lista das ${filtradas.length} emendas filtradas`, href: `/emendas/exportar?${exportar}&formato=executivo` },
+              { rotulo: "PDF só com os gráficos", detalhe: "Uma a duas páginas, sem a lista, para projetar", href: `/emendas/exportar?${exportar}&formato=executivo&tabela=0` },
+              { rotulo: "PDF da lista", detalhe: `Tabela das ${filtradas.length} emendas, para imprimir`, href: `/emendas/exportar?${exportar}&formato=pdf` },
+              { rotulo: "Excel (.xlsx)", detalhe: `Planilha completa das ${filtradas.length} emendas, com execução e parceria`, href: `/emendas/exportar?${exportar}` },
             ]}
           />
           {podeCriar && (

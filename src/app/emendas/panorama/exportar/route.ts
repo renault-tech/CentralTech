@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { linhasDeSaldo } from "@/lib/emendas/saldos";
-import { montarPdfTabelas } from "@/lib/emendas/pdf";
-import { carregarPanorama, carregarRestosAnteriores, resumoDoPanorama, tabelasAgrupadas, textoSituacao } from "@/lib/emendas/panorama-dados";
+import { montarPdfExecutivo } from "@/lib/emendas/pdf-executivo";
+import { relatorioDoPanorama } from "@/lib/emendas/relatorio-executivo";
+import { CARTOES, pertenceAoCartao, type Cartao } from "@/lib/emendas/encerramento";
+import { NOME_DO_CARTAO, carregarPanorama, carregarRestosAnteriores, resumoDoPanorama, tabelasAgrupadas, textoSituacao } from "@/lib/emendas/panorama-dados";
 
 export const dynamic = "force-dynamic";
 
@@ -21,30 +23,20 @@ export async function GET(request: NextRequest) {
   const s = p.get("s");
   const t = p.get("t");
   const { linhas: todas, conciliacoes } = await carregarPanorama(exercicio.ano);
-  const linhas = todas.filter((l) => (!s || l.secretaria_id === s) && (!t || l.tipo_execucao === t));
+  // Os MESMOS filtros da tela: secretaria, tipo e o cartão escolhido (antes o cartão não ia para o arquivo e vinha tudo).
+  const recorte = todas.filter((l) => (!s || l.secretaria_id === s) && (!t || l.tipo_execucao === t));
+  const cartao = (CARTOES as readonly string[]).includes(p.get("c") ?? "") ? (p.get("c") as Cartao) : null;
+  const linhas = recorte.filter((l) => !cartao || pertenceAoCartao(l, cartao));
   const resumo = resumoDoPanorama(linhas);
   const grupos = tabelasAgrupadas(linhas);
+  const filtros = [
+    s && `Secretaria: ${todas.find((l) => l.secretaria_id === s)?.secretaria_nome ?? s}`,
+    t && `Tipo de execução: ${t === "direta" ? "Execução direta" : t === "osc" ? "Repasse a OSC" : t === "ente" ? "Repasse a ente" : t}`,
+    cartao && `Cartão do Panorama: ${NOME_DO_CARTAO[cartao]}`,
+  ].filter((x): x is string => !!x);
 
   if (p.get("formato") === "pdf") {
-    const pdf = montarPdfTabelas({
-      titulo: `Panorama da execução das emendas impositivas - ${exercicio.ano}`,
-      subtitulo: "Resumo para prestação de contas e conciliação com a Contabilidade. Valores contábeis exatos, conforme o IPM (Lei 4.320/1964, art. 36, para restos a pagar).",
-      tabelas: [
-        { titulo: "Resumo", colunas: ["Indicador", "Emendas", "Valor"], linhas: resumo.map((r) => [r.nome, r.quantidade, r.valor]), monetarias: [2] },
-        ...grupos.map((g) => ({
-          titulo: g.titulo,
-          colunas: ["Nome", "Emendas", "Valor", "Empenhado", "Pago", "Sem empenhar", "Restos a pagar", "Cumpridas", "Sem situação"],
-          linhas: g.linhas.map((r) => [r.nome, r.emendas, r.valor, r.empenhado, r.pago, r.semEmpenhar, r.restos, r.cumpridas, r.semSituacao]),
-          monetarias: [2, 3, 4, 5, 6],
-        })),
-        {
-          titulo: "Por emenda",
-          colunas: ["Nº", "Secretaria", "Valor", "Empenhado", "Pago", "Sem empenhar", "A pagar", "Situação"],
-          linhas: linhas.map((l) => [l.numero, l.secretaria_nome, l.valor, l.empenhado, l.pago, l.semEmpenhar, l.aPagar, textoSituacao(l)]),
-          monetarias: [2, 3, 4, 5, 6],
-        },
-      ],
-    });
+    const pdf = montarPdfExecutivo(relatorioDoPanorama({ ano: exercicio.ano, linhas, filtros, totalDoRecorte: recorte.length, comTabela: p.get("tabela") !== "0" }));
     return new NextResponse(pdf as unknown as BodyInit, {
       headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="panorama-execucao-${exercicio.ano}.pdf"`, "Cache-Control": "private, no-store" },
     });
@@ -58,6 +50,15 @@ export async function GET(request: NextRequest) {
     r.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C1D33" } };
     ws.views = [{ state: "frozen", ySplit: 1 }];
   };
+
+  const wf = wb.addWorksheet("Filtros aplicados");
+  wf.columns = [{ width: 28 }, { width: 70 }];
+  wf.addRow(["Exercício", exercicio.ano]);
+  wf.addRow(["Emendas neste arquivo", linhas.length]);
+  wf.addRow(["Emendas no recorte (sem o cartão)", recorte.length]);
+  wf.addRow(["Filtros", filtros.length ? filtros.join("\n") : "Nenhum"]);
+  wf.getRow(4).getCell(2).alignment = { wrapText: true, vertical: "top" };
+  wf.getColumn(1).font = { bold: true };
 
   const ws0 = wb.addWorksheet("Resumo");
   ws0.columns = [{ header: "Indicador", width: 46 }, { header: "Emendas", width: 10 }, { header: "Valor", width: 20 }];

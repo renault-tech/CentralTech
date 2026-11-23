@@ -1,15 +1,14 @@
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { listarEmendas, listarExecucoes, listarMovimentos, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarExecucoes, listarMovimentos, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { carregarListaParaExportar } from "@/lib/emendas/exportar-lista";
+import { montarPdfExecutivo } from "@/lib/emendas/pdf-executivo";
+import { relatorioDaLista } from "@/lib/emendas/relatorio-executivo";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
-import { NOME_MODALIDADE, combinaSituacaoFinanceira, infoEtapa } from "@/lib/emendas/regras";
+import { NOME_MODALIDADE, infoEtapa } from "@/lib/emendas/regras";
 
 export const dynamic = "force-dynamic";
-
-function normalizar(t: string) {
-  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
 
 /**
  * Planilha .xlsx das emendas, com os mesmos filtros da lista. Lida com a
@@ -26,33 +25,30 @@ export async function GET(request: NextRequest) {
   const { exercicio } = await resolverExercicio(p.get("ano"));
   if (!exercicio) return NextResponse.redirect(new URL("/emendas", request.url));
 
-  const numeros = (p.get("numeros") ?? "").split(",").filter(Boolean).map(Number);
-  const q = normalizar(p.get("q") ?? "");
-  const [todas, catalogo] = await Promise.all([listarEmendas(exercicio.ano, true), obterCatalogoEtapas()]);
-  const emendas = todas.filter(
-    (r) =>
-      (!p.get("v") || r.vereador_id === p.get("v")) &&
-      (!p.get("s") || r.secretaria_id === p.get("s")) &&
-      (!p.get("t") || tipoDaEmenda(r) === p.get("t")) &&
-      (!p.get("etapa") || r.etapa === p.get("etapa")) &&
-      (!p.get("situacao") || r.situacao === p.get("situacao")) &&
-      (!p.get("fin") || combinaSituacaoFinanceira(p.get("fin")!, r)) &&
-      (!p.get("sd") || (p.get("sd") === "1" ? r.saude : !r.saude)) &&
-      (!p.get("rem") || (p.get("rem") === "1" ? r.remanejada : !r.remanejada)) &&
-      (numeros.length === 0 || numeros.includes(r.numero)) &&
-      (!q || q.split(/\s+/).every((parte) => normalizar([r.numero, r.objeto, r.beneficiario_nome ?? "", r.vereador_nome, r.secretaria_nome].join(" ")).includes(parte)))
-  );
+  // Filtros, busca e ordem: os MESMOS da tela (função compartilhada). O arquivo diz no cabeçalho o que filtrou e quantas emendas tem.
+  const { emendas, catalogo, filtros, totalDoExercicio } = await carregarListaParaExportar(p, exercicio);
+  const contagem = `${emendas.length} ${emendas.length === 1 ? "emenda" : "emendas"}${emendas.length !== totalDoExercicio ? ` (de ${totalDoExercicio} no exercício)` : ""}`;
+
+  if (p.get("formato") === "executivo") {
+    const pdf = montarPdfExecutivo(relatorioDaLista({ ano: exercicio.ano, emendas, catalogo, filtros, totalDoExercicio, comTabela: p.get("tabela") !== "0" }));
+    return new NextResponse(pdf as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="emendas-${exercicio.ano}-panorama.pdf"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
   if (p.get("formato") === "pdf") {
     const soma = (f: (e: (typeof emendas)[number]) => number) => emendas.reduce((t, e) => t + f(e), 0);
-    const filtros = [p.get("t") && `tipo: ${TIPOS_EXECUCAO[p.get("t") as keyof typeof TIPOS_EXECUCAO]?.nome ?? p.get("t")}`, p.get("q") && `busca: ${p.get("q")}`, p.get("situacao") && `situação: ${p.get("situacao")}`].filter(Boolean);
     const pdf = montarPdfTabelas({
       titulo: `Emendas impositivas - ${exercicio.ano}`,
-      subtitulo: `${emendas.length} emendas${filtros.length ? ` (${filtros.join("; ")})` : ""}. Gerado com as permissões de quem exportou.`,
+      subtitulo: `${contagem}. ${filtros.length ? `Filtros: ${filtros.join("; ")}.` : "Sem filtros."} Gerado com as permissões de quem exportou.`,
       tabelas: [
         {
           titulo: "Emendas",
-          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Pago"],
-          monetarias: [7, 8],
+          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Empenhado", "Pago"],
+          monetarias: [7, 8, 9],
           linhas: emendas.map((e) => [
             e.numero,
             `${String(e.vereador_numero).padStart(2, "0")} - ${e.vereador_nome}`,
@@ -62,9 +58,10 @@ export async function GET(request: NextRequest) {
             TIPOS_EXECUCAO[tipoDaEmenda(e)].curto,
             infoEtapa(e.etapa, catalogo).nome,
             e.valor,
+            e.empenhado,
             e.pago,
           ]),
-          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.pago)],
+          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.empenhado), soma((e) => e.pago)],
         },
       ],
     });
@@ -89,6 +86,14 @@ export async function GET(request: NextRequest) {
   wb.creator = "Central Cataguases · Emendas";
   wb.created = new Date();
   const ws = wb.addWorksheet(`Emendas ${exercicio.ano}`, { views: [{ state: "frozen", ySplit: 1 }] });
+  const wf = wb.addWorksheet("Filtros aplicados");
+  wf.columns = [{ width: 28 }, { width: 80 }];
+  wf.addRow(["Exercício", exercicio.ano]);
+  wf.addRow(["Emendas neste arquivo", emendas.length]);
+  wf.addRow(["Emendas do exercício", totalDoExercicio]);
+  wf.addRow(["Filtros", filtros.length ? filtros.join("\n") : "Nenhum (todas as emendas visíveis para quem exportou)"]);
+  wf.getRow(4).getCell(2).alignment = { wrapText: true, vertical: "top" };
+  wf.getColumn(1).font = { bold: true };
   ws.columns = [
     { header: "Emenda", key: "numero", width: 9 },
     { header: "ID", key: "id", width: 6 },
