@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-23",
+    titulo: "Contratos: liberar a leitura sem mexer no banco",
+    descricao:
+      "Ao conceder ou editar o acesso ao Compras, o formulário agora traz \"Ver contratos\" e \"Editar contratos\" (a leitura já vem marcada para os perfis do setor de Contratos). Em Usuários e acessos, quem é do setor de Contratos e ainda não vê nenhum contrato ganha o aviso \"Liberar leitura\" na própria linha, e há um botão \"Liberar leitura a todos\" para o setor inteiro de uma vez.",
+  },
+  {
+    data: "2026-11-23",
     titulo: "Permissões de Contratos pelo Hub",
     descricao:
       "Em Configurações → Usuários e acessos → Editar, quem tem conta no Compras ganhou o bloco \"Contratos (no Compras)\", com \"Ver contratos\" e \"Editar contratos\". O perfil do setor de Contratos sozinho não mostra os contratos: é a permissão \"ver\" que libera. Ao conceder o perfil de servidor ou coordenador de Contratos, a permissão de ver já vem marcada.",

@@ -33,7 +33,8 @@ import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
 import type { Modulo } from "@/types/database";
 
-export type DecisaoCompras = { perfil: string; setorId: string | null };
+/** `contratosVer`/`contratosEditar` (opcionais): permissões de Contratos no Compras. Ausentes = padrão (perfil de Contratos ganha só a leitura). */
+export type DecisaoCompras = { perfil: string; setorId: string | null; contratosVer?: boolean; contratosEditar?: boolean };
 export type DecisaoRequerimentos = { perfil: string; secretariaId: string | null };
 export type DecisaoNumera = { role: string; documentos: string[] };
 /** Acesso inicial ao Emendas: perfil + secretaria "própria" + se vê as
@@ -261,9 +262,13 @@ export async function aprovarCompras(
     console.error("[aprovarCompras] falha:", error);
     return { sucesso: false, mensagem: error.message };
   }
-  // Perfil do setor de Contratos precisa de `contratos_ver` para enxergar os contratos (o perfil sozinho não dá a leitura).
-  // Só ACRESCENTA: nunca tira uma permissão que o admin do Compras já tenha dado ou retirado de propósito.
-  if (decisao.perfil === "serv_contratos" || decisao.perfil === "coord_contratos") {
+  // Contratos: o perfil sozinho não dá a leitura (precisa de `contratos_ver`). Se o admin escolheu no formulário, vale o que ele marcou;
+  // senão, perfil do setor de Contratos ganha só a leitura (só ACRESCENTA: nunca tira o que o admin do Compras decidiu).
+  if (decisao.contratosVer !== undefined || decisao.contratosEditar !== undefined) {
+    const editar = decisao.contratosEditar === true;
+    const r = await gravarPermissoesDeContratos(authId, decisao.contratosVer === true || editar, editar);
+    if (!r.sucesso) console.error("[aprovarCompras] permissões de contratos não gravadas:", r.erro);
+  } else if (decisao.perfil === "serv_contratos" || decisao.perfil === "coord_contratos") {
     const { data: ja } = await adminBruto.schema("public").from("permissoes").select("id").eq("usuario_id", authId).eq("chave", "contratos_ver").maybeSingle();
     if (!ja) {
       const { error: erroPerm } = await adminBruto.schema("public").from("permissoes").insert({ usuario_id: authId, chave: "contratos_ver", permitido: true });

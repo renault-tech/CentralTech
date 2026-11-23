@@ -39,7 +39,9 @@ const esquemaAcesso = z.object({
   ativo: z.boolean(),
   decisoes: z
     .object({
-      compras: z.object({ perfil: z.string(), setorId: z.string().nullable() }).optional(),
+      compras: z
+        .object({ perfil: z.string(), setorId: z.string().nullable(), contratosVer: z.boolean().optional(), contratosEditar: z.boolean().optional() })
+        .optional(),
       requerimentos: z.object({ perfil: z.string(), secretariaId: z.string().nullable() }).optional(),
       numera: z.object({ role: z.string(), documentos: z.array(z.string()) }).optional(),
       emendas: z
@@ -316,4 +318,36 @@ export async function definirPermissoesContratos(dados: {
   if (!r.sucesso) return r;
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true };
+}
+
+/**
+ * Libera a LEITURA de contratos (`contratos_ver`) para todo mundo do setor de Contratos (perfis serv_contratos e
+ * coord_contratos) com conta ativa no Compras que ainda não a tem. Só acrescenta: nunca remove nem altera quem já tem a linha
+ * (inclusive quem teve a leitura retirada de propósito: linha com permitido = false é respeitada).
+ */
+export async function liberarLeituraContratosDoSetor(): Promise<{ sucesso: true; liberados: number } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const admin = criarClienteAdminBruto();
+  const { data: contas, error } = await admin
+    .schema("public")
+    .from("usuarios")
+    .select("id")
+    .in("perfil", ["serv_contratos", "coord_contratos"])
+    .eq("ativo", true);
+  if (error) return { sucesso: false, erro: "Não foi possível consultar o Compras agora." };
+  const ids = (contas ?? []).map((c) => c.id as string);
+  if (ids.length === 0) return { sucesso: true, liberados: 0 };
+  const { data: ja } = await admin.schema("public").from("permissoes").select("usuario_id").eq("chave", "contratos_ver").in("usuario_id", ids);
+  const comLinha = new Set((ja ?? []).map((x) => x.usuario_id as string));
+  const faltam = ids.filter((id) => !comLinha.has(id));
+  if (faltam.length > 0) {
+    const { error: erroIns } = await admin
+      .schema("public")
+      .from("permissoes")
+      .insert(faltam.map((usuario_id) => ({ usuario_id, chave: "contratos_ver", permitido: true })));
+    if (erroIns) return { sucesso: false, erro: "Não foi possível gravar as permissões agora." };
+  }
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true, liberados: faltam.length };
 }
