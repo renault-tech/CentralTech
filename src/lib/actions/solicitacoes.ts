@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { invalidarCabecalho } from "@/lib/dados/cache-cabecalho";
+
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
@@ -159,6 +161,7 @@ export async function aprovarSolicitacao(
     })
     .eq("id", solicitacaoId);
 
+  invalidarCabecalho();
   revalidatePath("/configuracoes");
   return { sucesso: true, resultados };
 }
@@ -187,6 +190,7 @@ export async function recusarSolicitacao(
     return { sucesso: false, erro: error.message };
   }
 
+  invalidarCabecalho();
   revalidatePath("/configuracoes");
   return { sucesso: true };
 }

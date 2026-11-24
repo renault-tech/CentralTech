@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+
+import { clienteFixoHub } from "@/lib/supabase/cliente-fixo-hub";
 
 import { envPublico } from "@/lib/env";
 import type { Database } from "@/types/database";
@@ -9,7 +12,7 @@ import type { Database } from "@/types/database";
  * Cliente Supabase para Server Components, Server Actions e Route Handlers.
  * React.cache: uma única instância por requisição.
  */
-export const criarClienteServidor = cache(async () => {
+const comCookies = cache(async () => {
   const env = envPublico();
   const cookieStore = await cookies();
 
@@ -38,3 +41,18 @@ export const criarClienteServidor = cache(async () => {
     }
   );
 });
+
+/**
+ * Dentro das leituras em cache do cabeçalho (`lerComCacheHub`) não há cookies: o cliente usa o token da própria pessoa,
+ * sem renovar sessão (a RLS continua valendo). Fora delas, o de sempre.
+ */
+export async function criarClienteServidor() {
+  const fixo = clienteFixoHub.getStore();
+  if (!fixo) return comCookies();
+  const env = envPublico();
+  return createClient<Database, "hub">(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    db: { schema: "hub" },
+    global: { headers: { Authorization: `Bearer ${fixo.token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

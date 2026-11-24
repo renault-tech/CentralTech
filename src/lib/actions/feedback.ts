@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
+import { invalidarCabecalho } from "@/lib/dados/cache-cabecalho";
 import { z } from "zod";
 
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -40,6 +42,7 @@ export async function enviarFeedback(dados: {
     console.error("[enviarFeedback]", error);
     return { sucesso: false, erro: "Não foi possível enviar. Tente novamente." };
   }
+  invalidarCabecalho();
   revalidatePath("/feedback");
   return { sucesso: true };
 }
@@ -87,6 +90,7 @@ export async function responderFeedback(dados: {
   if (error || !data || data.length === 0) {
     return { sucesso: false, erro: "Não foi possível salvar a resposta." };
   }
+  invalidarCabecalho();
   revalidatePath("/feedback");
   return { sucesso: true };
 }
@@ -107,6 +111,7 @@ export async function atualizarStatusFeedback(dados: {
   if (error || !data || data.length === 0) {
     return { sucesso: false, erro: "Não foi possível atualizar." };
   }
+  invalidarCabecalho();
   revalidatePath("/feedback");
   return { sucesso: true };
 }

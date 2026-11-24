@@ -1,6 +1,7 @@
 import { exigirAdminHub } from "@/lib/auth/exigir-admin";
 import { cache } from "react";
 
+import { lerComCacheHub } from "@/lib/dados/cache-cabecalho";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -24,7 +25,8 @@ export {
  * faixa da Início, que rodam em toda navegação do admin. `cache()`: o
  * cabeçalho e a página pedem a mesma contagem na mesma requisição. Qualquer falha
  * devolve 0: o aviso nunca pode derrubar a página que o mostra. */
-export const contarSolicitacoesPendentes = cache(async (): Promise<number> => {
+export const contarSolicitacoesPendentes = cache(async (): Promise<number> =>
+  lerComCacheHub("solicitacoes-pendentes", 30, async () => {
   try {
     const supabase = await criarClienteServidor();
     const { count, error } = await supabase
@@ -40,7 +42,8 @@ export const contarSolicitacoesPendentes = cache(async (): Promise<number> => {
     console.error("[contarSolicitacoesPendentes] erro inesperado:", e);
     return 0;
   }
-});
+  })
+);
 
 export async function listarSolicitacoesPendentes(): Promise<SolicitacaoAcesso[]> {
   const supabase = await criarClienteServidor();

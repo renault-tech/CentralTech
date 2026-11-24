@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { lerComCacheHub } from "@/lib/dados/cache-cabecalho";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import type { AppFeedback, FeedbackCentral, StatusFeedback, TipoFeedback } from "@/types/database";
 
@@ -55,18 +56,22 @@ export async function listarMeusFeedbacks(usuarioId: string): Promise<FeedbackCo
   return comUrls(data ?? []);
 }
 
-export const podeGerirFeedback = cache(async (): Promise<boolean> => {
-  const supabase = await criarClienteServidor();
-  const { data } = await supabase.rpc("pode_gerir_feedback");
-  return data === true;
-});
+export const podeGerirFeedback = cache(async (): Promise<boolean> =>
+  lerComCacheHub("pode-gerir-feedback", 120, async () => {
+    const supabase = await criarClienteServidor();
+    const { data } = await supabase.rpc("pode_gerir_feedback");
+    return data === true;
+  })
+);
 
 export async function contarFeedbackNovos(): Promise<number> {
-  const supabase = await criarClienteServidor();
-  const { count, error } = await supabase
-    .from("feedback")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "novo");
-  if (error) return 0;
-  return count ?? 0;
+  return lerComCacheHub("feedback-novos", 30, async () => {
+    const supabase = await criarClienteServidor();
+    const { count, error } = await supabase
+      .from("feedback")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "novo");
+    if (error) return 0;
+    return count ?? 0;
+  });
 }

@@ -59,9 +59,12 @@ export async function atualizarSessao(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `getClaims()` confere a assinatura do token localmente (chaves assimétricas do projeto) em vez de ir ao servidor de Auth a
+  // cada requisição — eram ~20 mil idas por dia só para isso. Renova a sessão quando o token expira. Sem chave assimétrica
+  // o próprio Supabase volta a validar no servidor, então nunca fica menos seguro que antes. Revogação (banimento) vale a partir
+  // do próximo token renovado (≤ 1 h); o acesso aos dados continua protegido pela RLS e pelo cadastro em `hub.usuarios`.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims?.sub ? { id: claims.claims.sub } : null;
 
   const { pathname } = request.nextUrl;
   // Rota exata ou subcaminho dela ("/login" não libera "/login-qualquer-coisa").

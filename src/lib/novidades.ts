@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-24",
+    titulo: "Navegação mais rápida",
+    descricao:
+      "Cada tela deixou de refazer, a cada clique, as consultas do cabeçalho (preferências, selos de pedidos e de feedback) e a conferência da sessão no servidor de login. Os selos podem levar até 30 segundos para refletir uma mudança feita por outra pessoa; o que você mesmo muda aparece na hora.",
+  },
+  {
     data: "2026-11-23",
     titulo: "Permissão \"Alterar prazos\" no painel",
     descricao:

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 
+import { invalidarCabecalho } from "@/lib/dados/cache-cabecalho";
 import { criarClienteServidor } from "@/lib/supabase/server";
 
 const esquema = z.object({
@@ -17,6 +18,7 @@ export async function salvarPreferencias(entrada: z.infer<typeof esquema>): Prom
     const supabase = await criarClienteServidor();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).rpc("salvar_preferencias", { p_tema: r.data.tema, p_estilo: r.data.estilo, p_detalhe: null });
+    invalidarCabecalho();
   } catch {
     /* sem rede ou sem sessão: a escolha segue valendo neste navegador */
   }
