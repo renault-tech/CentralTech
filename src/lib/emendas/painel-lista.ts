@@ -97,6 +97,50 @@ export function filtrarEmendasLista(
   );
 }
 
+/**
+ * Todas as chaves de filtro da lista que viajam na URL. A tela, o Excel e o PDF leem ESTA lista: um filtro novo entra aqui
+ * e passa a valer na exportação sem mais nenhum ajuste (antes cada exportador tinha a sua cópia e elas divergiam).
+ */
+export const CHAVES_FILTRO_LISTA = ["v", "s", "etapa", "t", "situacao", "fin", "sd", "rem", "cat", "p", "pe", "numeros", "ordem"] as const;
+
+/** Parâmetros da URL de exportação: o ano, a busca digitada e TODOS os filtros ativos da lista. */
+export function paramsDeExportacao(get: (k: string) => string | null | undefined, ano: number, busca: string): URLSearchParams {
+  const u = new URLSearchParams({ ano: String(ano) });
+  for (const k of CHAVES_FILTRO_LISTA) {
+    const v = get(k);
+    if (v) u.set(k, v);
+  }
+  if (busca.trim()) u.set("q", busca.trim());
+  return u;
+}
+
+/**
+ * Ordem da lista (a mesma na tela e nos arquivos exportados). `q` já normalizado: com texto na busca e a ordem
+ * padrão, o que mais combina vem primeiro. `etapasEmOrdem` = chaves das etapas, da primeira à última do fluxo.
+ */
+export function ordenarEmendasLista(emendas: EmendaResumo[], ordem: string, q: string, etapasEmOrdem: string[]): EmendaResumo[] {
+  return emendas.slice().sort((a, b) => {
+    switch (ordem) {
+      case "valor":
+        return b.valor - a.valor;
+      case "vereador":
+        return a.vereador_numero - b.vereador_numero || a.numero_vereador - b.numero_vereador;
+      case "etapa":
+        return etapasEmOrdem.indexOf(b.etapa) - etapasEmOrdem.indexOf(a.etapa) || a.numero - b.numero;
+      case "parada":
+        return a.etapa_atualizada_em.localeCompare(b.etapa_atualizada_em);
+      default: {
+        if (q) {
+          const pa = pontuarBusca({ numero: a.numero, objeto: a.objeto, outros: [a.beneficiario_nome ?? "", a.vereador_nome, a.secretaria_nome, a.unidade_codigo, a.ficha ?? ""] }, q);
+          const pb = pontuarBusca({ numero: b.numero, objeto: b.objeto, outros: [b.beneficiario_nome ?? "", b.vereador_nome, b.secretaria_nome, b.unidade_codigo, b.ficha ?? ""] }, q);
+          if (pa !== pb) return pb - pa;
+        }
+        return a.numero - b.numero;
+      }
+    }
+  });
+}
+
 /** Situação financeira EXCLUSIVA (cada emenda cai em uma só), a ordem de `combinaSituacaoFinanceira` na lista. */
 export const CLASSES_FINANCEIRAS = [
   ["paga", "Totalmente paga"],

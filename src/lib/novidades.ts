@@ -13,6 +13,54 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-23",
+    titulo: "Permissão \"Alterar prazos\" no painel",
+    descricao:
+      "O painel de permissões do Compras ganhou \"Alterar prazos\" (grupo Processos). Conceda a um servidor para ele editar o prazo das atribuições em aberto do próprio setor, ou retire de uma coordenação. No Compras, quem recebe a permissão passa a ver o bloco \"Prazo\" no processo.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Permissões de Licitações no painel",
+    descricao:
+      "No painel de permissões do Compras há agora o grupo Licitações: \"Atuar em processos de Licitações\" (desmarcar retira a atuação da coordenação ou do servidor) e \"Servidor atua depois da publicação do edital\" (libera o limite que o servidor tem hoje). Valem de verdade no banco e na tela do Compras.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Permissão \"Criar processos\" no Compras",
+    descricao:
+      "No painel de permissões do Compras (Usuários e acessos → Editar) há agora \"Criar processos\", que vale de verdade no Compras: conceda a quem não é diretor nem coordenação de Compras, ou retire de quem teria pelo perfil. O selo \"já vem do perfil\" mostra quando a pessoa já tem a permissão sem ajuste avulso.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Permissões do Compras num painel só",
+    descricao:
+      "Em Usuários e acessos → Editar, as permissões do Compras (contratos, obras e concorrência, logs) ficam num painel agrupado por assunto, com o nome da pessoa e o módulo sempre visíveis no topo enquanto você rola. Há modelos prontos (ex.: Contratos — gestão) e o botão Salvar mostra quantas mudanças estão pendentes. Quem pede editar contratos ganha ver contratos junto.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Contratos: liberar a leitura sem mexer no banco",
+    descricao:
+      "Ao conceder ou editar o acesso ao Compras, o formulário agora traz \"Ver contratos\" e \"Editar contratos\" (a leitura já vem marcada para os perfis do setor de Contratos). Em Usuários e acessos, quem é do setor de Contratos e ainda não vê nenhum contrato ganha o aviso \"Liberar leitura\" na própria linha, e há um botão \"Liberar leitura a todos\" para o setor inteiro de uma vez.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Permissões de Contratos pelo Hub",
+    descricao:
+      "Em Configurações → Usuários e acessos → Editar, quem tem conta no Compras ganhou o bloco \"Contratos (no Compras)\", com \"Ver contratos\" e \"Editar contratos\". O perfil do setor de Contratos sozinho não mostra os contratos: é a permissão \"ver\" que libera. Ao conceder o perfil de servidor ou coordenador de Contratos, a permissão de ver já vem marcada.",
+  },
+  {
+    data: "2026-11-23",
+    titulo: "Emendas: exportação fiel aos filtros e PDF com gráficos para apresentar",
+    descricao:
+      "Os arquivos exportados agora saem com exatamente as emendas que a tela mostra: o PDF e o Excel da lista levam todos os filtros (inclusive pendência, tipo de beneficiário, busca e ordem) e o cartão escolhido no Panorama. O cabeçalho informa os filtros aplicados e a quantidade de emendas (ex.: \"41 emendas, de 215 no exercício\"). Novo: \"PDF com gráficos\" na lista e no Panorama, e botão Exportar em Vereadores e Secretarias (PDF para apresentação só com gráficos, PDF completo e Excel), com gráficos nítidos para mostrar ao prefeito.",
+  },
+  {
+    data: "2026-11-19",
+    titulo: "Emendas e Pendências: o scroll do mouse funciona sobre os gráficos",
+    descricao:
+      "A lista ao lado da pizza deixou de ter rolagem própria, que prendia o scroll do mouse. Agora ela mostra os 7 primeiros itens e um botão \"Ver todos\" abre o resto; a página rola normalmente em qualquer ponto e os cliques nos filtros continuam iguais.",
+  },
+  {
     data: "2026-11-24",
     titulo: "Boas-vindas ao novo design e tutoriais atualizados",
     descricao:

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { TituloTela } from "@/components/modulo/titulo-tela";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { Vazio } from "@/components/emendas/ui";
 import { listarEmendasEmCache, obterCatalogoEtapas, obterContextoEmendas, podeEditarSecretaria, resolverExercicio } from "@/lib/emendas/dados";
 import { brl, brlCurto, infoEtapa, pct, porSecretaria } from "@/lib/emendas/regras";
@@ -18,7 +19,19 @@ export default async function PaginaSecretarias({ searchParams }: { searchParams
 
   return (
     <div className="flex flex-col gap-5">
-      <TituloTela titulo="Secretarias" subtitulo={`Exercício ${exercicio.ano}`} />
+      <TituloTela
+        titulo="Secretarias"
+        subtitulo={`Exercício ${exercicio.ano}`}
+        acao={
+          <MenuExportar
+            opcoes={[
+              { rotulo: "PDF para apresentação", detalhe: "Só os gráficos e indicadores, para projetar ou mostrar", href: `/emendas/secretarias/exportar?ano=${exercicio.ano}&formato=pdf&tabela=0` },
+              { rotulo: "PDF completo", detalhe: "Gráficos, indicadores e tabela comparativa", href: `/emendas/secretarias/exportar?ano=${exercicio.ano}&formato=pdf` },
+              { rotulo: "Excel (.xlsx)", detalhe: "Tabela comparativa para trabalhar", href: `/emendas/secretarias/exportar?ano=${exercicio.ano}&formato=xlsx` },
+            ]}
+          />
+        }
+      />
       {linhas.length === 0 && <Vazio>Nenhuma emenda visível para você neste exercício.</Vazio>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {linhas.map((l) => {

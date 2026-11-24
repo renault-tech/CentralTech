@@ -58,6 +58,11 @@ export function FormularioDecisaoModulos({
 
   const [perfilCompras, setPerfilCompras] = React.useState((PERFIS_COMPRAS[0] as string) ?? "");
   const [setorCompras, setSetorCompras] = React.useState<string>("");
+  // null = "padrão do perfil" (Contratos ganha só a leitura); true/false = escolha explícita do admin.
+  const [contratosVer, setContratosVer] = React.useState<boolean | null>(null);
+  const [contratosEditar, setContratosEditar] = React.useState(false);
+  const perfilDeContratos = perfilCompras === "serv_contratos" || perfilCompras === "coord_contratos";
+  const verContratosEfetivo = contratosEditar || (contratosVer ?? perfilDeContratos);
 
   const [perfilRequerimentos, setPerfilRequerimentos] = React.useState(
     (PERFIS_REQUERIMENTOS[3] as string) ?? ""
@@ -104,6 +109,8 @@ export function FormularioDecisaoModulos({
     decisoes.compras = {
       perfil: perfilCompras,
       setorId: PERFIS_COMPRAS_SEM_SETOR.includes(perfilCompras) ? null : setorCompras || null,
+      contratosVer: verContratosEfetivo,
+      contratosEditar,
     };
   }
   if (incluiRequerimentos) {
@@ -225,6 +232,25 @@ export function FormularioDecisaoModulos({
               </div>
               {faltaSetorCompras && (
                 <p className="mt-1.5 text-xs text-red-700">Este perfil exige um setor selecionado.</p>
+              )}
+              <p className="mt-3 text-xs font-semibold text-slate-600">Contratos (no Compras)</p>
+              <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-700">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={verContratosEfetivo}
+                    disabled={contratosEditar}
+                    onChange={(e) => setContratosVer(e.target.checked)}
+                  />
+                  Ver contratos
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={contratosEditar} onChange={(e) => setContratosEditar(e.target.checked)} />
+                  Editar contratos (cadastrar e alterar)
+                </label>
+              </div>
+              {perfilDeContratos && !verContratosEfetivo && (
+                <p className="mt-1 text-xs text-amber-700">Sem “Ver contratos”, esta pessoa não enxergará nenhum contrato.</p>
               )}
             </>
           )}

@@ -89,7 +89,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
   const lista = React.useMemo(() => (cartao ? recorte.filter((l) => pertenceAoCartao(l, cartao)) : recorte), [recorte, cartao]);
   const visao: Visao = VISOES.some((v) => v.chave === q && (v.chave !== "restos" || restos.length > 0)) ? (q as Visao) : "emendas";
   const quadro = React.useMemo(() => (visao === "secretaria" || visao === "vereador" || visao === "tipo" ? agrupar(recorte, visao) : []), [recorte, visao]);
-  const qExport = new URLSearchParams({ ano: String(ano), ...(s ? { s } : {}), ...(t ? { t } : {}) }).toString();
+  const qExport = new URLSearchParams({ ano: String(ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(c ? { c } : {}) }).toString();
   const filtrosAtivos = (s ? 1 : 0) + (t ? 1 : 0) + (cartao ? 1 : 0);
   const fechar = () => definir({ e: "" });
 
@@ -182,8 +182,9 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
               <span className="ml-auto print:hidden">
                 <MenuExportar
                   opcoes={[
-                    { rotulo: "Excel (.xlsx)", detalhe: "Relatório completo, com os filtros atuais", href: `/emendas/panorama/exportar?${qExport}` },
-                    { rotulo: "PDF", detalhe: "Resumo para imprimir ou enviar", href: `/emendas/panorama/exportar?${qExport}&formato=pdf` },
+                    { rotulo: "PDF para apresentação", detalhe: "Indicadores e gráficos do recorte atual", href: `/emendas/panorama/exportar?${qExport}&formato=pdf&tabela=0` },
+                    { rotulo: "PDF completo", detalhe: "Gráficos, indicadores e tabelas", href: `/emendas/panorama/exportar?${qExport}&formato=pdf` },
+                    { rotulo: "Excel (.xlsx)", detalhe: "Relatório completo, com a conciliação do IPM", href: `/emendas/panorama/exportar?${qExport}` },
                   ]}
                 />
               </span>

@@ -31,9 +31,11 @@ import { criarClienteServidor } from "@/lib/supabase/server";
 import { origemDaRequisicao } from "@/lib/origem";
 import { garantirConvite, linkDoConvite } from "@/lib/auth/convite";
 import { enviarEmailPrimeiroAcesso } from "@/lib/email/primeiro-acesso";
+import { CHAVES_COMPRAS, GRUPOS_COMPRAS } from "@/lib/permissoes/catalogo";
 import type { Modulo } from "@/types/database";
 
-export type DecisaoCompras = { perfil: string; setorId: string | null };
+/** `contratosVer`/`contratosEditar` (opcionais): permissões de Contratos no Compras. Ausentes = padrão (perfil de Contratos ganha só a leitura). */
+export type DecisaoCompras = { perfil: string; setorId: string | null; contratosVer?: boolean; contratosEditar?: boolean };
 export type DecisaoRequerimentos = { perfil: string; secretariaId: string | null };
 export type DecisaoNumera = { role: string; documentos: string[] };
 /** Acesso inicial ao Emendas: perfil + secretaria "própria" + se vê as
@@ -196,6 +198,31 @@ export function linkPrimeiroAcessoNumera(origemHub: string) {
     `${origemHub}/api/numera/abrir-link?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 }
 
+/**
+ * Grava `contratos_ver` / `contratos_editar` em `public.permissoes` (só o admin do Compras escreve ali pela RLS: o Hub
+ * usa a chave de serviço, depois de checar admin_hub no chamador). Atualiza a linha se existe, senão cria. Exige conta no Compras.
+ */
+export async function gravarPermissoesDeContratos(
+  usuarioId: string,
+  ver: boolean,
+  editar: boolean
+): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const admin = criarClienteAdminBruto();
+  const { data: conta } = await admin.schema("public").from("usuarios").select("id").eq("id", usuarioId).maybeSingle();
+  if (!conta) return { sucesso: false, erro: "Esta pessoa não tem conta no Compras." };
+  for (const [chave, permitido] of [["contratos_ver", ver], ["contratos_editar", editar]] as const) {
+    const { data: existente } = await admin.schema("public").from("permissoes").select("id").eq("usuario_id", usuarioId).eq("chave", chave).maybeSingle();
+    const { error } = existente
+      ? await admin.schema("public").from("permissoes").update({ permitido }).eq("id", existente.id)
+      : await admin.schema("public").from("permissoes").insert({ usuario_id: usuarioId, chave, permitido });
+    if (error) {
+      console.error("[gravarPermissoesDeContratos] falha:", error);
+      return { sucesso: false, erro: "Não foi possível gravar a permissão agora." };
+    }
+  }
+  return { sucesso: true };
+}
+
 export async function aprovarCompras(
   authId: string,
   pessoa: PessoaAlvo,
@@ -235,6 +262,19 @@ export async function aprovarCompras(
   if (error) {
     console.error("[aprovarCompras] falha:", error);
     return { sucesso: false, mensagem: error.message };
+  }
+  // Contratos: o perfil sozinho não dá a leitura (precisa de `contratos_ver`). Se o admin escolheu no formulário, vale o que ele marcou;
+  // senão, perfil do setor de Contratos ganha só a leitura (só ACRESCENTA: nunca tira o que o admin do Compras decidiu).
+  if (decisao.contratosVer !== undefined || decisao.contratosEditar !== undefined) {
+    const editar = decisao.contratosEditar === true;
+    const r = await gravarPermissoesDeContratos(authId, decisao.contratosVer === true || editar, editar);
+    if (!r.sucesso) console.error("[aprovarCompras] permissões de contratos não gravadas:", r.erro);
+  } else if (decisao.perfil === "serv_contratos" || decisao.perfil === "coord_contratos") {
+    const { data: ja } = await adminBruto.schema("public").from("permissoes").select("id").eq("usuario_id", authId).eq("chave", "contratos_ver").maybeSingle();
+    if (!ja) {
+      const { error: erroPerm } = await adminBruto.schema("public").from("permissoes").insert({ usuario_id: authId, chave: "contratos_ver", permitido: true });
+      if (erroPerm) console.error("[aprovarCompras] contratos_ver não gravada:", erroPerm);
+    }
   }
   return { sucesso: true, linkPrimeiroAcesso };
 }
@@ -546,4 +586,41 @@ export async function sincronizarBookkeepingHub(
   if (error) {
     console.error("[sincronizarBookkeepingHub] hub.definir_acesso falhou:", error);
   }
+}
+
+/**
+ * Grava permissões avulsas do Compras (só as chaves em `definidas`, só chaves do catálogo). `true` concede (cria/atualiza a linha);
+ * `false` retira: atualiza a linha se existe e, se o perfil da pessoa já daria a permissão, cria a linha `false` (retirada explícita).
+ * Respeita as dependências (editar contratos exige ver contratos).
+ */
+export async function gravarPermissoesCompras(
+  usuarioId: string,
+  definidas: Record<string, boolean>
+): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const admin = criarClienteAdminBruto();
+  const { data: conta } = await admin.schema("public").from("usuarios").select("id, perfil").eq("id", usuarioId).maybeSingle();
+  if (!conta) return { sucesso: false, erro: "Esta pessoa não tem conta no Compras." };
+  const itens = GRUPOS_COMPRAS.flatMap((g) => g.itens);
+  const alvo: Record<string, boolean> = {};
+  for (const [chave, valor] of Object.entries(definidas)) if (CHAVES_COMPRAS.includes(chave)) alvo[chave] = valor;
+  for (const i of itens) {
+    if (i.exige && alvo[i.chave] === true) alvo[i.exige] = true;
+    if (alvo[i.exige ?? ""] === false) alvo[i.chave] = false;
+  }
+  const { data: atuais } = await admin.schema("public").from("permissoes").select("id, chave, permitido").eq("usuario_id", usuarioId).in("chave", CHAVES_COMPRAS);
+  const porChave = new Map((atuais ?? []).map((l) => [l.chave as string, l]));
+  for (const [chave, permitido] of Object.entries(alvo)) {
+    const linha = porChave.get(chave);
+    if (linha && linha.permitido === permitido) continue;
+    const padrao = itens.find((i) => i.chave === chave)?.padraoPerfis?.includes(String(conta.perfil)) ?? false;
+    if (!linha && !permitido && !padrao) continue;
+    const { error } = linha
+      ? await admin.schema("public").from("permissoes").update({ permitido }).eq("id", linha.id)
+      : await admin.schema("public").from("permissoes").insert({ usuario_id: usuarioId, chave, permitido });
+    if (error) {
+      console.error("[gravarPermissoesCompras] falha:", error);
+      return { sucesso: false, erro: "Não foi possível gravar as permissões agora." };
+    }
+  }
+  return { sucesso: true };
 }

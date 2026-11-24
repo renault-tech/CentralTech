@@ -5,7 +5,8 @@ import { Check, Copy, Plus, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ESTILO_CAMPO_PADRAO as ESTILO_CAMPO } from "@/lib/utils";
-import { definirAcesso, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso, removerUsuario } from "@/lib/actions/configuracoes";
+import { definirAcesso, definirPermissoesContratos, liberarLeituraContratosDoSetor, enviarLinkPrimeiroAcessoPorEmail, obterLinkPrimeiroAcesso, removerUsuario } from "@/lib/actions/configuracoes";
+import { PermissoesCompras } from "@/components/hub/permissoes-compras";
 import { FormularioDecisaoModulos } from "@/components/hub/formulario-decisao-modulos";
 import type { CatalogoItem, DocumentoNumera } from "@/lib/catalogos-solicitacao";
 import { MODULOS, moduloInfo } from "@/lib/modulos-info";
@@ -45,6 +46,7 @@ export function PainelConfiguracoes({
   // linha (mesmo padrão de linha expansível já usado em Processos/Contratos
   // no App-Compras), sem precisar rolar até o fim da tabela.
   const [editandoId, setEditandoId] = React.useState<string | null>(null);
+  const semLeitura = usuarios.filter((u) => u.ativo && u.contratos?.deContratos && !u.contratos.ver && !u.contratos.editar).length;
   const [criandoNovo, setCriandoNovo] = React.useState(abrirNovo);
   const [busca, setBusca] = React.useState("");
   const [mostrarInativos, setMostrarInativos] = React.useState(false);
@@ -124,6 +126,8 @@ export function PainelConfiguracoes({
         </Button>
       </div>
 
+      {semLeitura > 0 && <LiberarContratosEmLote quantidade={semLeitura} />}
+
       {criandoNovo && (
         <div className="mt-3">
           <FormularioAcesso usuario={null} {...catalogos} onFechar={() => setCriandoNovo(false)} />
@@ -183,6 +187,7 @@ export function PainelConfiguracoes({
                       <p className="text-sm font-medium text-slate-800">
                         {u.nome} <span className="text-xs font-normal text-slate-500">· {u.email}</span>
                       </p>
+                      {u.contratos?.deContratos && !u.contratos.ver && !u.contratos.editar && <AvisoSemLeituraContratos usuarioId={u.id} />}
                       {u.nuncaEntrou && <PrimeiroAcessoPendente usuarioId={u.id} linkInicial={u.linkPrimeiroAcesso} />}
                     </td>
                   </tr>
@@ -459,6 +464,8 @@ function FormularioAcesso({
         )}
       </div>
 
+      {usuario?.compras && <PermissoesCompras usuarioId={usuario.id} nome={usuario.nome} perfil={usuario.compras.perfil} inicial={usuario.compras.ligadas} retiradas={usuario.compras.retiradas} />}
+
       {modulosParaDecisao.length > 0 && (
         <div className="mt-3">
           <FormularioDecisaoModulos
@@ -596,6 +603,53 @@ function LinkCopiavel({ link }: { link: string }) {
       >
         {copiado ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
+    </div>
+  );
+}
+
+
+/** Aviso na linha: perfil de Contratos sem a leitura — um clique libera (só "ver"; editar continua um passo consciente). */
+function AvisoSemLeituraContratos({ usuarioId }: { usuarioId: string }) {
+  const [pendente, setPendente] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+  async function liberar() {
+    setPendente(true);
+    setErro(null);
+    const r = await definirPermissoesContratos({ usuarioId, ver: true, editar: false });
+    setPendente(false);
+    if (!r.sucesso) setErro(r.erro);
+  }
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-amber-700">
+      Perfil de Contratos sem permissão para ver contratos.
+      <button type="button" onClick={liberar} disabled={pendente} className="font-medium underline underline-offset-2 hover:no-underline disabled:opacity-60">
+        {pendente ? "Liberando…" : "Liberar leitura"}
+      </button>
+      {erro && <span className="text-red-700">{erro}</span>}
+    </p>
+  );
+}
+
+/** Ação em lote: libera a leitura de contratos a todo o setor de Contratos que ainda não a tem. Só acrescenta. */
+function LiberarContratosEmLote({ quantidade }: { quantidade: number }) {
+  const [pendente, setPendente] = React.useState(false);
+  const [msg, setMsg] = React.useState<{ ok: boolean; texto: string } | null>(null);
+  async function liberar() {
+    setPendente(true);
+    setMsg(null);
+    const r = await liberarLeituraContratosDoSetor();
+    setPendente(false);
+    setMsg(r.sucesso ? { ok: true, texto: `Leitura de contratos liberada para ${r.liberados} pessoa(s).` } : { ok: false, texto: r.erro });
+  }
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-amber-200 bg-amber-50/60 p-2.5 text-xs text-amber-900">
+      <span>
+        {quantidade} {quantidade === 1 ? "pessoa do setor de Contratos não vê" : "pessoas do setor de Contratos não veem"} nenhum contrato no Compras.
+      </span>
+      <Button size="sm" variant="outline" disabled={pendente} onClick={liberar}>
+        {pendente ? "Liberando…" : "Liberar leitura a todos"}
+      </Button>
+      {msg && <span className={msg.ok ? "text-green-700" : "text-red-700"}>{msg.texto}</span>}
     </div>
   );
 }

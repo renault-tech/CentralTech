@@ -7,6 +7,8 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 ## Feito em 19/11/2026
 - **E020 (termo 70/2026, R$ 10.000) e E176 (termo 71/2026, R$ 15.000)**, Esporte Clube São José: termos tarjados (CPF/RG), cópias na PUBLICIDADE/TERMO e ligados na plataforma; originais movidos para "Já adicionados a plataforma / Esporte". Faltam plano e extrato das duas.
 - Procedimento padrão de entrada de documentos salvo e lista de documentos faltando gerada (73 emendas com falta, 177 documentos).
+- Informado pelo dono: **notificações às entidades enviadas** para abrirem conta em instituição pública (A12/C13; as contas novas serão necessárias para corrigir cadastro, termos e documentos, item C16 da planilha); **extratos do A25 ajustados**; **botões de conciliação definidos** para D08, para o item dos arredondamentos e para N2 (o gestor ainda precisa registrar nas emendas: hoje 0 conciliações no banco).
+- Planilha da CGM atualizada: `docs/pendencias-em-aberto-cgm-2026-11-19.xlsx` (A12 aguardando as entidades; C13, A25, arredondamentos e N2 resolvidos; D08 em andamento; novos C16 e D22).
 
 ## A. Documentos (Drive e plataforma)
 1. **Extrato do E168 (termo 110/2026)**: o recorte recebido veio cortado (sem dotação, data e assinatura), inclusive o que está em "Extrato termo 125.pdf" (recorte misto com o E169, que já tem extrato próprio). Pedir o recorte completo da edição de 30/08/2026.
@@ -18,7 +20,7 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 6. **Projeto Superação**: parado por decisão do dono (19/11). A Secretaria de Saúde pediu plano e documentos (ofício 0828, de 28/10; reiterado pelo 0923, de 12/11, prazo de 10 dias). Acompanhar o recebimento para as 15 emendas (15, 27, 42, 52, 59, 71, 84, 98, 112, 117, 135, 138, 167, 191, 215) e as eventuais recusas por escrito.
 
 ## B. Dados a decidir ou conferir
-7. **Emenda 102**: o cadastro foi alterado para a Secretaria de Cultura (aplicação direta, 3.3.90.39), mas continuam o empenho 2328, o pagamento de R$ 23.500 (10/02/2026), o termo 005/2026 e a conta do clube. Perguntar à Fazenda/Contabilidade se o pagamento foi estornado.
+7. **Emenda 102 — RESOLVIDA (17/11/2026, planilha da Fazenda, aba "Após")**: deixou de ser repasse ao Esporte Clube Taquara Preta e passou a aplicação direta da Secretaria de Cultura (3.3.90.39, dotação 2.121.1416 - EP14, remanejamento registrado). O empenho 2328 e o pagamento de R$ 23.500 saíram; hoje há 3 empenhos (12268, 12270, 12271 = R$ 10.878,00), pago zero. Resta só limpar na execução os dados do repasse antigo (termo 005/2026, conta Sicredi e vigência 02/02 a 02/05), se o dono confirmar.
 8. **IEF (emenda 70)**: ente público com termo de fomento (aparece na pendência "instrumento incompatível"); decidir se vira convênio.
 9. **Projeto Superação**: categoria OSC; decidir com o Jurídico se vira saúde/SUS (A06 da CGM).
 10. **Planilha da Fazenda**: a ficha das emendas 93, 126 e 162 ainda diz "RATERIO" (na plataforma já está "RATEIO").
@@ -33,3 +35,24 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 ## D. Plataforma
 16. **Importador de PDF do beneficiário**: calibrado só com textos de exemplo; testar com os primeiros cartões do CNPJ reais.
 17. **Leitores de PDF do Frotas e do Imóveis**: idem, calibrar com documentos reais.
+
+## Termos aditivos de troca de conta (19/11/2026)
+- Modelos em `docs/aditivos-conta-bancaria/` (23 PDFs preenchíveis com o timbre da secretaria; checklist em Excel; modelo de extrato). Cláusulas conferidas nos termos reais: Administração (conta no item 5.2, alterações na cláusula 8) e Esporte (item 7.2, Cláusula Décima).
+- **Vigência do cadastro errada em 10 termos** (AMAF e Cristo Vive: E23, 32, 34, 35, 37, 38, 50, 130, 157, 213): o cadastro tem vigência até 23/12/2026, mas os termos dizem 12 meses (conferido nos PDFs de E23, E32 e E50; extrato da E23: 09/09/2026 a 09/09/2027). **Não corrigido no banco** (regra: não sobrescrever campo preenchido sem confirmação); os PDFs usam início + 12 meses. A pendência "vigência" desses termos na plataforma depende dessa correção.
+- E148 já tem o 1º aditivo de troca de conta (02/11/2026, 62.082-3 → 63.402-6): fora da lista.
+
+
+## Parcerias encerradas em banco não público — 7 termos da Agricultura (23/11/2026)
+- Termos: E85 (091), E87 (104), E88 (120), E90 (135), E94 (121), E101 (111), E104 (105). Aditivo não cabe (cláusula 9.1: só até 30 dias antes do término); o caminho é exigir, na prestação de contas, extratos integrais, devolução de saldo e nexo das despesas. Modelos: `docs/aditivos-conta-bancaria/notificacoes-parcerias-encerradas/` (7 PDFs preenchíveis com o timbre da Agricultura + zip).
+- **Conferido no termo assinado** (vigência 3 meses, cl. 8.1): E87 (26/06 → 26/09), E90 (20/08 → **20/11**; o cadastro diz 20/10, errado), E94 (05/08 → 05/11), E101 (assinado 26/06; o texto diz "2025", erro de digitação; cadastro 25/09). **Não conferido** (PDF do termo não está no Drive; datas do cadastro): E85, E88, E104. E102 está fora por outro motivo: virou aplicação direta da Cultura (ver item 7), então não há termo nem conta de OSC a regularizar.
+- Não gravei nada no banco. Divergência de vigência do E90 a corrigir se o dono confirmar.
+
+## Documentos novos tratados em 23/11/2026
+- Ligados: planos E91 e E209; extratos E139, E144, E148, E206, E209 (documentos faltando cai em 7). Em aberto na pasta: planos E114, E206 (arquivos grandes) e E110 (arquivo em branco); anuências do SUS (Superação e Cisum) aguardando decisão.
+- E91: conta confirmada pelo dono como 62.640-6 (o cadastro está certo; o 4 manuscrito parecia 9). A conferir: extrato da E206 publicou vigência "30/06/2026 a 29/06/2026" (erro de digitação do jornal; o cadastro tem 29/06/2026 a 29/06/2027).
+- **Anuência do Cisum (23/11/2026)**: E93, E126 e E162 ligadas e marcadas "sim". Seguem faltando nas 3: convênio/contrato de rateio e extrato (Jurídico). Data da anuência em branco (ofícios sem data). Superação: 15 ofícios lidos e conferidos contra o cadastro (todos batem, exceto o 0953, que cita a emenda 053 por engano em lugar da 59); aguardando decisão de retomar o Superação.
+
+## Fechamento de 23/11/2026
+- 19 anuências do SUS já publicadas refeitas: a tarja era um retângulo desenhado sobre a imagem e o CPF da Secretária continuava recuperável; agora os pixels foram apagados (conferido por OCR), arquivos religados e os antigos na lixeira do Drive. **Outros PDFs tarjados antes podem ter o mesmo defeito: conferir.**
+- Ligação das anuências do Cisum (E93, E126, E162) desfeita: os ofícios vieram sem data e sem assinatura digital e serão reemitidos. Nada consta na plataforma até lá.
+- Relatório novo: `docs/pendencias-em-aberto-cgm-2026-11-23.xlsx` (recomendações da CGM de 17/11; itens novos N5 a N11).

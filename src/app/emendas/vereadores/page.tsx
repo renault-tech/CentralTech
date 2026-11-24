@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { TituloTela } from "@/components/modulo/titulo-tela";
 import { Vazio } from "@/components/emendas/ui";
+import { MenuExportar } from "@/components/emendas/menu-exportar";
 import { listarEmendasEmCache, listarVereadores, obterCatalogoEtapas, resolverExercicio } from "@/lib/emendas/dados";
 import { GRUPOS_EXECUCAO, brl, brlCurto, cumpreSaude, numeroVereador, pct, porVereador } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,15 @@ export default async function PaginaVereadores({ searchParams }: { searchParams:
       <TituloTela
         titulo="Vereadores"
         subtitulo={`Exercício ${exercicio.ano} · cota de ${brl(exercicio.cota_por_vereador)} por vereador · mínimo de ${exercicio.percentual_saude_min}% na Saúde`}
+        acao={
+          <MenuExportar
+            opcoes={[
+              { rotulo: "PDF para apresentação", detalhe: "Só os gráficos e indicadores, para projetar ou mostrar", href: `/emendas/vereadores/exportar?ano=${exercicio.ano}&formato=pdf&tabela=0` },
+              { rotulo: "PDF completo", detalhe: "Gráficos, indicadores e tabela comparativa", href: `/emendas/vereadores/exportar?ano=${exercicio.ano}&formato=pdf` },
+              { rotulo: "Excel (.xlsx)", detalhe: "Tabela comparativa para trabalhar", href: `/emendas/vereadores/exportar?ano=${exercicio.ano}&formato=xlsx` },
+            ]}
+          />
+        }
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {linhas.map((l) => {

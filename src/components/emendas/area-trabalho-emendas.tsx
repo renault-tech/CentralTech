@@ -20,7 +20,7 @@ import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { CLASSE_BOTAO } from "@/components/modulo/ui";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { ordenarEmendasLista } from "@/lib/emendas/ordenacao-lista";
-import { filtrarEmendasLista, lerFiltrosLista } from "@/lib/emendas/painel-lista";
+import { filtrarEmendasLista, lerFiltrosLista, paramsDeExportacao } from "@/lib/emendas/painel-lista";
 import { brl, brlCurto, etapasEmOrdem, numeroVereador } from "@/lib/emendas/regras";
 import type { ResumoLinha } from "@/lib/emendas/resumo";
 import { cn } from "@/lib/utils";
@@ -183,12 +183,8 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
     if (aberto) definir({ e: alvo.dataset.id ?? "" });
   }
 
-  const exportar = new URLSearchParams({ ano: String(ano) });
-  for (const k of ["v", "s", "etapa", "situacao", "numeros", "t", "fin", "sd", "rem", "cat"] as const) {
-    const v = params.get(k);
-    if (v) exportar.set(k, v);
-  }
-  if (busca.trim()) exportar.set("q", busca.trim());
+  // Mesma lista de filtros da tela (inclui pendência, ordem...): o arquivo sai com as MESMAS emendas da lista.
+  const exportar = paramsDeExportacao((k) => params.get(k), ano, busca);
 
   function limparTudo() {
     definir({ v: "", s: "", etapa: "", p: "", situacao: "", fin: "", sd: "", cat: "", rem: "", pe: "", numeros: "", q: "" });
@@ -217,8 +213,10 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
         <div className="ml-auto flex flex-wrap items-center gap-2 print:hidden">
           <MenuExportar
             opcoes={[
+              { rotulo: "PDF com gráficos", detalhe: "Indicadores, gráficos e a lista do recorte atual", href: `/emendas/exportar?${exportar}&formato=executivo` },
+              { rotulo: "PDF só gráficos", detalhe: "Para apresentar ao prefeito, sem a tabela", href: `/emendas/exportar?${exportar}&formato=executivo&tabela=0` },
+              { rotulo: "PDF da lista", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
               { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
-              { rotulo: "PDF", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
             ]}
           />
           {podeCriar && (

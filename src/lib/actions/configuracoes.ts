@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
+import { gravarPermissoesCompras, gravarPermissoesDeContratos } from "@/lib/actions/provisionamento-modulos";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { criarClienteAdmin, criarClienteAdminBruto } from "@/lib/supabase/admin";
 import { criarClienteNumeraAdmin } from "@/lib/supabase/numera-admin";
@@ -38,7 +39,9 @@ const esquemaAcesso = z.object({
   ativo: z.boolean(),
   decisoes: z
     .object({
-      compras: z.object({ perfil: z.string(), setorId: z.string().nullable() }).optional(),
+      compras: z
+        .object({ perfil: z.string(), setorId: z.string().nullable(), contratosVer: z.boolean().optional(), contratosEditar: z.boolean().optional() })
+        .optional(),
       requerimentos: z.object({ perfil: z.string(), secretariaId: z.string().nullable() }).optional(),
       numera: z.object({ role: z.string(), documentos: z.array(z.string()) }).optional(),
       emendas: z
@@ -294,4 +297,74 @@ export async function removerUsuario(dados: {
   revalidatePath("/configuracoes");
   revalidatePath("/configuracoes/usuarios");
   return { sucesso: true, avisos };
+}
+
+const esquemaContratos = z.object({ usuarioId: z.uuid(), ver: z.boolean(), editar: z.boolean() });
+
+/**
+ * Permissões de Contratos do Compras (ver / editar) de uma pessoa, pelo Hub. No Compras, o setor de Contratos só enxerga
+ * os contratos com `contratos_ver` e só altera com `contratos_editar` (o perfil sozinho não basta). Editar implica ver.
+ */
+export async function definirPermissoesContratos(dados: {
+  usuarioId: string;
+  ver: boolean;
+  editar: boolean;
+}): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const a = esquemaContratos.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos." };
+  const r = await gravarPermissoesDeContratos(a.data.usuarioId, a.data.ver || a.data.editar, a.data.editar);
+  if (!r.sucesso) return r;
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true };
+}
+
+/**
+ * Libera a LEITURA de contratos (`contratos_ver`) para todo mundo do setor de Contratos (perfis serv_contratos e
+ * coord_contratos) com conta ativa no Compras que ainda não a tem. Só acrescenta: nunca remove nem altera quem já tem a linha
+ * (inclusive quem teve a leitura retirada de propósito: linha com permitido = false é respeitada).
+ */
+export async function liberarLeituraContratosDoSetor(): Promise<{ sucesso: true; liberados: number } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const admin = criarClienteAdminBruto();
+  const { data: contas, error } = await admin
+    .schema("public")
+    .from("usuarios")
+    .select("id")
+    .in("perfil", ["serv_contratos", "coord_contratos"])
+    .eq("ativo", true);
+  if (error) return { sucesso: false, erro: "Não foi possível consultar o Compras agora." };
+  const ids = (contas ?? []).map((c) => c.id as string);
+  if (ids.length === 0) return { sucesso: true, liberados: 0 };
+  const { data: ja } = await admin.schema("public").from("permissoes").select("usuario_id").eq("chave", "contratos_ver").in("usuario_id", ids);
+  const comLinha = new Set((ja ?? []).map((x) => x.usuario_id as string));
+  const faltam = ids.filter((id) => !comLinha.has(id));
+  if (faltam.length > 0) {
+    const { error: erroIns } = await admin
+      .schema("public")
+      .from("permissoes")
+      .insert(faltam.map((usuario_id) => ({ usuario_id, chave: "contratos_ver", permitido: true })));
+    if (erroIns) return { sucesso: false, erro: "Não foi possível gravar as permissões agora." };
+  }
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true, liberados: faltam.length };
+}
+
+const esquemaPermissoesCompras = z.object({ usuarioId: z.uuid(), definidas: z.record(z.string().max(60), z.boolean()) });
+
+/** Concede ou retira permissões avulsas do Compras de uma pessoa (só as chaves enviadas; só admin do Hub). */
+export async function definirPermissoesCompras(dados: {
+  usuarioId: string;
+  definidas: Record<string, boolean>;
+}): Promise<{ sucesso: true } | { sucesso: false; erro: string }> {
+  const atual = await obterUsuarioAtual();
+  if (!atual?.admin_hub) return { sucesso: false, erro: "Sem permissão." };
+  const a = esquemaPermissoesCompras.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: "Dados inválidos." };
+  const r = await gravarPermissoesCompras(a.data.usuarioId, a.data.definidas);
+  if (!r.sucesso) return r;
+  revalidatePath("/configuracoes/usuarios");
+  return { sucesso: true };
 }
