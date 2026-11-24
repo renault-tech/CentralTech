@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   agruparPendencias,
+  docsDoFiltro,
   documentosFaltando,
   filtrarPendencias,
   indicadores,
@@ -14,7 +15,7 @@ import {
   type LinhaPendencia,
 } from "@/lib/emendas/painel-pendencias";
 
-const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "" };
+const F: FiltrosPainel = { t: "", g: "", s: "", r: "", a: "", m: "", j: "", q: "", d: "" };
 const linha = (o: Partial<LinhaPendencia>): LinhaPendencia => ({
   emendaId: "e1", numero: 1, objeto: "Obra", valor: 1000, tipo: "osc", secretariaId: "s1", secretaria: "Saúde",
   regra: "vigencia:x", gravidade: "media", titulo: "Vigência", detalhe: "", ...o,
@@ -68,6 +69,17 @@ describe("painel de pendências", () => {
     expect(i).toMatchObject({ pendencias: 3, altas: 1, emendasAfetadas: 2, emendasNoRecorte: 4, valorAfetado: 1500, valorNoRecorte: 2000, justificadas: 1 });
   });
 
+  it("indicadores: a busca por palavra do texto da pendência não zera o recorte de emendas", () => {
+    const emendas: EmendaPainel[] = [
+      { id: "e1", numero: 1, objeto: "Obra", valor: 1000, tipo: "osc", secretariaId: "s1", secretaria: "Saúde" },
+      { id: "e2", numero: 2, objeto: "Obra", valor: 500, tipo: "direta", secretariaId: "s2", secretaria: "Educação" },
+    ];
+    const lin = [linha({ emendaId: "e1", numero: 1, regra: "publicidade_incompleta", titulo: "Publicidade", detalhe: "Item XIV — Gestor responsável" })];
+    const f = { ...F, q: "gestor" };
+    const i = indicadores(filtrarPendencias(lin, f), lin, emendas, f);
+    expect(i).toMatchObject({ pendencias: 1, emendasAfetadas: 1, emendasNoRecorte: 1, valorNoRecorte: 1000 });
+  });
+
   it("documentos faltando agrupam por documento e respeitam tipo e secretaria", () => {
     const d = (n: number, doc: string, s = "s1", tipo: "osc" | "ente" = "osc"): LinhaDocFaltando => ({
       emendaId: `e${n}`, numero: n, objeto: "x", valor: 100, tipo, secretariaId: s, secretaria: s, doc, rotulo: doc,
@@ -78,6 +90,11 @@ describe("painel de pendências", () => {
     expect(g[0].emendas.map((e) => e.numero)).toEqual([1, 2, 3]);
     expect(documentosFaltando(docs, { ...F, s: "s2" })).toHaveLength(1);
     expect(documentosFaltando(docs, { ...F, t: "ente" })[0].emendas).toHaveLength(1);
+    // escolher um documento troca a lista para as emendas que não o têm
+    expect(docsDoFiltro(docs, F)).toHaveLength(0);
+    const termo = docsDoFiltro(docs, { ...F, d: g[0].doc });
+    expect(termo.length).toBe(g[0].emendas.length);
+    expect(termo.every((x) => x.doc === g[0].doc)).toBe(true);
   });
 
   it("motivos: filtra, agrupa e conta a pendência em cada motivo que ela tem", () => {
@@ -102,3 +119,20 @@ describe("painel de pendências", () => {
     expect(filtrarPendencias(M, { ...F, m: "publicidade_incompleta:X" }, ["m"])).toHaveLength(5);
   });
 });
+
+describe("busca por palavra nas pendências", () => {
+  const com = [
+    linha({ emendaId: "e1", numero: 1, regra: "publicidade_incompleta", titulo: "Publicidade incompleta", detalhe: "Faltam dados exigidos", motivos: [{ chave: "publicidade_incompleta:XIV", rotulo: "XIV: Gestor responsável" }] }),
+    linha({ emendaId: "e2", numero: 2, regra: "vigencia:a", titulo: "Vigência", detalhe: "Parceria vencida" }),
+  ];
+  it("acha pela causa (motivo), pelo título e pela explicação, sem acento nem caixa", () => {
+    expect(filtrarPendencias(com, { ...F, q: "gestor" }).map((l) => l.numero)).toEqual([1]);
+    expect(filtrarPendencias(com, { ...F, q: "VIGENCIA" }).map((l) => l.numero)).toEqual([2]);
+    expect(filtrarPendencias(com, { ...F, q: "dados exigidos" }).map((l) => l.numero)).toEqual([1]);
+  });
+  it("várias palavras: todas precisam aparecer (em qualquer ordem)", () => {
+    expect(filtrarPendencias(com, { ...F, q: "responsavel gestor" }).map((l) => l.numero)).toEqual([1]);
+    expect(filtrarPendencias(com, { ...F, q: "gestor vencida" })).toEqual([]);
+  });
+});
+

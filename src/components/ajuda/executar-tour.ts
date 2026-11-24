@@ -19,7 +19,13 @@ import type { Tour } from "@/lib/tours/tours";
  * nenhum passo tiver elemento — evita abrir um tour vazio.
  */
 export function executarTour(tour: Tour, opcoes?: { aoFechar?: () => void }): boolean {
-  const passos = tour.passos.filter((p) => document.querySelector(p.seletor));
+  // Passo cujo elemento não existe, ou está recolhido (painel fechado, largura quase zero), é pulado.
+  const passos = tour.passos.filter((p) => {
+    const el = document.querySelector(p.seletor);
+    if (!el) return false;
+    const caixa = el.getBoundingClientRect();
+    return caixa.width > 24 && caixa.height > 24;
+  });
   if (passos.length === 0) return false;
 
   const instancia = driver({

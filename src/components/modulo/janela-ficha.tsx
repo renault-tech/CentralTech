@@ -90,7 +90,7 @@ export function JanelaFicha({
               href={urlOriginal(driveFileId)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 w-fit items-center gap-2 rounded-[10px] bg-[#0B5FA8] px-5 text-sm font-medium text-white no-underline hover:bg-[#084A85]"
+              className="inline-flex min-h-11 py-1 w-fit items-center gap-2 rounded-[10px] bg-[#0B5FA8] px-5 text-sm font-medium text-white no-underline hover:bg-[#084A85]"
             >
               <ExternalLink className="h-[18px] w-[18px]" aria-hidden />
               Ver documento original

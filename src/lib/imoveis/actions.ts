@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidarCaminho as revalidatePath } from "@/lib/imoveis/invalidar";
 import { z } from "zod";
 
 import { obterContextoImoveis } from "@/lib/imoveis/dados";

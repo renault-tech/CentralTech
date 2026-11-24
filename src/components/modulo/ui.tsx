@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
  */
 
 const BOTAO_BASE =
-  "btn-ui inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-200 " +
-  "h-11 px-4 sm:h-9 sm:px-3.5 disabled:pointer-events-none disabled:opacity-50 " +
+  "btn-ui inline-flex items-center justify-center gap-2 rounded-lg text-center text-sm font-medium leading-tight transition-colors duration-200 " +
+  "min-h-11 px-4 py-1.5 sm:min-h-9 sm:px-3.5 disabled:pointer-events-none disabled:opacity-50 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--modulo-tinta)] focus-visible:ring-offset-2";
 
 /** Ação principal da tela: na cor do módulo. */
@@ -20,7 +20,7 @@ export const CLASSE_BOTAO_SECUNDARIO = `${BOTAO_BASE} border border-slate-300 bg
 export const CLASSE_BOTAO_PERIGO = `${BOTAO_BASE} border border-red-200 bg-white text-red-700 hover:bg-red-50`;
 /** Botão de uma linha de tabela ou barra de filtros (mesma forma, sem o alvo de 44 px). */
 export const CLASSE_BOTAO_COMPACTO =
-  "inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 py-1 text-center text-xs font-medium text-cataguases-marinho transition-colors duration-200 hover:bg-slate-50 disabled:opacity-50";
 
 export function Cartao({
   titulo,
@@ -94,16 +94,16 @@ export function Vazio({ children }: { children: ReactNode }) {
   return <p className="px-1 py-6 text-center text-sm text-slate-500">{children}</p>;
 }
 
-/** Título de página: o MESMO em todos os módulos (tamanho, peso e espaçamento). */
+/** Título de página: o MESMO em todos os módulos (tamanho, peso e espaçamento). Subtítulo = só dado curto (período, contagem), nunca explicação. */
 export function TituloPagina({ titulo, subtitulo, acao }: { titulo: string; subtitulo?: ReactNode; acao?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <header className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">{titulo}</h1>
-        {subtitulo && <p className="mt-1 max-w-3xl text-sm text-slate-600">{subtitulo}</p>}
+        <h1 className="text-[1.625rem] font-semibold leading-tight tracking-[-0.02em] text-cataguases-marinho text-balance">{titulo}</h1>
+        {subtitulo && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">{subtitulo}</p>}
       </div>
-      {acao && <div className="flex flex-wrap items-center gap-2">{acao}</div>}
-    </div>
+      {acao && <div className="flex flex-wrap items-center gap-2 print:hidden">{acao}</div>}
+    </header>
   );
 }
 

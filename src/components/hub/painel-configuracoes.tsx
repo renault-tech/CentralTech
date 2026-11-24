@@ -13,6 +13,7 @@ import { MODULOS, moduloInfo } from "@/lib/modulos-info";
 import type { UsuarioComAcessos } from "@/lib/dados/usuarios";
 import type { DecisaoAprovacao, ResultadoModulo } from "@/lib/actions/provisionamento-modulos";
 import type { Modulo } from "@/types/database";
+import { useDialogos } from "@/components/ui/dialogos";
 
 const TODOS_MODULOS = Object.values(MODULOS);
 
@@ -299,6 +300,7 @@ function FormularioAcesso({
   usuario: UsuarioComAcessos | null;
   onFechar: () => void;
 } & Catalogos) {
+  const { confirmar } = useDialogos();
   const [email, setEmail] = React.useState(usuario?.email ?? "");
   const [nome, setNome] = React.useState(usuario?.nome ?? "");
   const [adminHub, setAdminHub] = React.useState(usuario?.adminHub ?? false);
@@ -351,9 +353,12 @@ function FormularioAcesso({
 
   async function remover() {
     if (!usuario) return;
-    const ok = window.confirm(
-      `Remover ${usuario.nome}?\n\nTira o acesso a todos os módulos (inclusive Numera) e bloqueia o login. O histórico (processos, logs, documentos) é mantido com o nome. Dá para reativar depois, marcando Ativo e os módulos.`
-    );
+    const ok = await confirmar({
+      titulo: `Remover ${usuario.nome}?`,
+      mensagem: "Tira o acesso a todos os módulos (inclusive Numera) e bloqueia o login. O histórico (processos, logs, documentos) é mantido com o nome. Dá para reativar depois, marcando Ativo e os módulos.",
+      rotuloConfirmar: "Remover",
+      tom: "perigo",
+    });
     if (!ok) return;
     setPendente(true);
     setErro(null);

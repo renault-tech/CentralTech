@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Check, TriangleAlert } from "lucide-react";
+import { Check, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { cn } from "@/lib/utils";
 import { CATALOGO_PADRAO, infoEtapa, posicaoNaTrilha, trilha, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type { FaseCalculada } from "@/lib/emendas/fases";
@@ -45,6 +46,9 @@ export function Kpi({
   corBarra,
   corValor = "#0C1D33",
   ajuda,
+  icone: Icone,
+  comparacao,
+  info,
 }: {
   /** "?" com a explicação e a base legal do indicador. */
   ajuda?: ReactNode;
@@ -55,24 +59,43 @@ export function Kpi({
   barra: number;
   corBarra: string;
   corValor?: string;
+  icone?: LucideIcon;
+  /** Selo de variação contra outro exercício (ver `ComparacaoExercicios`); só aparece quando há com o que comparar. */
+  comparacao?: ReactNode;
+  /** Caixa de informações (composição do número) que abre depois de uma pausa com o mouse sobre o cartão. */
+  info?: ReactNode;
 }) {
-  return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-4">
-      <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+  const cartao = (
+    <div className="emd-ergue flex h-full flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 sm:p-[1.125rem]">
+      <span className="flex items-center gap-2 text-[0.8125rem] font-medium text-slate-600">
+        {Icone && (
+          <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--modulo)_12%,transparent)] text-[color:var(--modulo-tinta)]">
+            <Icone className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+          </span>
+        )}
         {rotulo}
         {ajuda}
       </span>
-      <span className="text-2xl font-semibold tabular-nums" style={{ color: corValor }}>
-        {valor}
+      <span className="flex flex-wrap items-baseline gap-x-2">
+        <span className="text-[1.625rem] font-semibold leading-tight tracking-tight tabular-nums" style={{ color: corValor }}>
+          {valor}
+        </span>
+        {comparacao}
       </span>
       <div className="h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
         <div
-          className="h-1.5 rounded-full"
+          className="emd-barra h-1.5 rounded-full"
           style={{ width: `${Math.max(0, Math.min(1, barra)) * 100}%`, backgroundColor: corBarra }}
         />
       </div>
       <span className="text-xs text-slate-500">{apoio}</span>
     </div>
+  );
+  if (!info) return cartao;
+  return (
+    <CaixaInfo as="div" className="h-full" conteudo={<><CaixaTitulo rotulo={rotulo} valor={valor} />{info}</>}>
+      {cartao}
+    </CaixaInfo>
   );
 }
 
@@ -101,14 +124,34 @@ export function BarraEtapas({
   );
 }
 
+/**
+ * "Paga" só vale como cumprida quando não sobra nada a conciliar. Etapa de pagamento (ou além) com saldo a registrar, empenho a anular
+ * ou pagamento parcial ganha uma ressalva, em âmbar, para a lista não passar a ideia de emenda concluída.
+ */
+export function ressalvaDaEtapa(
+  grupo: number,
+  fin?: { valor: number | string; empenhado: number | string; pago: number | string; regras?: string[] } | null
+): string | null {
+  if (!fin || grupo < 3) return null;
+  const regras = fin.regras ?? [];
+  if (regras.includes("saldo_nao_executado")) return "saldo a registrar";
+  if (regras.includes("anular_saldo_empenho")) return "empenho a anular";
+  const emp = Number(fin.empenhado), pago = Number(fin.pago);
+  if (emp > 0 && pago + 0.005 < emp) return "pagamento parcial";
+  return null;
+}
+
 export function SeloEtapa({
   etapa,
   situacao,
   catalogo = CATALOGO_PADRAO,
+  financeiro,
 }: {
   etapa: EtapaEmenda;
   situacao: SituacaoEmenda;
   catalogo?: CatalogoEtapas;
+  /** Valores e pendências da emenda: com eles o selo avisa quando a etapa "paga" ainda tem o que conciliar. */
+  financeiro?: { valor: number | string; empenhado: number | string; pago: number | string; regras?: string[] } | null;
 }) {
   if (situacao === "impedida") {
     return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Impedida</span>;
@@ -118,15 +161,19 @@ export function SeloEtapa({
   }
   const info = infoEtapa(etapa, catalogo);
   const escuro = info.grupo >= 2;
+  const ressalva = ressalvaDaEtapa(info.grupo, financeiro);
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-xs font-medium"
+      className={cn("inline-flex max-w-[11rem] items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium leading-tight", ressalva ? "rounded-[0.875rem]" : "rounded-full")}
+      title={ressalva ? `${info.nome}, mas com ${ressalva}: a emenda ainda não está cumprida.` : undefined}
       style={{
-        backgroundColor: info.grupo === 0 ? "#F1F5F9" : escuro ? "#EDE9FE" : "#F5F3FF",
-        color: info.grupo === 0 ? "#334155" : "#3B2A7A",
+        backgroundColor: ressalva ? "#FEF3C7" : info.grupo === 0 ? "#F1F5F9" : escuro ? "#EDE9FE" : "#F5F3FF",
+        color: ressalva ? "#78350F" : info.grupo === 0 ? "#334155" : "#3B2A7A",
       }}
     >
+      <span className="emd-ponto h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ressalva ? "#D97706" : info.cor === "#CBD5E1" ? "#94A3B8" : info.cor }} aria-hidden />
       {info.nome}
+      {ressalva && <span className="font-normal"> · {ressalva}</span>}
     </span>
   );
 }
@@ -232,9 +279,9 @@ export function LinhaEtapas({
         const proximo = itens[i + 1];
         const linha = it.estado === "completo" ? "#059669" : cor(it.estado) && proximo && cor(proximo.estado) ? "#F59E0B" : "#E2E8F0";
         return (
-          <li key={it.k} title={tooltip} className="flex flex-col gap-2 pr-2" aria-current={atual ? "step" : undefined}>
+          <CaixaInfo key={it.k} as="li" className="flex flex-col gap-2 pr-2" conteudo={<><CaixaTitulo rotulo="Etapa" valor={infoEtapa(it.k, catalogo).nome} /><CaixaNota>{it.resumo}</CaixaNota></>}>
             <div className="flex items-center">
-              <span title={tooltip} aria-label={tooltip.replace(/\n/g, " — ")} role="img" className="flex h-7 w-7 flex-none cursor-default items-center justify-center">
+              <span aria-label={tooltip.replace(/\n/g, " — ")} role="img" className={cn("flex h-7 w-7 flex-none cursor-default items-center justify-center rounded-full", atual && !travada && "emd-pulso")}>
                 {it.estado === "pendente" ? (
                   <span
                     className={cn(
@@ -248,7 +295,7 @@ export function LinhaEtapas({
                   <MarcaEstado estado={it.estado} tamanho={28} presumida={it.presumida} />
                 )}
               </span>
-              {i < itens.length - 1 && <span className="ml-1.5 h-[3px] flex-1 rounded" style={{ backgroundColor: linha }} />}
+              {i < itens.length - 1 && <span className="emd-barra ml-1.5 h-[3px] flex-1 rounded" style={{ backgroundColor: linha, animationDelay: `${120 + i * 70}ms` }} />}
             </div>
             <span className={cn("text-[0.8125rem]", atual ? "font-semibold text-cataguases-marinho" : it.estado !== "pendente" || proxima ? "text-cataguases-marinho" : "text-slate-500")}>
               {infoEtapa(it.k, catalogo).nome}
@@ -256,7 +303,7 @@ export function LinhaEtapas({
             <span className="text-xs text-slate-500">
               {rotulos[it.k] ?? (it.estado === "parcial" ? "parcial" : it.estado === "alerta" ? "atenção" : i < pos ? "sem registro" : proxima ? (travada ? "bloqueada" : "próxima") : "")}
             </span>
-          </li>
+          </CaixaInfo>
         );
       })}
     </ol>

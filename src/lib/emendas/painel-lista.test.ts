@@ -62,3 +62,13 @@ describe("lista de emendas: números do dashboard", () => {
     expect(porAssunto.reduce((s, g) => s + g.n, 0)).toBe(3);
   });
 });
+
+describe("busca por palavra na lista de emendas", () => {
+  const comTexto = { ...pend, b: { abertas: 1, regras: ["publicidade_incompleta"], busca: "Publicidade incompleta XIV: Gestor responsável" } };
+  it("acha a emenda pelo texto das pendências abertas (sem acento, várias palavras)", () => {
+    expect(nums(filtrarEmendasLista(L, comTexto, { ...F, q: "gestor" }))).toEqual([2]);
+    expect(nums(filtrarEmendasLista(L, comTexto, { ...F, q: "responsavel gestor" }))).toEqual([2]);
+    expect(nums(filtrarEmendasLista(L, comTexto, { ...F, q: "gestor onibus" }))).toEqual([]);
+  });
+});
+

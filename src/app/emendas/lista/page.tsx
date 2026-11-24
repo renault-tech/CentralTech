@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { TabelaEmendas } from "@/components/emendas/tabela-emendas";
+import { AreaTrabalhoEmendas } from "@/components/emendas/area-trabalho-emendas";
 import { Vazio } from "@/components/emendas/ui";
 import { medir } from "@/lib/emendas/tempo";
 import { calcularEmendasDoExercicio } from "@/lib/emendas/calculos";
@@ -23,7 +23,7 @@ export default async function PaginaListaEmendas({ searchParams }: { searchParam
 
   return (
     <Suspense>
-      <TabelaEmendas
+      <AreaTrabalhoEmendas
         emendas={emendas}
         resumos={resumos}
         ano={exercicio.ano}

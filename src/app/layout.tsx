@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AtualizarSozinho } from "@/components/layout/atualizar-sozinho";
 import { ControleZoom } from "@/components/layout/controle-zoom";
+import { ProvedorDialogos } from "@/components/ui/dialogos";
 import { SCRIPT_TEMA_INICIAL } from "@/lib/tema";
 import { SCRIPT_ZOOM_INICIAL } from "@/lib/zoom";
 
@@ -39,16 +40,20 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/* Conexão com o Supabase já aberta quando a página precisa dele (sessão, avisos ao vivo). */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />}
         {/* Aplica o tema salvo (ou o do sistema) antes da pintura, sem piscar. */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
         {/* Aplica o zoom salvo (limitado pela largura da tela) antes da pintura. */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_ZOOM_INICIAL }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
-        <AtualizarSozinho />
-        {/* Só aparece onde não há cabeçalho (login, portal público…); com cabeçalho o botão é o dele. */}
-        <ControleZoom variante="flutuante" />
+        <ProvedorDialogos>
+          {children}
+          <AtualizarSozinho />
+          {/* Só aparece onde não há cabeçalho (login, portal público…); com cabeçalho o botão é o dele. */}
+          <ControleZoom variante="flutuante" />
+        </ProvedorDialogos>
       </body>
     </html>
   );

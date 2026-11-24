@@ -8,6 +8,7 @@ import { AlertOctagon, AlertTriangle, Check, Copy, ExternalLink, Eye, Info, Mail
 import { CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem, TituloPagina } from "@/components/modulo/ui";
 import { publicarPortal, retirarPortal } from "@/lib/emendas/actions-portal";
 import { contarPorGravidade, type AlertaPortal, type Gravidade } from "@/lib/emendas/portal-verificacao";
+import { useDialogos } from "@/components/ui/dialogos";
 
 const ESTILO: Record<Gravidade, { nome: string; icone: typeof Info; classe: string; descricao: string }> = {
   critico: { nome: "Crítico", icone: AlertOctagon, classe: "border-red-200 bg-red-50 text-red-800", descricao: "Pode expor a Prefeitura ou os gestores. Resolva antes de publicar ou publique com ciência registrada." },
@@ -39,6 +40,7 @@ export function PainelPortalPublico({
   geradoEm: string;
 }) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [ciente, setCiente] = React.useState(false);
   const [msg, setMsg] = React.useState<{ tipo: "erro" | "ok"; texto: string } | null>(null);
   const [pendente, iniciar] = React.useTransition();
@@ -71,7 +73,6 @@ export function PainelPortalPublico({
     <div className="flex flex-col gap-6">
       <TituloPagina
         titulo="Portal público"
-        subtitulo="A página aberta ao cidadão, sem login. Ela lê os dados deste módulo e se atualiza sozinha; antes de publicar, confira os alertas abaixo."
         acao={
           <div className="flex flex-wrap gap-2">
             <a href={`/transparencia/emendas?ano=${ano}&previa=1`} target="_blank" rel="noopener" className={CLASSE_BOTAO_SECUNDARIO}>
@@ -127,7 +128,7 @@ export function PainelPortalPublico({
                     <Radio className="h-4 w-4" aria-hidden /> {pendente ? "Publicando…" : "Publicar no portal"}
                   </button>
                 ) : (
-                  <button type="button" className={CLASSE_BOTAO_PERIGO} disabled={pendente} onClick={() => confirm("Retirar o exercício do ar? O portal passa a mostrar \"em preparação\".") && agir(() => retirarPortal({ ano }), "Retirado do ar.")}>
+                  <button type="button" className={CLASSE_BOTAO_PERIGO} disabled={pendente} onClick={async () => (await confirmar({ titulo: "Retirar o exercício do ar?", mensagem: "O portal passa a mostrar “em preparação”.", rotuloConfirmar: "Retirar do ar", tom: "perigo" })) && agir(() => retirarPortal({ ano }), "Retirado do ar.")}>
                     Retirar do ar
                   </button>
                 )}

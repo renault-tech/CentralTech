@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { brlCurto, pct } from "@/lib/emendas/regras";
+import { brlCurto, pctDe } from "@/lib/moeda";
 
 /** Cores das fatias quando a dimensão não tem cor própria (área, assunto, secretaria, documento). */
 export const PALETA = ["#6B4FBB", "#0E7490", "#C2410C", "#5C7A1F", "#BE185D", "#1D4ED8", "#A16207", "#0F766E"];
@@ -15,14 +15,21 @@ export function Pizza({
   aoEscolher,
   dinheiro,
   rotuloTotal,
+  destaque = null,
+  className = "h-[12.25rem] w-[12.25rem]",
 }: {
   fatias: { chave: string; rotulo: string; v: number; cor: string; clicavel: boolean }[];
   selecionada: string;
   aoEscolher: (chave: string) => void;
   dinheiro: boolean;
   rotuloTotal: string;
+  /** Fatia a realçar vinda de fora (a linha do ranking sob o cursor). */
+  destaque?: string | null;
+  /** Tamanho do anel (classes de largura e altura). */
+  className?: string;
 }) {
-  const [sobre, setSobre] = React.useState<string | null>(null);
+  const [sobreLocal, setSobre] = React.useState<string | null>(null);
+  const sobre = sobreLocal ?? destaque;
   const R = 38;
   const C = 2 * Math.PI * R;
   const total = fatias.reduce((s, f) => s + f.v, 0);
@@ -42,11 +49,11 @@ export function Pizza({
   const corta = (t: string) => (t.length > 17 ? `${t.slice(0, 16)}…` : t);
 
   return (
-    <svg viewBox="0 0 100 100" className="h-[12.25rem] w-[12.25rem] shrink-0 text-cataguases-marinho" role="group" aria-label="Gráfico de pizza">
+    <svg viewBox="0 0 100 100" className={`${className} shrink-0 text-cataguases-marinho`} role="group" aria-label="Gráfico de pizza">
       {total === 0 ? (
         <circle cx="50" cy="50" r={R} fill="none" stroke={CINZA} strokeOpacity="0.35" strokeWidth="15" />
       ) : (
-        arcos.map((a) => {
+        arcos.map((a, idx) => {
           const ativa = a.chave === selecionada;
           const apagada = (selecionada || sobre) && !ativa && a.chave !== sobre;
           return (
@@ -62,11 +69,12 @@ export function Pizza({
               strokeDashoffset={-a.inicio}
               transform="rotate(-90 50 50)"
               opacity={apagada ? 0.4 : 1}
-              className={`outline-none transition-[stroke-width,opacity] duration-150 motion-reduce:transition-none ${a.clicavel ? "cursor-pointer" : ""}`}
+              className={`emd-fatia outline-none transition-[stroke-width,opacity,filter] duration-200 motion-reduce:transition-none ${a.clicavel ? "cursor-pointer" : ""}`}
+              style={{ animationDelay: `${idx * 70}ms` }}
               role={a.clicavel ? "button" : undefined}
               tabIndex={a.clicavel ? 0 : undefined}
               aria-pressed={a.clicavel ? ativa : undefined}
-              aria-label={`${a.rotulo}: ${fmt(a.v)} (${pct(a.v / total, 0)})`}
+              aria-label={`${a.rotulo}: ${fmt(a.v)} (${pctDe(a.v / total, 0)})`}
               onMouseEnter={() => setSobre(a.chave)}
               onMouseLeave={() => setSobre(null)}
               onFocus={() => setSobre(a.chave)}
@@ -91,7 +99,7 @@ export function Pizza({
         </text>
         {foco && total > 0 && (
           <text x="50" y="68" fontSize="4.6" opacity="0.7" className="tabular-nums">
-            {pct(foco.v / total, 0)}
+            {pctDe(foco.v / total, 0)}
           </text>
         )}
       </g>

@@ -23,11 +23,11 @@ export default function ErroDaPagina({ error, reset }: { error: Error & { digest
         <button
           type="button"
           onClick={reset}
-          className="inline-flex h-10 items-center rounded-lg bg-cataguases-marinho px-4 text-sm font-medium text-white hover:opacity-90"
+          className="inline-flex min-h-10 py-1 items-center rounded-lg bg-cataguases-marinho px-4 text-sm font-medium text-white hover:opacity-90"
         >
           Tentar de novo
         </button>
-        <Link href="/" className="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
+        <Link href="/" className="inline-flex min-h-10 py-1 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50">
           Voltar ao início
         </Link>
       </div>

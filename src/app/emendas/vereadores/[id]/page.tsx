@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinhaLink } from "@/components/emendas/linha-link";
 import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 
@@ -54,10 +55,10 @@ export default async function PaginaVereador({ params, searchParams }: { params:
           </p>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
-          <BotaoImprimir className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15" />
+          <BotaoImprimir className="inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15" />
           <a
             href={`/emendas/exportar?ano=${exercicio.ano}&v=${vereador.id}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15"
+            className="inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3.5 text-sm text-white hover:bg-white/15"
           >
             <Download className="h-4 w-4" aria-hidden /> Exportar Excel
           </a>
@@ -75,7 +76,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
               <span className="text-[0.8125rem] text-slate-600">{m.de}</span>
             </div>
             <div className="relative h-2.5 rounded-full bg-slate-100">
-              <div className="h-2.5 rounded-full" style={{ width: `${Math.min(1, m.w) * 100}%`, backgroundColor: m.cor }} />
+              <div className="emd-preenche h-2.5 rounded-full" style={{ width: `${Math.min(1, m.w) * 100}%`, backgroundColor: m.cor }} />
               {m.marca !== undefined && <span className="absolute -top-1 h-[18px] w-0.5 bg-cataguases-marinho" style={{ left: `${m.marca * 100}%` }} aria-hidden />}
             </div>
             <span className="text-xs text-slate-500">{m.apoio}</span>
@@ -87,7 +88,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
         <h2 className="mb-3 text-[0.9375rem] font-semibold text-cataguases-marinho">Para onde vai a cota</h2>
         <div className="flex h-6 overflow-hidden rounded-md" aria-hidden>
           {distrib.map((d, i) => (
-            <span key={d.secretariaId} title={d.nome} style={{ width: `${(d.total / (total || 1)) * 100}%`, backgroundColor: CORES[i % CORES.length] }} className="border-r-2 border-white last:border-0" />
+            <span key={d.secretariaId} title={d.nome} style={{ width: `${(d.total / (total || 1)) * 100}%`, backgroundColor: CORES[i % CORES.length] }} className="emd-preenche border-r-2 border-white last:border-0" />
           ))}
         </div>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -118,7 +119,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
           </thead>
           <tbody>
             {dele.map((e) => (
-              <tr key={e.id} className="border-t border-slate-100 align-top [break-inside:avoid]">
+              <LinhaLink key={e.id} href={`/emendas/${e.id}`} className="border-t border-slate-100 align-top [break-inside:avoid]">
                 <td className="px-4 py-2.5 font-mono text-slate-500">{e.numero_vereador}</td>
                 <td className="px-4 py-2.5 font-mono text-slate-500">{e.numero}</td>
                 <td className="px-4 py-2.5">
@@ -138,7 +139,7 @@ export default async function PaginaVereador({ params, searchParams }: { params:
                     <SeloEtapa etapa={e.etapa} situacao={e.situacao} catalogo={catalogo} />
                   </div>
                 </td>
-              </tr>
+              </LinhaLink>
             ))}
           </tbody>
         </table>

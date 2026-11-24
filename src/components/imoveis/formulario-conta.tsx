@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem, SeloNivel } from "@/components/imoveis/ui";
 import { excluirConta, salvarConta } from "@/lib/imoveis/actions";
@@ -9,6 +8,7 @@ import { analisarConsumo, referenciaDe, UNIDADE_DE_MEDIDA, type PontoConta } fro
 import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import type { Conta, ParametrosImoveis, TipoUnidade } from "@/types/imoveis";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export type OpcaoUnidade = { id: string; rotulo: string; tipo: TipoUnidade; historico: PontoConta[] };
 
@@ -26,7 +26,7 @@ export function FormularioConta({
   mesPadrao: string;
   aoConcluir?: () => void;
 }) {
-  const router = useRouter();
+  const { confirmar } = useDialogos();
   const [unidadeId, setUnidadeId] = React.useState(conta?.unidade_id ?? unidades[0]?.id ?? "");
   const [mes, setMes] = React.useState((conta?.referencia ?? mesPadrao).slice(0, 7));
   const [consumo, setConsumo] = React.useState(conta?.consumo != null ? String(conta.consumo).replace(".", ",") : "");
@@ -65,17 +65,15 @@ export function FormularioConta({
         setValor("");
         setPagoEm("");
       }
-      router.refresh();
       aoConcluir?.();
     });
   }
 
-  function excluir() {
-    if (!conta || !window.confirm("Excluir esta conta? O histórico da alteração fica registrado.")) return;
+  async function excluir() {
+    if (!conta || !(await confirmar({ titulo: "Excluir esta conta?", mensagem: "O histórico da alteração fica registrado.", rotuloConfirmar: "Excluir", tom: "perigo" }))) return;
     iniciar(async () => {
       const r = await excluirConta(conta.id);
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
       aoConcluir?.();
     });
   }

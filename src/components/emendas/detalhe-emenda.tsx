@@ -35,13 +35,15 @@ import { CATEGORIAS, INFO_CATEGORIA, tipoDaCategoria, type CategoriaBeneficiario
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
 import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 export const BOTAO_PRIMARIO =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-4 py-1.5 text-center text-sm leading-snug font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+const BOTAO_COMPACTO = "min-h-8 px-3 py-1 text-[0.8125rem]";
 export const BOTAO_SECUNDARIO =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-center text-sm leading-snug text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const TIPOS_DOC: { valor: TipoDocumento; rotulo: string; modalidade?: "repasse" | "direta" }[] = [
   { valor: "plano_trabalho", rotulo: "Plano de trabalho (IN 05/2025, art. 7º, IX)" },
@@ -140,8 +142,11 @@ function paraNumero(t: string): number | null {
   return limpo && Number.isFinite(n) ? n : null;
 }
 
-type Aba = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
-const ABAS_VALIDAS: Aba[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
+/** Comandos que o painel ao lado da lista dá ao detalhe (abrir os diálogos de gravação sem repetir a barra de botões). */
+export type ControleDetalhe = { abrir: (dialogo: "andamento" | "movimento", opcoes?: { tipoMovimento?: "empenho" | "pagamento" }) => void };
+
+export type AbaEmenda = "fases" | "andamentos" | "financeiro" | "documentacao" | "documentos" | "pendencias" | "historico";
+const ABAS_VALIDAS: AbaEmenda[] = ["fases", "andamentos", "financeiro", "documentacao", "documentos", "pendencias", "historico"];
 
 export function DetalheEmendaCliente({
   detalhe,
@@ -159,12 +164,24 @@ export function DetalheEmendaCliente({
   corTipo,
   atalhos,
   abaInicial,
+  abaControlada,
+  aoMudarAba,
+  modoPainel,
+  aoSucesso,
+  controleRef,
 }: {
   fases: FaseCalculada[];
   pendencias: Pendencia[];
   corTipo: string;
   atalhos?: AtalhosCompras;
   abaInicial?: string;
+  /** Painel ao lado da lista: a aba vem de fora (`null` = nenhuma aba daqui, só as ações e avisos), sem barra de abas nem moldura. */
+  abaControlada?: AbaEmenda | null;
+  aoMudarAba?: (destino: string) => void;
+  modoPainel?: boolean;
+  /** Chamado depois de uma gravação bem-sucedida (o painel recarrega os próprios dados). */
+  aoSucesso?: () => void;
+  controleRef?: React.Ref<ControleDetalhe>;
   detalhe: DetalheEmenda;
   podeEditar: boolean;
   gestor: boolean;
@@ -179,9 +196,20 @@ export function DetalheEmendaCliente({
 }) {
   const catalogo = useCatalogo();
   const router = useRouter();
+  const { confirmar, pedirTexto } = useDialogos();
   const { emenda, andamentos, movimentos, impedimentos, remanejamentos, documentos } = detalhe;
-  const [aba, setAba] = React.useState<Aba>(ABAS_VALIDAS.includes(abaInicial as Aba) ? (abaInicial as Aba) : "fases");
+  const [abaLocal, setAbaLocal] = React.useState<AbaEmenda>(ABAS_VALIDAS.includes(abaInicial as AbaEmenda) ? (abaInicial as AbaEmenda) : "fases");
+  const controlada = abaControlada !== undefined;
+  const aba: AbaEmenda | null = controlada ? abaControlada : abaLocal;
+  const setAba = (destino: AbaEmenda) => (controlada && aoMudarAba ? aoMudarAba(destino) : setAbaLocal(destino));
   const [dialogo, setDialogo] = React.useState<null | "andamento" | "impedimento" | "remanejar" | "movimento">(null);
+  const [tipoMov, setTipoMov] = React.useState<"empenho" | "pagamento">("pagamento");
+  React.useImperativeHandle(controleRef, () => ({
+    abrir: (d, opcoes) => {
+      if (d === "movimento") setTipoMov(opcoes?.tipoMovimento ?? "pagamento");
+      setDialogo(d);
+    },
+  }));
   const [erroGeral, setErroGeral] = React.useState<string | null>(null);
   const [avisoGeral, setAvisoGeral] = React.useState<string | null>(null);
 
@@ -207,31 +235,34 @@ export function DetalheEmendaCliente({
     const r = await acao();
     // Em caso de sucesso a própria action revalida a página (sem router.refresh).
     if (!r.sucesso) setErroGeral(r.erro);
-    else if (r.aviso) setAvisoGeral(r.aviso);
+    else {
+      if (r.aviso) setAvisoGeral(r.aviso);
+      aoSucesso?.();
+    }
     return r;
   }
 
   return (
     <>
-      {(podeEditar || gestor) && (
-        <div className="flex flex-wrap justify-end gap-2 print:hidden" data-tour="acoes-emenda">
+      {!modoPainel && (podeEditar || gestor) && (
+        <div className={cn("flex flex-wrap justify-end gap-2 print:hidden", modoPainel && "gap-1.5")} data-tour="acoes-emenda">
           {podeEditar && emenda.situacao !== "cancelada" && (
             <>
-              <button type="button" className={cn(BOTAO_SECUNDARIO, "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100")} onClick={() => setDialogo("impedimento")}>
+              <button type="button" className={cn(BOTAO_SECUNDARIO, "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100", modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("impedimento")}>
                 <AlertTriangle className="h-4 w-4" aria-hidden /> Registrar impedimento
               </button>
-              <button type="button" className={BOTAO_PRIMARIO} onClick={() => setDialogo("andamento")}>
+              <button type="button" className={cn(BOTAO_PRIMARIO, modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("andamento")}>
                 + Registrar andamento
               </button>
             </>
           )}
           {gestor && emenda.situacao !== "cancelada" && (
-            <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("remanejar")}>
+            <button type="button" className={cn(BOTAO_SECUNDARIO, modoPainel && BOTAO_COMPACTO)} onClick={() => setDialogo("remanejar")}>
               Remanejar
             </button>
           )}
           {gestor && (
-            <a href={`/emendas/${emenda.id}/editar`} className={BOTAO_SECUNDARIO}>
+            <a href={`/emendas/${emenda.id}/editar`} className={cn(BOTAO_SECUNDARIO, modoPainel && BOTAO_COMPACTO)}>
               <Pencil className="h-4 w-4" aria-hidden /> Corrigir cadastro
             </a>
           )}
@@ -254,8 +285,9 @@ export function DetalheEmendaCliente({
         </div>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white print:border-0">
-        <div role="tablist" aria-label="Seções da emenda" className="flex flex-wrap gap-1 border-b border-slate-200 px-3 print:hidden">
+      {aba !== null && (
+      <section className={cn(!modoPainel && "rounded-xl border border-slate-200 bg-white print:border-0")}>
+        {!modoPainel && <div role="tablist" aria-label="Seções da emenda" className="flex flex-wrap gap-1 border-b border-slate-200 px-3 print:hidden">
           {(
             [
               ["fases", `Fases (${fases.filter((f) => f.situacao === "concluida").length}/${fases.filter((f) => f.situacao !== "nao_se_aplica").length})`],
@@ -265,7 +297,7 @@ export function DetalheEmendaCliente({
               ["andamentos", `Andamentos (${andamentos.length})`],
               // Anexos desativados por ora (nada de arquivo no banco): documentos ficam no Drive, na aba Documentação.
               ["historico", `Histórico${remanejamentos.length ? ` (${remanejamentos.length})` : ""}`],
-            ] as [Aba, string][]
+            ] as [AbaEmenda, string][]
           ).map(([chave, rotulo]) => (
             <button
               key={chave}
@@ -281,9 +313,9 @@ export function DetalheEmendaCliente({
               {rotulo}
             </button>
           ))}
-        </div>
+        </div>}
 
-        <div className="p-5">
+        <div className={modoPainel ? "pt-1" : "p-5"}>
           {aba === "fases" && vinculo && <div className="mb-4">{vinculo}</div>}
           {aba === "fases" && <AbaFases emendaId={emenda.id} fases={fases} podeEditar={podeEditar} gestor={gestor} cor={corTipo} atalhos={atalhos} executar={executar} />}
 
@@ -326,7 +358,8 @@ export function DetalheEmendaCliente({
               podeEditar={podeEditar}
               executar={executar}
               irParaAba={(destino) => {
-                if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
+                if (modoPainel && (destino === "execucao" || destino === "transparencia")) aoMudarAba?.("parceria");
+                else if (destino === "execucao") document.getElementById("bloco-parceria")?.scrollIntoView({ behavior: "smooth" });
                 else if (destino === "transparencia") document.getElementById("bloco-transparencia")?.scrollIntoView({ behavior: "smooth" });
                 else setAba(destino);
               }}
@@ -353,11 +386,18 @@ export function DetalheEmendaCliente({
                         <button
                           type="button"
                           className="ml-3 text-red-700 hover:underline"
-                          onClick={() => {
-                            const motivo = window.prompt(`Desfazer o andamento “${infoEtapa(a.etapa, catalogo).nome}” de ${dataBr(a.data)}? A etapa da emenda volta ao andamento anterior.\n\nJustifique (mínimo de 10 caracteres):`);
+                          onClick={async () => {
+                            const motivo = await pedirTexto({
+                              titulo: `Desfazer o andamento “${infoEtapa(a.etapa, catalogo).nome}” de ${dataBr(a.data)}?`,
+                              mensagem: "A etapa da emenda volta ao andamento anterior.",
+                              rotulo: "Justificativa",
+                              minimo: 10,
+                              multilinha: true,
+                              rotuloConfirmar: "Desfazer andamento",
+                              tom: "perigo",
+                            });
                             if (motivo === null) return;
-                            if (motivo.trim().length < 10) return window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi desfeito.");
-                            void executar(() => excluirAndamento({ id: a.id, emendaId: emenda.id, justificativa: motivo.trim() }));
+                            void executar(() => excluirAndamento({ id: a.id, emendaId: emenda.id, justificativa: motivo }));
                           }}
                         >
                           Desfazer
@@ -411,7 +451,7 @@ export function DetalheEmendaCliente({
                 </table>
                 {movimentos.length === 0 && <p className="py-4 text-sm text-slate-500">Nenhum empenho, liquidação ou pagamento registrado ainda.</p>}
               </div>
-              {podeEditar && (
+              {podeEditar && !modoPainel && (
                 <div className="flex flex-wrap items-center gap-2">
                   <button type="button" className={BOTAO_SECUNDARIO} onClick={() => setDialogo("movimento")}>
                     + Lançar movimento (parcial, anulação…)
@@ -512,15 +552,16 @@ export function DetalheEmendaCliente({
           )}
         </div>
       </section>
+      )}
 
       {gestor && (
         <div className="flex justify-end print:hidden">
           <button
             type="button"
             className="text-xs text-slate-500 hover:text-red-700 hover:underline"
-            onClick={() => {
+            onClick={async () => {
               const cancelar = emenda.situacao !== "cancelada";
-              if (cancelar && !window.confirm("Cancelar esta emenda? O valor deixa de contar na cota do vereador.")) return;
+              if (cancelar && !(await confirmar({ titulo: "Cancelar esta emenda?", mensagem: "O valor deixa de contar na cota do vereador.", rotuloConfirmar: "Cancelar emenda", rotuloCancelar: "Voltar", tom: "perigo" }))) return;
               void executar(() => definirCancelamento(emenda.id, cancelar));
             }}
           >
@@ -531,17 +572,26 @@ export function DetalheEmendaCliente({
             type="button"
             className="text-xs text-slate-500 hover:text-red-700 hover:underline"
             onClick={async () => {
-              const motivo = window.prompt(
-                `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}, com todos os lançamentos, fases e anexos?\n\nSe só quer tirar a emenda da cota, use "Cancelar emenda".\n\nJustifique a exclusão (mínimo de 10 caracteres):`
-              );
+              const motivo = await pedirTexto({
+                titulo: `Excluir DEFINITIVAMENTE a emenda nº ${emenda.numero}?`,
+                mensagem: "Vão junto todos os lançamentos, fases e anexos. Se só quer tirar a emenda da cota, use “Cancelar emenda”.",
+                rotulo: "Justificativa da exclusão",
+                minimo: 10,
+                multilinha: true,
+                rotuloConfirmar: "Continuar",
+                tom: "perigo",
+              });
               if (motivo === null) return;
-              if (motivo.trim().length < 10) {
-                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
-                return;
-              }
-              const digitado = window.prompt(`Para confirmar, digite o número da emenda (${emenda.numero}):`);
+              const digitado = await pedirTexto({
+                titulo: "Confirme o número da emenda",
+                mensagem: `Para excluir, digite o número da emenda (${emenda.numero}).`,
+                rotulo: "Número da emenda",
+                igualA: String(emenda.numero),
+                rotuloConfirmar: "Excluir emenda",
+                tom: "perigo",
+              });
               if (digitado === null) return;
-              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado.trim()), justificativa: motivo.trim() }));
+              const r = await executar(() => excluirEmenda({ emendaId: emenda.id, numeroConfirmado: Number(digitado), justificativa: motivo }));
               if (r.sucesso) router.push("/emendas/lista");
             }}
           >
@@ -565,6 +615,8 @@ export function DetalheEmendaCliente({
         aoSalvar={(d) => executar(() => registrarImpedimento({ emendaId: emenda.id, ...d }))}
       />
       <DialogoMovimento
+        key={tipoMov}
+        tipoInicial={tipoMov}
         aberto={dialogo === "movimento"}
         saldos={(() => {
           const t = totaisFinanceiros(movimentos);
@@ -767,16 +819,18 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
 
 function DialogoMovimento({
   aberto,
+  tipoInicial,
   saldos,
   aoFechar,
   aoSalvar,
 }: {
   aberto: boolean;
+  tipoInicial: "empenho" | "pagamento";
   saldos: { empenhar: number; liquidar: number; pagar: number };
   aoFechar: () => void;
   aoSalvar: (d: { tipo: "empenho" | "liquidacao" | "pagamento" | "anulacao"; numero?: string; data: string | null; valor: number }) => Promise<Resultado>;
 }) {
-  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">("pagamento");
+  const [tipo, setTipo] = React.useState<"empenho" | "liquidacao" | "pagamento" | "anulacao">(tipoInicial);
   const [numero, setNumero] = React.useState("");
   const [data, setData] = React.useState(hojeLocal());
   const [valor, setValor] = React.useState("");
@@ -1035,6 +1089,7 @@ function LinhaMovimento({
   nome: string;
   aoCorrigir: (numero: string, data: string | null, valor: number) => Promise<Resultado>;
 }) {
+  const { pedirTexto } = useDialogos();
   const [editando, setEditando] = React.useState(false);
   const [valorTexto, setValorTexto] = React.useState(movimento.valor.toFixed(2).replace(".", ","));
   const [numero, setNumero] = React.useState(movimento.numero ?? "");
@@ -1104,14 +1159,18 @@ function LinhaMovimento({
             aria-label="Excluir lançamento"
             title="Excluir lançamento"
             className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
-            onClick={() => {
-              const motivo = window.prompt(`Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})? Não pode ser desfeito.\n\nJustifique a exclusão (mínimo de 10 caracteres):`);
+            onClick={async () => {
+              const motivo = await pedirTexto({
+                titulo: `Excluir este lançamento de ${nome.toLowerCase()} (${brl(movimento.valor)})?`,
+                mensagem: "Não pode ser desfeito.",
+                rotulo: "Justificativa da exclusão",
+                minimo: 10,
+                multilinha: true,
+                rotuloConfirmar: "Excluir lançamento",
+                tom: "perigo",
+              });
               if (motivo === null) return;
-              if (motivo.trim().length < 10) {
-                window.alert("A justificativa precisa ter pelo menos 10 caracteres. Nada foi excluído.");
-                return;
-              }
-              void aoExcluir(motivo.trim());
+              void aoExcluir(motivo);
             }}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
@@ -1224,6 +1283,7 @@ function ListaAnexos({
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
   emendaId: string;
 }) {
+  const { confirmar } = useDialogos();
   return (
     <ul className="flex w-full flex-col gap-1 sm:w-auto">
       {anexos.map((d) => (
@@ -1245,7 +1305,7 @@ function ListaAnexos({
               type="button"
               aria-label={`Remover ${d.nome_arquivo}`}
               className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-700"
-              onClick={() => window.confirm("Remover este arquivo?") && void executar(() => removerDocumento(d.id, emendaId))}
+              onClick={async () => (await confirmar({ titulo: "Remover este arquivo?", mensagem: d.nome_arquivo, rotuloConfirmar: "Remover", tom: "perigo" })) && void executar(() => removerDocumento(d.id, emendaId))}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>

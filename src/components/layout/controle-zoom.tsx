@@ -102,7 +102,7 @@ export function AjusteZoom() {
         <button
           type="button"
           onClick={() => definirZoom(100)}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+          className="inline-flex min-h-10 py-1 items-center justify-center gap-1.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden />
           Voltar ao padrão (100%)

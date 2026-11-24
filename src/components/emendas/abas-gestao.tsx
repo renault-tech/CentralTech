@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { CaixaInfo, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { AlertTriangle, ChevronDown, CircleDashed, Minus } from "lucide-react";
 
 import { preencherPeloPdf, removerDocumentoDrive, vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
@@ -14,13 +15,14 @@ import { cn } from "@/lib/utils";
 import { JanelaFicha } from "@/components/modulo/janela-ficha";
 import { ROTULO_DRIVE, TIPOS_DRIVE, avisosDoDocumento, montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
 import type { SituacaoFase } from "@/types/emendas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 const BOTAO_PRIMARIO =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+  "inline-flex min-h-9 py-1 items-center justify-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 const BOTAO_SECUNDARIO =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-9 py-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-cataguases-marinho hover:bg-slate-50 disabled:opacity-50";
 
 const NOME_SITUACAO: Record<SituacaoFase, string> = {
   pendente: "Pendente",
@@ -51,9 +53,21 @@ function Marca({ f }: { f: FaseCalculada }) {
   else if (f.situacao === "nao_se_aplica") corpo = <Minus className="h-5 w-5 text-slate-400" aria-hidden />;
   else corpo = <CircleDashed className="h-5 w-5 text-slate-400" aria-hidden />;
   return (
-    <span title={resumo} aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-default">
-      {corpo}
-    </span>
+    <CaixaInfo
+      conteudo={
+        <>
+          <CaixaTitulo rotulo="Fase" valor={f.fase.nome} />
+          <CaixaNota>{f.resumo}</CaixaNota>
+          {f.alertas.map((a) => (
+            <p key={a} className="mt-1.5 text-[0.75rem] leading-snug text-amber-800">⚠ {a}</p>
+          ))}
+        </>
+      }
+    >
+      <span aria-label={resumo.replace(/\n/g, " — ")} role="img" className="cursor-default">
+        {corpo}
+      </span>
+    </CaixaInfo>
   );
 }
 
@@ -175,6 +189,7 @@ function EditorFase({
   const [data, setData] = React.useState(fase.data ?? (fase.situacao === "concluida" ? "" : hojeLocal()));
   const [documento, setDocumento] = React.useState(fase.documento ?? "");
   const [observacao, setObservacao] = React.useState(fase.observacao ?? "");
+  const { confirmar } = useDialogos();
   const [pendente, iniciar] = React.useTransition();
   const [erro, setErro] = React.useState<string | null>(null);
   const informaData = situacao === "concluida" || situacao === "em_andamento";
@@ -239,8 +254,8 @@ function EditorFase({
             type="button"
             disabled={pendente}
             className="text-xs font-medium text-red-700 hover:underline disabled:opacity-50"
-            onClick={() => {
-              if (!window.confirm(`Voltar a fase “${fase.fase.nome}” para pendente? A data, o documento e a conclusão dela serão apagados.`)) return;
+            onClick={async () => {
+              if (!(await confirmar({ titulo: `Voltar a fase “${fase.fase.nome}” para pendente?`, mensagem: "A data, o documento e a conclusão dela serão apagados.", rotuloConfirmar: "Voltar para pendente", tom: "perigo" }))) return;
               setErro(null);
               iniciar(async () => {
                 const r = await executar(() => desfazerFase({ emendaId, chave: fase.fase.chave }));
@@ -296,6 +311,7 @@ export function AbaDocumentacao({
   gestor: boolean;
   executar: (acao: () => Promise<Resultado>) => Promise<Resultado>;
 }) {
+  const { confirmar } = useDialogos();
   if (exigidos.length === 0) {
     return (
       <div className="flex flex-col gap-3">
@@ -340,8 +356,8 @@ export function AbaDocumentacao({
                         <button
                           type="button"
                           className="text-xs text-slate-500 hover:text-red-700 hover:underline"
-                          onClick={() => {
-                            if (window.confirm("Remover o vínculo com este documento? O arquivo continua no Drive.")) void executar(() => removerDocumentoDrive(d.id, emendaId));
+                          onClick={async () => {
+                            if (await confirmar({ titulo: "Remover o vínculo com este documento?", mensagem: "O arquivo continua no Drive.", rotuloConfirmar: "Remover", tom: "perigo" })) void executar(() => removerDocumentoDrive(d.id, emendaId));
                           }}
                         >
                           Remover
@@ -368,6 +384,7 @@ export function AbaDocumentacao({
 
 /** Documento que comprova o cumprimento da emenda (nota fiscal com atesto, ou prestação de contas), ligado no Drive. Documento interno. */
 function ComprovacaoCumprimento({ docsDrive, gestor, emendaId, executar }: { docsDrive: DocumentoDrive[]; gestor: boolean; emendaId: string; executar: (acao: () => Promise<Resultado>) => Promise<Resultado> }) {
+  const { confirmar } = useDialogos();
   const docs = docsDrive.filter((d) => d.tipo === "nota_fiscal" || d.tipo === "prestacao_contas");
   if (docs.length === 0) return <p className="text-xs text-slate-500">Comprovação do cumprimento (nota fiscal ou prestação de contas): ainda não ligada. Ela é pedida ao marcar a emenda como cumprida, na aba Financeiro.</p>;
   return (
@@ -384,8 +401,8 @@ function ComprovacaoCumprimento({ docsDrive, gestor, emendaId, executar }: { doc
               <button
                 type="button"
                 className="text-slate-500 hover:text-red-700 hover:underline"
-                onClick={() => {
-                  if (window.confirm("Remover o vínculo com este documento? O arquivo continua no Drive.")) void executar(() => removerDocumentoDrive(d.id, emendaId));
+                onClick={async () => {
+                  if (await confirmar({ titulo: "Remover o vínculo com este documento?", mensagem: "O arquivo continua no Drive.", rotuloConfirmar: "Remover", tom: "perigo" })) void executar(() => removerDocumentoDrive(d.id, emendaId));
                 }}
               >
                 Remover

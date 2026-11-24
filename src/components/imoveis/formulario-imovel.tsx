@@ -9,10 +9,12 @@ import { excluirImovel, salvarImovel } from "@/lib/imoveis/actions";
 import { lerValor, valorParaCampo } from "@/lib/frotas/entrada";
 import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import type { Imobiliaria, Imovel, SecretariaImoveis } from "@/types/imoveis";
+import { useDialogos } from "@/components/ui/dialogos";
 
 /** Cadastro e edição de um imóvel: dados, contrato, imobiliária e proprietário. */
 export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara }: { imovel: Imovel | null; secretarias: SecretariaImoveis[]; imobiliarias: Imobiliaria[]; voltarPara: string }) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [v, setV] = React.useState({
     nome: imovel?.nome ?? "",
     endereco: imovel?.endereco ?? "",
@@ -74,8 +76,8 @@ export function FormularioImovel({ imovel, secretarias, imobiliarias, voltarPara
     });
   }
 
-  function excluir() {
-    if (!imovel || !window.confirm(`Excluir o imóvel “${imovel.nome}” com suas unidades, contas e entrega? O histórico da alteração fica registrado.`)) return;
+  async function excluir() {
+    if (!imovel || !(await confirmar({ titulo: `Excluir o imóvel “${imovel.nome}”?`, mensagem: "Vão junto as unidades, contas e a entrega. O histórico da alteração fica registrado.", rotuloConfirmar: "Excluir imóvel", tom: "perigo" }))) return;
     iniciar(async () => {
       const r = await excluirImovel(imovel.id);
       if (!r.sucesso) return setErro(r.erro);

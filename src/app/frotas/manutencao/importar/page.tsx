@@ -26,12 +26,7 @@ export default async function PaginaImportarOrcamentos() {
     <>
       <TituloPagina
         titulo="Importar orçamentos em PDF"
-        subtitulo={
-          <>
-            Vários PDFs de uma vez; você confere os dados lidos antes de registrar.{" "}
-            <Link href="/frotas/manutencao" className="font-semibold text-[#3F5A12] underline">Voltar às manutenções</Link>
-          </>
-        }
+        subtitulo={<Link href="/frotas/manutencao" className="font-semibold text-[color:var(--modulo-tinta)] underline">← Voltar às manutenções</Link>}
       />
       <Cartao>
         <ImportadorOrcamentos veiculos={opcoes} oficinas={oficinas.filter((o) => o.ativo)} dataHoje={dataNoFuso(new Date())} />

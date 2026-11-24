@@ -7,7 +7,7 @@ import { faseAtual, mapaManuais, progresso, situacaoFases, tipoDaEmenda, type Fa
 import { avaliarArt7, contasRepetidas, relatoriosDeGestao, type DocumentoResumo, type ItemConformidade } from "@/lib/emendas/conformidade";
 import { situacaoConciliacao, type Conciliacao } from "@/lib/emendas/conciliacao";
 import { documentosExigidos } from "@/lib/emendas/documentos-drive";
-import { maiorGravidade, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
+import { maiorGravidade, ORDEM_GRAVIDADE, pendencias, type Gravidade, type Pendencia } from "@/lib/emendas/pendencias";
 import { CATALOGO_PADRAO, type CatalogoEtapas } from "@/lib/emendas/regras";
 import type {
   EmendaResumo,
@@ -37,6 +37,12 @@ export type ResumoLinha = {
   gravidade: Gravidade | null;
   /** Assuntos (regra sem sufixo) das pendências abertas — para filtrar a lista. */
   regras: string[];
+  /** Texto das pendências abertas (título, explicação e causas), para a busca por palavra achar a emenda. */
+  busca?: string;
+  /** Fases do fluxo da emenda (nome e estado), para o painel de detalhe ao lado da lista. */
+  fases?: { nome: string; estado: "feita" | "parcial" | "andamento" | "pendente"; alerta: boolean; alertas?: string[] }[];
+  /** Pendências abertas (as 4 mais graves), para o mesmo painel. */
+  pendencias?: { titulo: string; gravidade: Gravidade }[];
 };
 
 export type EntradaResumos = {
@@ -181,5 +187,22 @@ export function resumoDaLinha(c: CalculoEmenda): ResumoLinha {
     abertas: c.pendencias.filter((x) => !x.justificativa).length,
     gravidade: maiorGravidade(c.pendencias),
     regras: Array.from(new Set(c.pendencias.filter((x) => !x.justificativa).map((x) => x.regra.split(":")[0]))),
+    busca: c.pendencias
+      .filter((x) => !x.justificativa)
+      .map((x) => [x.titulo, x.detalhe, ...(x.motivos ?? []).map((m) => m.rotulo)].join(" "))
+      .join(" "),
+    fases: c.fases
+      .filter((f) => f.situacao !== "nao_se_aplica")
+      .map((f) => ({
+        nome: f.fase.nome,
+        estado: f.situacao === "concluida" ? (f.parcial ? ("parcial" as const) : ("feita" as const)) : f.situacao === "em_andamento" || f.parcial ? ("andamento" as const) : ("pendente" as const),
+        alerta: f.alertas.length > 0,
+        alertas: f.alertas,
+      })),
+    pendencias: c.pendencias
+      .filter((x) => !x.justificativa)
+      .sort((a, b) => ORDEM_GRAVIDADE[a.gravidade] - ORDEM_GRAVIDADE[b.gravidade])
+      .slice(0, 4)
+      .map((x) => ({ titulo: x.titulo, gravidade: x.gravidade })),
   };
 }

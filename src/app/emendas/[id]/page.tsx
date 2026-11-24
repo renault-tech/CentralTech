@@ -4,31 +4,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DetalheEmendaCliente } from "@/components/emendas/detalhe-emenda";
-import { resumoDoProcesso } from "@/lib/emendas/compras";
 import { PainelParceria } from "@/components/emendas/painel-parceria";
 import { Chip, LinhaEtapas, LinkVoltar } from "@/components/emendas/ui";
 import { PainelTransparencia } from "@/components/emendas/painel-transparencia";
 import { VinculoCompras } from "@/components/emendas/vinculo-compras";
-import { buscarProcessoPorId } from "@/lib/emendas/compras";
+import { carregarDetalheCompleto } from "@/lib/emendas/detalhe-completo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { identificadorDaFicha } from "@/lib/emendas/conformidade";
-import { calcularEmendas } from "@/lib/emendas/resumo";
-import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
-import {
-  listarBeneficiarios,
-  listarFasesCatalogo,
-  listarPareceres,
-  listarUnidades,
-  listarVereadores,
-  obterCatalogoEtapas,
-  obterContextoEmendas,
-  obterDetalheEmenda,
-  podeEditarSecretaria,
-  resolverExercicio,
-} from "@/lib/emendas/dados";
-import { NOME_MODALIDADE, brl, dataBr, ehGestor, numeroVereador } from "@/lib/emendas/regras";
-import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
-import { criarClienteServidor } from "@/lib/supabase/server";
+import { TIPOS_EXECUCAO, progresso } from "@/lib/emendas/fases";
+import { AnelAndamento } from "@/components/emendas/anel-andamento";
+import { NOME_MODALIDADE, brl, dataBr, numeroVereador } from "@/lib/emendas/regras";
 import type { EtapaEmenda } from "@/types/emendas";
 
 export const dynamic = "force-dynamic";
@@ -37,72 +22,12 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   const { id } = await params;
   const { aba } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  // O contexto (sessão, perfil) e as leituras que não dependem dele andam juntos: antes o detalhe só começava
-  // a buscar depois de o perfil voltar.
-  const promessaCtx = obterContextoEmendas();
-  const promessaBase = Promise.all([obterDetalheEmenda(id), obterCatalogoEtapas(), listarBeneficiarios(), listarUnidades(), listarFasesCatalogo(), listarVereadores()]);
-  promessaBase.catch(() => {}); // se o contexto mandar sair, o erro desta rodada não pode virar rejeição solta
-  const ctx = await promessaCtx;
-  if (ctx.situacao !== "ok") redirect("/emendas");
-
-  // A auditoria e as exclusões só são lidas por gestor.
-  const gestor = ehGestor(ctx.perfil);
-  const [[detalhe, catalogo, beneficiarios, unidades, fasesCatalogo, vereadores], auditoria, exclusoes] = await Promise.all([
-    promessaBase,
-    gestor
-      ? criarClienteEmendas().then((c) =>
-          // Tudo o que mexeu nesta emenda: o cadastro (registro_id = emenda) e os registros filhos
-          // (lançamentos, andamentos, impedimentos, anexos, remanejamentos), que guardam a emenda no JSON.
-          c
-            .from("auditoria")
-            .select("*")
-            .or(`registro_id.eq.${id},antes->>emenda_id.eq.${id},depois->>emenda_id.eq.${id}`)
-            .order("em", { ascending: false })
-            .limit(300)
-        )
-      : Promise.resolve({ data: [] }),
-    gestor
-      ? criarClienteEmendas().then((c) =>
-          c.from("exclusoes_justificadas").select("em,usuario_id,justificativa,tipo").eq("emenda_id", id).order("em", { ascending: false })
-        )
-      : Promise.resolve({ data: [] }),
-  ]);
-  if (!detalhe) notFound();
+  const r = await carregarDetalheCompleto(id);
+  if (r.situacao === "sem_acesso") redirect("/emendas");
+  if (r.situacao === "nao_encontrada") notFound();
+  const { detalhe, catalogo, beneficiarios, unidades, auditoria: registros, exclusoes: listaExclusoes, nomesUsuarios, calculo, processoCompras, exercicio, podeEditar, gestor, tipo } = r;
   const { emenda, andamentos, movimentos, execucao } = detalhe;
-  const tipo = tipoDaEmenda(emenda);
-  const [processoCompras, { exercicio }, pareceres] = await Promise.all([
-    execucao?.processo_id ? buscarProcessoPorId(execucao.processo_id).catch(() => null) : Promise.resolve(null),
-    resolverExercicio(String(emenda.ano)),
-    listarPareceres(emenda.ano),
-  ]);
-  const calculo = calcularEmendas({
-    emendas: [emenda],
-    fasesCatalogo,
-    manuais: detalhe.fasesManuais,
-    movimentos,
-    compras: processoCompras && execucao?.processo_id ? new Map([[execucao.processo_id, resumoDoProcesso(processoCompras)]]) : undefined,
-    execucoes: execucao ? [execucao] : [],
-    exercicio,
-    pareceres,
-    justificadas: detalhe.justificadas,
-    catalogo,
-    documentos: detalhe.documentos.map((d) => ({ emenda_id: d.emenda_id, tipo: d.tipo, competencia: d.competencia ?? null })),
-    partidos: new Map(vereadores.map((v) => [v.id, v.partido])),
-    hoje: new Date().toISOString().slice(0, 10),
-  }).get(emenda.id)!;
-  const podeEditar = podeEditarSecretaria(ctx, emenda.secretaria_id);
   const vinculo = <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />;
-  const registros = auditoria.data ?? [];
-  const listaExclusoes = exclusoes.data ?? [];
-  const idsUsuarios = Array.from(
-    new Set([...registros.map((a) => a.usuario_id), ...listaExclusoes.map((e) => e.usuario_id)].filter((x): x is string => !!x))
-  );
-  const nomesUsuarios: Record<string, string> = {};
-  if (idsUsuarios.length) {
-    const hub = await criarClienteServidor();
-    const { data } = await hub.from("usuarios").select("id,nome").in("id", idsUsuarios);
-    for (const u of data ?? []) nomesUsuarios[u.id] = u.nome;
-  }
 
   const rotulos: Partial<Record<EtapaEmenda, string>> = { indicada: `LOA ${emenda.ano}` };
   for (const a of andamentos.slice().reverse()) rotulos[a.etapa] = dataBr(a.data);
@@ -111,6 +36,8 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   if (emenda.ultimo_pagamento) rotulos.paga = `em ${dataBr(emenda.ultimo_pagamento)}`;
   // Fases acompanhadas pela planilha de cumprimento: o dado vem do bloco de parceria.
   if (execucao?.numero_termo && !rotulos.termo_parceria) rotulos.termo_parceria = `nº ${execucao.numero_termo}`;
+
+  const andamento = progresso(calculo.fases);
 
   return (
     <div className="flex flex-col gap-5">
@@ -138,7 +65,18 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
               · {emenda.numero_vereador}ª emenda dele(a)
             </p>
           </div>
-          <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
+          <div className="flex items-center gap-4">
+            {andamento.total > 0 && (
+              <div className="flex items-center gap-2.5" title={`${andamento.concluidas} de ${andamento.total} fases concluídas`}>
+                <AnelAndamento concluidas={andamento.concluidas} total={andamento.total} tamanho={56} espessura={5} />
+                <span className="text-xs leading-snug text-slate-600">
+                  <span className="block font-medium text-cataguases-marinho">Andamento</span>
+                  <span className="block tabular-nums">{andamento.concluidas}/{andamento.total} fases</span>
+                </span>
+              </div>
+            )}
+            <span className="text-3xl font-semibold tabular-nums text-cataguases-marinho">{brl(emenda.valor)}</span>
+          </div>
         </div>
         <LinhaEtapas modalidade={emenda.modalidade} etapa={emenda.etapa} situacao={emenda.situacao} rotulos={rotulos} fases={calculo.fases} catalogo={catalogo} />
       </section>

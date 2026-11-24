@@ -5,10 +5,15 @@ import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import Link from "next/link";
 
 import { NavModulo } from "@/components/modulo/nav-modulo";
-import { estiloModulo, LARGURA_MODULO, MARGENS_MODULO } from "@/components/modulo/tema";
+import { BarraLateral, type GrupoLateral, type NomeIcone } from "@/components/modulo/barra-lateral";
+import { COOKIES_BARRA } from "@/lib/modulo/barra-cookie";
+import { cookies } from "next/headers";
+import { estiloModulo, LARGURA_MODULO } from "@/components/modulo/tema";
 import { MODULOS } from "@/lib/modulos-info";
 import { ProvedorCatalogo } from "@/components/emendas/catalogo-etapas";
 import { medir } from "@/lib/emendas/tempo";
+import { AjusteDeRolagem } from "@/components/modulo/ajuste-de-rolagem";
+import { AvisoConexao } from "@/components/modulo/estados-tela";
 import { AvisoExercicioEncerrado, SeletorExercicio } from "@/components/emendas/seletor-exercicio";
 import { contarPropostasPendentes, obterCatalogoEtapas, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
 import { COR_MODULO, ehGestor } from "@/lib/emendas/regras";
@@ -16,6 +21,34 @@ import { anosDoPortal, metaDoPortal, pacoteDoPortal } from "@/lib/emendas/portal
 import { contarPorGravidade, verificarPortal } from "@/lib/emendas/portal-verificacao";
 
 export const dynamic = "force-dynamic";
+
+const ICONE_EMENDAS: Record<string, NomeIcone> = {
+  "/emendas": "painel",
+  "/emendas/lista": "emendas",
+  "/emendas/pendencias": "pendencias",
+  "/emendas/conformidade": "conformidade",
+  "/emendas/panorama": "panorama",
+  "/emendas/aprovacoes": "aprovacoes",
+  "/emendas/relatorios": "relatorios",
+  "/emendas/portal": "portal",
+  "/emendas/vereadores": "vereadores",
+  "/emendas/secretarias": "secretarias",
+  "/emendas/configuracoes": "configuracoes",
+};
+const GRUPOS_EMENDAS: { titulo: string; hrefs: string[] }[] = [
+  { titulo: "Acompanhamento", hrefs: ["/emendas", "/emendas/lista", "/emendas/pendencias", "/emendas/conformidade", "/emendas/panorama"] },
+  { titulo: "Gestão", hrefs: ["/emendas/aprovacoes", "/emendas/relatorios", "/emendas/portal"] },
+  { titulo: "Cadastros", hrefs: ["/emendas/vereadores", "/emendas/secretarias", "/emendas/configuracoes"] },
+];
+function gruposEmendas(itens: { href: string; rotulo: string; exato?: boolean; selo?: number }[]): GrupoLateral[] {
+  return GRUPOS_EMENDAS.map((g) => ({
+    titulo: g.titulo,
+    itens: g.hrefs
+      .map((h) => itens.find((i) => i.href === h))
+      .filter((i): i is NonNullable<typeof i> => !!i)
+      .map((i) => ({ ...i, icone: ICONE_EMENDAS[i.href], selos: i.href === "/emendas/portal" ? ("alerta" as const) : undefined })),
+  }));
+}
 
 
 export const metadata = { title: "Emendas Impositivas · Central Cataguases" };
@@ -84,28 +117,49 @@ export default async function LayoutEmendas({ children }: { children: React.Reac
     { href: "/emendas/portal", rotulo: "Portal público", selo: alertasPortal },
   ];
 
-  return (
-    <div className="min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
-      <CabecalhoHub
-        usuario={ctx.usuario}
-        modulo={modulo}
-        contexto={
-          exercicioAtual && (
-            <React.Suspense fallback={null}>
-              <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
-            </React.Suspense>
-          )
-        }
-      />
-      <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" tour="nav-emendas" largura={LARGURA_MODULO} />
-      <main id="conteudo" className={`mx-auto ${LARGURA_MODULO} ${MARGENS_MODULO} print:max-w-none print:p-0`}>
-        {exercicioAtual && (
+  const barraRecolhida = (await cookies()).get(COOKIES_BARRA.emendas)?.value === "1";
+  const cabecalho = (
+    <CabecalhoHub
+      usuario={ctx.usuario}
+      modulo={modulo}
+      contexto={
+        exercicioAtual && (
           <React.Suspense fallback={null}>
-            <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+            <SeletorExercicio exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
           </React.Suspense>
-        )}
-        <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
-      </main>
+        )
+      }
+    />
+  );
+  const aviso = exercicioAtual && (
+    <React.Suspense fallback={null}>
+      <AvisoExercicioEncerrado exercicios={exercicios.map((e) => ({ ano: e.ano, situacao: e.situacao }))} atual={exercicioAtual.ano} />
+    </React.Suspense>
+  );
+
+  return (
+    <div className="emd min-h-dvh bg-slate-50 print:bg-white" style={estiloModulo(MODULOS.emendas)}>
+      {cabecalho}
+      {/* Telas estreitas: a faixa de abas de sempre. Telas largas: barra lateral (mesmos itens, agrupados). */}
+      <div className="lg:hidden">
+        <NavModulo itens={itens} rotuloAria="Seções do módulo Emendas" largura={LARGURA_MODULO} />
+      </div>
+      <div className="mx-auto flex max-w-[110rem] gap-4 px-3 py-4 sm:px-5 sm:py-5 print:block print:max-w-none print:p-0">
+        <BarraLateral
+          modulo="emendas"
+          grupos={gruposEmendas(itens)}
+          rotuloAria="Seções do módulo Emendas"
+          tour="nav-emendas"
+          recolhidaInicial={barraRecolhida}
+          atalhoExterno={{ href: "/transparencia/emendas?previa=1", rotulo: "Ver o portal como o público vê", dica: "Ver o portal como o público vê" }}
+        />
+        <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
+          <AjusteDeRolagem />
+          <AvisoConexao />
+          {aviso}
+          <ProvedorCatalogo catalogo={catalogo}>{children}</ProvedorCatalogo>
+        </main>
+      </div>
     </div>
   );
 }

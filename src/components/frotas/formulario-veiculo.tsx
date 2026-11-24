@@ -12,6 +12,7 @@ import { ESTILO_CAMPO_PADRAO } from "@/lib/utils";
 import { BuscaFipeVeiculo } from "@/components/frotas/busca-fipe";
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_PERIGO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/frotas/ui";
 import type { Classificacao, Combustivel, Fornecedor, SecretariaFrotas, SituacaoVeiculo, Veiculo, Vinculo } from "@/types/frotas";
+import { useDialogos } from "@/components/ui/dialogos";
 
 const COMBUSTIVEIS: [Combustivel, string][] = [["gasolina", "Gasolina"], ["flex", "Flex"], ["diesel", "Diesel"], ["diesel_s10", "Diesel S10"]];
 const CLASSIFICACOES: [Classificacao, string][] = [["leve", "Leve"], ["pesado", "Pesado"], ["maquina", "Máquina"], ["moto", "Moto"]];
@@ -34,6 +35,7 @@ export function FormularioVeiculo({
   voltarPara: string;
 }) {
   const router = useRouter();
+  const { confirmar } = useDialogos();
   const [placa, setPlaca] = React.useState(veiculo?.placa ?? "");
   const [modelo, setModelo] = React.useState(veiculo?.modelo ?? "");
   const [marca, setMarca] = React.useState(veiculo?.marca ?? "");
@@ -86,8 +88,8 @@ export function FormularioVeiculo({
     });
   }
 
-  function excluir() {
-    if (!veiculo || !window.confirm(`Excluir o veículo ${veiculo.placa ?? veiculo.modelo}? O histórico da alteração fica registrado.`)) return;
+  async function excluir() {
+    if (!veiculo || !(await confirmar({ titulo: `Excluir o veículo ${veiculo.placa ?? veiculo.modelo}?`, mensagem: "O histórico da alteração fica registrado.", rotuloConfirmar: "Excluir", tom: "perigo" }))) return;
     iniciar(async () => {
       const r = await excluirVeiculo(veiculo.id);
       if (!r.sucesso) return setErro(r.erro);
@@ -100,7 +102,6 @@ export function FormularioVeiculo({
     iniciar(async () => {
       const r = await marcarRevisaoCorreta(veiculo.id, codigo);
       if (!r.sucesso) return setErro(r.erro);
-      router.refresh();
     });
   }
 

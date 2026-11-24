@@ -12,7 +12,7 @@ import type { Exercicio, Secretaria, UnidadeOrcamentaria, Vereador } from "@/typ
 
 export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
-export const BOTAO = "inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
+export const BOTAO = "inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 
 function paraNumero(t: string): number | null {
   const limpo = t.replace(/[R$\s.]/g, "").replace(",", ".");

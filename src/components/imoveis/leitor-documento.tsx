@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Campo, CLASSE_BOTAO, CLASSE_BOTAO_SECUNDARIO, Mensagem } from "@/components/imoveis/ui";
 import { aplicarDocumento, lerDocumentoPdf, type OpcaoUnidadeDoc } from "@/lib/imoveis/actions-documento-pdf";
@@ -43,7 +42,6 @@ function camposDe(d: DocumentoLido): Campo[] {
 
 /** Lê um PDF do imóvel (contrato, titularidade, vistoria), propõe os dados e aplica o que for confirmado. O PDF nunca é guardado. */
 export function LeitorDocumento({ imovelId, tipoInicial = "contrato" }: { imovelId: string; tipoInicial?: TipoDocumentoLido }) {
-  const router = useRouter();
   const [tipo, setTipo] = React.useState<TipoDocumentoLido>(tipoInicial);
   const [campos, setCampos] = React.useState<Campo[] | null>(null);
   const [documento, setDocumento] = React.useState<DocumentoLido | null>(null);
@@ -105,7 +103,6 @@ export function LeitorDocumento({ imovelId, tipoInicial = "contrato" }: { imovel
       setOk(true);
       setCampos(null);
       setDocumento(null);
-      router.refresh();
     });
   }
 

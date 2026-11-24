@@ -12,7 +12,7 @@ export default async function ImportarContas() {
   if (ctx.situacao !== "ok" || !ctx.gestor) redirect("/imoveis");
   return (
     <>
-      <TituloPagina titulo="Importar contas" subtitulo="Planilha de controle (Excel) ou faturas em PDF: o sistema propõe, você confere e confirma." />
+      <TituloPagina titulo="Importar contas" />
       <section aria-labelledby="h-planilha" className="mb-8">
         <h2 id="h-planilha" className="mb-3 text-lg font-semibold text-cataguases-marinho">Planilha de controle (Excel)</h2>
         <ImportadorPlanilhaContas />

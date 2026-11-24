@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidarCaminho as revalidatePath } from "@/lib/frotas/invalidar";
 import { z } from "zod";
 
 import { COLUNAS_RELATORIO } from "@/lib/frotas/colunas";

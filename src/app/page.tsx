@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
+import { preconnect } from "react-dom";
 import Link from "next/link";
 import { Building2, Hash, Landmark, Lock, ScrollText, ShoppingBag, Sparkles, Truck, UserPlus, type LucideIcon } from "lucide-react";
 
 import { obterUsuarioAtual } from "@/lib/auth/perfil";
 import { listarModulosComAcesso } from "@/lib/dados/modulos";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
+import { MODULOS } from "@/lib/modulos-info";
 import { abrirModulo } from "@/lib/actions/sso";
 import { solicitarAcessoAoModulo } from "@/lib/actions/solicitar-modulo";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
@@ -42,6 +44,8 @@ export default async function PaginaInicial({
 }: {
   searchParams: Promise<{ erro?: string }>;
 }) {
+  // Quem abre um módulo externo já encontra a conexão pronta (DNS + TLS feitos enquanto a pessoa lê a tela).
+  for (const m of Object.values(MODULOS)) if (m.url.startsWith("https://")) preconnect(m.url);
   const [usuario, { erro }] = await Promise.all([obterUsuarioAtual(), searchParams]);
   if (!usuario) {
     redirect("/login");

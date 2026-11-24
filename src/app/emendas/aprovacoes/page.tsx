@@ -12,11 +12,6 @@ export default async function PaginaAprovacoes() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-cataguases-marinho">{gestor ? "Aprovações" : "Minhas propostas"}</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          {gestor
-            ? "Alterações em dado já preenchido (importações e edições das secretarias) só valem depois da sua aprovação."
-            : "Alterações que você fez em dado já preenchido esperam a aprovação do gestor."}
-        </p>
       </div>
       <ListaAprovacoes pendentes={pendentes} decididas={decididas} gestor={gestor} />
     </div>
