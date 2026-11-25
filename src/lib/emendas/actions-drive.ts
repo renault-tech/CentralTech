@@ -31,6 +31,18 @@ async function exigirGestor() {
   return ctx;
 }
 
+/**
+ * Ligar, trocar ou remover documento do Drive é só do administrador da Central (decisão do dono, 25/11/2026): os arquivos
+ * públicos (termo, plano) precisam estar tarjados e na pasta PUBLICIDADE, e alguns gestores ligaram os originais sem tarja,
+ * direto da pasta "Documentos novos". O gestor do módulo segue editando todo o resto da emenda.
+ */
+const MSG_SO_ADMIN_LIGA = "Só o administrador da Central liga ou remove documentos do Drive: o arquivo precisa estar tarjado e na pasta PUBLICIDADE.";
+async function exigirAdminDocumentos() {
+  const ctx = await exigirGestor();
+  if (!ctx || !ctx.usuario.admin_hub) return null;
+  return ctx;
+}
+
 function atualizar(emendaId: string) {
   revalidateTag(TAG_PORTAL, "max");
   revalidatePath(`/emendas/${emendaId}`, "page");
@@ -39,8 +51,10 @@ function atualizar(emendaId: string) {
 export async function vincularDocumentoDrive(dados: z.input<typeof esquema>): Promise<Resultado> {
   const a = esquema.safeParse(dados);
   if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
-  const ctx = await exigirGestor();
-  if (!ctx) return { sucesso: false, erro: "Só o gestor do módulo cadastra documentos." };
+  // Só os tipos que vão ao portal (termo, plano, extrato…) exigem o administrador; comprovação de cumprimento é interna.
+  const ehPublico = TIPOS_DRIVE_PUBLICOS.includes(a.data.tipo);
+  const ctx = ehPublico ? await exigirAdminDocumentos() : await exigirGestor();
+  if (!ctx) return { sucesso: false, erro: ehPublico ? MSG_SO_ADMIN_LIGA : "Só o gestor do módulo cadastra documentos." };
 
   const id = extrairIdDrive(a.data.link);
   if (!id) return { sucesso: false, erro: "Link inválido. Cole o link de um ARQUIVO do Drive (não de uma pasta)." };
@@ -70,6 +84,8 @@ export async function removerDocumentoDrive(id: string, emendaId: string): Promi
   if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(emendaId).success) return { sucesso: false, erro: "Documento inválido" };
   if (!(await exigirGestor())) return { sucesso: false, erro: "Só o gestor do módulo remove documentos." };
   const emendas = await criarClienteEmendas();
+  const { data: doc } = await emendas.from("documentos_drive").select("tipo").eq("id", id).eq("emenda_id", emendaId).maybeSingle();
+  if (doc && (TIPOS_DRIVE_PUBLICOS as readonly string[]).includes(doc.tipo) && !(await exigirAdminDocumentos())) return { sucesso: false, erro: MSG_SO_ADMIN_LIGA };
   // Remove só o vínculo; o arquivo continua no Drive.
   const { error } = await emendas.from("documentos_drive").delete().eq("id", id).eq("emenda_id", emendaId);
   if (error) {
@@ -94,8 +110,8 @@ export async function preencherPeloPdf(form: FormData): Promise<Resultado & { pr
   if (!emendaId.success || !tipo.success) return { sucesso: true, preenchidos: [] };
   const driveId = extrairIdDrive(String(form.get("link") ?? ""));
   if (!(arquivo instanceof File) || arquivo.size === 0) return { sucesso: true, preenchidos: [] };
-  const ctx = await exigirGestor();
-  if (!ctx) return { sucesso: false, erro: "Só o gestor do módulo preenche pelo PDF." };
+  const ctx = await exigirAdminDocumentos();
+  if (!ctx) return { sucesso: false, erro: MSG_SO_ADMIN_LIGA };
   if (arquivo.size > MAX_BYTES_PDF) return { sucesso: true, preenchidos: [], motivo: "PDF com mais de 5 MB: não foi lido." };
   const bytes = new Uint8Array(await arquivo.arrayBuffer());
   if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") return { sucesso: true, preenchidos: [], motivo: "O arquivo não é um PDF: não foi lido." };
