@@ -6,11 +6,13 @@ import { usePathname, useRouter } from "next/navigation";
 /** Telas sem sessão ou públicas: não há o que atualizar. */
 const SEM_ATUALIZAR = ["/login", "/solicitar-acesso", "/recuperar-senha", "/redefinir-senha", "/primeiro-acesso", "/auth", "/transparencia"];
 
-const INTERVALO_MS = 30_000;
-const VOLTA_MS = 15_000;
+// Cada refresh refaz layout + página no servidor (consome "Fluid Active CPU" da Vercel). Com 30 s o plano gratuito
+// estourou (25/11/2026): agora é só um respaldo a cada 5 min; o que importa chega por aviso em tempo real e ao voltar à aba.
+const INTERVALO_MS = 300_000;
+const VOLTA_MS = 60_000;
 
 /**
- * Mantém as telas em dia sem recarregar a página: refaz a leitura do servidor a cada 30 s
+ * Mantém as telas em dia sem recarregar a página: refaz a leitura do servidor a cada 5 min
  * (só com a aba visível), ao voltar para a aba e quando chega um aviso novo. Não interrompe
  * quem está digitando nem uma janela aberta, e não mexe no que está na tela (filtros, abas e
  * campos continuam como estão — é um refresh suave do Next).

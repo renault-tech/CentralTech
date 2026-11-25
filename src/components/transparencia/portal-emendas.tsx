@@ -127,7 +127,7 @@ function Portal({ linhas, versao, geradoEm, etapas, ano, anos, meta, previa }: P
         /* sem rede: tenta na próxima */
       }
     };
-    const id = window.setInterval(consultar, 30_000);
+    const id = window.setInterval(consultar, 180_000);
     const aoVoltar = () => !document.hidden && consultar();
     document.addEventListener("visibilitychange", aoVoltar);
     return () => {
