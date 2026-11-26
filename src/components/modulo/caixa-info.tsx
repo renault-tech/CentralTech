@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 /** Quando a última caixa fechou: passar de um alvo para o vizinho logo em seguida abre mais depressa (como nos tooltips do sistema). */
 let fechouEm = 0;
-const ATRASO_PADRAO = 1000;
+const ATRASO_PADRAO = 1500;
 const ATRASO_VIZINHO = 350;
 
 type Props = {

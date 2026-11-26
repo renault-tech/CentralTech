@@ -14,6 +14,24 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: valor exato nos números abreviados",
+    descricao:
+      "No Painel, os valores abreviados (como R$ 5,16 mi) mostram o valor exato em reais numa caixa ao deixar o mouse parado sobre eles.",
+  },
+  {
+    data: "2026-11-26",
+    titulo: "Caixas de detalhes no Painel de Emendas",
+    descricao:
+      "Os cartões do resumo do exercício e os limites da lei agora abrem uma caixa com a explicação do valor ao deixar o mouse parado sobre eles. A caixa de informações passou a esperar 1,5 segundo.",
+  },
+  {
+    data: "2026-11-26",
+    titulo: "Emendas: aprovado × obrigação legal no Painel",
+    descricao:
+      "O Painel passou a mostrar lado a lado a obrigação legal (2% da RCL), o valor aprovado pelos vereadores (total das emendas) e a diferença entre os dois, acima ou abaixo, sem presumir qual dos dois está certo.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: teto legal e valor aprovado pela Câmara",
     descricao:
       "O teto das emendas (2% da RCL) aparece como a obrigação legal, e o valor efetivamente aprovado pela Câmara é informado à parte em Configurações › Exercício, podendo passar do teto. O Painel usa o aprovado como base e mostra quanto passa do teto, o limite de restos a pagar (0,5% da RCL) e o mínimo que falta pagar.",

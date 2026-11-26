@@ -66,6 +66,7 @@ describe("painel de abertura", () => {
     expect(m.aprovadoOrigem).toBe("informado");
     expect(m.semEmendaCadastrada).toBe(100);
     expect(m.aprovadoAcimaDoTeto).toBe(50);
+    expect(m.diferencaParaObrigacao).toBe(50);
     expect(m.faltaPagar).toBe(350);
     expect(m.minimoAPagar).toBe(250);
     expect(m.semEmpenho).toBe(320);

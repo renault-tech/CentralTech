@@ -80,6 +80,8 @@ export type MetaExercicio = {
   tetoValor: number | null;
   tetoDescricao: string | null;
   aprovadoAcimaDoTeto: number | null;
+  /** Aprovado − obrigação legal: positivo = aprovou acima, negativo = aprovou abaixo, nulo = obrigação não calculada. */
+  diferencaParaObrigacao: number | null;
   /** Parte do valor aprovado que ainda não tem emenda cadastrada (aprovado informado − soma das emendas). */
   semEmendaCadastrada: number;
   aprovadoOrigem: "informado" | "emendas";
@@ -339,6 +341,7 @@ export function montarPainel(e: EntradaPainel): Painel {
     tetoValor: e.tetoValor ?? null,
     tetoDescricao: e.tetoDescricao ?? null,
     aprovadoAcimaDoTeto: e.tetoValor == null ? null : Math.max(0, aprovadoBase - e.tetoValor),
+    diferencaParaObrigacao: e.tetoValor == null ? null : Math.round((aprovadoBase - e.tetoValor) * 100) / 100,
     semEmendaCadastrada: Math.max(0, aprovadoBase - total),
     aprovadoOrigem: aprovadoBase === total && !(e.aprovadoInformado != null && e.aprovadoInformado > 0) ? "emendas" : "informado",
     minimoAPagar: e.tetoRestos == null ? null : Math.max(0, Math.max(0, aprovadoBase - pago) - e.tetoRestos),

@@ -82,7 +82,12 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
       <dl className="mt-4 grid gap-x-6 gap-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[0.8125rem] sm:grid-cols-2">
         <Linha rotulo="Aprovado pela Câmara (base das contas)" valor={brl(limites.aprovadoReferencia)} apoio={limites.aprovadoOrigem === "lei" ? "informado" : "soma das emendas cadastradas"} />
         <Linha rotulo="RCL informada" valor={limites.baseRcl != null ? brl(limites.baseRcl) : "—"} apoio={limites.baseRcl == null ? "informe a RCL: sem ela o teto e o limite de restos não são calculados" : undefined} alerta={limites.baseRcl == null} />
-        <Linha rotulo="Obrigação legal: teto das emendas" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.acimaDoTeto ? `a Câmara aprovou ${brl(limites.acimaDoTeto)} acima do teto` : limites.tetoDescricao ?? undefined} alerta={!!limites.acimaDoTeto} />
+        <Linha rotulo="Obrigação legal (o que a lei exige)" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.tetoDescricao ?? undefined} />
+        <Linha
+          rotulo="Aprovado × obrigação"
+          valor={limites.tetoValor == null ? "—" : `${limites.aprovadoReferencia >= limites.tetoValor ? "+" : "−"}${brl(Math.abs(limites.aprovadoReferencia - limites.tetoValor))}`}
+          apoio={limites.tetoValor == null ? undefined : limites.aprovadoReferencia > limites.tetoValor ? "aprovado acima da obrigação" : limites.aprovadoReferencia < limites.tetoValor ? "aprovado abaixo da obrigação" : "aprovado igual à obrigação"}
+        />
         <Linha rotulo="Pode ficar em restos a pagar" valor={limites.restosTeto != null ? brl(limites.restosTeto) : "—"} apoio={limites.restosDescricao ?? "informe o % ou o valor"} />
       </dl>
 
