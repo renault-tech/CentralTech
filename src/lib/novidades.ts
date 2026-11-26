@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: valor exato nos números abreviados",
+    descricao:
+      "No Painel, os valores abreviados (como R$ 5,16 mi) mostram o valor exato em reais numa caixa ao deixar o mouse parado sobre eles.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Caixas de detalhes no Painel de Emendas",
     descricao:
       "Os cartões do resumo do exercício e os limites da lei agora abrem uma caixa com a explicação do valor ao deixar o mouse parado sobre eles. A caixa de informações passou a esperar 1,5 segundo.",
