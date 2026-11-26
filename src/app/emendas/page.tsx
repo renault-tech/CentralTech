@@ -19,6 +19,7 @@ import {
 } from "@/lib/emendas/dados";
 import { alertas as calcularAlertas } from "@/lib/emendas/regras";
 import { diasEntre, montarPainel } from "@/lib/emendas/painel-abertura";
+import { calcularLimites } from "@/lib/emendas/limites-exercicio";
 import { carregarPanorama } from "@/lib/emendas/panorama-dados";
 import { totaisPorCartao } from "@/lib/emendas/encerramento";
 import { ehGestor } from "@/lib/emendas/regras";
@@ -76,6 +77,14 @@ export default async function PaginaPainelEmendas({
   const paradas = calcularAlertas(emendas, movimentos, { hoje: new Date(`${hoje}T12:00:00`), ano: exercicio.ano, diasParado: 30, catalogo }).find((a) => a.chave === "paradas")?.quantidade ?? 0;
   const admin = ctx.situacao === "ok" && ctx.usuario.admin_hub;
 
+  const limites = calcularLimites({
+    rcl: exercicio.rcl == null ? null : Number(exercicio.rcl),
+    percentualTeto: exercicio.percentual_rcl == null ? null : Number(exercicio.percentual_rcl),
+    percentualRestos: exercicio.restos_teto_pct == null ? null : Number(exercicio.restos_teto_pct),
+    restosValorManual: exercicio.restos_teto_valor == null ? null : Number(exercicio.restos_teto_valor),
+    aprovadoLoa: exercicio.aprovado_loa_valor == null ? null : Number(exercicio.aprovado_loa_valor),
+    somaEmendas: ativas.reduce((t, e) => t + e.valor, 0),
+  });
   const painel = montarPainel({
     ano: exercicio.ano,
     hoje,
@@ -85,6 +94,11 @@ export default async function PaginaPainelEmendas({
     vereadores: vereadoresAtivos,
     cotaPorVereador: exercicio.cota_por_vereador,
     saudeMinimoPct: exercicio.percentual_saude_min,
+    tetoRestos: limites.restosTeto,
+    tetoRestosDescricao: limites.restosDescricao,
+    tetoValor: limites.tetoValor,
+    tetoDescricao: limites.tetoDescricao,
+    aprovadoInformado: exercicio.aprovado_loa_valor == null ? null : Number(exercicio.aprovado_loa_valor),
     prazoExequibilidade: exercicio.prazo_exequibilidade,
     execucoes: execucoes.map((x) => ({ emenda_id: x.id, vigencia_fim: x.vigencia_fim })),
     contagens: { propostasPendentes, executadasIncompletas, relatoriosGestao, semSituacao: totaisPorCartao(panorama.linhas).sem_situacao.quantidade, paradas },

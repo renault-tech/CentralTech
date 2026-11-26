@@ -104,6 +104,39 @@ export async function salvarDatasExercicio(dados: z.input<typeof esquemaDatasExe
   return { sucesso: true };
 }
 
+const esquemaLimites = z.object({
+  ano: z.number().int().min(2020).max(2100),
+  rcl: z.number().positive().nullable(),
+  percentualTeto: z.number().min(0).max(100).nullable(),
+  percentualRestos: z.number().min(0).max(100).nullable(),
+  restosValor: z.number().min(0).nullable(),
+  aprovadoLoa: z.number().min(0).nullable(),
+});
+
+/** Limites legais do ano (teto das emendas, restos a pagar, RCL e valor aprovado). Mesma regra de quem decide do exercício. */
+export async function salvarLimitesExercicio(dados: z.input<typeof esquemaLimites>): Promise<Resultado> {
+  const a = esquemaLimites.safeParse(dados);
+  if (!a.success) return { sucesso: false, erro: a.error.issues[0]?.message ?? "Dados inválidos" };
+  const decisor = await exigirDecisor("configuram exercícios");
+  if (decisor.erro !== undefined) return { sucesso: false, erro: decisor.erro };
+  const emendas = await criarClienteEmendas();
+  const { data: linhas, error } = await emendas
+    .from("exercicios")
+    .update({
+      rcl: a.data.rcl,
+      percentual_rcl: a.data.percentualTeto,
+      restos_teto_pct: a.data.percentualRestos,
+      restos_teto_valor: a.data.restosValor,
+      aprovado_loa_valor: a.data.aprovadoLoa,
+    })
+    .eq("ano", a.data.ano)
+    .select("ano");
+  if (error) return { sucesso: false, erro: traduzir(error) };
+  if (!linhas?.length) return { sucesso: false, erro: "Nada foi gravado: o exercício não foi encontrado ou você não tem permissão para alterá-lo." };
+  revalidar();
+  return { sucesso: true };
+}
+
 /** Liga/desliga a correção de lançamentos (número e data) pelas secretarias, no exercício. */
 export async function salvarPermissaoLancamentos(dados: { ano: number; permitir: boolean }): Promise<Resultado> {
   if (!Number.isInteger(dados.ano) || typeof dados.permitir !== "boolean") return { sucesso: false, erro: "Dados inválidos" };

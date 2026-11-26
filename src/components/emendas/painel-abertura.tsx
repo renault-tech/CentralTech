@@ -118,7 +118,45 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         {ok
           ? "Meta legal atingida: todo o valor aprovado está pago ou empenhado; o que não foi pago fica em restos a pagar."
           : `Meta legal em risco: faltam ${brl(m.semEmpenho)} a empenhar até 31/12 para estar dentro da lei (${pct(m.fracaoDentroDaLei, 1)} já pago ou em restos a pagar).`}
+        {m.semEmendaCadastrada > 0.005 && <> {brl(m.semEmendaCadastrada)} do valor aprovado ainda não têm emenda cadastrada.</>}
+        {m.tetoRestos != null && (
+          <>
+            {" "}
+            Para os restos a pagar caberem no limite de {brl(m.tetoRestos)}, faltam pagar no mínimo <b>{brl(m.minimoAPagar ?? 0)}</b>.
+          </>
+        )}
       </p>
+
+      <ul className="mt-3 grid gap-2.5 sm:grid-cols-3" aria-label="Limites da lei">
+        {[
+          {
+            nome: `Obrigação legal: teto das emendas${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
+            valor: m.tetoValor != null ? brlCurto(m.tetoValor) : "—",
+            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? `a Câmara aprovou ${brlCurto(m.aprovadoAcimaDoTeto ?? 0)} acima do teto` : "o aprovado está dentro do teto",
+            tom: m.tetoValor == null ? undefined : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? VERMELHO : VERDE,
+          },
+          {
+            nome: "Pode ficar em restos a pagar",
+            valor: m.tetoRestos != null ? brlCurto(m.tetoRestos) : "—",
+            apoio: m.tetoRestos != null ? (m.tetoRestosDescricao ?? "limite informado") : "limite não informado",
+            tom: undefined as Tom | undefined,
+          },
+          {
+            nome: "Mínimo a pagar para esse limite",
+            valor: m.minimoAPagar != null ? brlCurto(m.minimoAPagar) : "—",
+            apoio: m.minimoAPagar == null ? "depende do limite de restos" : m.minimoAPagar > 0 ? "ainda falta pagar" : "já está dentro do limite",
+            tom: m.minimoAPagar == null ? undefined : m.minimoAPagar > 0 ? VERMELHO : VERDE,
+          },
+        ].map((c) => (
+          <li key={c.nome} className="rounded-xl border px-3 py-2" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
+            <span className="block text-[0.75rem] text-[#AEBBD0]">{c.nome}</span>
+            <span className="block text-[1.125rem] font-semibold tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
+              {c.valor}
+            </span>
+            <span className="text-[0.75rem] text-[#AEBBD0]">{c.apoio}</span>
+          </li>
+        ))}
+      </ul>
 
       <div className="mt-5 flex h-4 gap-0.5 overflow-hidden rounded-lg bg-white/10" role="img" aria-label={partes.map((x) => `${x.nome}: ${pct(x.valor / base, 1)}`).join("; ")}>
         {partes.map((x) => (

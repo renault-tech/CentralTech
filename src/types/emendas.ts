@@ -39,6 +39,12 @@ export type Exercicio = {
   percentual_saude_min: number;
   rcl: number | null;
   percentual_rcl: number | null;
+  /** Máximo (R$) que pode ficar em restos a pagar em 31/12; null = não informado. */
+  restos_teto_valor: number | null;
+  /** % da RCL que pode ficar em restos a pagar (ex.: 0,5). */
+  restos_teto_pct: number | null;
+  /** Valor aprovado na lei (opcional; sem ele vale a soma das emendas). */
+  aprovado_loa_valor: number | null;
   situacao: "aberto" | "encerrado";
   criado_em: string;
   data_aprovacao_loa: string | null;
