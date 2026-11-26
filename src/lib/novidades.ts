@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Portal público: plano de trabalho ligado no Drive passa a contar na verificação",
+    descricao:
+      "A verificação de publicação do portal só olhava os anexos antigos e acusava falta de plano de trabalho em repasses cujo plano já está ligado pelo Drive. Agora os dois são considerados.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Conformidade: repasse com termo cumpre o item \"instrumento e processo\"",
     descricao:
       "No item VIII do art. 7º, o número do processo administrativo é o mesmo do termo; por isso, repasse com o número do termo informado deixa de aparecer como faltando o processo.",

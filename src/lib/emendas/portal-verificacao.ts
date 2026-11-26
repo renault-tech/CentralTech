@@ -60,6 +60,9 @@ export function cnpjValido(cnpj: string): boolean {
   return dv(d.slice(0, 12)) === Number(d[12]) && dv(d.slice(0, 13)) === Number(d[13]);
 }
 
+/** Plano de trabalho entregue: anexo antigo OU o PDF ligado no Drive (é onde os planos estão hoje). */
+const temPlano = (l: LinhaPortal) => l.documentos.some((d) => d.tipo === "plano_trabalho") || (l.docsDrive ?? []).some((d) => d.tipo === "plano_trabalho");
+
 /** Itens do art. 7º que faltam nesta emenda (só os que se aplicam ao tipo dela). */
 export function itensFaltando(l: LinhaPortal): string[] {
   const f: string[] = [];
@@ -67,7 +70,7 @@ export function itensFaltando(l: LinhaPortal): string[] {
   if (!l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim) f.push("cronograma (VII)");
   if (repasse(l) && vazio(l.termo)) f.push("termo/instrumento (VIII)");
   if (!repasse(l) && executada(l) && vazio(l.processo)) f.push("processo administrativo (VIII)");
-  if (repasse(l) && l.instrumento !== "convenio" && !l.documentos.some((d) => d.tipo === "plano_trabalho")) f.push("plano de trabalho (IX)");
+  if (repasse(l) && l.instrumento !== "convenio" && !temPlano(l)) f.push("plano de trabalho (IX)");
   if (repasse(l) && vazio(l.cnpj)) f.push("CNPJ do recebedor (XI)");
   if (vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade)) f.push("gestor responsável (XIV)");
   if (repasse(l) && vazio(l.conta)) f.push("banco e conta (XVI)");
@@ -238,7 +241,7 @@ export function verificarPortal(linhas: LinhaPortal[], meta: MetaVerificacao, ho
   item("cronograma", "Cronograma (início e término) não informado", "IN TCE-MG 05/2025, art. 7º, VII", (l) => !l.inicioPrevisto && !l.terminoPrevisto && !l.vigenciaInicio && !l.vigenciaFim, "Emenda › Transparência › Cronograma.", undefined, { antes: true });
   item("termo", "Repasse sem número do termo", "IN TCE-MG 05/2025, art. 7º, VIII; Lei 13.019/2014, art. 42", (l) => repasse(l) && executada(l) && vazio(l.termo), "Emenda › Parceria › Termo.");
   item("processo", "Execução direta empenhada sem processo administrativo", "IN TCE-MG 05/2025, art. 7º, VIII", (l) => !repasse(l) && executada(l) && vazio(l.processo), "Emenda › vincular o processo do Compras.");
-  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && l.instrumento !== "convenio" && !l.documentos.some((d) => d.tipo === "plano_trabalho"), "Emenda › Anexos › Plano de trabalho (PDF).", undefined, { antes: true });
+  item("plano", "Repasse sem plano de trabalho publicado", "IN TCE-MG 05/2025, art. 7º, IX; Recomendação MPC-MG 01/2025, art. 2º, IV", (l) => repasse(l) && l.instrumento !== "convenio" && !temPlano(l), "Emenda › Anexos › Plano de trabalho (PDF).", undefined, { antes: true });
   item("cnpj", "Repasse sem CNPJ do recebedor", "IN TCE-MG 05/2025, art. 7º, XI", (l) => repasse(l) && vazio(l.cnpj), "Configurações › Beneficiários.", undefined, { antes: true });
   item("gestor", "Gestor responsável não informado", "IN TCE-MG 05/2025, art. 7º, XIV", (l) => vazio(l.gestorPrefeitura) && vazio(l.gestorEntidade), "Emenda › Parceria/Transparência › Gestor.", undefined, { antes: true });
   item("conta", "Repasse sem banco e conta", "IN TCE-MG 05/2025, art. 7º, XVI, e art. 6º", (l) => repasse(l) && vazio(l.conta), "Emenda › Parceria › Conta bancária.", undefined, { antes: true });
