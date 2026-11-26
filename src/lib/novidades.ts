@@ -16,7 +16,7 @@ export const NOVIDADES: Novidade[] = [
     data: "2026-11-26",
     titulo: "Emendas: meta legal do exercício no Painel",
     descricao:
-      "O Painel das Emendas abre com um cartão que compara o valor aprovado com o que já foi pago, o que está em restos a pagar (empenhado e não pago, dentro da lei) e o que ainda falta empenhar. Fica verde quando tudo está pago ou empenhado e vermelho enquanto houver valor sem empenho, com os vereadores que ainda têm pendência.",
+      "No cartão escuro do Painel das Emendas, os valores agora mostram o aprovado, o pago, o que está em restos a pagar (empenhado e não pago, dentro da lei), o que falta empenhar e o que falta pagar. Os cartões ficam translúcidos em verde ou vermelho, e uma faixa avisa se a meta legal foi atingida.",
   },
   {
     data: "2026-11-23",
