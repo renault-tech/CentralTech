@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-26",
+    titulo: "Emendas: meta legal do exercício no Painel",
+    descricao:
+      "O Painel das Emendas abre com um cartão que compara o valor aprovado com o que já foi pago, o que está em restos a pagar (empenhado e não pago, dentro da lei) e o que ainda falta empenhar. Fica verde quando tudo está pago ou empenhado e vermelho enquanto houver valor sem empenho, com os vereadores que ainda têm pendência.",
+  },
+  {
     data: "2026-11-23",
     titulo: "Permissão \"Alterar prazos\" no painel",
     descricao:

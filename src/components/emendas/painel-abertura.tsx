@@ -604,6 +604,87 @@ function Prazos({ p }: { p: Painel }) {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+/** Meta legal do exercício: verde quando tudo o que foi aprovado já está pago ou empenhado (restos a pagar), vermelho enquanto falta empenhar. */
+function Meta({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) {
+  const m = p.meta;
+  const ok = m.atingida;
+  const cor = ok ? "#047857" : "#B91C1C";
+  const seg = (f: number) => `${Math.max(0, Math.min(100, f * 100)).toFixed(2)}%`;
+  const fRestos = m.aprovado > 0 ? m.restosAPagar / m.aprovado : 0;
+  const fSem = m.aprovado > 0 ? m.semEmpenho / m.aprovado : 0;
+  return (
+    <section aria-label="Meta legal do exercício" data-tour="meta-emendas" className="emd-entra rounded-2xl border bg-white p-4 sm:p-5" style={{ borderColor: cor, borderWidth: 2, ["--i" as string]: 0 }}>
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <div>
+          <h2 className={ROTULO}>Meta legal do exercício de {ano}</h2>
+          <p className="mt-1 flex items-center gap-2 text-[1.125rem] font-semibold tracking-[-0.02em]" style={{ color: cor }}>
+            <span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: cor }} />
+            {ok ? "Meta atingida: todo o valor aprovado está pago ou empenhado" : `Faltam ${brl(m.semEmpenho)} para estar dentro da lei`}
+          </p>
+          <p className="mt-0.5 text-[0.8125rem] text-slate-600">
+            {ok ? "O que está empenhado e não pago fica em restos a pagar e continua dentro da lei (Lei 4.320, art. 36)." : "Valor aprovado que ainda não foi empenhado: precisa de empenho até 31/12, senão volta ao caixa e a meta não é cumprida."}
+            {diasFim >= 0 && ` Faltam ${diasFim} dias para o fim do exercício.`}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className="block text-[0.75rem] text-slate-600">Aprovado para as emendas</span>
+          <b className="text-[1.5rem] tabular-nums tracking-[-0.03em] text-cataguases-marinho">{brl(m.aprovado)}</b>
+        </div>
+      </div>
+
+      <CaixaInfo
+        as="div"
+        className="mt-3 block"
+        conteudo={
+          <>
+            <CaixaTitulo rotulo="Aprovado" valor={brl(m.aprovado)} />
+            <CaixaLinhas linhas={[
+              { rotulo: "Pago", valor: brl(m.pago), cor: COR_DINHEIRO.pago },
+              { rotulo: "Restos a pagar (empenhado, não pago)", valor: brl(m.restosAPagar), cor: COR_DINHEIRO.aPagar },
+              { rotulo: "Sem empenho (falta para a lei)", valor: brl(m.semEmpenho), cor: "#B91C1C" },
+            ]} />
+            <CaixaNota>Dentro da lei = pago + restos a pagar. Falta pagar = restos + sem empenho.</CaixaNota>
+          </>
+        }
+      >
+        <div className="flex h-4 w-full overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`Pago ${pct(m.fracaoPago)}, restos a pagar ${pct(fRestos)}, sem empenho ${pct(fSem)}`}>
+          <div style={{ width: seg(m.fracaoPago), backgroundColor: "#059669" }} />
+          <div style={{ width: seg(fRestos), backgroundColor: "#D97706" }} />
+          <div style={{ width: seg(fSem), backgroundColor: "#DC2626" }} />
+        </div>
+      </CaixaInfo>
+
+      <div className="mt-3 flex flex-wrap gap-2.5">
+        <Numero rotulo="Já pago" valor={brl(m.pago)} apoio={`${pct(m.fracaoPago)} do aprovado`} />
+        <Numero rotulo="Falta pagar (total)" valor={brl(m.faltaPagar)} apoio="restos + sem empenho" alerta={m.faltaPagar > 0} />
+        <Numero rotulo="Em restos a pagar" valor={brl(m.restosAPagar)} apoio="empenhado, dentro da lei" />
+        <Numero rotulo="Sem empenho" valor={brl(m.semEmpenho)} apoio={ok ? "nada a empenhar" : "ainda fora da lei"} alerta={!ok} />
+      </div>
+
+      {m.vereadoresTotal > 0 && (
+        <div className="mt-3 border-t border-slate-100 pt-2.5 text-[0.8125rem]">
+          <p className="text-slate-600">
+            <b className="text-emerald-700">{m.vereadoresOk} de {m.vereadoresTotal}</b> vereadores com a cota toda paga ou empenhada
+            {m.pendentes.length > 0 && <> · <b className="text-red-700">{m.pendentes.length}</b> ainda com valor sem empenho:</>}
+          </p>
+          {m.pendentes.length > 0 && (
+            <ul className="mt-1.5 flex flex-wrap gap-1.5">
+              {m.pendentes.slice(0, 8).map((v) => (
+                <li key={v.id}>
+                  <Link href={`/emendas/lista?v=${v.id}&fin=sem_empenho&ano=${ano}`} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-red-800 hover:bg-red-100">
+                    {v.nome.split(" ")[0]} <b className="tabular-nums">{brl(v.semEmpenho)}</b>
+                  </Link>
+                </li>
+              ))}
+              {m.pendentes.length > 8 && <li className="px-1 py-1 text-slate-600">+{m.pendentes.length - 8}</li>}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function PainelAbertura({ painel: p, ano, saudacao, dataExtenso, diasFim }: { painel: Painel; ano: number; saudacao: string; dataExtenso: string; diasFim: number }) {
   return (
     <div className="flex flex-col gap-3.5">
@@ -622,6 +703,7 @@ export function PainelAbertura({ painel: p, ano, saudacao, dataExtenso, diasFim 
         </div>
       </header>
 
+      <Meta p={p} ano={ano} diasFim={diasFim} />
       <div className="grid gap-3.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Hero p={p} ano={ano} diasFim={diasFim} />
         <Atencao itens={p.atencao} />
