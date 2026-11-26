@@ -18,7 +18,6 @@ import {
 import { resumirProcessos } from "@/lib/emendas/compras";
 import { medir } from "@/lib/emendas/tempo";
 import { lerComCache } from "@/lib/emendas/cache-dados";
-import { objetoGenerico } from "@/lib/emendas/pendencias";
 import { calcularEmendas, type CalculoEmenda } from "@/lib/emendas/resumo";
 import type { EmendaResumo, Exercicio } from "@/types/emendas";
 
@@ -31,8 +30,9 @@ export async function calcularEmendasDoExercicio(
   movimentosJaCarregados?: MovimentoResumo[]
 ): Promise<Map<string, CalculoEmenda>> {
   const ids = emendas.map((e) => e.id);
-  // As telas não carregam a descrição (pesada); para objeto genérico, busca só dessas para a regra enxergar a finalidade.
-  const genericas = emendas.filter((e) => !e.descricao && objetoGenerico(e.objeto)).map((e) => e.id);
+  // As telas não carregam a descrição (pesada), mas as regras dependem dela: o item III do art. 7º ("objeto detalhado", Conformidade)
+  // lê a descrição de TODA emenda e a pendência de objeto genérico a usa para achar a finalidade. Busca as que faltam, uma vez, em cache.
+  const genericas = emendas.filter((e) => !e.descricao).map((e) => e.id);
   const ano = String(exercicio.ano);
   const descricoes = genericas.length ? await medir("calculos:descricoes", () => lerComCache("descricoes", ano, async () => [...(await listarDescricoes(genericas))]).then((l) => new Map(l))) : new Map<string, string>();
   if (descricoes.size) emendas = emendas.map((e) => (descricoes.has(e.id) ? { ...e, descricao: descricoes.get(e.id) as string } : e));
