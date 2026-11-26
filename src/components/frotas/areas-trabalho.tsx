@@ -1,5 +1,7 @@
 "use client";
 
+import type { ColunaCsv } from "@/lib/modulo/csv";
+
 import * as React from "react";
 import Link from "next/link";
 
@@ -124,6 +126,26 @@ function resumoManutencao(l: LinhaManutencao) {
   );
 }
 
+const COLUNAS_AREAMANUTENCAO: ColunaCsv<LinhaManutencao>[] = [
+  { titulo: "Veículo", valor: (l) => l.veiculo },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Oficina", valor: (l) => l.oficina },
+  { titulo: "Serviço", valor: (l) => l.servico },
+  { titulo: "Descrição", valor: (l) => l.descricao },
+  { titulo: "Etapa", valor: (l) => l.etapaRotulo },
+  { titulo: "Dias na etapa", valor: (l) => l.dias },
+  { titulo: "Orçamento (R$)", valor: (l) => l.orcamento },
+  { titulo: "OC nº", valor: (l) => l.ocNumero },
+  { titulo: "OC valor (R$)", valor: (l) => l.ocValor },
+  { titulo: "NF nº", valor: (l) => l.nfNumero },
+  { titulo: "NF valor (R$)", valor: (l) => l.nfValor },
+  { titulo: "NF emissão", valor: (l) => l.nfEmissao },
+  { titulo: "Recebido em", valor: (l) => l.recebidoEm },
+  { titulo: "Analisado em", valor: (l) => l.analisadoEm },
+  { titulo: "Contabilidade em", valor: (l) => l.contabilidadeEm },
+  { titulo: "Valor considerado (R$)", valor: (l) => l.valor },
+  { titulo: "NF acima da OC (R$)", valor: (l) => l.nfAcimaOc },
+];
 export function AreaManutencao({ linhas, gestor }: { linhas: LinhaManutencao[]; gestor: boolean }) {
   return (
     <AreaTrabalhoLista
@@ -152,6 +174,7 @@ export function AreaManutencao({ linhas, gestor }: { linhas: LinhaManutencao[]; 
       hrefPagina={(l) => `/frotas/manutencao?id=${l.id}`}
       rotuloPagina={gestor ? "Abrir e editar" : "Abrir"}
       vazio="Nenhuma manutenção registrada ainda."
+      exportar={{ arquivo: "manutencoes", colunas: COLUNAS_AREAMANUTENCAO }}
       acoes={(params) => (
         <>
           <MenuExportarFrotas
@@ -291,6 +314,24 @@ function resumoVeiculo(l: LinhaVeiculo) {
   );
 }
 
+const COLUNAS_AREAVEICULOS: ColunaCsv<LinhaVeiculo>[] = [
+  { titulo: "Placa", valor: (l) => l.placa },
+  { titulo: "Modelo", valor: (l) => l.modelo },
+  { titulo: "Marca", valor: (l) => l.marca },
+  { titulo: "Ano", valor: (l) => l.ano },
+  { titulo: "Combustível", valor: (l) => l.combustivel },
+  { titulo: "Classificação", valor: (l) => l.classificacao },
+  { titulo: "Patrimônio", valor: (l) => l.patrimonio },
+  { titulo: "Vínculo", valor: (l) => l.vinculo },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Setor", valor: (l) => l.setor },
+  { titulo: "Situação", valor: (l) => l.situacao },
+  { titulo: "Motivo da situação", valor: (l) => l.motivoSituacao },
+  { titulo: "Valor de referência (R$)", valor: (l) => l.valorReferencia },
+  { titulo: "Manutenção 12 meses (R$)", valor: (l) => l.gasto12m },
+  { titulo: "Serviços 12 meses", valor: (l) => l.servicos12m },
+  { titulo: "Avisos", valor: (l) => l.avisos.join("; ") },
+];
 export function AreaVeiculos({ linhas, gestor }: { linhas: LinhaVeiculo[]; gestor: boolean }) {
   return (
     <AreaTrabalhoLista
@@ -319,6 +360,7 @@ export function AreaVeiculos({ linhas, gestor }: { linhas: LinhaVeiculo[]; gesto
       hrefPagina={(l) => (gestor ? `/frotas/veiculos?editar=${l.id}` : null)}
       rotuloPagina="Abrir e editar"
       vazio="Nenhum veículo cadastrado ainda."
+      exportar={{ arquivo: "veiculos", colunas: COLUNAS_AREAVEICULOS }}
       acoes={(params) => (
         <>
           {gestor && <AtualizarFipe />}
@@ -426,6 +468,21 @@ function resumoNota(l: LinhaNota) {
   );
 }
 
+const COLUNAS_AREACOMBUSTIVEL: ColunaCsv<LinhaNota>[] = [
+  { titulo: "NF nº", valor: (l) => l.numero },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Posto", valor: (l) => l.posto },
+  { titulo: "Quinzena de", valor: (l) => l.quinzenaInicio },
+  { titulo: "Quinzena até", valor: (l) => l.quinzenaFim },
+  { titulo: "Emissão", valor: (l) => l.emissao },
+  { titulo: "Valor (R$)", valor: (l) => l.valor },
+  { titulo: "Enviada em", valor: (l) => l.enviadaEm },
+  { titulo: "Retornou em", valor: (l) => l.retornouEm },
+  { titulo: "Contabilidade em", valor: (l) => l.contabilidadeEm },
+  { titulo: "Situação", valor: (l) => l.etapaRotulo },
+  { titulo: "Dias", valor: (l) => l.dias },
+  { titulo: "Observações", valor: (l) => l.observacoes },
+];
 export function AreaCombustivel({ linhas, gestor }: { linhas: LinhaNota[]; gestor: boolean }) {
   const dims = dimsCombustivel(linhas);
   return (
@@ -455,6 +512,7 @@ export function AreaCombustivel({ linhas, gestor }: { linhas: LinhaNota[]; gesto
       hrefPagina={(l) => (gestor ? `/frotas/combustivel?editar=${l.id}` : null)}
       rotuloPagina="Abrir e editar"
       vazio="Nenhuma NF lançada ainda."
+      exportar={{ arquivo: "notas-combustivel", colunas: COLUNAS_AREACOMBUSTIVEL }}
       acoes={(params) => (
         <>
           <MenuExportarFrotas

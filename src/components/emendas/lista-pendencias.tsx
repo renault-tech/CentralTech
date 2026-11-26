@@ -100,8 +100,9 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
               </label>
               <MenuExportar
                 opcoes={[
-                  { rotulo: "Excel (.xlsx)", detalhe: "Totais por corte e a lista, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}` },
-                  { rotulo: "PDF (imprimir)", detalhe: "Só o painel, com os filtros atuais", imprimir: true },
+                  { rotulo: "Excel (.xlsx)", detalhe: modoDoc ? "Totais por corte e as emendas sem o documento" : "Totais por corte e a lista, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}` },
+                  { rotulo: "PDF", detalhe: modoDoc ? "As emendas sem o documento, com os filtros atuais" : "A lista de pendências, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}&formato=pdf` },
+                  { rotulo: "Imprimir o painel", detalhe: "Gráficos e filtros, pela impressão do navegador", imprimir: true },
                 ]}
               />
             </div>

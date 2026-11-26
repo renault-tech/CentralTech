@@ -15,18 +15,16 @@ import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { TipoSelo } from "@/components/emendas/tipo-selo";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { ORDEM_TIPOS, TIPOS_EXECUCAO } from "@/lib/emendas/fases";
-import { normalizarTexto } from "@/lib/emendas/painel-lista";
+import { filtrarConformidade, rotuloCodigo, type FiltrosConformidade, type LinhaConformidade, type ResumoItem } from "@/lib/emendas/conformidade-lista";
 import { pct } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
 import type { TipoExecucao } from "@/types/emendas";
 
-export type ResumoItem = { codigo: string; nome: string; exigencia: string; aplicaveis: number; atendem: number };
-export type LinhaConformidade = { id: string; numero: number; objeto: string; secretaria: string; tipo: TipoExecucao; executada: boolean; faltas: string[] };
+export type { LinhaConformidade, ResumoItem };
 
 const CAMPO =
   "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
 const POR_PAGINA = 40;
-const rotuloCodigo = (c: string) => (c === "art5" ? "Art. 5º" : `Art. 7º, ${c}`);
 
 type Dim = "item" | "secretaria" | "tipo" | "situacao";
 const DIMENSOES: { chave: Dim; rotulo: string; param: "i" | "s" | "t" | "x" }[] = [
@@ -35,28 +33,15 @@ const DIMENSOES: { chave: Dim; rotulo: string; param: "i" | "s" | "t" | "x" }[] 
   { chave: "tipo", rotulo: "Tipo de execução", param: "t" },
   { chave: "situacao", rotulo: "Execução", param: "x" },
 ];
-type Filtros = { i: string; s: string; t: string; x: string; q: string };
+type Filtros = FiltrosConformidade;
 type ItemGrafico = { chave: string; rotulo: string; n: number; cor: string; dica?: string };
-
-function filtrar(linhas: LinhaConformidade[], f: Filtros, nomesItens: Map<string, string>, ignorar?: keyof Filtros): LinhaConformidade[] {
-  const q = normalizarTexto(f.q.trim());
-  return linhas.filter(
-    (l) =>
-      l.faltas.length > 0 &&
-      (ignorar === "i" || !f.i || l.faltas.includes(f.i)) &&
-      (ignorar === "s" || !f.s || l.secretaria === f.s) &&
-      (ignorar === "t" || !f.t || l.tipo === f.t) &&
-      (ignorar === "x" || !f.x || (f.x === "1" ? l.executada : !l.executada)) &&
-      (!q || q.split(/\s+/).every((parte) => normalizarTexto([l.numero, l.objeto, l.secretaria, ...l.faltas.map((c) => `${rotuloCodigo(c)} ${nomesItens.get(c) ?? ""}`)].join(" ")).includes(parte)))
-  );
-}
 
 function GraficoConformidade({ linhas, resumo, filtros: f, definir, visaoInicial, className }: { linhas: LinhaConformidade[]; resumo: ResumoItem[]; filtros: Filtros; definir: (m: Record<string, string>) => void; visaoInicial: Dim; className?: string }) {
   const [dim, setDim] = React.useState<Dim>(visaoInicial);
   const [sobre, setSobre] = React.useState<string | null>(null);
   const id = React.useId();
   const def = DIMENSOES.find((d) => d.chave === dim)!;
-  const base = filtrar(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])), def.param);
+  const base = filtrarConformidade(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])), def.param);
   const selecionada = f[def.param];
 
   const itens: ItemGrafico[] = (() => {
@@ -178,7 +163,12 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
 
   const completas = linhas.filter((l) => l.faltas.length === 0).length;
   const execIncompletas = linhas.filter((l) => l.executada && l.faltas.length > 0).length;
-  const filtradas = filtrar(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])));
+  const filtradas = filtrarConformidade(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])));
+  const consultaExportar = (formato: string) => {
+    const q = new URLSearchParams({ formato, ano: String(ano) });
+    for (const k of ["i", "s", "t", "x", "q"] as const) if (f[k].trim()) q.set(k, f[k].trim());
+    return q.toString();
+  };
   const nomeItem = (c: string) => resumo.find((r) => r.codigo === c)?.nome ?? c;
   const chips = [
     f.i && { chave: "i", rotulo: `${rotuloCodigo(f.i)} · ${nomeItem(f.i)}` },
@@ -252,7 +242,12 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden />
                   <input type="search" value={f.q} placeholder="Buscar nº, objeto ou secretaria" className={`${CAMPO} w-full pl-9`} onChange={(e) => definirUrl({ q: e.target.value }, true)} />
                 </label>
-                <MenuExportar opcoes={[{ rotulo: "Imprimir / salvar como PDF", detalhe: "Usa a impressão do navegador", imprimir: true }]} />
+                <MenuExportar
+                  opcoes={[
+                    { rotulo: "Excel (.xlsx)", detalhe: `A lista filtrada (${filtradas.length}) e o resumo por item`, href: `/emendas/conformidade/exportar?${consultaExportar("xlsx")}` },
+                    { rotulo: "PDF", detalhe: `A lista filtrada (${filtradas.length}), pronta para imprimir`, href: `/emendas/conformidade/exportar?${consultaExportar("pdf")}` },
+                  ]}
+                />
               </div>
               <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1.5" role="group" aria-label="Filtros ativos">
                 <span className="text-[0.8125rem] tabular-nums text-slate-600" aria-live="polite">
