@@ -58,7 +58,7 @@ function passos(app: AppBoasVindas): Passo[] {
       texto: "Clique numa linha da lista e o resumo abre ao lado, sem sair da tela e sem perder o filtro. Quem pode editar faz as ações ali mesmo.",
       dicas: [
         "Use as setas do teclado para passar de um item ao outro e Esc para fechar o resumo.",
-        "“Expandir” dá mais espaço ao detalhe; no celular ele abre como uma folha por cima da lista.",
+        "Arraste a alça entre a lista e o detalhe para dar mais espaço a um dos dois; “Expandir” leva o detalhe à tela toda. No celular ele abre como uma folha por cima da lista.",
         "O que você filtrou fica guardado: ao voltar de um item, a lista está como você deixou.",
       ],
     },

@@ -75,6 +75,7 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
       expandido={expandido}
       aoFechar={() => definirUrl({ e: "" })}
       aoRecolher={() => setExpandidaId("")}
+      aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)}
       filtrosAtivos={chips.length}
       aoLimpar={limparTudo}
       rotuloLista="Lista de pendências"

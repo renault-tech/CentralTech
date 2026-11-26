@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Alça entre a lista e o detalhe, Expandir em todos os módulos e telas sem faixa vazia",
+    descricao:
+      "Com um item aberto, a alça entre a lista e o detalhe (arraste, setinhas ou teclado) dá mais espaço a um dos dois, e a escolha fica guardada. O botão Expandir, que já existia nas Emendas, passou a existir em todos os módulos com detalhe (Frotas, Imóveis, Compras, Requerimentos); Esc volta. No Compras, as telas de trabalho agora vão até o pé da janela, sem a faixa vazia embaixo, e o conteúdo do detalhe se reorganiza em 1, 2 ou 3 colunas conforme a largura.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Conformidade: repasse com termo cumpre o item \"instrumento e processo\"",
     descricao:
       "No item VIII do art. 7º, o número do processo administrativo é o mesmo do termo; por isso, repasse com o número do termo informado deixa de aparecer como faltando o processo.",

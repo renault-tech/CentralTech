@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronRight, Download, Search, SearchX, X } from "lucide-react";
+import { ChevronRight, Download, Maximize2, Minimize2, Search, SearchX, X } from "lucide-react";
 
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { GraficoDimensao } from "@/components/modulo/grafico-dimensao";
@@ -108,6 +108,9 @@ export function AreaTrabalhoLista<T>(p: PropsAreaTrabalho<T>) {
   const escolhidaId = params.get("e") ?? "";
   const escolhida = escolhidaId ? p.itens.find((i) => p.id(i) === escolhidaId) : undefined;
   const aberto = !!escolhida;
+  // Detalhe expandido (largura toda): guarda o item expandido, então trocar de item ou fechar volta ao normal.
+  const [expandidaId, setExpandidaId] = React.useState("");
+  const expandido = aberto && expandidaId === escolhidaId;
   const definir = React.useCallback((m: Record<string, string>) => definirUrl(m), [definirUrl]);
   const busca = { texto: p.textoBusca, q };
 
@@ -174,9 +177,10 @@ export function AreaTrabalhoLista<T>(p: PropsAreaTrabalho<T>) {
 
       <EspacoTrabalho
         aberto={aberto}
-        expandido={false}
+        expandido={expandido}
         aoFechar={fechar}
-        aoRecolher={() => undefined}
+        aoRecolher={() => setExpandidaId("")}
+        aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)}
         filtrosAtivos={chips.length}
         aoLimpar={limparTudo}
         rotuloLista={`Lista de ${p.unidades.plural}`}
@@ -276,11 +280,15 @@ export function AreaTrabalhoLista<T>(p: PropsAreaTrabalho<T>) {
                     <ChevronRight className="h-3.5 w-3.5" aria-hidden />
                   </Link>
                 )}
+                <button type="button" onClick={() => setExpandidaId(expandido ? "" : escolhidaId)} aria-pressed={expandido} title={expandido ? "Voltar à lista (Esc)" : "Expandir o painel"} className="inline-flex min-h-8 flex-none items-center gap-1.5 rounded-lg px-2 py-1 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-200/70 hover:text-cataguases-marinho max-lg:hidden">
+                  {expandido ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
+                  {expandido ? "Recolher" : "Expandir"}
+                </button>
                 <button type="button" onClick={fechar} aria-label="Fechar o resumo" title="Fechar (Esc)" className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-cataguases-marinho">
                   <X className="h-4 w-4" aria-hidden />
                 </button>
               </header>
-              <div className="emd-rola min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">{p.renderResumo(escolhida)}</div>
+              <div className="emd-rola min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 lg:pb-[calc(1rem+var(--folga-bolha-detalhe,0rem))]">{p.renderResumo(escolhida)}</div>
             </div>
           )
         }

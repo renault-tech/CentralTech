@@ -233,6 +233,7 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
         expandido={expandido}
         aoFechar={fechar}
         aoRecolher={() => setExpandidaId("")}
+        aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)}
         filtrosAtivos={chips.length}
         aoLimpar={limparTudo}
         rotuloLista="Lista de emendas"

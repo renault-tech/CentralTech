@@ -13,6 +13,7 @@ import { BotaoFeedback } from "@/components/feedback/botao-feedback";
 import { SinoNotificacoes } from "@/components/notificacoes/sino";
 import { CLASSE_CONTADOR_CABECALHO, CLASSE_LINK_CABECALHO } from "@/components/layout/cabecalho-estilos";
 import { BoasVindasDesign } from "@/components/ajuda/boas-vindas-design";
+import { AvisoNovidade } from "@/components/ajuda/aviso-novidade";
 import { SincronizarPreferencias } from "@/components/layout/sincronizar-preferencias";
 import { lerPreferencias } from "@/lib/dados/preferencias";
 import type { UsuarioHub } from "@/types/database";
@@ -53,6 +54,7 @@ export async function CabecalhoHub({
     <>
       <SincronizarPreferencias salvas={preferencias} />
       <BoasVindasDesign app="hub" jaVisto={!!preferencias?.boasVindasVistas} />
+      <AvisoNovidade vistos={preferencias?.avisosVistos ?? []} boasVindasVistas={!!preferencias?.boasVindasVistas} />
       <CabecalhoVisual
         usuario={usuario}
         modulo={modulo}

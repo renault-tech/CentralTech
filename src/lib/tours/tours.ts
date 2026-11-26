@@ -154,6 +154,12 @@ export const TOURS: Tour[] = [
         descricao: "O resumo traz abas com o que importa do item. Quem pode editar faz as ações ali mesmo; “Expandir” dá mais espaço e, no celular, o resumo abre como uma folha por cima da lista.",
         lado: "left",
       },
+      {
+        seletor: '[data-tour="ws-alca"]',
+        titulo: "Alça: largura da lista e do resumo",
+        descricao: "Arraste a alça entre a lista e o resumo (ou use as setinhas e o teclado: ← → ajustam, Enter expande) para dar mais espaço a um dos dois. Sua escolha fica guardada neste navegador.",
+        lado: "left",
+      },
     ],
   },
   {

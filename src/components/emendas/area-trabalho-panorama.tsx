@@ -99,6 +99,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
       expandido={expandido}
       aoFechar={fechar}
       aoRecolher={() => setExpandidaId("")}
+      aoExpandir={() => setExpandidaId(expandido ? "" : escolhidaId)}
       filtrosAtivos={filtrosAtivos}
       aoLimpar={() => definir({ s: "", t: "", c: "" })}
       rotuloLista="Emendas do Panorama"

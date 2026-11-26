@@ -28,7 +28,7 @@ export function VoltarAoTopo({ alvoRef, depois = 480 }: { alvoRef: React.RefObje
       tabIndex={visivel ? 0 : -1}
       aria-hidden={!visivel}
       className={cn(
-        "absolute bottom-3 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:bg-white hover:text-cataguases-marinho motion-reduce:transition-none print:hidden",
+        "absolute bottom-[var(--folga-bolha,0.75rem)] right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:bg-white hover:text-cataguases-marinho motion-reduce:transition-none print:hidden",
         visivel ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       )}
     >
