@@ -96,6 +96,8 @@ export default async function PaginaPainelEmendas({
     saudeMinimoPct: exercicio.percentual_saude_min,
     tetoRestos: limites.restosTeto,
     tetoRestosDescricao: limites.restosDescricao,
+    tetoValor: limites.tetoValor,
+    tetoDescricao: limites.tetoDescricao,
     prazoExequibilidade: exercicio.prazo_exequibilidade,
     execucoes: execucoes.map((x) => ({ emenda_id: x.id, vigencia_fim: x.vigencia_fim })),
     contagens: { propostasPendentes, executadasIncompletas, relatoriosGestao, semSituacao: totaisPorCartao(panorama.linhas).sem_situacao.quantidade, paradas },

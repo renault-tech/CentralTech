@@ -54,8 +54,8 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
           <input className={CAMPO} inputMode="decimal" placeholder="Ex.: 0,5" value={pRestos} onChange={mudou(setPRestos)} />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          RCL do ano (R$, opcional)
-          <input className={CAMPO} inputMode="decimal" placeholder="Em branco: deduzida do valor aprovado" value={rcl} onChange={mudou(setRcl)} />
+          RCL (R$) — base dos percentuais
+          <input className={CAMPO} inputMode="decimal" placeholder="Ex.: RCL de 2024 do Município" value={rcl} onChange={mudou(setRcl)} />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
           Valor aprovado na lei (R$, opcional)
@@ -81,12 +81,8 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
 
       <dl className="mt-4 grid gap-x-6 gap-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[0.8125rem] sm:grid-cols-2">
         <Linha rotulo="Valor aprovado usado nas contas" valor={brl(limites.aprovadoReferencia)} apoio={limites.aprovadoOrigem === "lei" ? "da lei" : "soma das emendas cadastradas"} />
-        <Linha
-          rotulo="RCL usada nas contas"
-          valor={limites.baseRcl != null ? brl(limites.baseRcl) : "—"}
-          apoio={limites.baseRcl == null ? "informe o % do teto ou a RCL" : limites.baseDerivada ? "deduzida: aprovado ÷ % do teto (confira com a RCL real)" : "informada"}
-        />
-        <Linha rotulo="Teto das emendas (R$)" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.acimaDoTeto ? `emendas passam do teto em ${brl(limites.acimaDoTeto)}` : undefined} alerta={!!limites.acimaDoTeto} />
+        <Linha rotulo="RCL informada" valor={limites.baseRcl != null ? brl(limites.baseRcl) : "—"} apoio={limites.baseRcl == null ? "informe a RCL: sem ela o teto e o limite de restos não são calculados" : undefined} alerta={limites.baseRcl == null} />
+        <Linha rotulo="Teto das emendas (R$)" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.acimaDoTeto ? `a Câmara aprovou ${brl(limites.acimaDoTeto)} acima do teto` : limites.tetoDescricao ?? undefined} alerta={!!limites.acimaDoTeto} />
         <Linha rotulo="Pode ficar em restos a pagar" valor={limites.restosTeto != null ? brl(limites.restosTeto) : "—"} apoio={limites.restosDescricao ?? "informe o % ou o valor"} />
       </dl>
 

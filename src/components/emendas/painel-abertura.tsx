@@ -67,14 +67,11 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
   const VERDE = { fundo: "rgba(52,211,153,.16)", borda: "rgba(110,231,183,.45)", texto: "#A7F3D0" };
   const VERMELHO = { fundo: "rgba(248,113,113,.18)", borda: "rgba(252,165,165,.5)", texto: "#FECACA" };
   type Tom = typeof VERDE;
-  const legenda: { nome: string; valor: number; cor: string; apoio: string; href: string; tom?: Tom; semValor?: boolean }[] = [
+  const legenda: { nome: string; valor: number; cor: string; apoio: string; href: string; tom?: Tom }[] = [
     { nome: "Aprovado (indicado)", valor: p.total, cor: COR_DINHEIRO.indicado, apoio: `${p.quantidade} emendas`, href: `/emendas/lista?ano=${ano}` },
     { nome: "Pago", valor: p.pago, cor: COR_DINHEIRO.pago, apoio: `${pct(m.fracaoPago, 1)} do aprovado`, href: `/emendas/lista?fin=paga&ano=${ano}`, tom: VERDE },
     { nome: "Em restos a pagar", valor: m.restosAPagar, cor: "#34D399", apoio: "empenhado, não pago: dentro da lei", href: `/emendas/lista?fin=empenhada_sem_pagamento&ano=${ano}`, tom: VERDE },
     { nome: "Falta empenhar p/ a lei", valor: m.semEmpenho, cor: ok ? "#34D399" : "#F87171", apoio: ok ? "nada a empenhar: meta atingida" : "ainda fora da lei", href: `/emendas/lista?fin=sem_empenho&ano=${ano}`, tom: ok ? VERDE : VERMELHO },
-    m.tetoRestos == null
-      ? { nome: "Mínimo a pagar p/ o limite de restos", valor: 0, cor: "#94A3B8", apoio: "limite não informado: preencha em Configurações › Exercício", href: "/emendas/configuracoes/exercicio", semValor: true }
-      : { nome: "Mínimo a pagar p/ o limite de restos", valor: m.minimoAPagar ?? 0, cor: (m.minimoAPagar ?? 0) > 0 ? "#F87171" : "#34D399", apoio: (m.minimoAPagar ?? 0) > 0 ? `para os restos caberem em ${brlCurto(m.tetoRestos)}${m.tetoRestosDescricao ? ` (${m.tetoRestosDescricao})` : ""}` : `restos dentro do limite de ${brlCurto(m.tetoRestos)}`, href: `/emendas/lista?ano=${ano}`, tom: (m.minimoAPagar ?? 0) > 0 ? VERMELHO : VERDE },
     { nome: "Falta pagar (total)", valor: m.faltaPagar, cor: m.faltaPagar > 0 ? "#F87171" : "#34D399", apoio: "restos a pagar + sem empenho", href: `/emendas/lista?ano=${ano}`, tom: m.faltaPagar > 0 ? VERMELHO : VERDE },
   ];
   const chips: { nome: string; quantidade: number; cor: string; href: string }[] = [
@@ -129,6 +126,37 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         )}
       </p>
 
+      <ul className="mt-3 grid gap-2.5 sm:grid-cols-3" aria-label="Limites da lei">
+        {[
+          {
+            nome: `Teto legal das emendas${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
+            valor: m.tetoValor != null ? brlCurto(m.tetoValor) : "—",
+            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? `aprovado ${brlCurto(m.aprovadoAcimaDoTeto ?? 0)} acima do teto` : "aprovado dentro do teto",
+            tom: m.tetoValor == null ? undefined : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? VERMELHO : VERDE,
+          },
+          {
+            nome: "Pode ficar em restos a pagar",
+            valor: m.tetoRestos != null ? brlCurto(m.tetoRestos) : "—",
+            apoio: m.tetoRestos != null ? (m.tetoRestosDescricao ?? "limite informado") : "limite não informado",
+            tom: undefined as Tom | undefined,
+          },
+          {
+            nome: "Mínimo a pagar para esse limite",
+            valor: m.minimoAPagar != null ? brlCurto(m.minimoAPagar) : "—",
+            apoio: m.minimoAPagar == null ? "depende do limite de restos" : m.minimoAPagar > 0 ? "ainda falta pagar" : "já está dentro do limite",
+            tom: m.minimoAPagar == null ? undefined : m.minimoAPagar > 0 ? VERMELHO : VERDE,
+          },
+        ].map((c) => (
+          <li key={c.nome} className="rounded-xl border px-3 py-2" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
+            <span className="block text-[0.75rem] text-[#AEBBD0]">{c.nome}</span>
+            <span className="block text-[1.125rem] font-semibold tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
+              {c.valor}
+            </span>
+            <span className="text-[0.75rem] text-[#AEBBD0]">{c.apoio}</span>
+          </li>
+        ))}
+      </ul>
+
       <div className="mt-5 flex h-4 gap-0.5 overflow-hidden rounded-lg bg-white/10" role="img" aria-label={partes.map((x) => `${x.nome}: ${pct(x.valor / base, 1)}`).join("; ")}>
         {partes.map((x) => (
           <CaixaInfo
@@ -147,7 +175,7 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         ))}
       </div>
 
-      <ul className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-3 xl:grid-cols-6">
+      <ul className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
         {legenda.map((l) => (
           <li key={l.nome}>
             <Link href={l.href} className="block h-full rounded-xl border px-3 py-2.5 transition-colors hover:brightness-125" style={l.tom ? { backgroundColor: l.tom.fundo, borderColor: l.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
@@ -155,7 +183,7 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
                 <i className="inline-block h-2 w-2 rounded-[3px]" style={{ backgroundColor: l.cor }} aria-hidden />
                 {l.nome}
               </span>
-              <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums" style={l.tom ? { color: l.tom.texto } : undefined}>{l.semValor ? "—" : brlCurto(l.valor)}</span>
+              <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums" style={l.tom ? { color: l.tom.texto } : undefined}>{brlCurto(l.valor)}</span>
               <span className="text-[0.75rem] tabular-nums text-[#AEBBD0]">{l.apoio}</span>
             </Link>
           </li>
