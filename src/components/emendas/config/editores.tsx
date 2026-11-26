@@ -14,7 +14,7 @@ export const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
 export const BOTAO = "inline-flex min-h-9 py-1 items-center gap-1.5 rounded-lg bg-[#6B4FBB] px-3.5 text-sm font-medium text-white hover:bg-[#5B3FA8] disabled:opacity-50";
 
-function paraNumero(t: string): number | null {
+export function paraNumero(t: string): number | null {
   const limpo = t.replace(/[R$\s.]/g, "").replace(",", ".");
   const n = Number(limpo);
   return limpo && Number.isFinite(n) ? n : null;
@@ -71,7 +71,6 @@ export function EditorExercicios({ exercicios }: { exercicios: Exercicio[] }) {
               <th className="py-2 pr-3 font-medium">Cota por vereador</th>
               <th className="py-2 pr-3 font-medium">Mínimo na Saúde</th>
               <th className="py-2 pr-3 font-medium">RCL (opcional)</th>
-              <th className="py-2 pr-3 font-medium">Teto de restos a pagar</th>
               <th className="py-2 pr-3 font-medium">Situação</th>
               <th className="w-10" />
             </tr>
@@ -86,7 +85,6 @@ export function EditorExercicios({ exercicios }: { exercicios: Exercicio[] }) {
                   <td className="py-2.5 pr-3 tabular-nums">{brl(e.cota_por_vereador)}</td>
                   <td className="py-2.5 pr-3">{e.percentual_saude_min}%</td>
                   <td className="py-2.5 pr-3 tabular-nums">{e.rcl ? `${brl(e.rcl)}${e.percentual_rcl ? ` · ${e.percentual_rcl}%` : ""}` : "—"}</td>
-                  <td className="py-2.5 pr-3 tabular-nums">{e.restos_teto_valor != null ? brl(e.restos_teto_valor) : "não informado"}</td>
                   <td className="py-2.5 pr-3">{e.situacao === "aberto" ? "Aberto" : "Encerrado"}</td>
                   <td>
                     <button type="button" aria-label={`Editar ${e.ano}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setEditando(e.ano)}>
@@ -115,7 +113,6 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
   const [saude, setSaude] = React.useState(String(exercicio?.percentual_saude_min ?? 50));
   const [rcl, setRcl] = React.useState(exercicio?.rcl ? exercicio.rcl.toFixed(2).replace(".", ",") : "");
   const [pRcl, setPRcl] = React.useState(exercicio?.percentual_rcl ? String(exercicio.percentual_rcl) : "");
-  const [teto, setTeto] = React.useState(exercicio?.restos_teto_valor != null ? exercicio.restos_teto_valor.toFixed(2).replace(".", ",") : "");
   const [situacao, setSituacao] = React.useState<"aberto" | "encerrado">(exercicio?.situacao ?? "aberto");
   const { erro, salvando, salvar } = useSalvar();
   return (
@@ -134,9 +131,6 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
           <input className={CAMPO} inputMode="decimal" placeholder="RCL" value={rcl} onChange={(e) => setRcl(e.target.value)} aria-label="Receita corrente líquida" />
           <input className={cn(CAMPO, "w-16")} inputMode="decimal" placeholder="%" value={pRcl} onChange={(e) => setPRcl(e.target.value)} aria-label="Percentual da RCL" />
         </div>
-      </td>
-      <td className="py-2 pr-3">
-        <input className={CAMPO} inputMode="decimal" placeholder="R$ (opcional)" value={teto} onChange={(e) => setTeto(e.target.value)} aria-label="Teto de restos a pagar (R$)" />
       </td>
       <td className="py-2 pr-3">
         <select className={CAMPO} value={situacao} onChange={(e) => setSituacao(e.target.value as typeof situacao)} aria-label="Situação">
@@ -162,7 +156,6 @@ function LinhaExercicio({ exercicio, aoFechar }: { exercicio?: Exercicio; aoFech
                     saudeMin: paraNumero(saude) ?? 50,
                     rcl: paraNumero(rcl),
                     percentualRcl: paraNumero(pRcl),
-                    restosTeto: paraNumero(teto),
                     situacao,
                   }),
                 aoFechar

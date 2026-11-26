@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: limites legais do exercício nas Configurações",
+    descricao:
+      "Em Configurações › Exercício há um quadro com os limites da lei de cada ano: % do teto das emendas e % máximo de restos a pagar (sobre a RCL), RCL e valor aprovado, com as contas na hora. O Painel passa a mostrar o quanto pode ficar em restos a pagar e o mínimo que ainda falta pagar para ficar dentro da lei.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: mínimo a pagar para o limite de restos a pagar",
     descricao:
       "O Painel das Emendas ganhou o cartão do mínimo que ainda falta pagar para que os restos a pagar fiquem dentro do teto do exercício. O teto é informado em Configurações › Exercício; sem ele, o cartão avisa que o limite não foi informado.",

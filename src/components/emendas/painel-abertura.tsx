@@ -73,8 +73,8 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
     { nome: "Em restos a pagar", valor: m.restosAPagar, cor: "#34D399", apoio: "empenhado, não pago: dentro da lei", href: `/emendas/lista?fin=empenhada_sem_pagamento&ano=${ano}`, tom: VERDE },
     { nome: "Falta empenhar p/ a lei", valor: m.semEmpenho, cor: ok ? "#34D399" : "#F87171", apoio: ok ? "nada a empenhar: meta atingida" : "ainda fora da lei", href: `/emendas/lista?fin=sem_empenho&ano=${ano}`, tom: ok ? VERDE : VERMELHO },
     m.tetoRestos == null
-      ? { nome: "Mínimo a pagar p/ o limite de restos", valor: 0, cor: "#94A3B8", apoio: "teto não informado: preencha em Configurações › Exercício", href: "/emendas/configuracoes/exercicio", semValor: true }
-      : { nome: "Mínimo a pagar p/ o limite de restos", valor: m.minimoAPagar ?? 0, cor: (m.minimoAPagar ?? 0) > 0 ? "#F87171" : "#34D399", apoio: (m.minimoAPagar ?? 0) > 0 ? `para restos ficarem em até ${brlCurto(m.tetoRestos)}` : `restos dentro do teto de ${brlCurto(m.tetoRestos)}`, href: `/emendas/lista?ano=${ano}`, tom: (m.minimoAPagar ?? 0) > 0 ? VERMELHO : VERDE },
+      ? { nome: "Mínimo a pagar p/ o limite de restos", valor: 0, cor: "#94A3B8", apoio: "limite não informado: preencha em Configurações › Exercício", href: "/emendas/configuracoes/exercicio", semValor: true }
+      : { nome: "Mínimo a pagar p/ o limite de restos", valor: m.minimoAPagar ?? 0, cor: (m.minimoAPagar ?? 0) > 0 ? "#F87171" : "#34D399", apoio: (m.minimoAPagar ?? 0) > 0 ? `para os restos caberem em ${brlCurto(m.tetoRestos)}${m.tetoRestosDescricao ? ` (${m.tetoRestosDescricao})` : ""}` : `restos dentro do limite de ${brlCurto(m.tetoRestos)}`, href: `/emendas/lista?ano=${ano}`, tom: (m.minimoAPagar ?? 0) > 0 ? VERMELHO : VERDE },
     { nome: "Falta pagar (total)", valor: m.faltaPagar, cor: m.faltaPagar > 0 ? "#F87171" : "#34D399", apoio: "restos a pagar + sem empenho", href: `/emendas/lista?ano=${ano}`, tom: m.faltaPagar > 0 ? VERMELHO : VERDE },
   ];
   const chips: { nome: string; quantidade: number; cor: string; href: string }[] = [
@@ -121,6 +121,12 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         {ok
           ? "Meta legal atingida: todo o valor aprovado está pago ou empenhado; o que não foi pago fica em restos a pagar."
           : `Meta legal em risco: faltam ${brl(m.semEmpenho)} a empenhar até 31/12 para estar dentro da lei (${pct(m.fracaoDentroDaLei, 1)} já pago ou em restos a pagar).`}
+        {m.tetoRestos != null && (
+          <>
+            {" "}
+            Para os restos a pagar caberem no limite de {brl(m.tetoRestos)}, faltam pagar no mínimo <b>{brl(m.minimoAPagar ?? 0)}</b>.
+          </>
+        )}
       </p>
 
       <div className="mt-5 flex h-4 gap-0.5 overflow-hidden rounded-lg bg-white/10" role="img" aria-label={partes.map((x) => `${x.nome}: ${pct(x.valor / base, 1)}`).join("; ")}>
