@@ -75,18 +75,25 @@ export async function GET(request: NextRequest) {
   }
 
   const we = wb.addWorksheet("Por emenda");
-  we.columns = [
-    { header: "Nº", width: 7 }, { header: "Secretaria", width: 26 }, { header: "Beneficiário", width: 34 }, { header: "Vereador", width: 26 }, { header: "Tipo", width: 14 },
-    { header: "Valor da emenda", width: 16 }, { header: "Empenhado", width: 16 }, { header: "Pago", width: 16 }, { header: "Sem empenhar", width: 16 }, { header: "A pagar", width: 16 },
-    { header: "Situação", width: 30 }, { header: "Definida em", width: 13 }, { header: "Economia (não empenhado)", width: 20 }, { header: "Restos a pagar", width: 16 },
-    { header: "Empenho a anular", width: 16 }, { header: "Devolução", width: 14 }, { header: "Acima da emenda", width: 16 }, { header: "Fonte do excesso informada", width: 18 },
+  const tipoTxt = (t: string | null) => (t === "direta" ? "Execução direta" : t === "osc" ? "Repasse a OSC" : "Repasse a ente");
+  const ocultas = new Set((p.get("sem") ?? "").split("|").map((x) => x.trim()).filter(Boolean));
+  type Col = { h: string; w: number; moeda?: boolean; v: (l: (typeof linhas)[number]) => string | number | null };
+  const todasColunas: Col[] = [
+    { h: "Nº", w: 7, v: (l) => l.numero }, { h: "Secretaria", w: 26, v: (l) => l.secretaria_nome }, { h: "Beneficiário", w: 34, v: (l) => l.beneficiario_nome ?? "" },
+    { h: "Vereador", w: 26, v: (l) => l.vereador_nome }, { h: "Tipo", w: 14, v: (l) => tipoTxt(l.tipo_execucao) },
+    { h: "Valor da emenda", w: 16, moeda: true, v: (l) => l.valor }, { h: "Empenhado", w: 16, moeda: true, v: (l) => l.empenhado }, { h: "Pago", w: 16, moeda: true, v: (l) => l.pago },
+    { h: "Sem empenhar", w: 16, moeda: true, v: (l) => l.semEmpenhar || null }, { h: "A pagar", w: 16, moeda: true, v: (l) => l.aPagar || null }, { h: "Situação", w: 30, v: (l) => textoSituacao(l) },
+    { h: "Definida em", w: 13, v: (l) => l.encerradaEm ?? "" }, { h: "Economia (não empenhado)", w: 20, moeda: true, v: (l) => l.economia || null }, { h: "Restos a pagar", w: 16, moeda: true, v: (l) => l.restos || null },
+    { h: "Empenho a anular", w: 16, moeda: true, v: (l) => l.anular || null }, { h: "Devolução", w: 14, moeda: true, v: (l) => l.devolucao || null }, { h: "Acima da emenda", w: 16, moeda: true, v: (l) => l.excesso || null },
+    { h: "Fonte do excesso informada", w: 18, v: (l) => (l.excesso ? (l.semFonte ? "Não" : "Sim") : "") },
   ];
-  for (const l of linhas)
-    we.addRow([
-      l.numero, l.secretaria_nome, l.beneficiario_nome ?? "", l.vereador_nome, l.tipo_execucao === "direta" ? "Execução direta" : l.tipo_execucao === "osc" ? "Repasse a OSC" : "Repasse a ente",
-      l.valor, l.empenhado, l.pago, l.semEmpenhar || null, l.aPagar || null, textoSituacao(l), l.encerradaEm ?? "", l.economia || null, l.restos || null, l.anular || null, l.devolucao || null, l.excesso || null, l.excesso ? (l.semFonte ? "Não" : "Sim") : "",
-    ]);
-  for (const c of ["F", "G", "H", "I", "J", "M", "N", "O", "P", "Q"]) we.getColumn(c).numFmt = MOEDA;
+  let colunasEmenda = todasColunas.filter((c) => !ocultas.has(c.h));
+  if (colunasEmenda.length === 0) colunasEmenda = todasColunas;
+  we.columns = colunasEmenda.map((c) => ({ header: c.h, width: c.w }));
+  for (const l of linhas) we.addRow(colunasEmenda.map((c) => c.v(l)));
+  colunasEmenda.forEach((c, i) => {
+    if (c.moeda) we.getColumn(i + 1).numFmt = MOEDA;
+  });
   cabecalho(we);
 
   // Conciliação com o IPM: o que a Contabilidade precisa anular, registrar ou justificar, emenda por emenda.

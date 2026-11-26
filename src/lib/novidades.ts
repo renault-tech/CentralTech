@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Panorama: escolha as colunas do Excel",
+    descricao:
+      "No menu Exportar do Panorama da execução há \"Escolher colunas…\": desmarque o que não quer na aba \"Por emenda\" do Excel. A escolha fica guardada neste navegador.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Imóveis: escolha as colunas das exportações",
     descricao:
       "No menu Exportar de Imóveis e Consumo há agora \"Escolher colunas…\": desmarque o que não quer nos arquivos (Excel, PDF e CSV). A escolha fica guardada na sua conta, igual ao Frotas.",

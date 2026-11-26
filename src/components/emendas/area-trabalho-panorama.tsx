@@ -5,6 +5,8 @@ import * as React from "react";
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { DialogoColunas } from "@/components/modulo/dialogo-colunas";
+import { CHAVE_COLUNAS_PANORAMA, COLUNAS_PANORAMA } from "@/lib/emendas/colunas-panorama";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
@@ -89,6 +91,42 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
   const lista = React.useMemo(() => (cartao ? recorte.filter((l) => pertenceAoCartao(l, cartao)) : recorte), [recorte, cartao]);
   const visao: Visao = VISOES.some((v) => v.chave === q && (v.chave !== "restos" || restos.length > 0)) ? (q as Visao) : "emendas";
   const quadro = React.useMemo(() => (visao === "secretaria" || visao === "vereador" || visao === "tipo" ? agrupar(recorte, visao) : []), [recorte, visao]);
+  const [escolhendo, setEscolhendo] = React.useState(false);
+  const bruto = React.useSyncExternalStore(
+    (f) => {
+      window.addEventListener("storage", f);
+      window.addEventListener("panorama-colunas", f);
+      return () => {
+        window.removeEventListener("storage", f);
+        window.removeEventListener("panorama-colunas", f);
+      };
+    },
+    () => {
+      try {
+        return localStorage.getItem(CHAVE_COLUNAS_PANORAMA) ?? "[]";
+      } catch {
+        return "[]";
+      }
+    },
+    () => "[]"
+  );
+  const ocultasPan = React.useMemo(() => {
+    try {
+      const l = JSON.parse(bruto);
+      return Array.isArray(l) ? l.filter((x): x is string => typeof x === "string" && COLUNAS_PANORAMA.includes(x)) : [];
+    } catch {
+      return [];
+    }
+  }, [bruto]);
+  function guardarOcultas(l: string[]) {
+    try {
+      localStorage.setItem(CHAVE_COLUNAS_PANORAMA, JSON.stringify(l));
+    } catch {
+      /* vale só nesta visita */
+    }
+    window.dispatchEvent(new Event("panorama-colunas"));
+  }
+  const semParam = ocultasPan.length ? `&sem=${encodeURIComponent(ocultasPan.join("|"))}` : "";
   const qExport = new URLSearchParams({ ano: String(ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(c ? { c } : {}) }).toString();
   const filtrosAtivos = (s ? 1 : 0) + (t ? 1 : 0) + (cartao ? 1 : 0);
   const fechar = () => definir({ e: "" });
@@ -185,9 +223,20 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
                   opcoes={[
                     { rotulo: "PDF para apresentação", detalhe: "Indicadores e gráficos do recorte atual", href: `/emendas/panorama/exportar?${qExport}&formato=pdf&tabela=0` },
                     { rotulo: "PDF completo", detalhe: "Gráficos, indicadores e tabelas", href: `/emendas/panorama/exportar?${qExport}&formato=pdf` },
-                    { rotulo: "Excel (.xlsx)", detalhe: "Relatório completo, com a conciliação do IPM", href: `/emendas/panorama/exportar?${qExport}` },
+                    { rotulo: "Excel (.xlsx)", detalhe: "Relatório completo, com a conciliação do IPM", href: `/emendas/panorama/exportar?${qExport}${semParam}` },
+                    { rotulo: "Escolher colunas…", detalhe: "Colunas da aba “Por emenda” do Excel", aoClicar: () => setEscolhendo(true) },
                   ]}
                 />
+                {escolhendo && (
+                  <DialogoColunas
+                    relatorios={[{ id: "panorama", rotulo: "Excel · aba Por emenda", colunas: COLUNAS_PANORAMA }]}
+                    ocultas={{ panorama: ocultasPan }}
+                    alterar={(_, p) => guardarOcultas(p)}
+                    limparTudo={() => guardarOcultas([])}
+                    fechar={() => setEscolhendo(false)}
+                    guardadoEm="neste navegador"
+                  />
+                )}
               </span>
             </div>
             <p className="min-h-7 text-[0.8125rem] text-slate-600" aria-live="polite">

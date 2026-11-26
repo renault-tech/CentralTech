@@ -12,12 +12,14 @@ export function DialogoColunas({
   alterar,
   limparTudo,
   fechar,
+  guardadoEm = "sua conta",
 }: {
   relatorios: { id: string; rotulo: string; colunas: string[] }[];
   ocultas: Record<string, string[] | undefined>;
   alterar: (r: string, proximas: string[]) => void;
   limparTudo: () => void;
   fechar: () => void;
+  guardadoEm?: string;
 }) {
   const fecharRef = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
@@ -33,7 +35,7 @@ export function DialogoColunas({
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-base font-semibold text-cataguases-marinho">Colunas da exportação</h2>
-            <p className="mt-0.5 text-xs text-slate-600">Desmarque o que não quer nos arquivos. Sua escolha fica guardada na sua conta.</p>
+            <p className="mt-0.5 text-xs text-slate-600">Desmarque o que não quer nos arquivos. Sua escolha fica guardada {guardadoEm}.</p>
           </div>
           <button ref={fecharRef} type="button" onClick={fechar} aria-label="Fechar" className="-mr-2 flex size-10 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100">
             <X className="size-5" aria-hidden />
