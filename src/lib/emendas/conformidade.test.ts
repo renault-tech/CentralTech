@@ -34,6 +34,14 @@ describe("contas", () => {
 });
 
 describe("art. 7º da IN 05/2025", () => {
+  it("objeto detalhado lê a descrição; repasse com termo cumpre o item VIII (processo = nº do termo)", () => {
+    const faltando = (o: Partial<typeof base>) => faltas(avaliarArt7({ ...base, ...o } as never)).map((i) => i.codigo);
+    expect(faltando({})).not.toContain("III");
+    expect(faltando({ emenda: { ...emenda, descricao: "" } as never })).toContain("III");
+    expect(faltando({ execucao: { numero_termo: "027/2026" } as never })).not.toContain("VIII");
+    expect(faltando({ execucao: { numero_termo: "" } as never })).toContain("VIII");
+  });
+
   it("lista o que falta quando nada foi preenchido", () => {
     const codigos = faltas(avaliarArt7(base)).map((i) => i.codigo);
     for (const c of ["I", "II", "VI", "VII", "VIII", "IX", "XII", "XIII", "XIV", "XVI", "XVII", "art5"]) expect(codigos).toContain(c);

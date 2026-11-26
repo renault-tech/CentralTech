@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Conformidade: repasse com termo cumpre o item \"instrumento e processo\"",
+    descricao:
+      "No item VIII do art. 7º, o número do processo administrativo é o mesmo do termo; por isso, repasse com o número do termo informado deixa de aparecer como faltando o processo.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Conformidade: \"Objeto detalhado\" deixou de aparecer como faltando em emendas com descrição",
     descricao:
       "A verificação do item III (objeto detalhado) não estava lendo a descrição da emenda, só o objeto resumido, e marcava como incompleta até emenda com descrição completa (como a nº 12). Agora a descrição é considerada em todas as emendas.",
