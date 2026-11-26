@@ -67,6 +67,13 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
   const VERDE = { fundo: "rgba(52,211,153,.16)", borda: "rgba(110,231,183,.45)", texto: "#A7F3D0" };
   const VERMELHO = { fundo: "rgba(248,113,113,.18)", borda: "rgba(252,165,165,.5)", texto: "#FECACA" };
   type Tom = typeof VERDE;
+  const DETALHE_LEGENDA: Record<string, string> = {
+    "Aprovado (indicado)": "Soma das emendas não canceladas do exercício.",
+    "Pago": "Valor já pago aos beneficiários.",
+    "Em restos a pagar": "Empenhado e ainda não pago (Lei 4.320, art. 36): conta como dentro da lei.",
+    "Falta empenhar p/ a lei": "Valor aprovado sem empenho. Precisa ser empenhado até 31/12 para estar dentro da lei.",
+    "Falta pagar (total)": "Restos a pagar mais o que falta empenhar: tudo o que ainda não foi pago.",
+  };
   const legenda: { nome: string; valor: number; cor: string; apoio: string; href: string; tom?: Tom }[] = [
     { nome: "Aprovado (indicado)", valor: p.total, cor: COR_DINHEIRO.indicado, apoio: `${p.quantidade} emendas`, href: `/emendas/lista?ano=${ano}` },
     { nome: "Pago", valor: p.pago, cor: COR_DINHEIRO.pago, apoio: `${pct(m.fracaoPago, 1)} do aprovado`, href: `/emendas/lista?fin=paga&ano=${ano}`, tom: VERDE },
@@ -133,39 +140,48 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
             nome: `Obrigação legal${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
             valor: m.tetoValor != null ? brlCurto(m.tetoValor) : "—",
             apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : "o que a lei exige para as emendas",
+            detalhe: "Teto das emendas impositivas: percentual da receita corrente líquida (RCL) do exercício de referência. É a obrigação legal, calculada a partir da RCL e do percentual informados em Configurações › Exercício.",
             tom: undefined as Tom | undefined,
           },
           {
             nome: "Aprovado pelos vereadores",
             valor: brlCurto(m.aprovado),
             apoio: m.aprovadoOrigem === "emendas" ? "total das emendas cadastradas" : "valor informado em Configurações",
+            detalhe: "Valor efetivamente aprovado pelos vereadores. Sem valor informado em Configurações, é a soma das emendas cadastradas; é a base de \"falta pagar\" e do mínimo a pagar.",
             tom: undefined as Tom | undefined,
           },
           {
             nome: "Aprovado × obrigação",
             valor: m.diferencaParaObrigacao == null ? "—" : `${m.diferencaParaObrigacao > 0 ? "+" : m.diferencaParaObrigacao < 0 ? "−" : ""}${brlCurto(Math.abs(m.diferencaParaObrigacao))}`,
             apoio: m.diferencaParaObrigacao == null ? "depende da obrigação legal" : m.diferencaParaObrigacao > 0.005 ? "aprovado acima da obrigação" : m.diferencaParaObrigacao < -0.005 ? "aprovado abaixo da obrigação" : "aprovado igual à obrigação",
+            detalhe: "Aprovado menos obrigação legal. Positivo: a Câmara aprovou acima do que a lei exige; negativo: abaixo.",
             tom: undefined as Tom | undefined,
           },
           {
             nome: "Pode ficar em restos a pagar",
             valor: m.tetoRestos != null ? brlCurto(m.tetoRestos) : "—",
             apoio: m.tetoRestos != null ? (m.tetoRestosDescricao ?? "limite informado") : "limite não informado",
+            detalhe: "Máximo que pode permanecer empenhado e não pago (restos a pagar) ao fim do exercício, em percentual da RCL ou valor informado em Configurações.",
             tom: undefined as Tom | undefined,
           },
           {
             nome: "Mínimo a pagar para esse limite",
             valor: m.minimoAPagar != null ? brlCurto(m.minimoAPagar) : "—",
             apoio: m.minimoAPagar == null ? "depende do limite de restos" : m.minimoAPagar > 0 ? "ainda falta pagar" : "já está dentro do limite",
+            detalhe: "Quanto ainda precisa ser pago, no mínimo, para que o restante (empenhado) caiba no limite de restos a pagar: (aprovado − pago) − limite de restos.",
             tom: m.minimoAPagar == null ? undefined : m.minimoAPagar > 0 ? VERMELHO : VERDE,
           },
         ].map((c) => (
-          <li key={c.nome} className="rounded-xl border px-3 py-2" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
-            <span className="block text-[0.75rem] text-[#AEBBD0]">{c.nome}</span>
-            <span className="block text-[1.125rem] font-semibold tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
-              {c.valor}
-            </span>
-            <span className="text-[0.75rem] text-[#AEBBD0]">{c.apoio}</span>
+          <li key={c.nome}>
+            <CaixaInfo as="div" className="h-full" conteudo={<><CaixaTitulo rotulo={c.nome} valor={c.valor} /><CaixaNota>{c.detalhe}</CaixaNota></>}>
+              <div className="h-full rounded-xl border px-3 py-2" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
+                <span className="block text-[0.75rem] text-[#AEBBD0]">{c.nome}</span>
+                <span className="block text-[1.125rem] font-semibold tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
+                  {c.valor}
+                </span>
+                <span className="text-[0.75rem] text-[#AEBBD0]">{c.apoio}</span>
+              </div>
+            </CaixaInfo>
           </li>
         ))}
       </ul>
@@ -191,6 +207,7 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
       <ul className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
         {legenda.map((l) => (
           <li key={l.nome}>
+            <CaixaInfo as="div" className="h-full" conteudo={<><CaixaTitulo rotulo={l.nome} valor={brl(l.valor)} lado={pct(p.total ? l.valor / p.total : 0, 1)} ladoApoio="do indicado" /><CaixaNota>{DETALHE_LEGENDA[l.nome] ?? l.apoio}</CaixaNota></>}>
             <Link href={l.href} className="block h-full rounded-xl border px-3 py-2.5 transition-colors hover:brightness-125" style={l.tom ? { backgroundColor: l.tom.fundo, borderColor: l.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
               <span className="flex items-center gap-1.5 text-[0.75rem] text-[#AEBBD0]">
                 <i className="inline-block h-2 w-2 rounded-[3px]" style={{ backgroundColor: l.cor }} aria-hidden />
@@ -199,6 +216,7 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
               <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums" style={l.tom ? { color: l.tom.texto } : undefined}>{brlCurto(l.valor)}</span>
               <span className="text-[0.75rem] tabular-nums text-[#AEBBD0]">{l.apoio}</span>
             </Link>
+            </CaixaInfo>
           </li>
         ))}
       </ul>
