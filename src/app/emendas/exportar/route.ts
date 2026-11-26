@@ -1,7 +1,8 @@
 import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { listarExecucoes, listarMovimentos, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { listarConciliacoes, listarEncerramentos, listarExecucoes, listarMovimentos, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { linhasPanorama, rotuloSituacao, type LinhaPanorama } from "@/lib/emendas/encerramento";
 import { carregarListaParaExportar } from "@/lib/emendas/exportar-lista";
 import { montarPdfExecutivo } from "@/lib/emendas/pdf-executivo";
 import { relatorioDaLista } from "@/lib/emendas/relatorio-executivo";
@@ -29,6 +30,45 @@ export async function GET(request: NextRequest) {
   const { emendas, catalogo, filtros, totalDoExercicio } = await carregarListaParaExportar(p, exercicio);
   const contagem = `${emendas.length} ${emendas.length === 1 ? "emenda" : "emendas"}${emendas.length !== totalDoExercicio ? ` (de ${totalDoExercicio} no exercício)` : ""}`;
 
+  // Saldos da execução (sem empenhar, empenho não pago, acima da emenda) e situação de encerramento/conciliação: a mesma regra do Panorama.
+  const idsDaLista = emendas.map((e) => e.id);
+  const [encerramentos, conciliacoes] = await Promise.all([listarEncerramentos(idsDaLista), listarConciliacoes(idsDaLista)]);
+  const panorama = new Map<string, LinhaPanorama>(
+    linhasPanorama(
+      emendas.map((e) => ({
+        id: e.id,
+        numero: e.numero,
+        objeto: e.objeto,
+        vereador_nome: e.vereador_nome,
+        secretaria_id: e.secretaria_id,
+        secretaria_nome: e.secretaria_nome,
+        beneficiario_nome: e.beneficiario_nome,
+        tipo_execucao: tipoDaEmenda(e),
+        valor: e.valor,
+        empenhado: e.empenhado,
+        pago: e.pago,
+        etapa: e.etapa,
+        situacao: e.situacao,
+      })),
+      encerramentos,
+      conciliacoes
+    ).map((l) => [l.id, l])
+  );
+  const conciliacao = new Map(conciliacoes.map((c) => [c.id, c]));
+  const situacaoTexto = (e: (typeof emendas)[number]): string => {
+    const l = panorama.get(e.id);
+    if (!l) return "";
+    const partes: string[] = [l.encerramento ? rotuloSituacao(l.encerramento, l.tipo_execucao) : "Sem situação definida"];
+    const c = conciliacao.get(e.id);
+    if (c?.saldo_registrado_em) partes.push("saldo registrado");
+    if (c?.anulacao_solicitada_em) partes.push("anulação solicitada");
+    if (l.semFonte) partes.push("acima da emenda sem fonte");
+    return partes.join("; ");
+  };
+  const semEmpenhar = (e: (typeof emendas)[number]) => panorama.get(e.id)?.semEmpenhar ?? Math.max(0, Math.round((e.valor - e.empenhado) * 100) / 100);
+  const naoPago = (e: (typeof emendas)[number]) => panorama.get(e.id)?.aPagar ?? Math.max(0, Math.round((e.empenhado - e.pago) * 100) / 100);
+  const acima = (e: (typeof emendas)[number]) => panorama.get(e.id)?.excesso ?? 0;
+
   if (p.get("formato") === "executivo") {
     const pdf = montarPdfExecutivo(relatorioDaLista({ ano: exercicio.ano, emendas, catalogo, filtros, totalDoExercicio, comTabela: p.get("tabela") !== "0" }));
     return new NextResponse(pdf as unknown as BodyInit, {
@@ -47,8 +87,8 @@ export async function GET(request: NextRequest) {
       tabelas: [
         {
           titulo: "Emendas",
-          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Empenhado", "Pago"],
-          monetarias: [7, 8, 9],
+          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Empenhado", "Pago", "Sem empenhar (saldo)", "Empenho não pago (restos)", "Acima da emenda", "Situação"],
+          monetarias: [7, 8, 9, 10, 11, 12],
           linhas: emendas.map((e) => [
             e.numero,
             `${String(e.vereador_numero).padStart(2, "0")} - ${e.vereador_nome}`,
@@ -60,8 +100,12 @@ export async function GET(request: NextRequest) {
             e.valor,
             e.empenhado,
             e.pago,
+            semEmpenhar(e),
+            naoPago(e),
+            acima(e),
+            situacaoTexto(e),
           ]),
-          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.empenhado), soma((e) => e.pago)],
+          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.empenhado), soma((e) => e.pago), soma(semEmpenhar), soma(naoPago), soma(acima), ""],
         },
       ],
     });
@@ -115,6 +159,13 @@ export async function GET(request: NextRequest) {
     { header: "Empenho(s)", key: "empenhos", width: 14 },
     { header: "Empenhado", key: "empenhado", width: 15 },
     { header: "Pago", key: "pago", width: 15 },
+    { header: "Sem empenhar (saldo)", key: "semEmpenhar", width: 16 },
+    { header: "Empenho não pago (restos)", key: "naoPago", width: 16 },
+    { header: "Acima da emenda", key: "acima", width: 15 },
+    { header: "Situação da execução", key: "situacaoExec", width: 38 },
+    { header: "Saldo registrado em", key: "saldoRegistrado", width: 14 },
+    { header: "Anulação solicitada em", key: "anulacaoEm", width: 14 },
+    { header: "Fonte do excesso", key: "excessoFonte", width: 30 },
     { header: "Data do pagamento", key: "dataPagamento", width: 13 },
     { header: "Remanejada", key: "remanejada", width: 11 },
     { header: "Termo de parceria", key: "termo", width: 12 },
@@ -149,6 +200,13 @@ export async function GET(request: NextRequest) {
       empenhos: (empenhos.get(e.id) ?? []).join(", "),
       empenhado: e.empenhado,
       pago: e.pago,
+      semEmpenhar: semEmpenhar(e),
+      naoPago: naoPago(e),
+      acima: acima(e),
+      situacaoExec: situacaoTexto(e),
+      saldoRegistrado: data(conciliacao.get(e.id)?.saldo_registrado_em),
+      anulacaoEm: data(conciliacao.get(e.id)?.anulacao_solicitada_em),
+      excessoFonte: conciliacao.get(e.id)?.excesso_fonte ?? "",
       dataPagamento: data(e.ultimo_pagamento),
       remanejada: e.remanejada ? "Sim" : "",
       termo: x?.numero_termo ?? "",
@@ -164,7 +222,7 @@ export async function GET(request: NextRequest) {
   const ultima = emendas.length + 1;
   // Letras das colunas vêm das chaves: inserir uma coluna não desalinha mais os totais.
   const col = (k: string) => ws.getColumn(k).letter;
-  const total = ws.addRow({ vereador: "Total", valor: { formula: `SUM(${col("valor")}2:${col("valor")}${ultima})` }, empenhado: { formula: `SUM(${col("empenhado")}2:${col("empenhado")}${ultima})` }, pago: { formula: `SUM(${col("pago")}2:${col("pago")}${ultima})` } });
+  const total = ws.addRow({ vereador: "Total", valor: { formula: `SUM(${col("valor")}2:${col("valor")}${ultima})` }, empenhado: { formula: `SUM(${col("empenhado")}2:${col("empenhado")}${ultima})` }, pago: { formula: `SUM(${col("pago")}2:${col("pago")}${ultima})` }, semEmpenhar: { formula: `SUM(${col("semEmpenhar")}2:${col("semEmpenhar")}${ultima})` }, naoPago: { formula: `SUM(${col("naoPago")}2:${col("naoPago")}${ultima})` }, acima: { formula: `SUM(${col("acima")}2:${col("acima")}${ultima})` } });
   total.font = { bold: true };
 
   const cabecalho = ws.getRow(1);
@@ -172,10 +230,10 @@ export async function GET(request: NextRequest) {
   cabecalho.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C1D33" } };
   cabecalho.alignment = { vertical: "middle" };
   cabecalho.height = 22;
-  for (const k of ["valor", "empenhado", "pago"]) ws.getColumn(k).numFmt = '"R$" #,##0.00';
-  for (const k of ["dataPagamento", "vigenciaInicio", "vigenciaFim", "extrato", "envio"]) ws.getColumn(k).numFmt = "dd/mm/yyyy";
+  for (const k of ["valor", "empenhado", "pago", "semEmpenhar", "naoPago", "acima"]) ws.getColumn(k).numFmt = '"R$" #,##0.00';
+  for (const k of ["dataPagamento", "vigenciaInicio", "vigenciaFim", "extrato", "envio", "saldoRegistrado", "anulacaoEm"]) ws.getColumn(k).numFmt = "dd/mm/yyyy";
   for (const k of ["descricao", "objeto"]) ws.getColumn(k).alignment = { wrapText: true, vertical: "top" };
-  ws.autoFilter = { from: "A1", to: "AD1" };
+  ws.autoFilter = { from: "A1", to: `${ws.getColumn(ws.columnCount).letter}1` };
 
   const buffer = await wb.xlsx.writeBuffer();
   return new NextResponse(buffer as ArrayBuffer, {
