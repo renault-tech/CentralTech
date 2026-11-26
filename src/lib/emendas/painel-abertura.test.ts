@@ -51,6 +51,14 @@ describe("painel de abertura", () => {
     expect(ok.meta.vereadoresOk).toBe(1);
   });
 
+  it("mínimo a pagar para o teto de restos: falta pagar menos o teto; vazio sem teto", () => {
+    const emendas = [em("a", 1, 100, 80, 50), em("b", 2, 200, 0, 0)];
+    expect(montarPainel(base({ emendas })).meta.minimoAPagar).toBeNull();
+    const m = montarPainel(base({ emendas, tetoRestos: 100 })).meta;
+    expect(m.minimoAPagar).toBe(150);
+    expect(montarPainel(base({ emendas, tetoRestos: 1000 })).meta.minimoAPagar).toBe(0);
+  });
+
   it("classifica a situação financeira como o filtro da lista", () => {
     const p = montarPainel(base({ emendas: [em("a", 1, 100, 100, 100), em("b", 2, 100, 100, 40), em("c", 3, 100, 60, 0), em("d", 4, 100, 0, 0)] }));
     expect(p.situacoes.map((s) => s.quantidade)).toEqual([1, 1, 1, 1]);

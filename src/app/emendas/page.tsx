@@ -85,6 +85,7 @@ export default async function PaginaPainelEmendas({
     vereadores: vereadoresAtivos,
     cotaPorVereador: exercicio.cota_por_vereador,
     saudeMinimoPct: exercicio.percentual_saude_min,
+    tetoRestos: exercicio.restos_teto_valor == null ? null : Number(exercicio.restos_teto_valor),
     prazoExequibilidade: exercicio.prazo_exequibilidade,
     execucoes: execucoes.map((x) => ({ emenda_id: x.id, vigencia_fim: x.vigencia_fim })),
     contagens: { propostasPendentes, executadasIncompletas, relatoriosGestao, semSituacao: totaisPorCartao(panorama.linhas).sem_situacao.quantidade, paradas },

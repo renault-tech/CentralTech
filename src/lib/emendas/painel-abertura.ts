@@ -19,6 +19,8 @@ export type EntradaPainel = {
   vereadores: { id: string; numero: number; nome: string }[];
   cotaPorVereador: number;
   saudeMinimoPct: number;
+  /** Teto de restos a pagar do exercício (R$); null = não informado. */
+  tetoRestos?: number | null;
   prazoExequibilidade: string | null;
   execucoes: { emenda_id: string; vigencia_fim: string | null }[];
   contagens: {
@@ -64,6 +66,10 @@ export type MetaExercicio = {
   fracaoPago: number;
   fracaoDentroDaLei: number;
   atingida: boolean;
+  /** Teto de restos a pagar informado no exercício (null = não informado). */
+  tetoRestos: number | null;
+  /** Mínimo que ainda falta PAGAR para que o que sobrar em restos a pagar caiba no teto (null = teto não informado). */
+  minimoAPagar: number | null;
   /** Vereadores que ainda têm valor sem empenho. */
   pendentes: { id: string; numero: number; nome: string; semEmpenho: number }[];
   vereadoresOk: number;
@@ -312,6 +318,8 @@ export function montarPainel(e: EntradaPainel): Painel {
     fracaoPago: total > 0 ? Math.min(1, pago / total) : 0,
     fracaoDentroDaLei: total > 0 ? Math.min(1, (pago + aPagar) / total) : 0,
     atingida: total > 0 && semEmp < centavo,
+    tetoRestos: e.tetoRestos ?? null,
+    minimoAPagar: e.tetoRestos == null ? null : Math.max(0, Math.max(0, total - pago) - e.tetoRestos),
     pendentes: vereadores.filter((v) => v.semEmpenhar >= centavo).map((v) => ({ id: v.id, numero: v.numero, nome: v.nome, semEmpenho: v.semEmpenhar })).sort((a, b) => b.semEmpenho - a.semEmpenho),
     vereadoresOk: vereadores.filter((v) => v.semEmpenhar < centavo).length,
     vereadoresTotal: vereadores.length,

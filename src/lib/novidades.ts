@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: mínimo a pagar para o limite de restos a pagar",
+    descricao:
+      "O Painel das Emendas ganhou o cartão do mínimo que ainda falta pagar para que os restos a pagar fiquem dentro do teto do exercício. O teto é informado em Configurações › Exercício; sem ele, o cartão avisa que o limite não foi informado.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: meta legal do exercício no Painel",
     descricao:
       "No cartão escuro do Painel das Emendas, os valores agora mostram o aprovado, o pago, o que está em restos a pagar (empenhado e não pago, dentro da lei), o que falta empenhar e o que falta pagar. Os cartões ficam translúcidos em verde ou vermelho, e uma faixa avisa se a meta legal foi atingida.",

@@ -56,6 +56,7 @@ const esquemaExercicio = z.object({
   saudeMin: z.number().min(0).max(100),
   rcl: z.number().positive().nullable(),
   percentualRcl: z.number().min(0).max(100).nullable(),
+  restosTeto: z.number().min(0).nullable().optional(),
   situacao: z.enum(["aberto", "encerrado"]),
 });
 
@@ -71,6 +72,7 @@ export async function salvarExercicio(dados: z.input<typeof esquemaExercicio>): 
     percentual_saude_min: a.data.saudeMin,
     rcl: a.data.rcl,
     percentual_rcl: a.data.percentualRcl,
+    ...(a.data.restosTeto !== undefined ? { restos_teto_valor: a.data.restosTeto } : {}),
     situacao: a.data.situacao,
   });
   if (error) return { sucesso: false, erro: traduzir(error) };
