@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: números do Painel mais alinhados",
+    descricao:
+      "Os cartões do resumo do exercício e dos limites da lei passaram a alinhar rótulo, valor e nota nas mesmas linhas, e o quadro \"Precisa da sua atenção\" ficou mais estreito para dar espaço a eles.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: valor exato nos números abreviados",
     descricao:
       "No Painel, os valores abreviados (como R$ 5,16 mi) mostram o valor exato em reais numa caixa ao deixar o mouse parado sobre eles.",
