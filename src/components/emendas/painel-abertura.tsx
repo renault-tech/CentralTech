@@ -179,12 +179,12 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         ].map((c) => (
           <li key={c.nome}>
             <CaixaInfo as="div" className="h-full" conteudo={<><CaixaTitulo rotulo={c.nome} valor={c.exato ?? c.valor} /><CaixaNota>{c.detalhe}</CaixaNota></>}>
-              <div className="h-full rounded-xl border px-3 py-2" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
-                <span className="block text-[0.75rem] text-[#AEBBD0]">{c.nome}</span>
-                <span className="block text-[1.125rem] font-semibold tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
+              <div className="flex h-full flex-col rounded-xl border px-3 py-2.5" style={c.tom ? { backgroundColor: c.tom.fundo, borderColor: c.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
+                <span className="block min-h-[2.25rem] text-[0.75rem] leading-[1.15rem] text-[#AEBBD0]">{c.nome}</span>
+                <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tabular-nums tracking-[-0.02em]" style={c.tom ? { color: c.tom.texto } : undefined}>
                   {c.valor}
                 </span>
-                <span className="text-[0.75rem] text-[#AEBBD0]">{c.apoio}</span>
+                <span className="mt-1 block text-[0.75rem] leading-snug text-[#AEBBD0]">{c.apoio}</span>
               </div>
             </CaixaInfo>
           </li>
@@ -213,13 +213,13 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         {legenda.map((l) => (
           <li key={l.nome}>
             <CaixaInfo as="div" className="h-full" conteudo={<><CaixaTitulo rotulo={l.nome} valor={brl(l.valor)} lado={pct(p.total ? l.valor / p.total : 0, 1)} ladoApoio="do indicado" /><CaixaNota>{DETALHE_LEGENDA[l.nome] ?? l.apoio}</CaixaNota></>}>
-            <Link href={l.href} className="block h-full rounded-xl border px-3 py-2.5 transition-colors hover:brightness-125" style={l.tom ? { backgroundColor: l.tom.fundo, borderColor: l.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
-              <span className="flex items-center gap-1.5 text-[0.75rem] text-[#AEBBD0]">
-                <i className="inline-block h-2 w-2 rounded-[3px]" style={{ backgroundColor: l.cor }} aria-hidden />
+            <Link href={l.href} className="flex h-full flex-col rounded-xl border px-3 py-2.5 transition-colors hover:brightness-125" style={l.tom ? { backgroundColor: l.tom.fundo, borderColor: l.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
+              <span className="flex min-h-[2.25rem] items-start gap-1.5 text-[0.75rem] leading-[1.15rem] text-[#AEBBD0]">
+                <i className="mt-[0.3rem] inline-block h-2 w-2 flex-none rounded-[3px]" style={{ backgroundColor: l.cor }} aria-hidden />
                 {l.nome}
               </span>
               <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums" style={l.tom ? { color: l.tom.texto } : undefined}>{brlCurto(l.valor)}</span>
-              <span className="text-[0.75rem] tabular-nums text-[#AEBBD0]">{l.apoio}</span>
+              <span className="mt-1 block text-[0.75rem] leading-snug tabular-nums text-[#AEBBD0]">{l.apoio}</span>
             </Link>
             </CaixaInfo>
           </li>
@@ -717,7 +717,7 @@ export function PainelAbertura({ painel: p, ano, saudacao, dataExtenso, diasFim 
         </div>
       </header>
 
-      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,19rem)]">
         <Hero p={p} ano={ano} diasFim={diasFim} />
         <Atencao itens={p.atencao} />
       </div>
