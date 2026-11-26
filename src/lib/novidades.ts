@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Imóveis: escolha as colunas das exportações",
+    descricao:
+      "No menu Exportar de Imóveis e Consumo há agora \"Escolher colunas…\": desmarque o que não quer nos arquivos (Excel, PDF e CSV). A escolha fica guardada na sua conta, igual ao Frotas.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: escolha as colunas dos relatórios direto no menu Exportar",
     descricao:
       "No menu Exportar da lista de Emendas, \"Escolher colunas…\" abre uma janela com todas as colunas disponíveis (identificação, financeiro, orçamento e parceria). O que você marcar vale para o PDF da lista e para o Excel, fica guardado neste navegador e \"Voltar ao padrão\" desfaz. Sem escolha, o PDF traz o resumo e o Excel traz tudo.",

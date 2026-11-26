@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
+import { aplicarColunasOcultas, lerColunasOcultas } from "@/lib/frotas/colunas";
 import { tabelaParaCsv } from "@/lib/frotas/relatorios";
 import { tabelasParaXlsx } from "@/lib/frotas/xlsx-saida";
 import { carregarTudo } from "@/lib/imoveis/carregar";
@@ -24,20 +25,22 @@ export async function GET(request: NextRequest) {
 
   const t = await carregarTudo();
   const rel = montarTabelas(r as IdRelatorioImoveis, { ...t, pendencias: t.pendencias });
+  const ocultas = lerColunasOcultas(q.get("sem"));
+  const tabelas = aplicarColunasOcultas(rel.tabelas, ocultas);
   const cabecalhos = { "Cache-Control": "private, no-store" };
 
   if (formato === "csv") {
-    return new NextResponse(tabelaParaCsv(rel.tabelas[0]), {
+    return new NextResponse(tabelaParaCsv(tabelas[0]), {
       headers: { ...cabecalhos, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${nomeArquivoImoveis(r, t.hoje, "csv")}"` },
     });
   }
   if (formato === "pdf") {
-    const pdf = montarPdfTabelas({ titulo: `Imoveis e Consumo - ${rel.nome}`, tabelas: rel.tabelas, rodape: "Central Cataguases - Imoveis e Consumo" });
+    const pdf = montarPdfTabelas({ titulo: `Imoveis e Consumo - ${rel.nome}`, tabelas, rodape: "Central Cataguases - Imoveis e Consumo" });
     return new NextResponse(pdf as unknown as BodyInit, {
       headers: { ...cabecalhos, "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${nomeArquivoImoveis(r, t.hoje, "pdf")}"` },
     });
   }
-  const xlsx = await tabelasParaXlsx({ criador: "Central Cataguases · Imóveis e Consumo", tabelas: rel.tabelas });
+  const xlsx = await tabelasParaXlsx({ criador: "Central Cataguases · Imóveis e Consumo", tabelas });
   return new NextResponse(xlsx as unknown as BodyInit, {
     headers: {
       ...cabecalhos,

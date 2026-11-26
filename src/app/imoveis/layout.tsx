@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ProvedorColunasImoveis } from "@/components/imoveis/colunas-exportacao";
+import { lerColunasOcultasImoveis } from "@/lib/imoveis/preferencias";
 import { CabecalhoHub } from "@/components/layout/cabecalho-hub";
 import { cookies } from "next/headers";
 
@@ -54,6 +56,7 @@ export default async function LayoutImoveis({ children }: { children: React.Reac
   const pendenciasPronto = carregarTudo()
     .then((t) => t.pendencias.length)
     .catch(() => 0);
+  const colunasPronto = lerColunasOcultasImoveis();
   const ctx = await obterContextoImoveis();
   if (ctx.situacao === "sem_login") redirect("/login?proximo=%2Fimoveis");
   if (ctx.situacao === "inativo") redirect("/login?motivo=desativado");
@@ -104,7 +107,7 @@ export default async function LayoutImoveis({ children }: { children: React.Reac
         <main id="conteudo" className="min-w-0 flex-1 print:max-w-none print:p-0">
           <AjusteDeRolagem />
           <AvisoConexao />
-          {children}
+          <ProvedorColunasImoveis iniciais={await colunasPronto}>{children}</ProvedorColunasImoveis>
         </main>
       </div>
     </div>

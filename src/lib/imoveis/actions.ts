@@ -4,6 +4,7 @@ import { revalidarCaminho as revalidatePath } from "@/lib/imoveis/invalidar";
 import { z } from "zod";
 
 import { obterContextoImoveis } from "@/lib/imoveis/dados";
+import { COLUNAS_RELATORIO_IMOVEIS } from "@/lib/imoveis/colunas";
 import { referenciaDe } from "@/lib/imoveis/regras";
 import { criarClienteImoveis } from "@/lib/supabase/imoveis-cliente";
 
@@ -405,5 +406,24 @@ export async function removerJustificativa(imovelId: string, chave: string): Pro
   const { error } = await imoveis.from("pendencias_justificadas").delete().eq("imovel_id", imovelId).eq("chave", chave);
   if (error) return falha(traduzir(error));
   atualizarTelas();
+  return { sucesso: true };
+}
+
+/** Guarda, por pessoa, as colunas que ela escondeu nas exportações (só nomes que existem no catálogo). */
+export async function salvarColunasOcultasImoveis(ocultas: Record<string, string[]>): Promise<Resultado> {
+  const ctx = await obterContextoImoveis();
+  if (ctx.situacao !== "ok") return falha("Sem acesso ao módulo.");
+  const limpo: Record<string, string[]> = {};
+  for (const [r, nomes] of Object.entries(ocultas ?? {})) {
+    const validas = COLUNAS_RELATORIO_IMOVEIS[r as keyof typeof COLUNAS_RELATORIO_IMOVEIS];
+    if (!validas || !Array.isArray(nomes)) continue;
+    const escolhidas = [...new Set(nomes.filter((n): n is string => typeof n === "string" && validas.includes(n)))];
+    if (escolhidas.length > 0 && escolhidas.length < validas.length) limpo[r] = escolhidas;
+  }
+  const imoveis = await criarClienteImoveis();
+  const { data: sessao } = await imoveis.auth.getUser();
+  if (!sessao.user) return falha("Sessão expirada.");
+  const { error } = await imoveis.from("preferencias_exportacao").upsert({ usuario_id: sessao.user.id, ocultas: limpo }, { onConflict: "usuario_id" });
+  if (error) return falha("Não foi possível guardar a escolha.");
   return { sucesso: true };
 }
