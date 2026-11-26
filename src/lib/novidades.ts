@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: teto legal e valor aprovado pela Câmara",
+    descricao:
+      "O teto das emendas (2% da RCL) aparece como a obrigação legal, e o valor efetivamente aprovado pela Câmara é informado à parte em Configurações › Exercício, podendo passar do teto. O Painel usa o aprovado como base e mostra quanto passa do teto, o limite de restos a pagar (0,5% da RCL) e o mínimo que falta pagar.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: limites legais do exercício nas Configurações",
     descricao:
       "Em Configurações › Exercício há um quadro com os limites da lei de cada ano: % do teto das emendas e % máximo de restos a pagar (sobre a RCL), RCL e valor aprovado, com as contas na hora. O Painel passa a mostrar o quanto pode ficar em restos a pagar e o mínimo que ainda falta pagar para ficar dentro da lei.",

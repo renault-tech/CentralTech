@@ -42,7 +42,7 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
   return (
     <Secao
       titulo={`Limites legais de ${exercicio.ano}`}
-      apoio="Percentuais da lei sobre a receita corrente líquida (RCL). Alimentam o painel das Emendas: o quanto pode ficar em restos a pagar e o mínimo que ainda falta pagar. Cada ano tem os seus valores."
+      apoio="Os percentuais da lei sobre a receita corrente líquida (RCL) definem a obrigação (teto) e o máximo em restos a pagar. O valor efetivamente aprovado pela Câmara é informado à parte e pode passar do teto: é ele a base do painel das Emendas."
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
@@ -58,8 +58,8 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
           <input className={CAMPO} inputMode="decimal" placeholder="Ex.: RCL de 2024 do Município" value={rcl} onChange={mudou(setRcl)} />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Valor aprovado na lei (R$, opcional)
-          <input className={CAMPO} inputMode="decimal" placeholder={`Em branco: soma das emendas (${brl(somaEmendas)})`} value={aprovado} onChange={mudou(setAprovado)} />
+          Valor efetivamente aprovado pela Câmara (R$)
+          <input className={CAMPO} inputMode="decimal" placeholder={`Em branco: soma das emendas (${brl(somaEmendas)}). Pode passar do teto.`} value={aprovado} onChange={mudou(setAprovado)} />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
           Restos a pagar em R$ (opcional, substitui o %)
@@ -80,9 +80,9 @@ export function EditorLimitesLegais({ exercicio, somaEmendas }: { exercicio: Exe
       </div>
 
       <dl className="mt-4 grid gap-x-6 gap-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[0.8125rem] sm:grid-cols-2">
-        <Linha rotulo="Valor aprovado usado nas contas" valor={brl(limites.aprovadoReferencia)} apoio={limites.aprovadoOrigem === "lei" ? "da lei" : "soma das emendas cadastradas"} />
+        <Linha rotulo="Aprovado pela Câmara (base das contas)" valor={brl(limites.aprovadoReferencia)} apoio={limites.aprovadoOrigem === "lei" ? "informado" : "soma das emendas cadastradas"} />
         <Linha rotulo="RCL informada" valor={limites.baseRcl != null ? brl(limites.baseRcl) : "—"} apoio={limites.baseRcl == null ? "informe a RCL: sem ela o teto e o limite de restos não são calculados" : undefined} alerta={limites.baseRcl == null} />
-        <Linha rotulo="Teto das emendas (R$)" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.acimaDoTeto ? `a Câmara aprovou ${brl(limites.acimaDoTeto)} acima do teto` : limites.tetoDescricao ?? undefined} alerta={!!limites.acimaDoTeto} />
+        <Linha rotulo="Obrigação legal: teto das emendas" valor={limites.tetoValor != null ? brl(limites.tetoValor) : "—"} apoio={limites.acimaDoTeto ? `a Câmara aprovou ${brl(limites.acimaDoTeto)} acima do teto` : limites.tetoDescricao ?? undefined} alerta={!!limites.acimaDoTeto} />
         <Linha rotulo="Pode ficar em restos a pagar" valor={limites.restosTeto != null ? brl(limites.restosTeto) : "—"} apoio={limites.restosDescricao ?? "informe o % ou o valor"} />
       </dl>
 

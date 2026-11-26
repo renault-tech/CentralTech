@@ -118,6 +118,7 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         {ok
           ? "Meta legal atingida: todo o valor aprovado está pago ou empenhado; o que não foi pago fica em restos a pagar."
           : `Meta legal em risco: faltam ${brl(m.semEmpenho)} a empenhar até 31/12 para estar dentro da lei (${pct(m.fracaoDentroDaLei, 1)} já pago ou em restos a pagar).`}
+        {m.semEmendaCadastrada > 0.005 && <> {brl(m.semEmendaCadastrada)} do valor aprovado ainda não têm emenda cadastrada.</>}
         {m.tetoRestos != null && (
           <>
             {" "}
@@ -129,9 +130,9 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
       <ul className="mt-3 grid gap-2.5 sm:grid-cols-3" aria-label="Limites da lei">
         {[
           {
-            nome: `Teto legal das emendas${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
+            nome: `Obrigação legal: teto das emendas${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
             valor: m.tetoValor != null ? brlCurto(m.tetoValor) : "—",
-            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? `aprovado ${brlCurto(m.aprovadoAcimaDoTeto ?? 0)} acima do teto` : "aprovado dentro do teto",
+            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? `a Câmara aprovou ${brlCurto(m.aprovadoAcimaDoTeto ?? 0)} acima do teto` : "o aprovado está dentro do teto",
             tom: m.tetoValor == null ? undefined : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? VERMELHO : VERDE,
           },
           {

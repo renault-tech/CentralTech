@@ -59,6 +59,18 @@ describe("painel de abertura", () => {
     expect(montarPainel(base({ emendas, tetoRestos: 1000 })).meta.minimoAPagar).toBe(0);
   });
 
+  it("o valor aprovado informado é a base da meta e pode passar do teto legal", () => {
+    const emendas = [em("a", 1, 100, 80, 50), em("b", 2, 200, 0, 0)];
+    const m = montarPainel(base({ emendas, aprovadoInformado: 400, tetoValor: 350, tetoRestos: 100 })).meta;
+    expect(m.aprovado).toBe(400);
+    expect(m.aprovadoOrigem).toBe("informado");
+    expect(m.semEmendaCadastrada).toBe(100);
+    expect(m.aprovadoAcimaDoTeto).toBe(50);
+    expect(m.faltaPagar).toBe(350);
+    expect(m.minimoAPagar).toBe(250);
+    expect(m.semEmpenho).toBe(320);
+  });
+
   it("classifica a situação financeira como o filtro da lista", () => {
     const p = montarPainel(base({ emendas: [em("a", 1, 100, 100, 100), em("b", 2, 100, 100, 40), em("c", 3, 100, 60, 0), em("d", 4, 100, 0, 0)] }));
     expect(p.situacoes.map((s) => s.quantidade)).toEqual([1, 1, 1, 1]);

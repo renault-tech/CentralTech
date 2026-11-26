@@ -98,6 +98,7 @@ export default async function PaginaPainelEmendas({
     tetoRestosDescricao: limites.restosDescricao,
     tetoValor: limites.tetoValor,
     tetoDescricao: limites.tetoDescricao,
+    aprovadoInformado: exercicio.aprovado_loa_valor == null ? null : Number(exercicio.aprovado_loa_valor),
     prazoExequibilidade: exercicio.prazo_exequibilidade,
     execucoes: execucoes.map((x) => ({ emenda_id: x.id, vigencia_fim: x.vigencia_fim })),
     contagens: { propostasPendentes, executadasIncompletas, relatoriosGestao, semSituacao: totaisPorCartao(panorama.linhas).sem_situacao.quantidade, paradas },

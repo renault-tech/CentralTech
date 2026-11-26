@@ -26,6 +26,8 @@ export type EntradaPainel = {
   /** Teto legal das emendas (R$) e de onde vem ("2% da RCL"); nulo = RCL não informada. */
   tetoValor?: number | null;
   tetoDescricao?: string | null;
+  /** Valor efetivamente aprovado pela Câmara (pode passar do teto legal). Vazio = soma das emendas. */
+  aprovadoInformado?: number | null;
   prazoExequibilidade: string | null;
   execucoes: { emenda_id: string; vigencia_fim: string | null }[];
   contagens: {
@@ -78,6 +80,9 @@ export type MetaExercicio = {
   tetoValor: number | null;
   tetoDescricao: string | null;
   aprovadoAcimaDoTeto: number | null;
+  /** Parte do valor aprovado que ainda não tem emenda cadastrada (aprovado informado − soma das emendas). */
+  semEmendaCadastrada: number;
+  aprovadoOrigem: "informado" | "emendas";
   /** Mínimo que ainda falta PAGAR para que o que sobrar em restos a pagar caiba no teto (null = teto não informado). */
   minimoAPagar: number | null;
   /** Vereadores que ainda têm valor sem empenho. */
@@ -317,23 +322,26 @@ export function montarPainel(e: EntradaPainel): Painel {
   prazos.sort((a, b) => a.dias - b.dias);
 
   const centavo = 0.005;
-  const semEmp = Math.max(0, total - empenhado);
+  const aprovadoBase = e.aprovadoInformado != null && e.aprovadoInformado > 0 ? e.aprovadoInformado : total;
+  const semEmp = Math.max(0, aprovadoBase - empenhado);
   const meta: MetaExercicio = {
-    aprovado: total,
+    aprovado: aprovadoBase,
     pago,
     restosAPagar: aPagar,
     semEmpenho: semEmp,
-    faltaPagar: Math.max(0, total - pago),
-    dentroDaLei: Math.min(total, pago + aPagar),
-    fracaoPago: total > 0 ? Math.min(1, pago / total) : 0,
-    fracaoDentroDaLei: total > 0 ? Math.min(1, (pago + aPagar) / total) : 0,
-    atingida: total > 0 && semEmp < centavo,
+    faltaPagar: Math.max(0, aprovadoBase - pago),
+    dentroDaLei: Math.min(aprovadoBase, pago + aPagar),
+    fracaoPago: aprovadoBase > 0 ? Math.min(1, pago / aprovadoBase) : 0,
+    fracaoDentroDaLei: aprovadoBase > 0 ? Math.min(1, (pago + aPagar) / aprovadoBase) : 0,
+    atingida: aprovadoBase > 0 && semEmp < centavo,
     tetoRestos: e.tetoRestos ?? null,
     tetoRestosDescricao: e.tetoRestosDescricao ?? null,
     tetoValor: e.tetoValor ?? null,
     tetoDescricao: e.tetoDescricao ?? null,
-    aprovadoAcimaDoTeto: e.tetoValor == null ? null : Math.max(0, total - e.tetoValor),
-    minimoAPagar: e.tetoRestos == null ? null : Math.max(0, Math.max(0, total - pago) - e.tetoRestos),
+    aprovadoAcimaDoTeto: e.tetoValor == null ? null : Math.max(0, aprovadoBase - e.tetoValor),
+    semEmendaCadastrada: Math.max(0, aprovadoBase - total),
+    aprovadoOrigem: aprovadoBase === total && !(e.aprovadoInformado != null && e.aprovadoInformado > 0) ? "emendas" : "informado",
+    minimoAPagar: e.tetoRestos == null ? null : Math.max(0, Math.max(0, aprovadoBase - pago) - e.tetoRestos),
     pendentes: vereadores.filter((v) => v.semEmpenhar >= centavo).map((v) => ({ id: v.id, numero: v.numero, nome: v.nome, semEmpenho: v.semEmpenhar })).sort((a, b) => b.semEmpenho - a.semEmpenho),
     vereadoresOk: vereadores.filter((v) => v.semEmpenhar < centavo).length,
     vereadoresTotal: vereadores.length,
