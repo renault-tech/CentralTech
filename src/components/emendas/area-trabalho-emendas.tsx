@@ -9,6 +9,7 @@ import { useCatalogo } from "@/components/emendas/catalogo-etapas";
 import { CategoriaSelo } from "@/components/emendas/categoria-selo";
 import { HoverAndamento } from "@/components/emendas/hover-andamento";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { EscolherColunas, comColunas, lerColunasGuardadas } from "@/components/emendas/escolher-colunas";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { PainelDetalheEmenda, type AtualizacaoEmenda } from "@/components/emendas/painel-detalhe-emenda";
@@ -185,6 +186,13 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
 
   // Mesma lista de filtros da tela (inclui pendência, ordem...): o arquivo sai com as MESMAS emendas da lista.
   const exportar = paramsDeExportacao((k) => params.get(k), ano, busca);
+  const [colunas, setColunas] = React.useState<string[] | null>(null);
+  const [escolhendoColunas, setEscolhendoColunas] = React.useState(false);
+  React.useEffect(() => {
+    // lê a escolha guardada neste navegador (só existe no cliente)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setColunas(lerColunasGuardadas());
+  }, []);
 
   function limparTudo() {
     definir({ v: "", s: "", etapa: "", p: "", situacao: "", fin: "", sd: "", cat: "", rem: "", pe: "", numeros: "", q: "" });
@@ -215,10 +223,12 @@ export function AreaTrabalhoEmendas({ emendas: emendasServidor, resumos: resumos
             opcoes={[
               { rotulo: "PDF com gráficos", detalhe: "Indicadores, gráficos e a lista do recorte atual", href: `/emendas/exportar?${exportar}&formato=executivo` },
               { rotulo: "PDF só gráficos", detalhe: "Para apresentar ao prefeito, sem a tabela", href: `/emendas/exportar?${exportar}&formato=executivo&tabela=0` },
-              { rotulo: "PDF da lista", detalhe: "Lista resumida para imprimir ou enviar", href: `/emendas/exportar?${exportar}&formato=pdf` },
-              { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: `/emendas/exportar?${exportar}` },
+              { rotulo: "PDF da lista", detalhe: "Lista resumida para imprimir ou enviar", href: comColunas(`/emendas/exportar?${exportar}&formato=pdf`, colunas) },
+              { rotulo: "Excel (.xlsx)", detalhe: "Planilha completa, com execução e parceria", href: comColunas(`/emendas/exportar?${exportar}`, colunas) },
+              { rotulo: "Escolher colunas…", detalhe: colunas ? `${colunas.length} colunas escolhidas (PDF da lista e Excel)` : "Define o que aparece no PDF da lista e no Excel", aoClicar: () => setEscolhendoColunas(true) },
             ]}
           />
+          {escolhendoColunas && <EscolherColunas inicial={colunas} aoSalvar={(c) => { setColunas(c); setEscolhendoColunas(false); }} aoFechar={() => setEscolhendoColunas(false)} />}
           {podeCriar && (
             <Link href="/emendas/nova" className={CLASSE_BOTAO}>
               <Plus className="h-4 w-4" aria-hidden />

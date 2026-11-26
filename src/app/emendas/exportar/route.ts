@@ -2,6 +2,7 @@ import { TIPOS_EXECUCAO, tipoDaEmenda } from "@/lib/emendas/fases";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { listarConciliacoes, listarEncerramentos, listarExecucoes, listarMovimentos, obterContextoEmendas, resolverExercicio } from "@/lib/emendas/dados";
+import { colunasDoArquivo } from "@/lib/emendas/colunas-lista";
 import { linhasPanorama, rotuloSituacao, type LinhaPanorama } from "@/lib/emendas/encerramento";
 import { carregarListaParaExportar } from "@/lib/emendas/exportar-lista";
 import { montarPdfExecutivo } from "@/lib/emendas/pdf-executivo";
@@ -79,107 +80,18 @@ export async function GET(request: NextRequest) {
       },
     });
   }
-  if (p.get("formato") === "pdf") {
-    const soma = (f: (e: (typeof emendas)[number]) => number) => emendas.reduce((t, e) => t + f(e), 0);
-    const pdf = montarPdfTabelas({
-      titulo: `Emendas impositivas - ${exercicio.ano}`,
-      subtitulo: `${contagem}. ${filtros.length ? `Filtros: ${filtros.join("; ")}.` : "Sem filtros."} Gerado com as permissões de quem exportou.`,
-      tabelas: [
-        {
-          titulo: "Emendas",
-          colunas: ["Nº", "Vereador", "Objeto", "Beneficiário", "Secretaria", "Tipo", "Etapa", "Valor", "Empenhado", "Pago", "Sem empenhar (saldo)", "Empenho não pago (restos)", "Acima da emenda", "Situação"],
-          monetarias: [7, 8, 9, 10, 11, 12],
-          linhas: emendas.map((e) => [
-            e.numero,
-            `${String(e.vereador_numero).padStart(2, "0")} - ${e.vereador_nome}`,
-            e.objeto,
-            e.beneficiario_nome ?? "",
-            e.secretaria_nome,
-            TIPOS_EXECUCAO[tipoDaEmenda(e)].curto,
-            infoEtapa(e.etapa, catalogo).nome,
-            e.valor,
-            e.empenhado,
-            e.pago,
-            semEmpenhar(e),
-            naoPago(e),
-            acima(e),
-            situacaoTexto(e),
-          ]),
-          total: ["", "", "", "", "", "", "Total", soma((e) => e.valor), soma((e) => e.empenhado), soma((e) => e.pago), soma(semEmpenhar), soma(naoPago), soma(acima), ""],
-        },
-      ],
-    });
-    return new NextResponse(pdf as unknown as BodyInit, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="emendas-${exercicio.ano}.pdf"`,
-        "Cache-Control": "private, no-store",
-      },
-    });
-  }
-  const [movimentos, execucoes] = await Promise.all([listarMovimentos(emendas.map((e) => e.id)), listarExecucoes(emendas.map((e) => e.id))]);
+  // Valor de cada coluna do catálogo (PDF e Excel leem daqui). Datas: Date no Excel, texto dd/mm/aaaa no PDF.
+  const dataIso = (iso: string | null | undefined) => (iso ? new Date(`${iso}T12:00:00`) : null);
+  const [movimentos, execucoes] = await Promise.all([listarMovimentos(idsDaLista), listarExecucoes(idsDaLista)]);
   const execucao = new Map(execucoes.map((x) => [x.id, x]));
-  const data = (iso: string | null | undefined) => (iso ? new Date(`${iso}T12:00:00`) : null);
   const empenhos = new Map<string, string[]>();
   for (const m of movimentos) {
     if (m.tipo === "empenho" && m.numero) empenhos.set(m.emenda_id, [...(empenhos.get(m.emenda_id) ?? []), m.numero]);
   }
-
-  const ExcelJS = (await import("exceljs")).default;
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "Central Cataguases · Emendas";
-  wb.created = new Date();
-  const ws = wb.addWorksheet(`Emendas ${exercicio.ano}`, { views: [{ state: "frozen", ySplit: 1 }] });
-  const wf = wb.addWorksheet("Filtros aplicados");
-  wf.columns = [{ width: 28 }, { width: 80 }];
-  wf.addRow(["Exercício", exercicio.ano]);
-  wf.addRow(["Emendas neste arquivo", emendas.length]);
-  wf.addRow(["Emendas do exercício", totalDoExercicio]);
-  wf.addRow(["Filtros", filtros.length ? filtros.join("\n") : "Nenhum (todas as emendas visíveis para quem exportou)"]);
-  wf.getRow(4).getCell(2).alignment = { wrapText: true, vertical: "top" };
-  wf.getColumn(1).font = { bold: true };
-  ws.columns = [
-    { header: "Emenda", key: "numero", width: 9 },
-    { header: "ID", key: "id", width: 6 },
-    { header: "Vereador", key: "vereador", width: 34 },
-    { header: "Objeto", key: "objeto", width: 50 },
-    { header: "Descrição", key: "descricao", width: 60 },
-    { header: "Valor", key: "valor", width: 15 },
-    { header: "Destinação", key: "beneficiario", width: 32 },
-    { header: "Funcional", key: "funcional", width: 18 },
-    { header: "Natureza", key: "natureza", width: 11 },
-    { header: "Nova dotação", key: "ficha", width: 40 },
-    { header: "Unidade", key: "unidade", width: 30 },
-    { header: "Secretaria", key: "secretaria", width: 24 },
-    { header: "Saúde", key: "saude", width: 7 },
-    { header: "Modalidade", key: "modalidade", width: 19 },
-    { header: "Tipo de execução", key: "tipo", width: 20 },
-    { header: "Etapa", key: "etapa", width: 20 },
-    { header: "Situação", key: "situacao", width: 11 },
-    { header: "Empenho(s)", key: "empenhos", width: 14 },
-    { header: "Empenhado", key: "empenhado", width: 15 },
-    { header: "Pago", key: "pago", width: 15 },
-    { header: "Sem empenhar (saldo)", key: "semEmpenhar", width: 16 },
-    { header: "Empenho não pago (restos)", key: "naoPago", width: 16 },
-    { header: "Acima da emenda", key: "acima", width: 15 },
-    { header: "Situação da execução", key: "situacaoExec", width: 38 },
-    { header: "Saldo registrado em", key: "saldoRegistrado", width: 14 },
-    { header: "Anulação solicitada em", key: "anulacaoEm", width: 14 },
-    { header: "Fonte do excesso", key: "excessoFonte", width: 30 },
-    { header: "Data do pagamento", key: "dataPagamento", width: 13 },
-    { header: "Remanejada", key: "remanejada", width: 11 },
-    { header: "Termo de parceria", key: "termo", width: 12 },
-    { header: "Processo licitatório", key: "processo", width: 24 },
-    { header: "Início da vigência", key: "vigenciaInicio", width: 13 },
-    { header: "Fim da vigência", key: "vigenciaFim", width: 13 },
-    { header: "Publicação do extrato", key: "extrato", width: 13 },
-    { header: "Conta bancária", key: "conta", width: 34 },
-    { header: "Gestor na entidade", key: "gestorOsc", width: 30 },
-    { header: "Gestor na Prefeitura", key: "gestorPmc", width: 30 },
-  ];
-  for (const e of emendas) {
+  const valores = (e: (typeof emendas)[number]): Record<string, string | number | Date | null> => {
     const x = execucao.get(e.id);
-    ws.addRow({
+    const c = conciliacao.get(e.id);
+    return {
       numero: e.numero,
       id: e.numero_vereador,
       vereador: `${String(e.vereador_numero).padStart(2, "0")} - ${e.vereador_nome}`,
@@ -204,25 +116,77 @@ export async function GET(request: NextRequest) {
       naoPago: naoPago(e),
       acima: acima(e),
       situacaoExec: situacaoTexto(e),
-      saldoRegistrado: data(conciliacao.get(e.id)?.saldo_registrado_em),
-      anulacaoEm: data(conciliacao.get(e.id)?.anulacao_solicitada_em),
-      excessoFonte: conciliacao.get(e.id)?.excesso_fonte ?? "",
-      dataPagamento: data(e.ultimo_pagamento),
+      saldoRegistrado: dataIso(c?.saldo_registrado_em),
+      anulacaoEm: dataIso(c?.anulacao_solicitada_em),
+      excessoFonte: c?.excesso_fonte ?? "",
+      dataPagamento: dataIso(e.ultimo_pagamento),
       remanejada: e.remanejada ? "Sim" : "",
       termo: x?.numero_termo ?? "",
       processo: x?.processo_licitatorio ?? "",
-      vigenciaInicio: data(x?.vigencia_inicio),
-      vigenciaFim: data(x?.vigencia_fim),
-      extrato: data(x?.data_publicacao_extrato),
+      vigenciaInicio: dataIso(x?.vigencia_inicio),
+      vigenciaFim: dataIso(x?.vigencia_fim),
+      extrato: dataIso(x?.data_publicacao_extrato),
       conta: x?.conta_bancaria ?? "",
       gestorOsc: x?.gestor_osc ?? "",
       gestorPmc: x?.gestor_pmc ?? "",
+    };
+  };
+
+  if (p.get("formato") === "pdf") {
+    const soma = (f: (e: (typeof emendas)[number]) => number) => emendas.reduce((t, e) => t + f(e), 0);
+    const cols = colunasDoArquivo(p.get("cols"), "pdf");
+    const texto = (v: string | number | Date | null) => (v instanceof Date ? v.toLocaleDateString("pt-BR") : (v ?? ""));
+    const somas: Record<string, number> = { valor: soma((e) => e.valor), empenhado: soma((e) => e.empenhado), pago: soma((e) => e.pago), semEmpenhar: soma(semEmpenhar), naoPago: soma(naoPago), acima: soma(acima) };
+    const primeiraTexto = cols.findIndex((c) => c.tipo !== "dinheiro");
+    const pdf = montarPdfTabelas({
+      titulo: `Emendas impositivas - ${exercicio.ano}`,
+      subtitulo: `${contagem}. ${filtros.length ? `Filtros: ${filtros.join("; ")}.` : "Sem filtros."} Gerado com as permissões de quem exportou.`,
+      tabelas: [
+        {
+          titulo: "Emendas",
+          colunas: cols.map((c) => c.rotulo),
+          monetarias: cols.flatMap((c, i) => (c.tipo === "dinheiro" ? [i] : [])),
+          linhas: emendas.map((e) => {
+            const v = valores(e);
+            return cols.map((c) => (c.tipo === "dinheiro" ? (v[c.chave] as number) : String(texto(v[c.chave]))));
+          }),
+          total: cols.map((c, i) => (c.chave in somas ? somas[c.chave] : i === Math.max(0, primeiraTexto) && !(c.chave in somas) ? "Total" : "")),
+        },
+      ],
+    });
+    return new NextResponse(pdf as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="emendas-${exercicio.ano}.pdf"`,
+        "Cache-Control": "private, no-store",
+      },
     });
   }
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Central Cataguases · Emendas";
+  wb.created = new Date();
+  const ws = wb.addWorksheet(`Emendas ${exercicio.ano}`, { views: [{ state: "frozen", ySplit: 1 }] });
+  const wf = wb.addWorksheet("Filtros aplicados");
+  wf.columns = [{ width: 28 }, { width: 80 }];
+  wf.addRow(["Exercício", exercicio.ano]);
+  wf.addRow(["Emendas neste arquivo", emendas.length]);
+  wf.addRow(["Emendas do exercício", totalDoExercicio]);
+  wf.addRow(["Filtros", filtros.length ? filtros.join("\n") : "Nenhum (todas as emendas visíveis para quem exportou)"]);
+  wf.getRow(4).getCell(2).alignment = { wrapText: true, vertical: "top" };
+  wf.getColumn(1).font = { bold: true };
+  const colsX = colunasDoArquivo(p.get("cols"), "xlsx");
+  ws.columns = colsX.map((c) => ({ header: c.rotulo, key: c.chave, width: c.largura }));
+  for (const e of emendas) ws.addRow(valores(e));
   const ultima = emendas.length + 1;
   // Letras das colunas vêm das chaves: inserir uma coluna não desalinha mais os totais.
   const col = (k: string) => ws.getColumn(k).letter;
-  const total = ws.addRow({ vereador: "Total", valor: { formula: `SUM(${col("valor")}2:${col("valor")}${ultima})` }, empenhado: { formula: `SUM(${col("empenhado")}2:${col("empenhado")}${ultima})` }, pago: { formula: `SUM(${col("pago")}2:${col("pago")}${ultima})` }, semEmpenhar: { formula: `SUM(${col("semEmpenhar")}2:${col("semEmpenhar")}${ultima})` }, naoPago: { formula: `SUM(${col("naoPago")}2:${col("naoPago")}${ultima})` }, acima: { formula: `SUM(${col("acima")}2:${col("acima")}${ultima})` } });
+  const linhaTotal: Record<string, string | { formula: string }> = {};
+  const somaveis = ["valor", "empenhado", "pago", "semEmpenhar", "naoPago", "acima"].filter((k) => colsX.some((c) => c.chave === k));
+  for (const k of somaveis) linhaTotal[k] = { formula: `SUM(${col(k)}2:${col(k)}${ultima})` };
+  const rotuloTotal = colsX.find((c) => c.tipo !== "dinheiro" && !(c.chave in linhaTotal));
+  if (rotuloTotal) linhaTotal[rotuloTotal.chave] = "Total";
+  const total = ws.addRow(linhaTotal);
   total.font = { bold: true };
 
   const cabecalho = ws.getRow(1);
@@ -230,9 +194,9 @@ export async function GET(request: NextRequest) {
   cabecalho.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0C1D33" } };
   cabecalho.alignment = { vertical: "middle" };
   cabecalho.height = 22;
-  for (const k of ["valor", "empenhado", "pago", "semEmpenhar", "naoPago", "acima"]) ws.getColumn(k).numFmt = '"R$" #,##0.00';
-  for (const k of ["dataPagamento", "vigenciaInicio", "vigenciaFim", "extrato", "envio", "saldoRegistrado", "anulacaoEm"]) ws.getColumn(k).numFmt = "dd/mm/yyyy";
-  for (const k of ["descricao", "objeto"]) ws.getColumn(k).alignment = { wrapText: true, vertical: "top" };
+  for (const k of somaveis) ws.getColumn(k).numFmt = '"R$" #,##0.00';
+  for (const c of colsX.filter((c) => c.tipo === "data")) ws.getColumn(c.chave).numFmt = "dd/mm/yyyy";
+  for (const k of ["descricao", "objeto"].filter((k) => colsX.some((c) => c.chave === k))) ws.getColumn(k).alignment = { wrapText: true, vertical: "top" };
   ws.autoFilter = { from: "A1", to: `${ws.getColumn(ws.columnCount).letter}1` };
 
   const buffer = await wb.xlsx.writeBuffer();

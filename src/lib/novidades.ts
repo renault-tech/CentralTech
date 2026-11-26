@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Emendas: escolha as colunas dos relatórios direto no menu Exportar",
+    descricao:
+      "No menu Exportar da lista de Emendas, \"Escolher colunas…\" abre uma janela com todas as colunas disponíveis (identificação, financeiro, orçamento e parceria). O que você marcar vale para o PDF da lista e para o Excel, fica guardado neste navegador e \"Voltar ao padrão\" desfaz. Sem escolha, o PDF traz o resumo e o Excel traz tudo.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: lista em PDF e Excel agora mostram o saldo e os restos de empenho",
     descricao:
       "A lista exportada (PDF da lista e Excel) trazia só Valor, Empenhado e Pago, então emendas totalmente pagas com saldo não empenhado ou empenho sem pagar pareciam sem pendência. Agora saem também: Sem empenhar (saldo), Empenho não pago (restos), Acima da emenda e a Situação da execução (cumprida, com economia, restos a pagar, saldo registrado, anulação solicitada). O Excel ainda traz as datas do saldo registrado e da anulação e a fonte do excesso.",
