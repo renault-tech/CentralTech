@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Conformidade: \"Objeto detalhado\" deixou de aparecer como faltando em emendas com descrição",
+    descricao:
+      "A verificação do item III (objeto detalhado) não estava lendo a descrição da emenda, só o objeto resumido, e marcava como incompleta até emenda com descrição completa (como a nº 12). Agora a descrição é considerada em todas as emendas.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Exportar a lista filtrada em Conformidade, Pendências, Frotas e Imóveis",
     descricao:
       "Conformidade ganhou Excel e PDF da lista que está na tela (com os filtros dos gráficos e a busca); Pendências ganhou PDF da lista; as listas de Frotas e Imóveis têm \"Lista filtrada (CSV)\", que baixa exatamente o que está na tela. No gráfico de motivos das Pendências, os itens da publicidade aparecem como na Conformidade (\"Art. 7º, XIV · Gestor responsável\"), sem repetir \"Publicidade incompleta\".",
