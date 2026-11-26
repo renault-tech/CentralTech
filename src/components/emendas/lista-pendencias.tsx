@@ -5,6 +5,9 @@ import { Search, X } from "lucide-react";
 
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { DialogoColunas } from "@/components/modulo/dialogo-colunas";
+import { useColunasLocais } from "@/components/modulo/use-colunas-locais";
+import { CHAVE_COLUNAS_PENDENCIAS, COLUNAS_PENDENCIAS } from "@/lib/emendas/colunas-listas";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { PainelPendencias, chipsDePendencias, removerFiltroPendencia } from "@/components/emendas/painel-pendencias";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
@@ -54,6 +57,8 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
         .sort((a, b) => b.p - a.p || a.i - b.i)
         .map((x) => x.l)
     : achadas;
+  const { ocultas: ocultasCol, guardar: guardarCol, sem: semCol } = useColunasLocais(CHAVE_COLUNAS_PENDENCIAS, COLUNAS_PENDENCIAS);
+  const [escolhendo, setEscolhendo] = React.useState(false);
   const consultaExcel = (() => {
     const p = new URLSearchParams(params.toString());
     p.delete("e");
@@ -101,11 +106,22 @@ export function ListaPendencias({ linhas, docs, emendas, secretarias, ano }: { l
               </label>
               <MenuExportar
                 opcoes={[
-                  { rotulo: "Excel (.xlsx)", detalhe: modoDoc ? "Totais por corte e as emendas sem o documento" : "Totais por corte e a lista, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}` },
-                  { rotulo: "PDF", detalhe: modoDoc ? "As emendas sem o documento, com os filtros atuais" : "A lista de pendências, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}&formato=pdf` },
+                  { rotulo: "Excel (.xlsx)", detalhe: modoDoc ? "Totais por corte e as emendas sem o documento" : "Totais por corte e a lista, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}${semCol}` },
+                  { rotulo: "PDF", detalhe: modoDoc ? "As emendas sem o documento, com os filtros atuais" : "A lista de pendências, com os filtros atuais", href: `/emendas/pendencias/exportar?${consultaExcel}&formato=pdf${semCol}` },
+                  { rotulo: "Escolher colunas…", detalhe: "Colunas da lista no Excel e no PDF", aoClicar: () => setEscolhendo(true) },
                   { rotulo: "Imprimir o painel", detalhe: "Gráficos e filtros, pela impressão do navegador", imprimir: true },
                 ]}
               />
+              {escolhendo && (
+                <DialogoColunas
+                  relatorios={[{ id: "pendencias", rotulo: "Lista de pendências / emendas sem o documento", colunas: COLUNAS_PENDENCIAS }]}
+                  ocultas={{ pendencias: ocultasCol }}
+                  alterar={(_, l) => guardarCol(l)}
+                  limparTudo={() => guardarCol([])}
+                  fechar={() => setEscolhendo(false)}
+                  guardadoEm="neste navegador"
+                />
+              )}
             </div>
             <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1.5" role="group" aria-label="Filtros ativos">
               <span className="text-[0.8125rem] tabular-nums text-slate-600" aria-live="polite">

@@ -5,6 +5,7 @@ import * as React from "react";
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { useColunasLocais } from "@/components/modulo/use-colunas-locais";
 import { DialogoColunas } from "@/components/modulo/dialogo-colunas";
 import { CHAVE_COLUNAS_PANORAMA, COLUNAS_PANORAMA } from "@/lib/emendas/colunas-panorama";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
@@ -92,41 +93,7 @@ export function AreaTrabalhoPanorama({ linhas, restos, ano }: { linhas: LinhaPan
   const visao: Visao = VISOES.some((v) => v.chave === q && (v.chave !== "restos" || restos.length > 0)) ? (q as Visao) : "emendas";
   const quadro = React.useMemo(() => (visao === "secretaria" || visao === "vereador" || visao === "tipo" ? agrupar(recorte, visao) : []), [recorte, visao]);
   const [escolhendo, setEscolhendo] = React.useState(false);
-  const bruto = React.useSyncExternalStore(
-    (f) => {
-      window.addEventListener("storage", f);
-      window.addEventListener("panorama-colunas", f);
-      return () => {
-        window.removeEventListener("storage", f);
-        window.removeEventListener("panorama-colunas", f);
-      };
-    },
-    () => {
-      try {
-        return localStorage.getItem(CHAVE_COLUNAS_PANORAMA) ?? "[]";
-      } catch {
-        return "[]";
-      }
-    },
-    () => "[]"
-  );
-  const ocultasPan = React.useMemo(() => {
-    try {
-      const l = JSON.parse(bruto);
-      return Array.isArray(l) ? l.filter((x): x is string => typeof x === "string" && COLUNAS_PANORAMA.includes(x)) : [];
-    } catch {
-      return [];
-    }
-  }, [bruto]);
-  function guardarOcultas(l: string[]) {
-    try {
-      localStorage.setItem(CHAVE_COLUNAS_PANORAMA, JSON.stringify(l));
-    } catch {
-      /* vale só nesta visita */
-    }
-    window.dispatchEvent(new Event("panorama-colunas"));
-  }
-  const semParam = ocultasPan.length ? `&sem=${encodeURIComponent(ocultasPan.join("|"))}` : "";
+  const { ocultas: ocultasPan, guardar: guardarOcultas, sem: semParam } = useColunasLocais(CHAVE_COLUNAS_PANORAMA, COLUNAS_PANORAMA);
   const qExport = new URLSearchParams({ ano: String(ano), ...(s ? { s } : {}), ...(t ? { t } : {}), ...(c ? { c } : {}) }).toString();
   const filtrosAtivos = (s ? 1 : 0) + (t ? 1 : 0) + (cartao ? 1 : 0);
   const fechar = () => definir({ e: "" });

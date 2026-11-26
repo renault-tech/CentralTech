@@ -9,6 +9,9 @@ import { BaseLegalLinha } from "@/components/emendas/base-legal";
 import { CaixaInfo, CaixaLinhas, CaixaNota, CaixaTitulo } from "@/components/modulo/caixa-info";
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { MenuExportar } from "@/components/emendas/menu-exportar";
+import { DialogoColunas } from "@/components/modulo/dialogo-colunas";
+import { useColunasLocais } from "@/components/modulo/use-colunas-locais";
+import { CHAVE_COLUNAS_CONFORMIDADE, COLUNAS_CONFORMIDADE } from "@/lib/emendas/colunas-listas";
 import { PainelDetalheEmenda } from "@/components/emendas/painel-detalhe-emenda";
 import { CINZA, PALETA, Pizza } from "@/components/modulo/pizza";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
@@ -164,6 +167,8 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
   const completas = linhas.filter((l) => l.faltas.length === 0).length;
   const execIncompletas = linhas.filter((l) => l.executada && l.faltas.length > 0).length;
   const filtradas = filtrarConformidade(linhas, f, new Map(resumo.map((r) => [r.codigo, r.nome])));
+  const { ocultas: ocultasCol, guardar: guardarCol, sem: semCol } = useColunasLocais(CHAVE_COLUNAS_CONFORMIDADE, COLUNAS_CONFORMIDADE);
+  const [escolhendo, setEscolhendo] = React.useState(false);
   const consultaExportar = (formato: string) => {
     const q = new URLSearchParams({ formato, ano: String(ano) });
     for (const k of ["i", "s", "t", "x", "q"] as const) if (f[k].trim()) q.set(k, f[k].trim());
@@ -245,10 +250,21 @@ export function ListaConformidade({ ano, resumo, linhas, relatoriosPendentes, co
                 </label>
                 <MenuExportar
                   opcoes={[
-                    { rotulo: "Excel (.xlsx)", detalhe: `A lista filtrada (${filtradas.length}) e o resumo por item`, href: `/emendas/conformidade/exportar?${consultaExportar("xlsx")}` },
-                    { rotulo: "PDF", detalhe: `A lista filtrada (${filtradas.length}), pronta para imprimir`, href: `/emendas/conformidade/exportar?${consultaExportar("pdf")}` },
+                    { rotulo: "Excel (.xlsx)", detalhe: `A lista filtrada (${filtradas.length}) e o resumo por item`, href: `/emendas/conformidade/exportar?${consultaExportar("xlsx")}${semCol}` },
+                    { rotulo: "PDF", detalhe: `A lista filtrada (${filtradas.length}), pronta para imprimir`, href: `/emendas/conformidade/exportar?${consultaExportar("pdf")}${semCol}` },
+                    { rotulo: "Escolher colunas…", detalhe: "Colunas da lista no Excel e no PDF", aoClicar: () => setEscolhendo(true) },
                   ]}
                 />
+                {escolhendo && (
+                  <DialogoColunas
+                    relatorios={[{ id: "conformidade", rotulo: "Lista de emendas com itens a completar", colunas: COLUNAS_CONFORMIDADE }]}
+                    ocultas={{ conformidade: ocultasCol }}
+                    alterar={(_, l) => guardarCol(l)}
+                    limparTudo={() => guardarCol([])}
+                    fechar={() => setEscolhendo(false)}
+                    guardadoEm="neste navegador"
+                  />
+                )}
               </div>
               <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1.5" role="group" aria-label="Filtros ativos">
                 <span className="text-[0.8125rem] tabular-nums text-slate-600" aria-live="polite">

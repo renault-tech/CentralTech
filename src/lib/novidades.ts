@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Pendências e Conformidade: escolha as colunas da exportação",
+    descricao:
+      "No menu Exportar de Pendências e de Conformidade há \"Escolher colunas…\": desmarque o que não quer na lista do Excel e do PDF. A escolha fica guardada neste navegador.",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Panorama: escolha as colunas do Excel",
     descricao:
       "No menu Exportar do Panorama da execução há \"Escolher colunas…\": desmarque o que não quer na aba \"Por emenda\" do Excel. A escolha fica guardada neste navegador.",

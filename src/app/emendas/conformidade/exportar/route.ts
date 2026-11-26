@@ -4,6 +4,7 @@ import { carregarConformidade } from "@/lib/emendas/conformidade-dados";
 import { descreverFiltrosConformidade, filtrarConformidade, rotuloCodigo, type FiltrosConformidade } from "@/lib/emendas/conformidade-lista";
 import { obterContextoEmendas } from "@/lib/emendas/dados";
 import { TIPOS_EXECUCAO } from "@/lib/emendas/fases";
+import { aplicarColunasOcultas, lerColunasOcultas } from "@/lib/frotas/colunas";
 import { montarPdfTabelas } from "@/lib/emendas/pdf";
 import { tabelasParaXlsx } from "@/lib/frotas/xlsx-saida";
 
@@ -29,13 +30,14 @@ export async function GET(request: NextRequest) {
   const itensFaltando = (faltas: string[]) => faltas.map((c) => `${rotuloCodigo(c)} · ${nomes.get(c) ?? ""}`).join("; ");
   const colunas = ["Emenda", "Secretaria", "Tipo", "Execução", "Itens faltando", "Objeto"];
   const linhasTabela = lista.map((l) => [l.numero, l.secretaria, nomeTipo(l.tipo), l.executada ? "Já empenhada ou paga" : "Ainda não executada", itensFaltando(l.faltas), l.objeto]);
+  const tabelaLista = aplicarColunasOcultas([{ titulo: "Emendas com itens a completar", aba: "Emendas", colunas, monetarias: [], linhas: linhasTabela }], lerColunasOcultas(p.get("sem")))[0];
   const comItemFaltando = linhas.filter((l) => l.faltas.length > 0).length;
 
   if (p.get("formato") === "pdf") {
     const pdf = montarPdfTabelas({
       titulo: `Conformidade das emendas ${exercicio.ano} (IN TCE-MG 05/2025)`,
       subtitulo: `${lista.length} de ${comItemFaltando} emendas com item faltando · ${filtros}`,
-      tabelas: [{ titulo: "Emendas com itens a completar", colunas, monetarias: [], linhas: linhasTabela }],
+      tabelas: [tabelaLista],
     });
     return new NextResponse(pdf as unknown as BodyInit, {
       headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="conformidade-emendas-${exercicio.ano}.pdf"`, "Cache-Control": "private, no-store" },
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
         monetarias: [],
         linhas: resumo.map((r) => [`${rotuloCodigo(r.codigo)} · ${r.nome}`, r.exigencia, r.aplicaveis, r.atendem, lista.filter((l) => l.faltas.includes(r.codigo)).length]),
       },
-      { titulo: "Emendas", colunas, monetarias: [], linhas: linhasTabela },
+      { ...tabelaLista, titulo: "Emendas" },
     ],
   });
   return new NextResponse(xlsx as unknown as BodyInit, {
