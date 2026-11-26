@@ -14,6 +14,12 @@ export type Novidade = {
 export const NOVIDADES: Novidade[] = [
   {
     data: "2026-11-26",
+    titulo: "Exportar a lista filtrada em Conformidade, Pendências, Frotas e Imóveis",
+    descricao:
+      "Conformidade ganhou Excel e PDF da lista que está na tela (com os filtros dos gráficos e a busca); Pendências ganhou PDF da lista; as listas de Frotas e Imóveis têm \"Lista filtrada (CSV)\", que baixa exatamente o que está na tela. No gráfico de motivos das Pendências, os itens da publicidade aparecem como na Conformidade (\"Art. 7º, XIV · Gestor responsável\"), sem repetir \"Publicidade incompleta\".",
+  },
+  {
+    data: "2026-11-26",
     titulo: "Emendas: números do Painel mais alinhados",
     descricao:
       "Os cartões do resumo do exercício e dos limites da lei passaram a alinhar rótulo, valor e nota nas mesmas linhas, e o quadro \"Precisa da sua atenção\" ficou mais estreito para dar espaço a eles.",

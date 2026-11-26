@@ -1,5 +1,7 @@
 "use client";
 
+import type { ColunaCsv } from "@/lib/modulo/csv";
+
 import * as React from "react";
 import Link from "next/link";
 
@@ -131,6 +133,28 @@ function resumoImovel(l: LinhaImovel) {
   );
 }
 
+const COLUNAS_AREAIMOVEIS: ColunaCsv<LinhaImovel>[] = [
+  { titulo: "Imóvel", valor: (l) => l.nome },
+  { titulo: "Endereço", valor: (l) => l.endereco },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Setor", valor: (l) => l.setor },
+  { titulo: "Finalidade", valor: (l) => l.finalidade },
+  { titulo: "Situação", valor: (l) => l.situacao },
+  { titulo: "Vínculo", valor: (l) => l.vinculo },
+  { titulo: "Imobiliária", valor: (l) => l.imobiliaria },
+  { titulo: "Contrato", valor: (l) => l.contrato },
+  { titulo: "Vigência início", valor: (l) => l.vigenciaInicio },
+  { titulo: "Vigência fim", valor: (l) => l.vigenciaFim },
+  { titulo: "Vigência", valor: (l) => l.vigencia.texto },
+  { titulo: "Aluguel (R$)", valor: (l) => l.aluguel },
+  { titulo: "Dia de vencimento", valor: (l) => l.diaVencimento },
+  { titulo: "Índice de reajuste", valor: (l) => l.indice },
+  { titulo: "Próximo reajuste", valor: (l) => l.proximoReajuste },
+  { titulo: "Proprietário", valor: (l) => l.proprietario },
+  { titulo: "Documento", valor: (l) => l.documento },
+  { titulo: "Água (R$, mês de referência)", valor: (l) => l.agua },
+  { titulo: "Luz (R$, mês de referência)", valor: (l) => l.luz },
+];
 export function AreaImoveis({ linhas, gestor }: { linhas: LinhaImovel[]; gestor: boolean }) {
   const ref = linhas[0]?.referencia;
   return (
@@ -160,6 +184,7 @@ export function AreaImoveis({ linhas, gestor }: { linhas: LinhaImovel[]; gestor:
       hrefPagina={(l) => `/imoveis/imoveis/${l.id}`}
       rotuloPagina={gestor ? "Abrir e editar" : "Abrir"}
       vazio="Nenhum imóvel cadastrado ainda."
+      exportar={{ arquivo: "imoveis", colunas: COLUNAS_AREAIMOVEIS }}
       acoes={
         <>
           <MenuExportarImoveis relatorios={[{ r: "imoveis", rotulo: "Imóveis" }, { r: "secretarias", rotulo: "Gasto por secretaria" }]} />
@@ -245,6 +270,16 @@ function resumoPendencia(l: LinhaPendencia, gestor: boolean) {
   );
 }
 
+const COLUNAS_AREAPENDENCIAS: ColunaCsv<LinhaPendencia>[] = [
+  { titulo: "Imóvel", valor: (l) => l.imovel },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Pendência", valor: (l) => l.titulo },
+  { titulo: "Assunto", valor: (l) => l.assunto },
+  { titulo: "Nível", valor: (l) => (l.nivel === "critico" ? "Crítico" : "Atenção") },
+  { titulo: "Detalhe", valor: (l) => l.detalhe },
+  { titulo: "Justificada em", valor: (l) => l.justificada?.em },
+  { titulo: "Justificativa", valor: (l) => l.justificada?.texto },
+];
 export function AreaPendencias({ linhas, gestor }: { linhas: LinhaPendencia[]; gestor: boolean }) {
   return (
     <AreaTrabalhoLista
@@ -272,6 +307,7 @@ export function AreaPendencias({ linhas, gestor }: { linhas: LinhaPendencia[]; g
       hrefPagina={(l) => `/imoveis/imoveis/${l.imovelId}`}
       rotuloPagina="Abrir imóvel"
       vazio="Nenhuma pendência. Tudo em ordem."
+      exportar={{ arquivo: "pendencias-imoveis", colunas: COLUNAS_AREAPENDENCIAS }}
       acoes={<MenuExportarImoveis relatorios={[{ r: "pendencias", rotulo: "Pendências" }]} />}
     />
   );
@@ -344,6 +380,18 @@ function resumoEntrega(l: LinhaEntrega) {
   );
 }
 
+const COLUNAS_AREAENTREGAS: ColunaCsv<LinhaEntrega>[] = [
+  { titulo: "Imóvel", valor: (l) => l.nome },
+  { titulo: "Endereço", valor: (l) => l.endereco },
+  { titulo: "Secretaria", valor: (l) => l.secretaria },
+  { titulo: "Situação", valor: (l) => l.situacao },
+  { titulo: "Contrato", valor: (l) => l.contrato },
+  { titulo: "Vigência fim", valor: (l) => l.vigenciaFim },
+  { titulo: "Etapas feitas", valor: (l) => l.feitas },
+  { titulo: "Total de etapas", valor: (l) => l.total },
+  { titulo: "Próxima etapa", valor: (l) => l.proxima },
+  { titulo: "Em alerta", valor: (l) => l.alerta },
+];
 export function AreaEntregas({ linhas, gestor }: { linhas: LinhaEntrega[]; gestor: boolean }) {
   return (
     <AreaTrabalhoLista
@@ -371,6 +419,7 @@ export function AreaEntregas({ linhas, gestor }: { linhas: LinhaEntrega[]; gesto
       hrefPagina={(l) => `/imoveis/imoveis/${l.id}?aba=entrega`}
       rotuloPagina={gestor ? "Abrir e editar" : "Abrir"}
       vazio="Nenhuma entrega em andamento. Para iniciar, abra o imóvel e use a aba “Entrega”."
+      exportar={{ arquivo: "entregas-imoveis", colunas: COLUNAS_AREAENTREGAS }}
     />
   );
 }

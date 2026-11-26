@@ -6,6 +6,7 @@ import { NOME_GRAVIDADE } from "@/lib/emendas/pendencias";
 import {
   descreverFiltros,
   documentosFaltando,
+  docsDoFiltro,
   filtrarPendencias,
   indicadores,
   lerFiltros,
@@ -19,6 +20,7 @@ import {
   type Grupo,
 } from "@/lib/emendas/painel-pendencias";
 import { carregarPendencias } from "@/lib/emendas/pendencias-dados";
+import { montarPdfTabelas } from "@/lib/emendas/pdf";
 import { tabelasParaXlsx } from "@/lib/frotas/xlsx-saida";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +48,26 @@ export async function GET(request: NextRequest) {
   });
   const nomeTipo = (t: string) => TIPOS_EXECUCAO[t as keyof typeof TIPOS_EXECUCAO]?.nome ?? t;
   const faltando = documentosFaltando(docs, f);
+  // Com um documento faltando escolhido na tela, a lista é das emendas que ainda não o têm.
+  const semDoc = docsDoFiltro(docs, f);
+  const rotuloDoc = docs.find((x) => x.doc === f.d)?.rotulo ?? f.d ?? "";
+  const colunasPend = ["Emenda", "Secretaria", "Tipo", "Valor (R$)", "Gravidade", "Área", "Assunto", "Motivo", "Pendência", "Detalhe", "Justificada"];
+  const linhasPend = lista.map((l) => [l.numero, l.secretaria, nomeTipo(l.tipo), l.valor, NOME_GRAVIDADE[l.gravidade], areaDaLinha(l), nomeDaRegra(l), (l.motivos ?? []).map((m) => m.rotulo).join("; "), l.titulo, l.detalhe, l.justificativa ? "Sim" : ""]);
+  const colunasDoc = ["Emenda", "Secretaria", "Tipo", "Valor (R$)", "Objeto"];
+  const linhasDoc = semDoc.map((d) => [d.numero, d.secretaria, nomeTipo(d.tipo), d.valor, d.objeto]);
+
+  if (p.get("formato") === "pdf") {
+    const pdf = montarPdfTabelas({
+      titulo: `Pendências das emendas ${exercicio.ano}`,
+      subtitulo: `${f.d ? `${semDoc.length} emendas sem ${rotuloDoc.toLowerCase()}` : `${lista.length} pendências em ${ind.emendasAfetadas} emendas`}${filtros ? ` · ${filtros}` : ""}`,
+      tabelas: f.d
+        ? [{ titulo: `Emendas sem ${rotuloDoc.toLowerCase()}`, colunas: colunasDoc, monetarias: [3], linhas: linhasDoc }]
+        : [{ titulo: "Pendências", colunas: colunasPend.filter((c) => c !== "Detalhe"), monetarias: [3], linhas: linhasPend.map((l) => l.filter((_, i) => i !== 9)) }],
+    });
+    return new NextResponse(pdf as unknown as BodyInit, {
+      headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="pendencias-emendas-${exercicio.ano}.pdf"`, "Cache-Control": "private, no-store" },
+    });
+  }
 
   const xlsx = await tabelasParaXlsx({
     criador: "Central Cataguases · Emendas",
@@ -77,12 +99,9 @@ export async function GET(request: NextRequest) {
         monetarias: [2],
         linhas: faltando.map((g) => [g.rotulo, g.emendas.length, g.valor, g.emendas.map((e) => e.numero).join(", ")]),
       },
-      {
-        titulo: "Pendências (lista)",
-        colunas: ["Emenda", "Secretaria", "Tipo", "Valor (R$)", "Gravidade", "Área", "Assunto", "Motivo", "Pendência", "Detalhe", "Justificada"],
-        monetarias: [3],
-        linhas: lista.map((l) => [l.numero, l.secretaria, nomeTipo(l.tipo), l.valor, NOME_GRAVIDADE[l.gravidade], areaDaLinha(l), nomeDaRegra(l), (l.motivos ?? []).map((m) => m.rotulo).join("; "), l.titulo, l.detalhe, l.justificativa ? "Sim" : ""]),
-      },
+      f.d
+        ? { titulo: "Emendas sem o documento", colunas: colunasDoc, monetarias: [3], linhas: linhasDoc }
+        : { titulo: "Pendências (lista)", colunas: colunasPend, monetarias: [3], linhas: linhasPend },
     ],
   });
   return new NextResponse(xlsx as unknown as BodyInit, {

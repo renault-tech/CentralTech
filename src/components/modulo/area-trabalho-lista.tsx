@@ -2,18 +2,28 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronRight, Search, SearchX, X } from "lucide-react";
+import { ChevronRight, Download, Search, SearchX, X } from "lucide-react";
 
 import { EspacoTrabalho } from "@/components/modulo/espaco-trabalho";
 import { GraficoDimensao } from "@/components/modulo/grafico-dimensao";
 import { useFiltrosUrl } from "@/components/modulo/use-filtros-url";
 import { CLASSE_BOTAO_COMPACTO } from "@/components/modulo/ui";
 import { VoltarAoTopo } from "@/components/modulo/voltar-ao-topo";
+import { listaParaCsv, type ColunaCsv } from "@/lib/modulo/csv";
 import { agruparPorDimensao, contarFiltros, filtrarItens, type Dimensao, type Medida } from "@/lib/modulo/area-trabalho";
 import { cn } from "@/lib/utils";
 
 const CAMPO =
   "h-10 min-w-0 rounded-[0.75rem] border border-slate-300 bg-white px-3 text-sm text-cataguases-marinho outline-none transition-shadow focus:border-[color:var(--modulo)] focus:ring-2 focus:ring-[color:var(--modulo)]/25";
+
+function baixarCsv(nome: string, texto: string) {
+  const url = URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export type Kpi = { rotulo: string; valor: string; apoio?: string };
 export type OrdemLista<T> = { chave: string; rotulo: string; comparar: (a: T, b: T) => number };
@@ -47,6 +57,8 @@ export type PropsAreaTrabalho<T> = {
   /** Botões do alto (exportar, novo…); a função recebe os filtros atuais para que "Exportar" leve a lista como está na tela. */
   acoes?: React.ReactNode | ((params: URLSearchParams) => React.ReactNode);
   vazio: string;
+  /** Colunas do arquivo "lista filtrada (CSV)": sai exatamente o que a tela mostra, com os filtros dos gráficos, a busca e a ordem. */
+  exportar?: { arquivo: string; colunas: ColunaCsv<T>[] };
 };
 
 type PropsLinha<T> = { item: T; id: string; sel: boolean; primeira: boolean; render: (i: T) => React.ReactNode; cor: string; escolher: (id: string) => void; href: string | null };
@@ -142,7 +154,22 @@ export function AreaTrabalhoLista<T>(p: PropsAreaTrabalho<T>) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <h1 className="!text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] text-cataguases-marinho">{p.titulo}</h1>
-        {p.acoes && <div className="ml-auto flex flex-wrap items-center gap-2 print:hidden">{typeof p.acoes === "function" ? p.acoes(params) : p.acoes}</div>}
+        {(p.acoes || p.exportar) && (
+          <div className="ml-auto flex flex-wrap items-center gap-2 print:hidden">
+            {p.exportar && (
+              <button
+                type="button"
+                title={`Baixa as ${ordenados.length} ${p.unidades.plural} que estão na lista, com os filtros atuais`}
+                onClick={() => baixarCsv(`${p.exportar!.arquivo}-${new Date().toISOString().slice(0, 10)}.csv`, listaParaCsv(p.exportar!.colunas, ordenados))}
+                className={cn(CLASSE_BOTAO_COMPACTO, "gap-1.5")}
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                Lista filtrada (CSV)
+              </button>
+            )}
+            {typeof p.acoes === "function" ? p.acoes(params) : p.acoes}
+          </div>
+        )}
       </div>
 
       <EspacoTrabalho

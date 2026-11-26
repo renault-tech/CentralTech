@@ -140,7 +140,9 @@ export function porMotivo(linhas: LinhaPendencia[], comAssunto = false): Grupo[]
     const assunto = nomeDaRegra(l);
     // "Vigência encerrada" já diz o assunto: não repete "Vigência (…) · Vigência encerrada"
     const repete = m.rotulo.toLowerCase().startsWith(assunto.split(/[\s(]/)[0].toLowerCase());
-    return { chave: m.chave, rotulo: comAssunto && !repete ? `${assunto} · ${m.rotulo}` : m.rotulo };
+    // Os motivos da publicidade já são o item exigido ("Art. 7º, XIV · Gestor"), como na tela de Conformidade: o assunto não se repete.
+    const semPrefixo = chaveRegra(l).startsWith("publicidade_incompleta");
+    return { chave: m.chave, rotulo: comAssunto && !repete && !semPrefixo ? `${assunto} · ${m.rotulo}` : m.rotulo };
   });
 }
 

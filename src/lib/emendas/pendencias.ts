@@ -403,7 +403,7 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
         titulo: iniciou ? "Execução sem publicidade completa (IN TCE-MG 05/2025)" : "Publicidade incompleta (IN TCE-MG 05/2025)",
         detalhe: `Faltam para a divulgação obrigatória: ${faltando.map((f) => `${f.codigo === "art5" ? "art. 5º" : `item ${f.codigo}`} — ${f.nome}`).join("; ")}.${iniciou ? " As informações devem ser divulgadas antes da execução (art. 7º, § 2º)." : ""}`,
         assinatura: `publicidade|${faltando.map((f) => f.codigo).join(",")}|${iniciou ? "exec" : "pre"}`,
-        motivos: faltando.map((f) => ({ chave: `publicidade_incompleta:${f.codigo}`, rotulo: `${f.codigo === "art5" ? "Art. 5º" : `Item ${f.codigo}`} — ${f.nome}` })),
+        motivos: faltando.map((f) => ({ chave: `publicidade_incompleta:${f.codigo}`, rotulo: `${f.codigo === "art5" ? "Art. 5º" : `Art. 7º, ${f.codigo}`} · ${f.nome}` })),
         aba: "transparencia",
       });
     }
