@@ -33,6 +33,24 @@ describe("painel de abertura", () => {
     expect(p.pago + p.aPagar + p.semEmpenhar).toBe(p.total);
   });
 
+  it("meta legal: pago + restos a pagar contam; só o sem empenho deixa a meta fora da lei", () => {
+    const risco = montarPainel(base({ emendas: [em("a", 1, 100, 80, 50), em("b", 2, 200, 0, 0)] }));
+    expect(risco.meta.aprovado).toBe(300);
+    expect(risco.meta.restosAPagar).toBe(30);
+    expect(risco.meta.semEmpenho).toBe(220);
+    expect(risco.meta.faltaPagar).toBe(250);
+    expect(risco.meta.dentroDaLei).toBe(80);
+    expect(risco.meta.atingida).toBe(false);
+    expect(risco.meta.pendentes.map((v) => v.nome)).toEqual(["Fulana"]);
+
+    const ok = montarPainel(base({ emendas: [em("a", 1, 100, 100, 40), em("b", 2, 200, 200, 200), em("c", 3, 50, 0, 0, { situacao: "cancelada" })] }));
+    expect(ok.meta.atingida).toBe(true);
+    expect(ok.meta.restosAPagar).toBe(60);
+    expect(ok.meta.faltaPagar).toBe(60);
+    expect(ok.meta.semEmpenho).toBe(0);
+    expect(ok.meta.vereadoresOk).toBe(1);
+  });
+
   it("classifica a situação financeira como o filtro da lista", () => {
     const p = montarPainel(base({ emendas: [em("a", 1, 100, 100, 100), em("b", 2, 100, 100, 40), em("c", 3, 100, 60, 0), em("d", 4, 100, 0, 0)] }));
     expect(p.situacoes.map((s) => s.quantidade)).toEqual([1, 1, 1, 1]);

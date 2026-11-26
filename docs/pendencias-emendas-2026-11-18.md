@@ -56,3 +56,11 @@ secretaria: `docs/documentos-faltando-por-secretaria.md` (e os `.xlsx`/PDFs ao l
 - 19 anuências do SUS já publicadas refeitas: a tarja era um retângulo desenhado sobre a imagem e o CPF da Secretária continuava recuperável; agora os pixels foram apagados (conferido por OCR), arquivos religados e os antigos na lixeira do Drive. **Outros PDFs tarjados antes podem ter o mesmo defeito: conferir.**
 - Ligação das anuências do Cisum (E93, E126, E162) desfeita: os ofícios vieram sem data e sem assinatura digital e serão reemitidos. Nada consta na plataforma até lá.
 - Relatório novo: `docs/pendencias-em-aberto-cgm-2026-11-23.xlsx` (recomendações da CGM de 17/11; itens novos N5 a N11).
+
+## Atualização de 26/11/2026 — anuências do SUS (Cisum e Superação)
+
+- **Ofícios reemitidos** (SMS/DIRA-JUR, **datados de 23/11/2026**, assinados pela Secretária Fernanda Rocha Guedes com rubrica; sem CPF nem dado pessoal no texto) substituem os antigos sem data. Valor, autor e beneficiário conferidos contra o cadastro.
+- **Ligadas e marcadas "sim" (data 23/11/2026)**: Cisum E93 (0656), E126 (0658), E162 (0660) e Superação E15 (0949), E27 (0950), E42 (0951), E52 (0952), E59 (0953 — o texto cita "emenda 053" por engano; valor, autor e Superação são da E59), E71 (0954), E84 (0955), E98 (0956), E112 (0957), E138 (0959), E135 (0960), E167 (0961), E191 (0962), E215 (0963). Cópias em PUBLICIDADE/"4 - Anuencias do SUS". Total de emendas da Saúde com anuência "sim": 36.
+- **Segue faltando**: ofício **0958** (por exclusão, a **E117** — Superação, R$ 20.000, Josimar Branquinho; não veio na pasta). As emendas de Saúde com o campo vazio (postos, CAPS, CEO, GAIA, Secretaria de Saúde, laboratório) não têm ofício; conferir se cada uma exige anuência ou é "não se aplica" (como E96, E111 e E115).
+- Cisum: continuam faltando o **convênio/contrato de rateio** e o **extrato** (Jurídico). A anuência deixa de ser pendência nas 3.
+- Superação: as emendas foram ligadas por decisão do dono, mas o projeto segue sem termo/plano na plataforma.

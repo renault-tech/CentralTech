@@ -62,11 +62,17 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
     { nome: "Empenhado, a pagar", valor: p.aPagar, cor: COR_DINHEIRO.empenhado },
     { nome: "Sem empenhar", valor: p.semEmpenhar, cor: COR_DINHEIRO.semEmpenhar },
   ];
-  const legenda = [
-    { nome: "Indicado", valor: p.total, cor: COR_DINHEIRO.indicado, apoio: `${p.quantidade} emendas`, href: `/emendas/lista?ano=${ano}` },
-    { nome: "Pago", valor: p.pago, cor: COR_DINHEIRO.pago, apoio: `${pct(p.pago / base, 1)} do indicado`, href: `/emendas/lista?fin=paga&ano=${ano}` },
-    { nome: "A pagar (já empenhado)", valor: p.aPagar, cor: COR_DINHEIRO.empenhado, apoio: `${pct(p.aPagar / base, 1)} do indicado`, href: `/emendas/lista?fin=empenhada_sem_pagamento&ano=${ano}` },
-    { nome: "Sem empenhar", valor: p.semEmpenhar, cor: COR_DINHEIRO.semEmpenhar, apoio: `${pct(p.semEmpenhar / base, 1)} do indicado`, href: `/emendas/lista?fin=sem_empenho&ano=${ano}` },
+  const m = p.meta;
+  const ok = m.atingida;
+  const VERDE = { fundo: "rgba(52,211,153,.16)", borda: "rgba(110,231,183,.45)", texto: "#A7F3D0" };
+  const VERMELHO = { fundo: "rgba(248,113,113,.18)", borda: "rgba(252,165,165,.5)", texto: "#FECACA" };
+  type Tom = typeof VERDE;
+  const legenda: { nome: string; valor: number; cor: string; apoio: string; href: string; tom?: Tom }[] = [
+    { nome: "Aprovado (indicado)", valor: p.total, cor: COR_DINHEIRO.indicado, apoio: `${p.quantidade} emendas`, href: `/emendas/lista?ano=${ano}` },
+    { nome: "Pago", valor: p.pago, cor: COR_DINHEIRO.pago, apoio: `${pct(m.fracaoPago, 1)} do aprovado`, href: `/emendas/lista?fin=paga&ano=${ano}`, tom: VERDE },
+    { nome: "Em restos a pagar", valor: m.restosAPagar, cor: "#34D399", apoio: "empenhado, não pago: dentro da lei", href: `/emendas/lista?fin=empenhada_sem_pagamento&ano=${ano}`, tom: VERDE },
+    { nome: "Falta empenhar p/ a lei", valor: m.semEmpenho, cor: ok ? "#34D399" : "#F87171", apoio: ok ? "nada a empenhar: meta atingida" : "ainda fora da lei", href: `/emendas/lista?fin=sem_empenho&ano=${ano}`, tom: ok ? VERDE : VERMELHO },
+    { nome: "Falta pagar (total)", valor: m.faltaPagar, cor: m.faltaPagar > 0 ? "#F87171" : "#34D399", apoio: "restos a pagar + sem empenho", href: `/emendas/lista?ano=${ano}`, tom: m.faltaPagar > 0 ? VERMELHO : VERDE },
   ];
   const chips: { nome: string; quantidade: number; cor: string; href: string }[] = [
     { nome: "Pagas", quantidade: p.situacoes[0].quantidade, cor: "#34D399", href: `/emendas/lista?fin=paga&ano=${ano}` },
@@ -107,6 +113,13 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         </div>
       </div>
 
+      <p className="mt-4 flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[0.875rem] font-medium" role="status" style={{ backgroundColor: ok ? VERDE.fundo : VERMELHO.fundo, borderColor: ok ? VERDE.borda : VERMELHO.borda, color: ok ? VERDE.texto : VERMELHO.texto }}>
+        <span aria-hidden className="inline-block h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: ok ? "#34D399" : "#F87171" }} />
+        {ok
+          ? "Meta legal atingida: todo o valor aprovado está pago ou empenhado; o que não foi pago fica em restos a pagar."
+          : `Meta legal em risco: faltam ${brl(m.semEmpenho)} a empenhar até 31/12 para estar dentro da lei (${pct(m.fracaoDentroDaLei, 1)} já pago ou em restos a pagar).`}
+      </p>
+
       <div className="mt-5 flex h-4 gap-0.5 overflow-hidden rounded-lg bg-white/10" role="img" aria-label={partes.map((x) => `${x.nome}: ${pct(x.valor / base, 1)}`).join("; ")}>
         {partes.map((x) => (
           <CaixaInfo
@@ -125,15 +138,15 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         ))}
       </div>
 
-      <ul className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <ul className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-5">
         {legenda.map((l) => (
           <li key={l.nome}>
-            <Link href={l.href} className="block rounded-xl bg-white/[0.07] px-3 py-2.5 transition-colors hover:bg-white/[0.13]">
+            <Link href={l.href} className="block h-full rounded-xl border px-3 py-2.5 transition-colors hover:brightness-125" style={l.tom ? { backgroundColor: l.tom.fundo, borderColor: l.tom.borda } : { backgroundColor: "rgba(255,255,255,.07)", borderColor: "transparent" }}>
               <span className="flex items-center gap-1.5 text-[0.75rem] text-[#AEBBD0]">
                 <i className="inline-block h-2 w-2 rounded-[3px]" style={{ backgroundColor: l.cor }} aria-hidden />
                 {l.nome}
               </span>
-              <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums">{brlCurto(l.valor)}</span>
+              <span className="mt-0.5 block text-[1.25rem] font-semibold leading-tight tracking-[-0.02em] tabular-nums" style={l.tom ? { color: l.tom.texto } : undefined}>{brlCurto(l.valor)}</span>
               <span className="text-[0.75rem] tabular-nums text-[#AEBBD0]">{l.apoio}</span>
             </Link>
           </li>

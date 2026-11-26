@@ -46,7 +46,32 @@ export type LinhaSecretariaPainel = { nome: string; total: number; pago: number 
 export type ItemAtividade = { tipo: "pagamento" | "empenho" | "anulacao" | "outro"; texto: string; numeroEmenda: number; secretaria: string; data: string; quando: string };
 export type ItemPrazo = { dias: number; titulo: string; detalhe: string };
 
+/**
+ * Meta legal do exercício: o valor aprovado tem de estar PAGO ou, no mínimo, EMPENHADO até 31/12 (o empenhado e não pago vira restos a
+ * pagar, Lei 4.320, art. 36, e continua dentro da lei). O que não foi empenhado volta ao caixa e é o que ainda põe a meta em risco.
+ */
+export type MetaExercicio = {
+  aprovado: number;
+  pago: number;
+  /** Empenhado e ainda não pago: se não for pago até o fim do ano, fica em restos a pagar. */
+  restosAPagar: number;
+  /** Ainda sem empenho: é o que falta para estar dentro da lei. */
+  semEmpenho: number;
+  /** Quanto falta PAGAR do aprovado (restos + sem empenho). */
+  faltaPagar: number;
+  /** Pago + restos (o que já está dentro da lei). */
+  dentroDaLei: number;
+  fracaoPago: number;
+  fracaoDentroDaLei: number;
+  atingida: boolean;
+  /** Vereadores que ainda têm valor sem empenho. */
+  pendentes: { id: string; numero: number; nome: string; semEmpenho: number }[];
+  vereadoresOk: number;
+  vereadoresTotal: number;
+};
+
 export type Painel = {
+  meta: MetaExercicio;
   quantidade: number;
   total: number;
   empenhado: number;
@@ -275,7 +300,25 @@ export function montarPainel(e: EntradaPainel): Painel {
   if (diasFim >= 0) prazos.push({ dias: diasFim, titulo: `Fim do exercício de ${e.ano}`, detalhe: "o que não for pago vira restos a pagar" });
   prazos.sort((a, b) => a.dias - b.dias);
 
+  const centavo = 0.005;
+  const semEmp = Math.max(0, total - empenhado);
+  const meta: MetaExercicio = {
+    aprovado: total,
+    pago,
+    restosAPagar: aPagar,
+    semEmpenho: semEmp,
+    faltaPagar: Math.max(0, total - pago),
+    dentroDaLei: Math.min(total, pago + aPagar),
+    fracaoPago: total > 0 ? Math.min(1, pago / total) : 0,
+    fracaoDentroDaLei: total > 0 ? Math.min(1, (pago + aPagar) / total) : 0,
+    atingida: total > 0 && semEmp < centavo,
+    pendentes: vereadores.filter((v) => v.semEmpenhar >= centavo).map((v) => ({ id: v.id, numero: v.numero, nome: v.nome, semEmpenho: v.semEmpenhar })).sort((a, b) => b.semEmpenho - a.semEmpenho),
+    vereadoresOk: vereadores.filter((v) => v.semEmpenhar < centavo).length,
+    vereadoresTotal: vereadores.length,
+  };
+
   return {
+    meta,
     quantidade: ativas.length,
     total,
     empenhado,
