@@ -134,8 +134,9 @@ export function avaliarArt7(i: EntradaConformidade): ItemConformidade[] {
     item("VI", "Localidade", "Município ou localidade beneficiada (art. 7º, VI)", preenchido(x?.localidade), naoInformado("a localidade beneficiada")),
     item("VII", "Cronograma", "Início e término previstos (art. 7º, VII)", (!!x?.inicio_previsto && !!x?.termino_previsto) || (!!x?.vigencia_inicio && !!x?.vigencia_fim), naoInformado("início e término previstos")),
     item("VIII", "Instrumentos e processo", "Convênio/termo/contrato e processo administrativo (art. 7º, VIII)",
-      tipo === "direta" ? !!(x?.processo_id || preenchido(x?.processo_licitatorio)) : preenchido(x?.numero_termo) && !!(x?.processo_id || preenchido(x?.processo_licitatorio) || preenchido(x?.numero_contrato)),
-      tipo === "direta" ? "vincular o processo do Compras" : "informar o termo e o processo administrativo", iniciou),
+      // Repasse: o número do processo administrativo É o do termo (confirmado pelo dono em 24/11/2026), então o termo basta.
+      tipo === "direta" ? !!(x?.processo_id || preenchido(x?.processo_licitatorio)) : preenchido(x?.numero_termo),
+      tipo === "direta" ? "vincular o processo do Compras" : "informar o número do termo (é também o do processo administrativo)", iniciou),
     item("IX", "Plano de Trabalho", "Plano de trabalho com objeto, metas, recursos, classificação e prazo (art. 7º, IX)", plano.ok, plano.falta.join("; ")),
     item("XI", "Recebedor e CNPJ", "Recebedor dos recursos e CNPJ (art. 7º, XI)", tipo === "direta" ? preenchido(ex?.municipio_cnpj) : preenchido(e.beneficiario_cnpj), tipo === "direta" ? "informar o CNPJ do Município" : "informar o CNPJ do beneficiário"),
     item("XII", "Município e CNPJ", "Município e CNPJ do recebedor (art. 7º, XII)", preenchido(ex?.municipio_cnpj) && preenchido(ex?.municipio_nome), "informar nome e CNPJ do Município no exercício"),
