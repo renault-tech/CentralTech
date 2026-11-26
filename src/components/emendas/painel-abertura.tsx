@@ -127,13 +127,25 @@ function Hero({ p, ano, diasFim }: { p: Painel; ano: number; diasFim: number }) 
         )}
       </p>
 
-      <ul className="mt-3 grid gap-2.5 sm:grid-cols-3" aria-label="Limites da lei">
+      <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5" aria-label="Limites da lei">
         {[
           {
-            nome: `Obrigação legal: teto das emendas${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
+            nome: `Obrigação legal${m.tetoDescricao ? ` (${m.tetoDescricao})` : ""}`,
             valor: m.tetoValor != null ? brlCurto(m.tetoValor) : "—",
-            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? `a Câmara aprovou ${brlCurto(m.aprovadoAcimaDoTeto ?? 0)} acima do teto` : "o aprovado está dentro do teto",
-            tom: m.tetoValor == null ? undefined : (m.aprovadoAcimaDoTeto ?? 0) > 0 ? VERMELHO : VERDE,
+            apoio: m.tetoValor == null ? "informe a RCL em Configurações › Exercício" : "o que a lei exige para as emendas",
+            tom: undefined as Tom | undefined,
+          },
+          {
+            nome: "Aprovado pelos vereadores",
+            valor: brlCurto(m.aprovado),
+            apoio: m.aprovadoOrigem === "emendas" ? "total das emendas cadastradas" : "valor informado em Configurações",
+            tom: undefined as Tom | undefined,
+          },
+          {
+            nome: "Aprovado × obrigação",
+            valor: m.diferencaParaObrigacao == null ? "—" : `${m.diferencaParaObrigacao > 0 ? "+" : m.diferencaParaObrigacao < 0 ? "−" : ""}${brlCurto(Math.abs(m.diferencaParaObrigacao))}`,
+            apoio: m.diferencaParaObrigacao == null ? "depende da obrigação legal" : m.diferencaParaObrigacao > 0.005 ? "aprovado acima da obrigação" : m.diferencaParaObrigacao < -0.005 ? "aprovado abaixo da obrigação" : "aprovado igual à obrigação",
+            tom: undefined as Tom | undefined,
           },
           {
             nome: "Pode ficar em restos a pagar",
