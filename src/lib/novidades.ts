@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-27",
+    titulo: "Emendas: nota fiscal e atesto para concluir",
+    descricao:
+      "Na execução direta, marcar a emenda como cumprida (inclusive com economia) pede dois links: nota fiscal e atesto de recebimento. Cada campo tem um \"?\" explicando.",
+  },
+  {
     data: "2026-11-26",
     titulo: "Pendências e Conformidade: escolha as colunas da exportação",
     descricao:

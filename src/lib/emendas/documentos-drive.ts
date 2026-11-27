@@ -9,7 +9,7 @@ import { brl, dataBr } from "@/lib/emendas/regras";
  * Arquivo puro (sem `server-only`): usado nas telas internas, no portal e nos testes.
  */
 
-export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "jornal_edicao", "convenio", "nota_fiscal", "prestacao_contas"] as const;
+export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "jornal_edicao", "convenio", "nota_fiscal", "atesto", "prestacao_contas"] as const;
 export type TipoDrive = (typeof TIPOS_DRIVE)[number];
 
 /** Só estes tipos podem aparecer no portal sem login. Certidões, RG, orçamentos e demais anexos nunca entram. */
@@ -24,6 +24,7 @@ export const ROTULO_DRIVE: Record<TipoDrive, string> = {
   jornal_edicao: "Edição do Jornal Oficial",
   convenio: "Convênio / contrato de rateio",
   nota_fiscal: "Nota fiscal com atesto (cumprimento)",
+  atesto: "Atesto de recebimento (cumprimento)",
   prestacao_contas: "Prestação de contas (cumprimento)",
 };
 
@@ -243,9 +244,10 @@ export function montarFicha(doc: Pick<DocumentoDrive, "tipo" | "titulo">, c: Con
         ],
       };
     case "nota_fiscal":
+    case "atesto":
     case "prestacao_contas":
       return {
-        titulo: doc.tipo === "nota_fiscal" ? "Nota fiscal com atesto de recebimento" : "Prestação de contas",
+        titulo: doc.tipo === "nota_fiscal" ? "Nota fiscal" : doc.tipo === "atesto" ? "Atesto de recebimento" : "Prestação de contas",
         base: "Comprovação do cumprimento da emenda (documento interno, não vai ao portal)",
         campos: [
           { rotulo: "Emenda", valor: autor },

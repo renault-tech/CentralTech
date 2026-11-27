@@ -5,29 +5,33 @@ import { agrupar, linhasPanorama, pertenceAoCartao, rotuloSituacao, sugerirSitua
 const fin = (valor: number, empenhado: number, pago: number) => ({ valor, empenhado, pago });
 
 describe("validarEncerramento", () => {
+  it("execução direta exige nota fiscal e atesto", () => {
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 80, 80), documentosLigados: ["nota_fiscal"] })).toMatch(/atesto/i);
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 80, 80), documentosLigados: ["atesto"] })).toMatch(/nota fiscal/i);
+  });
   it("exige o documento comprobatório para marcar cumprida", () => {
-    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 100), temDocumento: false })).toMatch(/nota fiscal/i);
-    expect(validarEncerramento({ situacao: "cumprida", tipo: "osc", financeiro: fin(100, 100, 100), temDocumento: false })).toMatch(/prestação de contas/i);
-    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 100), temDocumento: true })).toBeNull();
+    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 100), documentosLigados: [] })).toMatch(/nota fiscal/i);
+    expect(validarEncerramento({ situacao: "cumprida", tipo: "osc", financeiro: fin(100, 100, 100), documentosLigados: [] })).toMatch(/prestação de contas/i);
+    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 100), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"] })).toBeNull();
   });
   it("cumprida exige tudo empenhado e pago; economia cobre o valor sem empenhar", () => {
-    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 80, 80), temDocumento: true })).toMatch(/economia/);
-    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 80, 80), temDocumento: true })).toBeNull();
-    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 60), temDocumento: true })).toMatch(/não pago/);
+    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 80, 80), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"] })).toMatch(/economia/);
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 80, 80), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"] })).toBeNull();
+    expect(validarEncerramento({ situacao: "cumprida", tipo: "direta", financeiro: fin(100, 100, 60), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"] })).toMatch(/não pago/);
   });
   it("restos a pagar só com empenho não pago", () => {
-    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 100, 100), temDocumento: false })).toMatch(/não empenhado/);
-    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 100, 40), temDocumento: false })).toBeNull();
-    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 80, 80), temDocumento: false })).not.toBeNull();
+    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 100, 100), documentosLigados: [] })).toMatch(/não empenhado/);
+    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 100, 40), documentosLigados: [] })).toBeNull();
+    expect(validarEncerramento({ situacao: "restos_a_pagar", tipo: "direta", financeiro: fin(100, 80, 80), documentosLigados: [] })).not.toBeNull();
   });
   it("não cumprida não exige documento", () => {
-    expect(validarEncerramento({ situacao: "nao_cumprida", tipo: "osc", financeiro: fin(100, 0, 0), temDocumento: false })).toBeNull();
+    expect(validarEncerramento({ situacao: "nao_cumprida", tipo: "osc", financeiro: fin(100, 0, 0), documentosLigados: [] })).toBeNull();
   });
   it("devolução só no repasse, completa e dentro do repassado", () => {
-    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 100, 100), temDocumento: true, devolucaoValor: 5, devolucaoData: "2026-12-01" })).toMatch(/repasse/);
-    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), temDocumento: true, devolucaoValor: 5, devolucaoData: null })).toMatch(/valor e a data/);
-    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), temDocumento: true, devolucaoValor: 150, devolucaoData: "2026-12-01" })).toMatch(/passar/);
-    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), temDocumento: true, devolucaoValor: 5, devolucaoData: "2026-12-01" })).toBeNull();
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "direta", financeiro: fin(100, 100, 100), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"], devolucaoValor: 5, devolucaoData: "2026-12-01" })).toMatch(/repasse/);
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"], devolucaoValor: 5, devolucaoData: null })).toMatch(/valor e a data/);
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"], devolucaoValor: 150, devolucaoData: "2026-12-01" })).toMatch(/passar/);
+    expect(validarEncerramento({ situacao: "cumprida_economia", tipo: "osc", financeiro: fin(100, 100, 100), documentosLigados: ["nota_fiscal", "atesto", "prestacao_contas"], devolucaoValor: 5, devolucaoData: "2026-12-01" })).toBeNull();
   });
 });
 

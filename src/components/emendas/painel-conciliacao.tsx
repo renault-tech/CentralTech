@@ -7,7 +7,7 @@ import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CAMPO } from "@/components/emendas/de
 import { DicaAjuda } from "@/components/emendas/dica-ajuda";
 import { desfazerConciliacao, desfazerEncerramento, salvarConciliacao, salvarEncerramento } from "@/lib/emendas/actions";
 import { vincularDocumentoDrive } from "@/lib/emendas/actions-drive";
-import { COR_SITUACAO, documentoComprobatorio, rotuloSituacao, type Encerramento, type SituacaoEncerramento, type TipoExecucaoEnc } from "@/lib/emendas/encerramento";
+import { COR_SITUACAO, documentosComprobatorios, rotuloSituacao, type Encerramento, type SituacaoEncerramento, type TipoExecucaoEnc } from "@/lib/emendas/encerramento";
 import { situacaoConciliacao, type Conciliacao } from "@/lib/emendas/conciliacao";
 import { brl, dataBr } from "@/lib/emendas/regras";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ export function CartoesFinanceiros({
   conciliacao: c,
   encerramento,
   tipo,
-  provaLigada,
+  provasLigadas,
   gestor,
   executar,
 }: {
@@ -115,8 +115,8 @@ export function CartoesFinanceiros({
   conciliacao: Conciliacao | null;
   encerramento: Encerramento | null;
   tipo: TipoExecucaoEnc;
-  /** O documento que comprova o cumprimento (nota fiscal ou prestação de contas) já está ligado na Documentação. */
-  provaLigada: boolean;
+  /** Tipos de documento de comprovação (nota fiscal, atesto, prestação de contas) já ligados na Documentação. */
+  provasLigadas: string[];
   gestor: boolean;
   executar: Executar;
 }) {
@@ -125,7 +125,7 @@ export function CartoesFinanceiros({
   const semEmpenhar = Math.round((valor - empenhado) * 100) / 100;
   const acima = semEmpenhar < -0.005;
   const semSaldoPendente = semEmpenhar <= 0.005 && aPagar <= 0.005;
-  const form = { emendaId, tipo, provaLigada, gestor, executar, valor, empenhado, pago };
+  const form = { emendaId, tipo, provasLigadas, gestor, executar, valor, empenhado, pago };
   return (
     <div className="flex flex-col gap-2">
       {encerramento && <FaixaEncerramento enc={encerramento} tipo={tipo} gestor={gestor} emendaId={emendaId} executar={executar} />}
@@ -161,7 +161,7 @@ export function CartoesFinanceiros({
 
 type Sit = ReturnType<typeof situacaoConciliacao>;
 
-type PropsForm = { emendaId: string; tipo: TipoExecucaoEnc; provaLigada: boolean; gestor: boolean; executar: Executar; valor: number; empenhado: number; pago: number };
+type PropsForm = { emendaId: string; tipo: TipoExecucaoEnc; provasLigadas: string[]; gestor: boolean; executar: Executar; valor: number; empenhado: number; pago: number };
 
 function AcaoSaldo({ sit, c, falta, empenhado, gestor, semEncerramento, form }: { sit: Sit; c: Conciliacao | null; falta: number; empenhado: number; gestor: boolean; semEncerramento: boolean; form: PropsForm }) {
   const { pendente, erro, enviar } = useEnvio(form.executar);
@@ -186,32 +186,38 @@ function AcaoSaldo({ sit, c, falta, empenhado, gestor, semEncerramento, form }: 
 }
 
 const DESCRICAO_SITUACAO: Record<SituacaoEncerramento, (tipo: TipoExecucaoEnc) => string> = {
-  cumprida: () => "O objeto foi entregue integralmente.",
-  cumprida_economia: (tipo) => (tipo === "direta" ? "O objeto foi entregue gastando menos. A parte não empenhada volta ao caixa da Prefeitura e a emenda conta como cumprida." : "A entidade cumpriu o objeto e devolveu o saldo que não gastou."),
-  nao_cumprida: () => "O objeto não foi entregue (impedimento ou desistência).",
-  restos_a_pagar: () => "O empenho não pago passa para o exercício seguinte. Só vale para valor já empenhado.",
+  cumprida: () => "Objeto entregue por inteiro.",
+  cumprida_economia: (tipo) => (tipo === "direta" ? "Entregue gastando menos. O que não foi empenhado volta ao caixa." : "Objeto cumprido; saldo não gasto devolvido."),
+  nao_cumprida: () => "Não entregue (impedimento ou desistência).",
+  restos_a_pagar: () => "Empenho não pago vai para o ano seguinte.",
 };
 
 /** Janela de encerramento: situação, comprovante (nota fiscal ou prestação de contas), devolução no repasse e observação. */
-function FormEncerramento({ emendaId, tipo, provaLigada, executar, opcoes, fechar }: PropsForm & { opcoes: SituacaoEncerramento[]; fechar: () => void }) {
+function FormEncerramento({ emendaId, tipo, provasLigadas, executar, opcoes, fechar }: PropsForm & { opcoes: SituacaoEncerramento[]; fechar: () => void }) {
   const { pendente, erro, enviar } = useEnvio(executar);
   const [situacao, setSituacao] = React.useState<SituacaoEncerramento>(opcoes[0]);
   const [obs, setObs] = React.useState("");
-  const [link, setLink] = React.useState("");
+  const [links, setLinks] = React.useState<Record<string, string>>({});
   const [dev, setDev] = React.useState("");
   const [devData, setDevData] = React.useState("");
   const [devDoc, setDevDoc] = React.useState("");
-  const prova = documentoComprobatorio(tipo);
+  const provas = documentosComprobatorios(tipo);
+  const faltam = provas.filter((p) => !provasLigadas.includes(p.tipo));
   const exigeProva = situacao === "cumprida" || situacao === "cumprida_economia";
   const comDevolucao = situacao === "cumprida_economia" && tipo !== "direta";
   const devNum = Number(dev.replace(/\./g, "").replace(",", "."));
 
   function confirmar() {
     enviar(async () => {
-      if (exigeProva && !provaLigada) {
-        if (!link.trim()) return { sucesso: false as const, erro: `Cole o link do documento: ${prova.rotulo.toLowerCase()}.` };
-        const r = await vincularDocumentoDrive({ emendaId, tipo: prova.tipo, link });
-        if (!r.sucesso) return r;
+      if (exigeProva) {
+        for (const p of faltam) {
+          const l = (links[p.tipo] ?? "").trim();
+          if (!l) return { sucesso: false as const, erro: `Cole o link: ${p.rotulo.toLowerCase()}.` };
+        }
+        for (const p of faltam) {
+          const r = await vincularDocumentoDrive({ emendaId, tipo: p.tipo, link: links[p.tipo] });
+          if (!r.sucesso) return r;
+        }
       }
       return salvarEncerramento({ emendaId, situacao, observacao: obs, devolucaoValor: comDevolucao && dev ? devNum : null, devolucaoData: comDevolucao && dev ? devData : null, devolucaoDocumento: comDevolucao ? devDoc : undefined });
     }, fechar);
@@ -232,16 +238,21 @@ function FormEncerramento({ emendaId, tipo, provaLigada, executar, opcoes, fecha
         ))}
       {opcoes.length === 1 && <p className="text-xs text-slate-600">{DESCRICAO_SITUACAO[situacao](tipo)}</p>}
       {exigeProva &&
-        (provaLigada ? (
-          <p className="flex items-center gap-1 text-xs text-green-800">
-            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> {prova.rotulo}: já ligado na Documentação.
-          </p>
-        ) : (
-          <label className={ROTULO}>
-            {prova.rotulo} (obrigatório)
-            <input className={CAMPO} value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole o link do arquivo no Drive" />
-          </label>
-        ))}
+        provas.map((p) =>
+          provasLigadas.includes(p.tipo) ? (
+            <p key={p.tipo} className="flex items-center gap-1 text-xs text-green-800">
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> {p.rotulo} ligado
+            </p>
+          ) : (
+            <label key={p.tipo} className={ROTULO}>
+              <span className="flex items-center gap-1">
+                {p.rotulo} <span className="font-normal text-red-700">*</span>
+                <DicaAjuda texto={p.dica} rotulo={`O que é: ${p.rotulo}`} alinhar="inicio" />
+              </span>
+              <input className={CAMPO} value={links[p.tipo] ?? ""} onChange={(e) => setLinks((x) => ({ ...x, [p.tipo]: e.target.value }))} placeholder="Link do Drive" />
+            </label>
+          )
+        )}
       {comDevolucao && (
         <div className="grid gap-2 rounded-lg border border-dashed border-slate-300 p-2">
           <p className="text-xs font-medium text-slate-700">Devolução de saldo pela entidade (se houve)</p>

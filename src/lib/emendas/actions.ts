@@ -16,7 +16,7 @@ import { calcularFasesDaEmenda } from "@/lib/emendas/calculos";
 import { etapaAoConcluir, motivoBloqueioConclusao, tipoDaEmenda, totaisFinanceiros } from "@/lib/emendas/fases";
 import { situacaoConciliacao } from "@/lib/emendas/conciliacao";
 import { exigirDecisor } from "@/lib/emendas/master";
-import { SITUACOES_ENCERRAMENTO, documentoComprobatorio, validarEncerramento } from "@/lib/emendas/encerramento";
+import { SITUACOES_ENCERRAMENTO, validarEncerramento } from "@/lib/emendas/encerramento";
 import { extrairDaDescricao, validarDocumento, type TipoBeneficiario } from "@/lib/emendas/documentos";
 import { CATEGORIAS, categoriaPorTipoENome, ehCategoria, sugestaoDaCategoria, tipoDaCategoria, type CategoriaBeneficiario } from "@/lib/emendas/categorias";
 import { escaparLike } from "@/lib/seguranca/escapar-like";
@@ -812,17 +812,16 @@ export async function salvarEncerramento(dados: z.input<typeof esquemaEncerramen
   const [{ data: em }, { data: movs }, { data: docs }] = await Promise.all([
     emendas.from("v_emendas").select("valor,etapa,tipo_execucao,modalidade").eq("id", a.data.emendaId).maybeSingle(),
     emendas.from("movimentos_financeiros").select("tipo,valor").eq("emenda_id", a.data.emendaId),
-    emendas.from("documentos_drive").select("tipo").eq("emenda_id", a.data.emendaId).in("tipo", ["nota_fiscal", "prestacao_contas"]),
+    emendas.from("documentos_drive").select("tipo").eq("emenda_id", a.data.emendaId).in("tipo", ["nota_fiscal", "atesto", "prestacao_contas"]),
   ]);
   if (!em) return { sucesso: false, erro: "Emenda não encontrada." };
   const tipo = tipoDaEmenda(em);
   const t = totaisFinanceiros(movs ?? []);
-  const prova = documentoComprobatorio(tipo).tipo;
   const impedimento = validarEncerramento({
     situacao: a.data.situacao,
     tipo,
     financeiro: { valor: Number(em.valor), empenhado: t.empenhado, pago: t.pago },
-    temDocumento: (docs ?? []).some((d) => d.tipo === prova),
+    documentosLigados: (docs ?? []).map((d) => d.tipo as string),
     devolucaoValor: a.data.devolucaoValor ?? null,
     devolucaoData: a.data.devolucaoData ?? null,
   });

@@ -395,7 +395,7 @@ export type Proposta = {
 export type DocumentoDriveRow = {
   id: string;
   emenda_id: string;
-  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio" | "nota_fiscal" | "prestacao_contas";
+  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio" | "nota_fiscal" | "atesto" | "prestacao_contas";
   titulo: string;
   drive_file_id: string;
   drive_versao: string | null;

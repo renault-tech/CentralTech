@@ -40,9 +40,15 @@ export const COR_SITUACAO: Record<SituacaoEncerramento, { selo: string; ponto: s
   restos_a_pagar: { selo: "bg-blue-50 text-blue-800", ponto: "#1D4ED8" },
 };
 
-/** Documento que comprova o cumprimento (obrigatório para marcar cumprida). */
-export function documentoComprobatorio(tipo: TipoExecucaoEnc): { tipo: "nota_fiscal" | "prestacao_contas"; rotulo: string } {
-  return tipo === "direta" ? { tipo: "nota_fiscal", rotulo: "Nota fiscal com o atesto de recebimento" } : { tipo: "prestacao_contas", rotulo: "Prestação de contas aprovada" };
+/** Documentos que comprovam o cumprimento (todos obrigatórios para marcar cumprida). */
+export type TipoProva = "nota_fiscal" | "atesto" | "prestacao_contas";
+export function documentosComprobatorios(tipo: TipoExecucaoEnc): { tipo: TipoProva; rotulo: string; dica: string }[] {
+  if (tipo === "direta")
+    return [
+      { tipo: "nota_fiscal", rotulo: "Nota fiscal", dica: "Nota fiscal da compra ou do serviço." },
+      { tipo: "atesto", rotulo: "Atesto de recebimento", dica: "Documento que atesta que o serviço ou a compra foi atendido." },
+    ];
+  return [{ tipo: "prestacao_contas", rotulo: "Prestação de contas aprovada", dica: "Prestação de contas da entidade, já aprovada." }];
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -54,7 +60,7 @@ export type EntradaEncerramento = {
   situacao: SituacaoEncerramento;
   tipo: TipoExecucaoEnc;
   financeiro: DadosFinanceiros;
-  temDocumento: boolean;
+  documentosLigados: string[];
   devolucaoValor?: number | null;
   devolucaoData?: string | null;
 };
@@ -63,7 +69,8 @@ export type EntradaEncerramento = {
 export function validarEncerramento(e: EntradaEncerramento): string | null {
   const { valor, empenhado, pago } = e.financeiro;
   const comprova = e.situacao === "cumprida" || e.situacao === "cumprida_economia";
-  if (comprova && !e.temDocumento) return `Ligue antes o documento que comprova o cumprimento: ${documentoComprobatorio(e.tipo).rotulo.toLowerCase()}.`;
+  const faltam = documentosComprobatorios(e.tipo).filter((d) => !e.documentosLigados.includes(d.tipo));
+  if (comprova && faltam.length > 0) return `Falta ligar: ${faltam.map((d) => d.rotulo.toLowerCase()).join(" e ")}.`;
   if (e.situacao === "cumprida" && r2(valor - empenhado) > 0.005) return "A emenda ainda tem valor sem empenhar: use “Cumprida com economia” para registrar a economia.";
   if (e.situacao === "cumprida" && r2(empenhado - pago) > 0.005) return "Ainda há empenho não pago: pague ou inscreva o saldo em restos a pagar.";
   if (e.situacao === "restos_a_pagar" && r2(empenhado - pago) <= 0.005) return "Não há empenho a pagar para inscrever em restos a pagar (valor não empenhado não vira restos).";

@@ -412,7 +412,7 @@ export function DetalheEmendaCliente({
 
           {aba === "financeiro" && (
             <div className="flex flex-col gap-4">
-              <CartoesFinanceiros emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} encerramento={detalhe.encerramento} tipo={tipoDaEmenda(emenda)} provaLigada={detalhe.docsDrive.some((d) => d.tipo === (tipoDaEmenda(emenda) === "direta" ? "nota_fiscal" : "prestacao_contas"))} gestor={gestor} executar={executar} />
+              <CartoesFinanceiros emendaId={emenda.id} valor={emenda.valor} empenhado={emenda.empenhado} pago={emenda.pago} etapa={emenda.etapa} conciliacao={detalhe.conciliacao} encerramento={detalhe.encerramento} tipo={tipoDaEmenda(emenda)} provasLigadas={detalhe.docsDrive.map((d) => d.tipo as string)} gestor={gestor} executar={executar} />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-[0.8125rem]">
                   <thead>

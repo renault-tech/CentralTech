@@ -319,7 +319,7 @@ export function AbaDocumentacao({
           {tipoRotulo}: a lei não exige termo de fomento, plano de trabalho ou extrato para este tipo de execução. Os documentos próprios da compra ficam no processo ligado na aba Fases.
         </p>
         <ComprovacaoCumprimento docsDrive={docsDrive} gestor={gestor} emendaId={emendaId} executar={executar} />
-        {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={["nota_fiscal"]} executar={executar} />}
+        {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={["nota_fiscal", "atesto"]} executar={executar} />}
       </div>
     );
   }
@@ -385,8 +385,8 @@ export function AbaDocumentacao({
 /** Documento que comprova o cumprimento da emenda (nota fiscal com atesto, ou prestação de contas), ligado no Drive. Documento interno. */
 function ComprovacaoCumprimento({ docsDrive, gestor, emendaId, executar }: { docsDrive: DocumentoDrive[]; gestor: boolean; emendaId: string; executar: (acao: () => Promise<Resultado>) => Promise<Resultado> }) {
   const { confirmar } = useDialogos();
-  const docs = docsDrive.filter((d) => d.tipo === "nota_fiscal" || d.tipo === "prestacao_contas");
-  if (docs.length === 0) return <p className="text-xs text-slate-500">Comprovação do cumprimento (nota fiscal ou prestação de contas): ainda não ligada. Ela é pedida ao marcar a emenda como cumprida, na aba Financeiro.</p>;
+  const docs = docsDrive.filter((d) => d.tipo === "nota_fiscal" || d.tipo === "atesto" || d.tipo === "prestacao_contas");
+  if (docs.length === 0) return <p className="text-xs text-slate-500">Comprovação do cumprimento (nota fiscal e atesto): ainda não ligada. É pedida ao marcar a emenda como cumprida.</p>;
   return (
     <div className="rounded-lg border border-slate-200 p-3">
       <p className="text-sm font-medium text-cataguases-marinho">Comprovação do cumprimento</p>
