@@ -17,7 +17,7 @@ import { useDialogos } from "@/components/ui/dialogos";
 type Executar = (acao: () => Promise<Resultado>) => Promise<Resultado>;
 
 /** Altura de toque de 44 px no celular e compacta no computador (padrão dos módulos). */
-const ALVO = "min-h-11 sm:min-h-9";
+const ALVO = "min-h-9 sm:min-h-7";
 const ROTULO = "flex flex-col gap-1 text-xs font-medium text-slate-700";
 const SELO = "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium";
 
@@ -39,11 +39,11 @@ function Acao({ rotulo, children }: { rotulo: string; children: (fechar: () => v
   const [aberta, setAberta] = React.useState(false);
   if (!aberta)
     return (
-      <button type="button" onClick={() => setAberta(true)} className={cn(BOTAO_PRIMARIO, ALVO, "w-full justify-center text-xs")}>
+      <button type="button" onClick={() => setAberta(true)} className={cn(BOTAO_PRIMARIO, ALVO, "w-full justify-center px-2 py-1 text-[0.6875rem] leading-tight")}>
         {rotulo}
       </button>
     );
-  return <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5">{children(() => setAberta(false))}</div>;
+  return <div data-aberta className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5">{children(() => setAberta(false))}</div>;
 }
 
 function Botoes({ confirmar, pendente, desabilitar, fechar, rotulo = "Confirmar" }: { confirmar: () => void; pendente: boolean; desabilitar?: boolean; fechar: () => void; rotulo?: string }) {
@@ -77,13 +77,13 @@ function Desfazer({ onClick, pendente }: { onClick: () => void; pendente: boolea
 
 function Cartao({ rotulo, valor, cor, dica, alinhar, children }: { rotulo: string; valor: number; cor?: string; dica: React.ReactNode; alinhar?: "inicio" | "centro" | "fim"; children?: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <div className="rounded-lg border border-slate-200 px-3 py-2.5">
-        <dt className="flex items-center gap-1 text-xs text-slate-600">
+    <div className="flex min-w-0 flex-col gap-1 has-[[data-aberta]]:col-span-full">
+      <div className="rounded-lg border border-slate-200 px-2 py-1.5">
+        <dt className="flex items-center gap-1 text-[0.6875rem] leading-tight text-slate-600">
           {rotulo}
           <DicaAjuda texto={dica} rotulo={`O que é: ${rotulo}`} alinhar={alinhar} />
         </dt>
-        <dd className={cn("mt-0.5 text-lg font-semibold tabular-nums", cor ?? "text-cataguases-marinho")}>{brl(valor)}</dd>
+        <dd className={cn("text-[0.9375rem] font-semibold tabular-nums", cor ?? "text-cataguases-marinho")}>{brl(valor)}</dd>
       </div>
       {children}
     </div>
@@ -129,7 +129,7 @@ export function CartoesFinanceiros({
   return (
     <div className="flex flex-col gap-2">
       {encerramento && <FaixaEncerramento enc={encerramento} tipo={tipo} gestor={gestor} emendaId={emendaId} executar={executar} />}
-    <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] items-start gap-2" aria-label="Valores da emenda">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6.5rem),1fr))] items-start gap-2" aria-label="Valores da emenda">
       <Cartao rotulo="Valor da emenda" valor={valor} alinhar="inicio" dica="Valor total indicado pelo vereador, dentro da cota do exercício." />
       <Cartao rotulo="Empenhado" valor={empenhado} dica="Soma dos empenhos lançados. Fica sempre com o valor exato do IPM, sem arredondamento." />
       <Cartao rotulo="Pago" valor={pago} dica="Soma dos pagamentos lançados (inclui retenções, quando houver).">
