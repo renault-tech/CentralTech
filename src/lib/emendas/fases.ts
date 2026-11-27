@@ -291,7 +291,7 @@ export function faseAtual(fases: FaseCalculada[]): FaseCalculada | null {
  * proíbe é o REPASSE antes do extrato (Lei 13.019/2014, art. 38: o termo só produz efeitos depois de publicado),
  * então o extrato sai da sequência e é comparado só com o repasse.
  */
-export function datasForaDeOrdem(fases: FaseCalculada[]): [FaseCalculada, FaseCalculada][] {
+export function datasForaDeOrdem(fases: FaseCalculada[], extratoSaneadorEm?: string | null): [FaseCalculada, FaseCalculada][] {
   const comData = fases.filter((f) => f.situacao === "concluida" && f.data && f.origem !== "presumida");
   const out: [FaseCalculada, FaseCalculada][] = [];
   const sequencia = comData.filter((f) => f.fase.derivacao !== "extrato");
@@ -301,7 +301,8 @@ export function datasForaDeOrdem(fases: FaseCalculada[]): [FaseCalculada, FaseCa
   }
   const extrato = comData.find((f) => f.fase.derivacao === "extrato");
   const repasse = comData.find((f) => f.fase.derivacao === "pagamento");
-  if (extrato && repasse && (repasse.data as string) < (extrato.data as string) && !out.some(([, d]) => d === repasse)) out.push([extrato, repasse]);
+  // Extrato saneador publicado (decisão do Controle Interno): o repasse anterior ao extrato fica regularizado e deixa de ser pendência.
+  if (extrato && repasse && !extratoSaneadorEm && (repasse.data as string) < (extrato.data as string) && !out.some(([, d]) => d === repasse)) out.push([extrato, repasse]);
   return out;
 }
 

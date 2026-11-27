@@ -2386,3 +2386,12 @@ Mesmo padrão do Frotas: "Escolher colunas…" no menu Exportar (`MenuExportarIm
 Panorama (26/11/2026): "Escolher colunas…" no menu Exportar escolhe as colunas da aba "Por emenda" do Excel (`lib/emendas/colunas-panorama.ts`; escolha em `localStorage["emendas-panorama-ocultas"]`, enviada como `sem=A|B`; a rota monta as colunas a partir de uma lista de definições). **Coluna nova nessa aba = entrada em `todasColunas` na rota e o nome em `COLUNAS_PANORAMA`.** Pendências, Conformidade e o PDF com gráficos seguem sem escolha de colunas.
 
 Pendências e Conformidade (26/11/2026): mesmo "Escolher colunas…" (catálogo em `lib/emendas/colunas-listas.ts`, hook `useColunasLocais` em `components/modulo/`, `sem=A|B` na URL; as rotas aplicam `aplicarColunasOcultas` só na tabela da lista, não nos resumos). O Panorama passou a usar o mesmo hook. Segue sem escolha de colunas só o "PDF com gráficos" do Emendas.
+
+## Emendas — extrato saneador (27/11/2026)
+
+Decisão do Controle Interno (22/11): termo cujo extrato saiu DEPOIS do repasse (Lei 13.019/2014, art. 38) se regulariza com a publicação de um **extrato saneador**. Antes só dava para justificar a pendência; agora há registro próprio.
+- **Banco** (`20261127000000_emendas_extrato_saneador.sql`, aplicada por MCP; só acrescenta): `emendas.execucao.data_extrato_saneador` e o tipo `extrato_saneador` em `documentos_drive`.
+- **Regra** (`fases.ts`, `datasForaDeOrdem(fases, extratoSaneadorEm)`): com a data preenchida, o par "repasse antes do extrato" deixa de ser pendência (as outras datas fora de ordem continuam). `pendencias.ts` passa `execucao.data_extrato_saneador`.
+- **Telas**: Parceria e execução › "Publicação do extrato saneador" (data; secretaria vira proposta como nos demais campos); Documentação › tipo "Extrato saneador" (PDF no Drive, mesma regra de tarja e pasta PUBLICIDADE; só o administrador liga). Entra em `TIPOS_DRIVE_PUBLICOS` (é publicação oficial) e tem ficha própria em `montarFicha`.
+- **Modelo**: `docs/extrato-saneador/` (DOCX + PDF no timbre da Secretaria de Administração, exemplo com a emenda 43; texto a conferir com o Jurídico). Não há leitura automática do PDF do saneador.
+- Emendas com a pendência hoje (conta em banco público): 1, 16, 30, 36, 43, 44, 60, 72, 80, 82, 83, 95, 106, 113, 118, 125, 136, 137, 139, 140, 142, 143, 146, 150, 156, 169, 177, 187, 189, 193, 204, 208, 214.

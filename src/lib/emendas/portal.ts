@@ -58,7 +58,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       db
         .from("execucao")
         .select(
-          "id,numero_termo,instrumento,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,anuencia_sus_data,identificador_contabil,fonte_recurso"
+          "id,numero_termo,instrumento,processo_licitatorio,processo_id,numero_contrato,vigencia_inicio,vigencia_fim,data_publicacao_extrato,data_extrato_saneador,conta_bancaria,gestor_osc,gestor_pmc,localidade,inicio_previsto,termino_previsto,plano_metas,plano_outras_fontes,anuencia_sus,anuencia_sus_data,identificador_contabil,fonte_recurso"
         )
         .in("id", lote),
       db.from("impedimentos").select("emenda_id,tipo,resolvido_em").in("emenda_id", lote).is("resolvido_em", null),
@@ -135,6 +135,7 @@ async function carregar(ano: number): Promise<LinhaPortal[]> {
       vigenciaInicio: s(x?.vigencia_inicio),
       vigenciaFim: s(x?.vigencia_fim),
       extratoPublicadoEm: s(x?.data_publicacao_extrato),
+      extratoSaneadorEm: s(x?.data_extrato_saneador),
       conta: s(x?.conta_bancaria),
       gestorPrefeitura: s(x?.gestor_pmc),
       gestorEntidade: s(x?.gestor_osc),

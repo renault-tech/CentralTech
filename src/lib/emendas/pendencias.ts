@@ -87,7 +87,7 @@ export type EntradaPendencias = {
   execucao: Pick<
     ExecucaoEmenda,
     "numero_termo" | "vigencia_fim" | "data_publicacao_extrato" | "conta_bancaria"
-  > & { processo_licitatorio?: string | null; processo_id?: string | null } & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
+  > & { data_extrato_saneador?: string | null } & { processo_licitatorio?: string | null; processo_id?: string | null } & { instrumento?: ExecucaoEmenda["instrumento"] } | null;
   exercicio: Pick<Exercicio, "prazo_exequibilidade"> | null;
   temParecer: boolean;
   /** Conciliação com o IPM (saldo não executado, anulação do saldo do empenho, fonte do excesso). */
@@ -316,13 +316,13 @@ export function pendencias(e: EntradaPendencias): Pendencia[] {
     });
   }
 
-  for (const [antes, depois] of datasForaDeOrdem(e.fases)) {
+  for (const [antes, depois] of datasForaDeOrdem(e.fases, execucao?.data_extrato_saneador)) {
     add({
       regra: `data_fora_de_ordem:${depois.fase.chave}`,
       gravidade: "media",
       titulo: "Datas fora de ordem",
       detalhe: `${depois.fase.nome} (${dataBr(depois.data)}) é anterior a ${antes.fase.nome} (${dataBr(antes.data)}).${
-        antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação. Se as datas estão corretas, a saída indicada pelo Controle Interno é a publicação de um extrato saneador (registre-a na justificativa)." : ""
+        antes.fase.derivacao === "extrato" ? " O termo só produz efeitos depois da publicação do extrato (Lei 13.019/2014, art. 38): confira a data do pagamento ou a da publicação. Se as datas estão corretas, a saída indicada pelo Controle Interno é a publicação de um extrato saneador: registre a data dele na aba Parceria (campo “Publicação do extrato saneador”) e anexe o PDF em Documentação." : ""
       }`,
       motivos: [{ chave: `data_fora_de_ordem:${antes.fase.chave}>${depois.fase.chave}`, rotulo: `${depois.fase.nome} antes de ${antes.fase.nome}` }],
       aba: "fases",

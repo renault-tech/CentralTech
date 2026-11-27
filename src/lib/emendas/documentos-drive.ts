@@ -9,16 +9,17 @@ import { brl, dataBr } from "@/lib/emendas/regras";
  * Arquivo puro (sem `server-only`): usado nas telas internas, no portal e nos testes.
  */
 
-export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "jornal_edicao", "convenio", "nota_fiscal", "prestacao_contas"] as const;
+export const TIPOS_DRIVE = ["termo", "plano_trabalho", "extrato", "extrato_saneador", "anuencia_sus", "relatorio_gestao", "jornal_edicao", "convenio", "nota_fiscal", "prestacao_contas"] as const;
 export type TipoDrive = (typeof TIPOS_DRIVE)[number];
 
 /** Só estes tipos podem aparecer no portal sem login. Certidões, RG, orçamentos e demais anexos nunca entram. */
-export const TIPOS_DRIVE_PUBLICOS: readonly TipoDrive[] = ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "convenio"];
+export const TIPOS_DRIVE_PUBLICOS: readonly TipoDrive[] = ["termo", "plano_trabalho", "extrato", "extrato_saneador", "anuencia_sus", "relatorio_gestao", "convenio"];
 
 export const ROTULO_DRIVE: Record<TipoDrive, string> = {
   termo: "Termo de fomento",
   plano_trabalho: "Plano de trabalho",
   extrato: "Extrato publicado",
+  extrato_saneador: "Extrato saneador (publicação de regularização)",
   anuencia_sus: "Anuência do SUS",
   relatorio_gestao: "Relatório de gestão",
   jornal_edicao: "Edição do Jornal Oficial",
@@ -112,6 +113,8 @@ export type ContextoFicha = {
   vigenciaInicio: string | null;
   vigenciaFim: string | null;
   extratoPublicadoEm: string | null;
+  /** Publicação do extrato saneador (quando o extrato original saiu depois do repasse). */
+  extratoSaneadorEm?: string | null;
   gestorPrefeitura: string | null;
   conta: string | null;
   anuenciaSus: "sim" | "nao" | "nao_se_aplica" | null;
@@ -210,6 +213,18 @@ export function montarFicha(doc: Pick<DocumentoDrive, "tipo" | "titulo">, c: Con
           { rotulo: "Publicado em", valor: c.extratoPublicadoEm ? dataBr(c.extratoPublicadoEm) : null },
         ],
       };
+    case "extrato_saneador":
+      return {
+        titulo: c.termo ? `Extrato saneador do termo nº ${c.termo}` : "Extrato saneador do termo de fomento",
+        base: "Lei 13.019/2014, art. 38 (publicação do extrato) · orientação do Controle Interno",
+        campos: [
+          { rotulo: "Termo", valor: c.termo },
+          { rotulo: "Valor do repasse", valor: brl(c.valor) },
+          { rotulo: "Organização da sociedade civil", valor: c.beneficiario },
+          { rotulo: "Extrato original publicado em", valor: c.extratoPublicadoEm ? dataBr(c.extratoPublicadoEm) : null },
+          { rotulo: "Extrato saneador publicado em", valor: c.extratoSaneadorEm ? dataBr(c.extratoSaneadorEm) : null },
+        ],
+      };
     case "anuencia_sus": {
       const of = numeroDoOficio(doc.titulo);
       return {
@@ -262,7 +277,7 @@ export function montarFicha(doc: Pick<DocumentoDrive, "tipo" | "titulo">, c: Con
 export function avisosDoDocumento(
   doc: Pick<DocumentoDrive, "tipo" | "leitura_aviso" | "tambem_em">,
   mesmoTipo: number,
-  execucao: { numero_termo?: string | null; data_publicacao_extrato?: string | null } | null
+  execucao: { numero_termo?: string | null; data_publicacao_extrato?: string | null; data_extrato_saneador?: string | null } | null
 ): string[] {
   const a: string[] = [];
   if (doc.leitura_aviso) a.push(doc.leitura_aviso);
@@ -270,5 +285,6 @@ export function avisosDoDocumento(
   if (doc.tambem_em?.length) a.push(`O mesmo arquivo também está ligado à(s) emenda(s) nº ${doc.tambem_em.join(", ")}.`);
   if ((doc.tipo === "termo" || doc.tipo === "convenio") && !execucao?.numero_termo) a.push("Documento ligado, mas o nº do termo não está no cadastro.");
   if (doc.tipo === "extrato" && !execucao?.data_publicacao_extrato) a.push("Extrato ligado, mas a data de publicação não está no cadastro.");
+  if (doc.tipo === "extrato_saneador" && !execucao?.data_extrato_saneador) a.push("Extrato saneador ligado, mas a data de publicação não está no cadastro (Parceria › Publicação do extrato saneador).");
   return a;
 }

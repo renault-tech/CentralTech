@@ -73,11 +73,11 @@ async function valorAtualDe(emendas: Cliente, p: Linha): Promise<unknown> {
 // só campos conhecidos e valores no formato esperado chegam a ser aplicados pelo gestor.
 const CAMPOS_EXECUCAO = new Set([
   "numero_termo", "processo_licitatorio", "processo_id", "data_envio_pagamento", "vigencia_inicio", "vigencia_fim",
-  "data_publicacao_extrato", "conta_bancaria", "gestor_osc", "gestor_pmc", "observacao", "numero_contrato",
+  "data_publicacao_extrato", "data_extrato_saneador", "conta_bancaria", "gestor_osc", "gestor_pmc", "observacao", "numero_contrato",
   "localidade", "inicio_previsto", "termino_previsto", "plano_metas", "plano_outras_fontes", "anuencia_sus",
   "anuencia_sus_data", "identificador_contabil", "fonte_recurso", "instrumento",
 ]);
-const CAMPOS_DATA = new Set(["data_envio_pagamento", "vigencia_inicio", "vigencia_fim", "data_publicacao_extrato", "inicio_previsto", "termino_previsto", "anuencia_sus_data"]);
+const CAMPOS_DATA = new Set(["data_envio_pagamento", "vigencia_inicio", "vigencia_fim", "data_publicacao_extrato", "data_extrato_saneador", "inicio_previsto", "termino_previsto", "anuencia_sus_data"]);
 const SITUACOES_FASE = new Set(["pendente", "em_andamento", "concluida", "nao_se_aplica"]);
 const ESTADOS_CHECK = new Set(["conferido", "presumido", "pendente", "nao_se_aplica"]);
 const CHAVE_OK = /^[a-z][a-z0-9_]{1,40}$/;

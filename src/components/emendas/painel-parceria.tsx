@@ -17,6 +17,7 @@ type Campos = {
   vigenciaInicio: string;
   vigenciaFim: string;
   dataPublicacaoExtrato: string;
+  dataExtratoSaneador: string;
   contaBancaria: string;
   gestorOsc: string;
   gestorPmc: string;
@@ -36,6 +37,7 @@ function paraCampos(x: ExecucaoEmenda | null): Campos {
     vigenciaInicio: x?.vigencia_inicio ?? "",
     vigenciaFim: x?.vigencia_fim ?? "",
     dataPublicacaoExtrato: x?.data_publicacao_extrato ?? "",
+    dataExtratoSaneador: x?.data_extrato_saneador ?? "",
     contaBancaria: x?.conta_bancaria ?? "",
     gestorOsc: x?.gestor_osc ?? "",
     gestorPmc: x?.gestor_pmc ?? "",
@@ -77,6 +79,7 @@ export function PainelParceria({
           execucao?.vigencia_inicio || execucao?.vigencia_fim ? `${dataBr(execucao?.vigencia_inicio)} a ${dataBr(execucao?.vigencia_fim)}` : null,
         ],
         [convenio ? "Publicação do convênio" : "Publicação do extrato", execucao?.data_publicacao_extrato ? dataBr(execucao.data_publicacao_extrato) : null],
+        ...(execucao?.data_extrato_saneador ? ([["Publicação do extrato saneador", dataBr(execucao.data_extrato_saneador)]] as [string, string][]) : []),
         ["Conta bancária da entidade", execucao?.conta_bancaria ?? null],
         ["Gestor da parceria na entidade", execucao?.gestor_osc ?? null],
         ["Gestor da parceria na Prefeitura", execucao?.gestor_pmc ?? null],
@@ -230,6 +233,13 @@ function DialogoParceria({
                 <label className={rotulo}>
                   <span className="flex items-center gap-1.5">{convenio ? "Publicação do convênio" : "Publicação do extrato"} <BaseLegalDica chave={convenio ? "convenio_publicacao" : "termo_extrato"} /></span>
                   <input type="date" className={CAMPO} {...campo("dataPublicacaoExtrato")} />
+                </label>
+                <label className={`${rotulo} sm:col-span-2`}>
+                  Publicação do extrato saneador
+                  <input type="date" className={CAMPO} {...campo("dataExtratoSaneador")} />
+                  <span className="text-xs font-normal text-slate-600">
+                    Só quando o extrato do termo saiu depois do repasse: a publicação do extrato saneador (decisão do Controle Interno) regulariza a situação e baixa a pendência “Datas fora de ordem”. Anexe o PDF em Documentação.
+                  </span>
                 </label>
                 <label className={rotulo}>
                   Início da vigência

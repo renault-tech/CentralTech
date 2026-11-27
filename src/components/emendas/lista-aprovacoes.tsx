@@ -19,6 +19,7 @@ const ROTULO_CAMPO: Record<string, string> = {
   vigencia_inicio: "Início da vigência",
   vigencia_fim: "Fim da vigência",
   data_publicacao_extrato: "Publicação do extrato",
+  data_extrato_saneador: "Publicação do extrato saneador",
   conta_bancaria: "Conta bancária",
   gestor_osc: "Gestor na entidade",
   gestor_pmc: "Gestor na Prefeitura",

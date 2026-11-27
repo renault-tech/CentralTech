@@ -122,6 +122,21 @@ describe("datasForaDeOrdem e o extrato", () => {
   });
 });
 
+describe("extrato saneador", () => {
+  const fase = (chave: string, derivacao: string | null, data: string) =>
+    ({ fase: { chave, nome: chave, derivacao }, situacao: "concluida", data, origem: "dado" }) as unknown as FaseCalculada;
+  const f = [fase("extrato", "extrato", "2026-03-29"), fase("repasse", "pagamento", "2026-03-26")];
+  it("com a publicação do extrato saneador registrada, o repasse antes do extrato deixa de ser apontado", () => {
+    expect(datasForaDeOrdem(f)).toHaveLength(1);
+    expect(datasForaDeOrdem(f, "2026-11-30")).toHaveLength(0);
+    expect(datasForaDeOrdem(f, null)).toHaveLength(1);
+  });
+  it("não esconde outras datas fora de ordem", () => {
+    const g = [fase("extrato", "extrato", "2026-03-29"), fase("empenho", "empenho", "2026-05-01"), fase("liquidacao", "liquidacao", "2026-04-01")];
+    expect(datasForaDeOrdem(g, "2026-11-30")).toHaveLength(1);
+  });
+});
+
 describe("tipoDaEmenda", () => {
   it("usa o tipo gravado; sem tipo, deduz pela modalidade", () => {
     expect(tipoDaEmenda({ tipo_execucao: "ente", modalidade: "direta" })).toBe("ente");

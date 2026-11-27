@@ -39,7 +39,7 @@ describe("documentos do Drive", () => {
   it("o portal nunca publica certidão, RG ou documento interno", () => {
     expect(TIPOS_DRIVE_PUBLICOS).not.toContain("jornal_edicao" as never);
     for (const t of TIPOS_DRIVE_PUBLICOS) expect(TIPOS_DRIVE).toContain(t);
-    expect(TIPOS_DRIVE_PUBLICOS.every((t) => ["termo", "plano_trabalho", "extrato", "anuencia_sus", "relatorio_gestao", "convenio"].includes(t))).toBe(true);
+    expect(TIPOS_DRIVE_PUBLICOS.every((t) => ["termo", "plano_trabalho", "extrato", "extrato_saneador", "anuencia_sus", "relatorio_gestao", "convenio"].includes(t))).toBe(true);
   });
 
   it("extrai o número do ofício do nome do arquivo", () => {

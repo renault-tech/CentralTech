@@ -302,7 +302,7 @@ export function AbaDocumentacao({
   executar,
   execucao = null,
 }: {
-  execucao?: { numero_termo?: string | null; data_publicacao_extrato?: string | null } | null;
+  execucao?: { numero_termo?: string | null; data_publicacao_extrato?: string | null; data_extrato_saneador?: string | null } | null;
   exigidos: DocumentoExigido[];
   docsDrive: DocumentoDrive[];
   contexto: ContextoFicha;

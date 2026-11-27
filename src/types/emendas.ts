@@ -241,6 +241,8 @@ export type ExecucaoEmenda = {
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
   data_publicacao_extrato: string | null;
+  /** Publicação do extrato saneador: regulariza o termo cujo extrato saiu depois do repasse (Lei 13.019, art. 38). */
+  data_extrato_saneador: string | null;
   conta_bancaria: string | null;
   gestor_osc: string | null;
   gestor_pmc: string | null;
@@ -395,7 +397,7 @@ export type Proposta = {
 export type DocumentoDriveRow = {
   id: string;
   emenda_id: string;
-  tipo: "termo" | "plano_trabalho" | "extrato" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio" | "nota_fiscal" | "prestacao_contas";
+  tipo: "termo" | "plano_trabalho" | "extrato" | "extrato_saneador" | "anuencia_sus" | "relatorio_gestao" | "jornal_edicao" | "convenio" | "nota_fiscal" | "prestacao_contas";
   titulo: string;
   drive_file_id: string;
   drive_versao: string | null;
