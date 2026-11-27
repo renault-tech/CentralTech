@@ -208,7 +208,7 @@ function EditorFase({
   }
 
   return (
-    <div className="mt-2 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+    <div className="mt-2 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
       <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
         Situação
         <select className={CAMPO} value={situacao} onChange={(e) => setSituacao(e.target.value as SituacaoFase)}>
@@ -472,7 +472,7 @@ function CadastroDocumentoDrive({
             </option>
           ))}
         </select>
-        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole o link do arquivo no Drive" className={cn(CAMPO, "min-w-[16rem] flex-1")} aria-label="Link do arquivo no Drive" />
+        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole o link do arquivo no Drive" className={cn(CAMPO, "min-w-0 flex-1")} aria-label="Link do arquivo no Drive" />
         <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Nome (opcional)" className={cn(CAMPO, "w-48")} aria-label="Nome do documento" />
         <button type="submit" disabled={pendente || !link.trim()} className={BOTAO_PRIMARIO}>
           {pendente ? "Ligando…" : "Ligar"}

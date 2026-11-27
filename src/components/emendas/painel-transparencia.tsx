@@ -142,7 +142,7 @@ function FormularioTransparencia({ emendaId, execucao, saude, aoFechar }: { emen
   }
 
   return (
-    <form onSubmit={salvar} className="mt-3 grid gap-3.5 sm:grid-cols-2">
+    <form onSubmit={salvar} className="mt-3 grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
       <label className={`${rotulo} sm:col-span-2`}>
         <span className="flex items-center gap-1.5">Localidade beneficiada <span className="font-normal text-slate-400">(município, bairro ou distrito)</span></span>
         <input className={CAMPO} maxLength={200} value={v.localidade} onChange={set("localidade")} placeholder="Ex.: Cataguases — Bairro Vila Reis" />

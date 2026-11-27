@@ -202,7 +202,7 @@ function DialogoParceria({
           </DialogDescription>
         </DialogHeader>
         <form className="mt-4 flex flex-col gap-3.5" onSubmit={salvar}>
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             {repasse && permiteConvenio && (
               <label className={`${rotulo} sm:col-span-2`}>
                 Instrumento da parceria

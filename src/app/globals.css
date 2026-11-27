@@ -896,3 +896,7 @@ html:has(.emd) { scroll-behavior: smooth; }
 .dialogo-cartao { animation: dialogo-cartao 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @media (prefers-reduced-motion: reduce) { .dialogo-fundo, .dialogo-cartao { animation: none; } }
 @media print { .dialogo-fundo { display: none; } }
+
+/* Nada de rolagem lateral: fieldset tem largura mínima = conteúdo por padrão, e campos podem passar da coluna. */
+fieldset { min-width: 0; }
+.emd input:not([type="checkbox"]):not([type="radio"]), .emd select, .emd textarea { max-width: 100%; min-width: 0; }

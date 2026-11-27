@@ -129,7 +129,7 @@ export function CartoesFinanceiros({
   return (
     <div className="flex flex-col gap-2">
       {encerramento && <FaixaEncerramento enc={encerramento} tipo={tipo} gestor={gestor} emendaId={emendaId} executar={executar} />}
-    <dl className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Valores da emenda">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] items-start gap-2" aria-label="Valores da emenda">
       <Cartao rotulo="Valor da emenda" valor={valor} alinhar="inicio" dica="Valor total indicado pelo vereador, dentro da cota do exercício." />
       <Cartao rotulo="Empenhado" valor={empenhado} dica="Soma dos empenhos lançados. Fica sempre com o valor exato do IPM, sem arredondamento." />
       <Cartao rotulo="Pago" valor={pago} dica="Soma dos pagamentos lançados (inclui retenções, quando houver).">
@@ -218,7 +218,7 @@ function FormEncerramento({ emendaId, tipo, provaLigada, executar, opcoes, fecha
   }
 
   return (
-    <fieldset className="flex flex-col gap-2" disabled={pendente}>
+    <fieldset className="flex min-w-0 flex-col gap-2" disabled={pendente}>
       <legend className="sr-only">Situação da emenda</legend>
       {opcoes.length > 1 &&
         opcoes.map((o) => (

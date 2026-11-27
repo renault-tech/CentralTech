@@ -478,7 +478,7 @@ export function DetalheEmendaCliente({
                   </div>
                   {r.motivo && <p className="mt-1 text-[0.8125rem] text-slate-600">{r.motivo}</p>}
                   {Object.keys(r.antes).map((campo) => (
-                    <div key={campo} className="mt-2.5 grid gap-2 text-[0.8125rem] sm:grid-cols-[150px_1fr_1fr]">
+                    <div key={campo} className="mt-2.5 grid gap-2 text-[0.8125rem] grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))]">
                       <span className="text-slate-600">{ROTULO_CAMPO[campo] ?? campo}</span>
                       <span className="rounded-md bg-red-50 px-2 py-1.5 text-red-900 line-through decoration-red-300">{exibir(campo, r.antes[campo])}</span>
                       <span className="rounded-md bg-green-50 px-2 py-1.5 text-green-900">{exibir(campo, r.depois[campo])}</span>
@@ -741,7 +741,7 @@ function DialogoAndamento({
             </select>
           </Campo>
           {bloqueioConclusao && <p className="-mt-1 text-xs text-slate-600">{bloqueioConclusao}</p>}
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <Campo rotulo="Data">
               <input type="date" required className={CAMPO} value={data} onChange={(e) => setData(e.target.value)} />
             </Campo>
@@ -791,7 +791,7 @@ function DialogoImpedimento({ aberto, aoFechar, aoSalvar }: { aberto: boolean; a
             });
           }}
         >
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <Campo rotulo="Tipo">
               <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
                 <option value="tecnico">Técnico</option>
@@ -862,7 +862,7 @@ function DialogoMovimento({
             });
           }}
         >
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <Campo rotulo="Tipo">
               <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
                 {Object.entries(NOME_TIPO_MOV).filter(([k]) => k !== "liquidacao" && !k.startsWith("arredondamento")).map(([k, v]) => (
@@ -951,7 +951,7 @@ function DialogoRemanejar({
             void enviar(() => aoSalvar({ ato, motivo, novo }), aoFechar);
           }}
         >
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <Campo rotulo="Beneficiário / destinação">
               <select className={CAMPO} value={benef} onChange={(e) => setBenef(e.target.value)}>
                 <option value="">— sem beneficiário —</option>
@@ -1003,7 +1003,7 @@ function DialogoRemanejar({
           <Campo rotulo="Nova dotação (ficha)">
             <input className={CAMPO} value={ficha} onChange={(e) => setFicha(e.target.value)} />
           </Campo>
-          <div className="grid gap-3.5 sm:grid-cols-[1fr_180px]">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
             <Campo rotulo="Objeto (resumo)">
               <input className={CAMPO} value={objeto} onChange={(e) => setObjeto(e.target.value)} />
             </Campo>
@@ -1014,7 +1014,7 @@ function DialogoRemanejar({
           <label className="flex items-center gap-2 text-[0.8125rem] text-cataguases-marinho">
             <input type="checkbox" checked={saude} onChange={(e) => setSaude(e.target.checked)} className="h-4 w-4 accent-[#6B4FBB]" /> Conta para a Saúde
           </label>
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
             <Campo rotulo="Ato / ofício">
               <input className={CAMPO} value={ato} onChange={(e) => setAto(e.target.value)} placeholder="Ofício nº…" />
             </Campo>
@@ -1249,7 +1249,7 @@ function Documentos({
         <div className="flex flex-wrap items-end gap-2 rounded-lg bg-slate-50 p-3">
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
             Tipo do documento
-            <select className={cn(CAMPO, "min-w-[240px]")} value={tipo} onChange={(e) => setTipo(e.target.value as TipoDocumento)}>
+            <select className={cn(CAMPO, "min-w-0 max-w-full")} value={tipo} onChange={(e) => setTipo(e.target.value as TipoDocumento)}>
               {tipos.map((t) => (
                 <option key={t.valor} value={t.valor}>{t.rotulo}</option>
               ))}
