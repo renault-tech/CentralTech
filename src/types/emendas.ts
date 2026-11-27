@@ -408,6 +408,23 @@ export type DocumentoDriveRow = {
   atualizado_em: string;
 };
 
+/** Documento enviado pela plataforma ao Drive (`emendas.documentos_enviados`); o arquivo fica no Drive, nunca no banco. */
+export type DocumentoEnviadoRow = {
+  id: string;
+  emenda_id: string;
+  tipo: DocumentoDriveRow["tipo"];
+  nome: string;
+  drive_file_id: string;
+  pasta: "originais" | "internos";
+  tamanho: number | null;
+  status: "aguardando" | "aprovado" | "devolvido";
+  enviado_por: string;
+  enviado_em: string;
+  decidido_por: string | null;
+  decidido_em: string | null;
+  motivo: string | null;
+};
+
 type Tabela<Row, Obrigatorios extends keyof Row, Gerados extends keyof Row> = {
   Row: Row;
   Insert: Pick<Row, Obrigatorios> & Partial<Omit<Row, Obrigatorios | Gerados>>;
@@ -452,6 +469,7 @@ export type DatabaseEmendas = {
       propostas: Tabela<Proposta, "emenda_id" | "alvo" | "valor_proposto", "id" | "criado_em">;
       pendencias_justificadas: Tabela<PendenciaJustificada, "emenda_id" | "regra" | "assinatura" | "justificativa", never>;
       documentos_drive: Tabela<DocumentoDriveRow, "emenda_id" | "tipo" | "titulo" | "drive_file_id", "id" | "criado_em" | "atualizado_em">;
+      documentos_enviados: Tabela<DocumentoEnviadoRow, "emenda_id" | "tipo" | "nome" | "drive_file_id" | "pasta", "id" | "enviado_em">;
     };
     Views: {
       v_emendas: { Row: EmendaResumo; Relationships: [] };

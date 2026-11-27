@@ -13,6 +13,12 @@ export type Novidade = {
 
 export const NOVIDADES: Novidade[] = [
   {
+    data: "2026-11-28",
+    titulo: "Documentos: envio direto para o Google Drive",
+    descricao:
+      "Em Configurações → Documentos o administrador conecta o Google Drive e escolhe uma pasta; a plataforma cria sozinha as pastas Originais, Publicada e Internos. Na aba Documentação da emenda, quem tem permissão envia o PDF e ele vai direto para o Drive, com nome padrão. Gestores e o administrador aprovam em Aprovações; a análise com compressão e tarja dos documentos públicos chega na próxima etapa. Quem envia e quem aprova é configurável por pessoa.",
+  },
+  {
     data: "2026-11-27",
     titulo: "Emendas: nota fiscal e atesto para concluir",
     descricao:

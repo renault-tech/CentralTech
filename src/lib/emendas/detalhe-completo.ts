@@ -17,9 +17,11 @@ import {
 import { tipoDaEmenda } from "@/lib/emendas/fases";
 import { calcularEmendas, type CalculoEmenda } from "@/lib/emendas/resumo";
 import { ehGestor, type CatalogoEtapas } from "@/lib/emendas/regras";
+import { armazenamentoPronto } from "@/lib/documentos/config";
+import { permissoesDocumentos } from "@/lib/documentos/permissoes";
 import { criarClienteEmendas } from "@/lib/supabase/emendas-cliente";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import type { Beneficiario, Exercicio, TipoExecucao, UnidadeOrcamentaria } from "@/types/emendas";
+import type { Beneficiario, DocumentoEnviadoRow, Exercicio, TipoExecucao, UnidadeOrcamentaria } from "@/types/emendas";
 
 export type LinhaAuditoria = { id: number; tabela: string; acao: string; em: string; usuario_id: string | null; antes: Record<string, unknown> | null; depois: Record<string, unknown> | null };
 export type ExclusaoJustificada = { em: string; usuario_id: string; justificativa: string; tipo: string };
@@ -39,6 +41,8 @@ export type DetalheCompleto = {
   podeEditar: boolean;
   gestor: boolean;
   tipo: TipoExecucao;
+  /** Envio de documentos pela plataforma: `pronto` = Drive conectado e pastas criadas; `pode` = esta pessoa envia nesta emenda. */
+  envio: { pronto: boolean; pode: boolean; enviados: DocumentoEnviadoRow[] };
 };
 
 export type ResultadoDetalheCompleto = { situacao: "sem_acesso" } | { situacao: "nao_encontrada" } | ({ situacao: "ok" } & DetalheCompleto);
@@ -96,6 +100,11 @@ export async function carregarDetalheCompleto(id: string): Promise<ResultadoDeta
     hoje: new Date().toISOString().slice(0, 10),
   }).get(emenda.id)!;
 
+  const [pronto, perms, enviadosRes] = await Promise.all([
+    armazenamentoPronto(),
+    permissoesDocumentos(ctx.usuario.id, ctx.perfil),
+    criarClienteEmendas().then((c) => c.from("documentos_enviados").select("*").eq("emenda_id", id).order("enviado_em", { ascending: false }).limit(50)),
+  ]);
   const registros = (auditoria.data ?? []) as LinhaAuditoria[];
   const listaExclusoes = (exclusoes.data ?? []) as ExclusaoJustificada[];
   const idsUsuarios = Array.from(new Set([...registros.map((a) => a.usuario_id), ...listaExclusoes.map((e) => e.usuario_id)].filter((x): x is string => !!x)));
@@ -121,5 +130,6 @@ export async function carregarDetalheCompleto(id: string): Promise<ResultadoDeta
     podeEditar: podeEditarSecretaria(ctx, emenda.secretaria_id),
     gestor,
     tipo,
+    envio: { pronto, pode: pronto && perms.enviar && podeEditarSecretaria(ctx, emenda.secretaria_id), enviados: (enviadosRes.data ?? []) as DocumentoEnviadoRow[] },
   };
 }

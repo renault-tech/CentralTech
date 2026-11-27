@@ -25,7 +25,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
   const r = await carregarDetalheCompleto(id);
   if (r.situacao === "sem_acesso") redirect("/emendas");
   if (r.situacao === "nao_encontrada") notFound();
-  const { detalhe, catalogo, beneficiarios, unidades, auditoria: registros, exclusoes: listaExclusoes, nomesUsuarios, calculo, processoCompras, exercicio, podeEditar, gestor, tipo } = r;
+  const { detalhe, catalogo, beneficiarios, unidades, auditoria: registros, exclusoes: listaExclusoes, nomesUsuarios, calculo, processoCompras, exercicio, podeEditar, gestor, tipo, envio } = r;
   const { emenda, andamentos, movimentos, execucao } = detalhe;
   const vinculo = <VinculoCompras emendaId={emenda.id} processo={processoCompras} numeroLivre={execucao?.processo_licitatorio ?? null} podeEditar={podeEditar} />;
 
@@ -93,6 +93,7 @@ export default async function PaginaEmenda({ params, searchParams }: { params: P
             exclusoes={listaExclusoes}
             podeCorrigirLancamento={podeEditar && !!exercicio?.secretaria_edita_lancamentos}
             nomesUsuarios={nomesUsuarios}
+            envio={envio}
             fases={calculo.fases}
             pendencias={calculo.pendencias}
             corTipo={TIPOS_EXECUCAO[tipo].cor}

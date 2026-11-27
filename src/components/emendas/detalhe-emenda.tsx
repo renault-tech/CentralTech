@@ -35,6 +35,7 @@ import { CATEGORIAS, INFO_CATEGORIA, tipoDaCategoria, type CategoriaBeneficiario
 import { cn } from "@/lib/utils";
 import type { DetalheEmenda } from "@/lib/emendas/dados";
 import type { Beneficiario, EtapaEmenda, TipoDocumento, UnidadeOrcamentaria } from "@/types/emendas";
+import type { DetalheCompleto } from "@/lib/emendas/detalhe-completo";
 import { useDialogos } from "@/components/ui/dialogos";
 
 export const CAMPO =
@@ -159,6 +160,7 @@ export function DetalheEmendaCliente({
   podeCorrigirLancamento,
   vinculo,
   nomesUsuarios,
+  envio,
   fases,
   pendencias,
   corTipo,
@@ -193,6 +195,8 @@ export function DetalheEmendaCliente({
   vinculo?: React.ReactNode;
   exclusoes: { em: string; usuario_id: string; justificativa: string; tipo: string }[];
   nomesUsuarios: Record<string, string>;
+  /** Envio de documentos pela plataforma (Drive). */
+  envio?: DetalheCompleto["envio"];
 }) {
   const catalogo = useCatalogo();
   const router = useRouter();
@@ -323,6 +327,8 @@ export function DetalheEmendaCliente({
             <AbaDocumentacao
               exigidos={documentosExigidos(tipoDaEmenda(emenda), { saude: emenda.saude, anuenciaSus: detalhe.execucao?.anuencia_sus ?? null, instrumento: detalhe.execucao?.instrumento ?? null })}
               docsDrive={detalhe.docsDrive}
+              envio={envio ?? null}
+              nomes={nomesUsuarios}
               execucao={detalhe.execucao}
               emendaId={emenda.id}
               gestor={gestor}

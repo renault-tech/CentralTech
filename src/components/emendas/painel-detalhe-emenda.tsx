@@ -495,6 +495,7 @@ function PainelCorpo({
               exclusoes={pacote.exclusoes}
               podeCorrigirLancamento={pacote.podeCorrigirLancamento}
               nomesUsuarios={pacote.nomesUsuarios}
+              envio={pacote.envio}
               fases={pacote.fases}
               pendencias={pacote.pendencias}
               corTipo={cor}

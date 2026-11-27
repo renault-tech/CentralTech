@@ -1,4 +1,4 @@
-import { Inbox, ShieldAlert, Users } from "lucide-react";
+import { FolderOpen, Inbox, ShieldAlert, Users } from "lucide-react";
 
 import { IndiceConfiguracoes, type CartaoConfiguracao } from "@/components/layout/indice-configuracoes";
 import { contarSolicitacoesPendentes } from "@/lib/dados/solicitacoes";
@@ -38,6 +38,13 @@ export default async function PaginaConfiguracoes() {
       descricao: "Sinal de quanto cada app já migrou, e o interruptor de bloqueio.",
       Icone: ShieldAlert,
       cor: "#D98614",
+    },
+    {
+      href: "/configuracoes/documentos",
+      titulo: "Documentos",
+      descricao: "Conexão com o Google Drive, pastas e quem envia ou aprova documentos.",
+      Icone: FolderOpen,
+      cor: "#6B4FBB",
     },
   ];
 

@@ -16,6 +16,8 @@ import { JanelaFicha } from "@/components/modulo/janela-ficha";
 import { ROTULO_DRIVE, TIPOS_DRIVE, avisosDoDocumento, montarFicha, urlOriginal, type ContextoFicha, type DocumentoDrive, type DocumentoExigido } from "@/lib/emendas/documentos-drive";
 import type { SituacaoFase } from "@/types/emendas";
 import { useDialogos } from "@/components/ui/dialogos";
+import { EnvioDocumentos } from "@/components/emendas/envio-documentos";
+import type { DocumentoEnviadoRow } from "@/types/emendas";
 
 const CAMPO =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-cataguases-marinho outline-none focus:border-[#6B4FBB] focus:ring-1 focus:ring-[#6B4FBB]";
@@ -287,6 +289,9 @@ function EditorFase({
 
 // ------------------------------------------------------ documentos (por lei)
 
+/** Tipos que a plataforma recebe por envio (o jornal fica de fora: é referência, não documento da emenda). */
+const TIPOS_ENVIO = TIPOS_DRIVE.filter((t) => t !== "jornal_edicao");
+
 /**
  * Documentos que a LEI exige para a emenda (só os de parceria e publicação; execução direta não tem). O estado
  * vem do Drive: se o arquivo está ligado à emenda, aparece "Disponível" com o olho (ficha) e o link do original;
@@ -301,7 +306,11 @@ export function AbaDocumentacao({
   gestor,
   executar,
   execucao = null,
+  envio = null,
+  nomes = {},
 }: {
+  envio?: { pronto: boolean; pode: boolean; enviados: DocumentoEnviadoRow[] } | null;
+  nomes?: Record<string, string>;
   execucao?: { numero_termo?: string | null; data_publicacao_extrato?: string | null } | null;
   exigidos: DocumentoExigido[];
   docsDrive: DocumentoDrive[];
@@ -319,6 +328,7 @@ export function AbaDocumentacao({
           {tipoRotulo}: a lei não exige termo de fomento, plano de trabalho ou extrato para este tipo de execução. Os documentos próprios da compra ficam no processo ligado na aba Fases.
         </p>
         <ComprovacaoCumprimento docsDrive={docsDrive} gestor={gestor} emendaId={emendaId} executar={executar} />
+        {envio?.pronto && <EnvioDocumentos emendaId={emendaId} tipos={TIPOS_ENVIO} enviados={envio.enviados} nomes={nomes} pode={envio.pode} executar={executar} />}
         {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={["nota_fiscal", "atesto"]} executar={executar} />}
       </div>
     );
@@ -377,6 +387,7 @@ export function AbaDocumentacao({
         })}
       </ul>
       <ComprovacaoCumprimento docsDrive={docsDrive} gestor={gestor} emendaId={emendaId} executar={executar} />
+      {envio?.pronto && <EnvioDocumentos emendaId={emendaId} tipos={TIPOS_ENVIO} enviados={envio.enviados} nomes={nomes} pode={envio.pode} executar={executar} />}
       {gestor && <CadastroDocumentoDrive emendaId={emendaId} tipos={exigidos.map((e) => e.tipo)} executar={executar} />}
     </div>
   );

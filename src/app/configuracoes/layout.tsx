@@ -42,6 +42,7 @@ export default async function LayoutConfiguracoes({
               { href: "/configuracoes/solicitacoes", rotulo: "Solicitações" },
               { href: "/configuracoes/usuarios", rotulo: "Usuários e acessos" },
               { href: "/configuracoes/login-direto", rotulo: "Login direto" },
+              { href: "/configuracoes/documentos", rotulo: "Documentos" },
             ]}
           />
         </div>

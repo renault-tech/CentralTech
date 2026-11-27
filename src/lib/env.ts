@@ -79,3 +79,29 @@ export function envServidor() {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }
+
+// Conexão com o Google Drive (documentos). Cliente OAuth criado no Google Cloud com a conta da instituição; a chave de
+// cifra protege no banco a autorização guardada. `GOOGLE_PICKER_API_KEY`/`GOOGLE_PROJECT_NUMBER` são opcionais: sem elas
+// a tela não oferece o seletor de pastas do Google, só criar as pastas na raiz do Drive conectado.
+const esquemaGoogle = z.object({
+  GOOGLE_OAUTH_CLIENT_ID: z.string().min(10, "GOOGLE_OAUTH_CLIENT_ID ausente"),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(10, "GOOGLE_OAUTH_CLIENT_SECRET ausente"),
+  DOCUMENTOS_CHAVE_CRIPTO: z.string().min(16, "DOCUMENTOS_CHAVE_CRIPTO ausente (mínimo 16 caracteres)"),
+  GOOGLE_PICKER_API_KEY: z.string().optional(),
+  GOOGLE_PROJECT_NUMBER: z.string().optional(),
+});
+
+/** `null` quando a instituição ainda não configurou o Google: a tela explica o passo a passo em vez de quebrar. */
+export function envGoogle() {
+  if (typeof window !== "undefined") {
+    throw new Error("envGoogle() não pode ser chamado no cliente");
+  }
+  const r = esquemaGoogle.safeParse({
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+    DOCUMENTOS_CHAVE_CRIPTO: process.env.DOCUMENTOS_CHAVE_CRIPTO,
+    GOOGLE_PICKER_API_KEY: process.env.GOOGLE_PICKER_API_KEY || undefined,
+    GOOGLE_PROJECT_NUMBER: process.env.GOOGLE_PROJECT_NUMBER || undefined,
+  });
+  return r.success ? r.data : null;
+}
